@@ -1,6 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
+import { Platform } from 'react-native';
+import { ReactNode, lazy, Suspense } from 'react';
 import { handleSupabaseError } from '../utils/errorHandling';
+
+// Lazy load devtools only in development and on web
+const ReactQueryDevtools = 
+  __DEV__ && Platform.OS === 'web'
+    ? lazy(() => 
+        import('@tanstack/react-query-devtools').then((d) => ({
+          default: d.ReactQueryDevtools,
+        }))
+      )
+    : null;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +50,13 @@ interface QueryProviderProps {
 
 export function QueryProvider({ children }: QueryProviderProps) {
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+      {ReactQueryDevtools && (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+        </Suspense>
+      )}
+    </QueryClientProvider>
   );
 }
