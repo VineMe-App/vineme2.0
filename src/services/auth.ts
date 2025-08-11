@@ -100,18 +100,17 @@ export class AuthService {
   async getCurrentUser(): Promise<User | null> {
     try {
       const {
-        data: { user },
+        data: { session },
         error,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
 
       if (error) {
-        console.error('Error getting current user:', error.message);
+        // Treat missing-session as unauthenticated without noisy logs
         return null;
       }
 
-      return user;
-    } catch (error) {
-      console.error('Error getting current user:', error);
+      return session?.user ?? null;
+    } catch {
       return null;
     }
   }

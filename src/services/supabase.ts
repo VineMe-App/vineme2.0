@@ -16,7 +16,8 @@ const isWeb = typeof window !== 'undefined';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    // Use native AsyncStorage only on native. On web, let Supabase fall back to localStorage
+    storage: isWeb ? undefined : AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
     // On web, allow detecting the session in the URL after auth redirects
