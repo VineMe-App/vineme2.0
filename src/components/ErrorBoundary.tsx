@@ -42,6 +42,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <Text style={styles.message}>
             We're sorry, but something unexpected happened. Please try again.
           </Text>
+          {this.state.error?.message ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorHeading}>Error</Text>
+              <Text style={styles.errorText}>{this.state.error.message}</Text>
+            </View>
+          ) : null}
           <TouchableOpacity style={styles.button} onPress={this.handleRetry}>
             <Text style={styles.buttonText}>Try Again</Text>
           </TouchableOpacity>
@@ -84,5 +90,24 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorBox: {
+    backgroundColor: '#fff0f0',
+    borderColor: '#ffccd1',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    alignSelf: 'stretch',
+  },
+  errorHeading: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#b00020',
+    marginBottom: 6,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#b00020',
   },
 });
