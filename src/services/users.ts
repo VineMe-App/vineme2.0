@@ -1,0 +1,258 @@
+import { supabase } from './supabase';
+import type { DatabaseUser, UserWithDetails } from '../types/database';
+
+export interface UpdateUserProfileData {
+  name?: string;
+  avatar_url?: string | null;
+  church_id?: string;
+  service_id?: string;
+}
+
+export interface UserServiceResponse<T = any> {
+  data: T | null;
+  error: Error | null;
+}
+
+export class UserService {
+  /**
+   * Get user profile by ID with related data
+   */
+  async getUserProfile(
+    userId: string
+  ): Promise<UserServiceResponse<UserWithDetails>> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select(
+          `
+          *,
+          church:churches(*),
+          service:services(*),
+          group_memberships:group_memberships(
+            *,
+            group:groups(*)
+          ),
+          friendships:friendships(
+            *,
+            friend:users!friendships_friend_id_fkey(id, name, avatar_url)
+          )
+        `
+        )
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get user profile'),
+      };
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateUserProfile(
+    userId: string,
+    updates: UpdateUserProfileData
+  ): Promise<UserServiceResponse<DatabaseUser>> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to update user profile'),
+      };
+    }
+  }
+
+  /**
+   * Upload avatar image to Supabase storage
+   */
+  async uploadAvatar(
+    userId: string,
+    file: File | Blob
+  ): Promise<UserServiceResponse<string>> {
+    try {
+      const fileExt = file instanceof File ? file.name.split('.').pop() : 'jpg';
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('user-avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        return { data: null, error: new Error(uploadError.message) };
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('user-avatars').getPublicUrl(filePath);
+
+      return { data: publicUrl, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error ? error : new Error('Failed to upload avatar'),
+      };
+    }
+  }
+
+  /**
+   * Delete avatar from storage
+   */
+  async deleteAvatar(avatarUrl: string): Promise<UserServiceResponse<boolean>> {
+    try {
+      // Extract file path from URL
+      const urlParts = avatarUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const filePath = `avatars/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('user-avatars')
+        .remove([filePath]);
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: true, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error ? error : new Error('Failed to delete avatar'),
+      };
+    }
+  }
+
+  /**
+   * Get user's group memberships
+   */
+  async getUserGroupMemberships(
+    userId: string
+  ): Promise<UserServiceResponse<any[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          group:groups(
+            *,
+            service:services(*),
+            church:churches(*)
+          )
+        `
+        )
+        .eq('user_id', userId)
+        .eq('status', 'active');
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get group memberships'),
+      };
+    }
+  }
+
+  /**
+   * Get user's friendships
+   */
+  async getUserFriendships(
+    userId: string
+  ): Promise<UserServiceResponse<any[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('friendships')
+        .select(
+          `
+          *,
+          friend:users!friendships_friend_id_fkey(id, name, avatar_url, email)
+        `
+        )
+        .eq('user_id', userId)
+        .eq('status', 'accepted');
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get friendships'),
+      };
+    }
+  }
+
+  /**
+   * Search users by name or email
+   */
+  async searchUsers(
+    query: string,
+    limit: number = 10
+  ): Promise<UserServiceResponse<Partial<DatabaseUser>[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, email, avatar_url, church_id')
+        .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(limit);
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error ? error : new Error('Failed to search users'),
+      };
+    }
+  }
+}
+
+// Export singleton instance
+export const userService = new UserService();

@@ -1,0 +1,68 @@
+import React from 'react';
+import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { GroupDetail } from '../../components/groups';
+import { useGroup, useGroupMembership } from '../../hooks/useGroups';
+import { useAuthStore } from '../../stores/auth';
+
+export default function GroupDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const { userProfile } = useAuthStore();
+
+  const {
+    data: group,
+    isLoading: groupLoading,
+    error: groupError,
+    refetch: refetchGroup,
+  } = useGroup(id);
+
+  const { data: membershipData, refetch: refetchMembership } =
+    useGroupMembership(id, userProfile?.id);
+
+  const handleMembershipChange = () => {
+    // Refetch both group data and membership status
+    refetchGroup();
+    refetchMembership();
+  };
+
+  if (groupLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  if (groupError || !group) {
+    Alert.alert('Error', 'Failed to load group details', [
+      { text: 'Go Back', onPress: () => router.back() },
+      { text: 'Retry', onPress: () => refetchGroup() },
+    ]);
+    return null;
+  }
+
+  const membershipStatus = membershipData?.membership?.role || null;
+
+  return (
+    <View style={styles.container}>
+      <GroupDetail
+        group={group}
+        membershipStatus={membershipStatus}
+        onMembershipChange={handleMembershipChange}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
