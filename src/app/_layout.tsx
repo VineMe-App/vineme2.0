@@ -5,6 +5,7 @@ import { QueryProvider } from '@/providers/QueryProvider';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { ErrorBoundary, OfflineBanner } from '@/components';
+import '@/utils/globalErrorHandler'; // Initialize global error handler
 
 function RootLayoutNav() {
   const segments = useSegments();

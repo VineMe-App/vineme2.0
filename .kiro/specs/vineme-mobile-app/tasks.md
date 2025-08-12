@@ -92,7 +92,7 @@
   - Add friend request acceptance/rejection actions
   - _Requirements: 4.2, 4.3, 4.4, 4.6_
 
-- [ ] 13. Add error handling and loading states
+- [x] 13. Add error handling and loading states
   - Implement global error boundary for crash protection
   - Add network error handling with retry mechanisms
   - Create loading states for all async operations
@@ -100,7 +100,7 @@
   - Add offline detection and graceful degradation
   - _Requirements: 6.2, 6.3_
 
-- [ ] 14. Implement security and permission controls
+- [-] 14. Implement security and permission controls
   - Add Row Level Security policy compliance in service layer
   - Implement permission checks before data operations
   - Add secure storage for sensitive authentication data
