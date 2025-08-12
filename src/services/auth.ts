@@ -203,18 +203,20 @@ export class AuthService {
       }
 
       // Insert minimal required fields to avoid 400s from missing FKs or columns
-      const basePayload: Record<string, any> = {
+      const payload: Record<string, any> = {
         id: user.id,
         email: user.email || '',
         name: userData.name,
-        roles: ['member'],
-        created_at: new Date().toISOString(),
+        roles: ['user'],
         updated_at: new Date().toISOString(),
       };
-      const payload = {
-        ...basePayload,
-        ...(userData.church_id ? { church_id: userData.church_id } : {}),
-      };
+
+      if (userData.church_id) {
+        payload.church_id = userData.church_id;
+      }
+      if (userData.service_id) {
+        payload.service_id = userData.service_id;
+      }
       const { error } = await supabase
         .from('users')
         .upsert(payload, {

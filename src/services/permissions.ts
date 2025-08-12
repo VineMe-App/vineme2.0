@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { authService } from './auth';
 import type { DatabaseUser } from '../types/database';
 
-export type UserRole = 'member' | 'church_admin' | 'superadmin';
+export type UserRole = 'user' | 'church_admin' | 'superadmin';
 export type Permission = 
   | 'read_own_data'
   | 'update_own_data'

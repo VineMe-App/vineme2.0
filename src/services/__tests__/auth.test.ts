@@ -225,7 +225,7 @@ describe('AuthService', () => {
         name: 'Test User',
         email: 'test@example.com',
         church_id: 'church-123',
-        roles: ['member'],
+        roles: ['user'],
         created_at: '2023-01-01T00:00:00Z',
       };
 
@@ -306,7 +306,7 @@ describe('AuthService', () => {
         name: 'Test User',
         church_id: 'church-123',
         service_id: undefined,
-        roles: ['member'],
+        roles: ['user'],
         created_at: expect.any(String),
       });
     });

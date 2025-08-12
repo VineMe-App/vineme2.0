@@ -16,7 +16,7 @@ const mockFriendRequest: FriendRequest = {
     avatar_url: 'https://example.com/avatar.jpg',
     church_id: 'church-1',
     service_id: 'service-1',
-    roles: ['member'],
+    roles: ['user'],
     created_at: '2024-01-01T00:00:00Z',
   },
 };
