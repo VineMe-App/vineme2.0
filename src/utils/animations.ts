@@ -120,13 +120,13 @@ export const pulse = (
       Animated.timing(animatedValue, {
         toValue: maxValue,
         duration: duration / 2,
-        easing: Easing.inOut(Easing.sine),
+        easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
       }),
       Animated.timing(animatedValue, {
         toValue: minValue,
         duration: duration / 2,
-        easing: Easing.inOut(Easing.sine),
+        easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
       }),
     ])

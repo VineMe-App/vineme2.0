@@ -51,7 +51,7 @@ export class GroupService {
           `
           *,
           service:services(*),
-          church:churches(*),
+          
           memberships:group_memberships(
             id,
             user_id,
@@ -102,7 +102,7 @@ export class GroupService {
           `
           *,
           service:services(*),
-          church:churches(*),
+          
           memberships:group_memberships(
             id,
             user_id,
@@ -153,7 +153,7 @@ export class GroupService {
           group:groups(
             *,
             service:services(*),
-            church:churches(*)
+            
           )
         `
         )
@@ -444,7 +444,7 @@ export class GroupService {
           `
           *,
           service:services(*),
-          church:churches(*),
+          
           memberships:group_memberships(
             id,
             user_id,

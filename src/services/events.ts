@@ -42,7 +42,7 @@ export class EventService {
         .select(
           `
           *,
-          category_info:event_categories(
+          category_info:categories(
             id,
             name,
             description,
@@ -95,7 +95,7 @@ export class EventService {
         .select(
           `
           *,
-          category_info:event_categories(
+          category_info:categories(
             id,
             name,
             description,
@@ -165,7 +165,7 @@ export class EventService {
           *,
           event:events(
             *,
-            category_info:event_categories(
+            category_info:categories(
               id,
               name,
               description,
@@ -215,7 +215,7 @@ export class EventService {
   async getEventCategories(): Promise<EventServiceResponse<EventCategory[]>> {
     try {
       const { data, error } = await supabase
-        .from('event_categories')
+        .from('categories')
         .select('*')
         .order('name');
 
@@ -248,7 +248,7 @@ export class EventService {
         .select(
           `
           *,
-          category_info:event_categories(
+          category_info:categories(
             id,
             name,
             description,
@@ -452,7 +452,7 @@ export class EventService {
         .select(
           `
           *,
-          category_info:event_categories(
+          category_info:categories(
             id,
             name,
             description,
