@@ -16,13 +16,20 @@ export interface PlatformInfo {
 export const getPlatformInfo = (): PlatformInfo => {
   const { width, height } = Dimensions.get('window');
   const screenSize = getScreenSize(width, height);
+  const versionRaw = (Platform as any)?.Version;
+  const osVersion =
+    typeof versionRaw === 'string'
+      ? versionRaw
+      : typeof versionRaw === 'number'
+      ? String(versionRaw)
+      : 'unknown';
   
   return {
     platform: Platform.OS as 'ios' | 'android' | 'web',
     isDevice: Device.isDevice,
     deviceType: getDeviceType(width, height),
     screenSize,
-    osVersion: Platform.Version.toString(),
+    osVersion,
     modelName: Device.modelName || undefined,
   };
 };
