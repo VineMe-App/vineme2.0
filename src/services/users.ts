@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { permissionService } from './permissions';
 import type { DatabaseUser, UserWithDetails } from '../types/database';
 
 export interface UpdateUserProfileData {
@@ -65,6 +66,18 @@ export class UserService {
     updates: UpdateUserProfileData
   ): Promise<UserServiceResponse<DatabaseUser>> {
     try {
+      // Check permission to modify user resource
+      const permissionCheck = await permissionService.canModifyResource('user', userId, userId);
+      if (!permissionCheck.hasPermission) {
+        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to modify user profile') };
+      }
+
+      // Validate RLS compliance
+      const rlsCheck = await permissionService.validateRLSCompliance('users', 'update', { id: userId });
+      if (!rlsCheck.hasPermission) {
+        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+      }
+
       const { data, error } = await supabase
         .from('users')
         .update({

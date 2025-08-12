@@ -4,6 +4,8 @@ import { ReactNode, lazy, Suspense, useEffect } from 'react';
 import { handleSupabaseError } from '../utils/errorHandling';
 import { globalErrorHandler } from '../utils/globalErrorHandler';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { performanceMonitor } from '../utils/performance';
+import { getPerformanceConfig } from '../config/performance';
 import NetInfo from '@react-native-community/netinfo';
 
 // Lazy load devtools only in development and on web
@@ -16,12 +18,18 @@ const ReactQueryDevtools =
       )
     : null;
 
+const performanceConfig = getPerformanceConfig();
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes
-      networkMode: 'offlineFirst', // Allow queries to run offline with cached data
+      // Optimized caching configuration from performance config
+      staleTime: performanceConfig.reactQuery.staleTime.medium,
+      gcTime: performanceConfig.reactQuery.gcTime.long,
+      networkMode: performanceConfig.reactQuery.networkMode.queries,
+      refetchOnWindowFocus: false, // Disable refetch on window focus for mobile
+      refetchOnReconnect: 'always', // Always refetch when reconnecting
+      refetchOnMount: true, // Refetch when component mounts if data is stale
       retry: (failureCount, error) => {
         const appError = handleSupabaseError(error as Error);
         
@@ -30,19 +38,25 @@ const queryClient = new QueryClient({
           queryRetry: true,
           failureCount,
         });
+
+        // Record query performance metrics
+        performanceMonitor.recordMetric('query_retry', failureCount, {
+          errorType: appError.type,
+          errorMessage: appError.message,
+        });
         
         // Don't retry auth or validation errors
         if (appError.type === 'auth' || appError.type === 'validation' || appError.type === 'permission') {
           return false;
         }
         
-        // Retry network errors up to 3 times
-        return failureCount < 3;
+        // Retry network errors up to configured count
+        return failureCount < performanceConfig.reactQuery.retry.count;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: performanceConfig.reactQuery.retry.delay,
     },
     mutations: {
-      networkMode: 'online', // Mutations require network connection
+      networkMode: performanceConfig.reactQuery.networkMode.mutations,
       retry: (failureCount, error) => {
         const appError = handleSupabaseError(error as Error);
         
@@ -51,16 +65,22 @@ const queryClient = new QueryClient({
           mutationRetry: true,
           failureCount,
         });
+
+        // Record mutation performance metrics
+        performanceMonitor.recordMetric('mutation_retry', failureCount, {
+          errorType: appError.type,
+          errorMessage: appError.message,
+        });
         
         // Don't retry auth, validation, or permission errors
         if (appError.type === 'auth' || appError.type === 'validation' || appError.type === 'permission') {
           return false;
         }
         
-        // Retry network errors up to 2 times for mutations
+        // Retry network errors up to 2 times for mutations (more conservative)
         return failureCount < 2;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: performanceConfig.reactQuery.retry.delay,
     },
   },
 });

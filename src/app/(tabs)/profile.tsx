@@ -18,6 +18,7 @@ import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
+import { AdminOnly, PermissionGate } from '@/components/ui/RoleBasedRender';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
@@ -255,6 +256,50 @@ export default function ProfileScreen() {
           </>
         )}
 
+        {/* Admin Features */}
+        <AdminOnly>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Admin Tools</Text>
+            <View style={styles.adminActions}>
+              <PermissionGate permission="manage_church_events">
+                <Button
+                  title="Manage Events"
+                  onPress={() => {
+                    Alert.alert('Admin Feature', 'Event management coming soon!');
+                  }}
+                  variant="secondary"
+                  size="small"
+                  style={styles.adminButton}
+                />
+              </PermissionGate>
+              
+              <PermissionGate permission="manage_church_groups">
+                <Button
+                  title="Manage Groups"
+                  onPress={() => {
+                    Alert.alert('Admin Feature', 'Group management coming soon!');
+                  }}
+                  variant="secondary"
+                  size="small"
+                  style={styles.adminButton}
+                />
+              </PermissionGate>
+              
+              <PermissionGate permission="manage_church_users">
+                <Button
+                  title="Manage Users"
+                  onPress={() => {
+                    Alert.alert('Admin Feature', 'User management coming soon!');
+                  }}
+                  variant="secondary"
+                  size="small"
+                  style={styles.adminButton}
+                />
+              </PermissionGate>
+            </View>
+          </View>
+        </AdminOnly>
+
         <View style={styles.actionsSection}>
           <Button
             title="Sign Out"
@@ -454,5 +499,14 @@ const styles = StyleSheet.create({
   },
   findFriendsButton: {
     marginTop: 8,
+  },
+  adminActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  adminButton: {
+    flex: 1,
+    minWidth: 120,
   },
 });

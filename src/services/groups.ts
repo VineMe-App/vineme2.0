@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { permissionService } from './permissions';
 import type {
   Group,
   GroupWithDetails,
@@ -32,6 +33,18 @@ export class GroupService {
     churchId: string
   ): Promise<GroupServiceResponse<GroupWithDetails[]>> {
     try {
+      // Check permission to access church data
+      const permissionCheck = await permissionService.canAccessChurchData(churchId);
+      if (!permissionCheck.hasPermission) {
+        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to church data') };
+      }
+
+      // Validate RLS compliance
+      const rlsCheck = await permissionService.validateRLSCompliance('groups', 'select', { church_id: [churchId] });
+      if (!rlsCheck.hasPermission) {
+        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+      }
+
       const { data, error } = await supabase
         .from('groups')
         .select(
@@ -176,6 +189,18 @@ export class GroupService {
     role: 'member' | 'leader' = 'member'
   ): Promise<GroupServiceResponse<GroupMembership>> {
     try {
+      // Check permission to manage group membership
+      const permissionCheck = await permissionService.canManageGroupMembership(groupId, userId);
+      if (!permissionCheck.hasPermission) {
+        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to manage group membership') };
+      }
+
+      // Validate RLS compliance for group membership insertion
+      const rlsCheck = await permissionService.validateRLSCompliance('group_memberships', 'insert', { user_id: userId });
+      if (!rlsCheck.hasPermission) {
+        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+      }
+
       // Check if user is already a member
       const { data: existingMembership } = await supabase
         .from('group_memberships')
@@ -245,6 +270,12 @@ export class GroupService {
     userId: string
   ): Promise<GroupServiceResponse<boolean>> {
     try {
+      // Check permission to manage group membership
+      const permissionCheck = await permissionService.canManageGroupMembership(groupId, userId);
+      if (!permissionCheck.hasPermission) {
+        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to manage group membership') };
+      }
+
       const { error } = await supabase
         .from('group_memberships')
         .update({ status: 'inactive' })

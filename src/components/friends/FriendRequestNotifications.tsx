@@ -1,22 +1,19 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useReceivedFriendRequests } from '../../hooks/useFriendships';
 import { Avatar } from '../ui/Avatar';
+import type { FriendshipWithUser } from '../../types/database';
 
 interface FriendRequestNotificationsProps {
-  userId?: string;
+  requests: FriendshipWithUser[];
   onPress?: () => void;
   maxDisplay?: number;
 }
 
 export function FriendRequestNotifications({
-  userId,
+  requests,
   onPress,
   maxDisplay = 3,
 }: FriendRequestNotificationsProps) {
-  const receivedRequestsQuery = useReceivedFriendRequests(userId);
-
-  const requests = receivedRequestsQuery.data || [];
   const displayRequests = requests.slice(0, maxDisplay);
   const remainingCount = Math.max(0, requests.length - maxDisplay);
 
@@ -39,13 +36,13 @@ export function FriendRequestNotifications({
 
       <View style={styles.requestsContainer}>
         {displayRequests.map((request) => {
-          const sender = request.user;
+          const sender = request.friend || request.user;
           if (!sender) return null;
 
           return (
             <View key={request.id} style={styles.requestItem}>
               <Avatar
-                imageUrl={sender.avatar_url}
+                uri={sender.avatar_url}
                 name={sender.name}
                 size={32}
               />

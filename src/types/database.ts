@@ -130,6 +130,11 @@ export interface EventWithDetails extends Event {
   ticket_count?: number;
 }
 
+export interface FriendshipWithUser extends Friendship {
+  user?: User;
+  friend?: User;
+}
+
 export interface UserWithDetails extends User {
   church?: Church;
   service?: Service;

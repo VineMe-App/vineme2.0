@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { permissionService } from './permissions';
 import type {
   Event,
   EventWithDetails,
@@ -24,6 +25,18 @@ export class EventService {
     churchId: string
   ): Promise<EventServiceResponse<EventWithDetails[]>> {
     try {
+      // Check permission to access church data
+      const permissionCheck = await permissionService.canAccessChurchData(churchId);
+      if (!permissionCheck.hasPermission) {
+        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to church data') };
+      }
+
+      // Validate RLS compliance
+      const rlsCheck = await permissionService.validateRLSCompliance('events', 'select', { church_id: churchId, is_public: true });
+      if (!rlsCheck.hasPermission) {
+        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+      }
+
       const { data, error } = await supabase
         .from('events')
         .select(
@@ -289,6 +302,12 @@ export class EventService {
     ticketData: CreateTicketData
   ): Promise<EventServiceResponse<Ticket>> {
     try {
+      // Validate RLS compliance for ticket creation
+      const rlsCheck = await permissionService.validateRLSCompliance('tickets', 'insert', { user_id: ticketData.user_id });
+      if (!rlsCheck.hasPermission) {
+        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+      }
+
       // Check if user already has a ticket for this event
       const { data: existingTicket } = await supabase
         .from('tickets')

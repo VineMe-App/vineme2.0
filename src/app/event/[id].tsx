@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/Button';
 import { formatDateTime, isToday } from '../../utils/helpers';
+import { shareEvent } from '../../utils/deepLinking';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -169,6 +170,12 @@ export default function EventDetailScreen() {
     );
   };
 
+  const handleShare = () => {
+    if (event) {
+      shareEvent(event.id, event.title, event.start_date);
+    }
+  };
+
   if (eventLoading) {
     return (
       <View style={styles.container}>
@@ -211,19 +218,24 @@ export default function EventDetailScreen() {
 
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>{event.title}</Text>
-          {event.category_info && (
-            <View
-              style={[
-                styles.categoryBadge,
-                { backgroundColor: event.category_info.color || '#007AFF' },
-              ]}
-            >
-              <Text style={styles.categoryText}>
-                {event.category_info.name}
-              </Text>
-            </View>
-          )}
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>{event.title}</Text>
+            {event.category_info && (
+              <View
+                style={[
+                  styles.categoryBadge,
+                  { backgroundColor: event.category_info.color || '#007AFF' },
+                ]}
+              >
+                <Text style={styles.categoryText}>
+                  {event.category_info.name}
+                </Text>
+              </View>
+            )}
+          </View>
+          <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
+            <Text style={styles.shareIcon}>📤</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.description}>{event.description}</Text>
@@ -357,12 +369,23 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
+  titleSection: {
+    flex: 1,
+    marginRight: 12,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    flex: 1,
-    marginRight: 12,
+    marginBottom: 8,
+  },
+  shareButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  shareIcon: {
+    fontSize: 20,
   },
   categoryBadge: {
     paddingHorizontal: 12,

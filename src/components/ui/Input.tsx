@@ -1,33 +1,76 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TextInput,
   Text,
   StyleSheet,
   TextInputProps,
+  TouchableOpacity,
 } from 'react-native';
+import { Theme } from '../../utils/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   helperText?: string;
+  required?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  onRightIconPress?: () => void;
+  variant?: 'default' | 'filled' | 'outlined';
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
   error,
   helperText,
+  required = false,
+  leftIcon,
+  rightIcon,
+  onRightIconPress,
+  variant = 'default',
   style,
   ...props
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const inputContainerStyle = [
+    styles.inputContainer,
+    styles[variant],
+    isFocused && styles.focused,
+    error && styles.inputError,
+  ];
+
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        style={[styles.input, error ? styles.inputError : undefined, style]}
-        placeholderTextColor="#999"
-        {...props}
-      />
+      {label && (
+        <Text style={styles.label}>
+          {label}
+          {required && <Text style={styles.required}> *</Text>}
+        </Text>
+      )}
+      <View style={inputContainerStyle}>
+        {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
+        <TextInput
+          style={[styles.input, style]}
+          placeholderTextColor={Theme.colors.textTertiary}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          accessibilityLabel={label}
+          accessibilityRequired={required}
+          {...props}
+        />
+        {rightIcon && (
+          <TouchableOpacity
+            style={styles.rightIcon}
+            onPress={onRightIconPress}
+            disabled={!onRightIconPress}
+            accessibilityRole={onRightIconPress ? 'button' : undefined}
+          >
+            {rightIcon}
+          </TouchableOpacity>
+        )}
+      </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
       {helperText && !error && (
         <Text style={styles.helperText}>{helperText}</Text>
@@ -38,35 +81,66 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: Theme.spacing.base,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    fontSize: Theme.typography.fontSize.base,
+    fontWeight: Theme.typography.fontWeight.medium,
+    color: Theme.colors.textPrimary,
+    marginBottom: Theme.spacing.xs,
   },
-  input: {
+  required: {
+    color: Theme.colors.error,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#dee2e6',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
-    minHeight: 44,
+    borderRadius: Theme.borderRadius.base,
+    backgroundColor: Theme.colors.surface,
+    minHeight: Theme.layout.touchTarget,
+  },
+  default: {
+    borderColor: Theme.colors.border,
+  },
+  filled: {
+    borderColor: 'transparent',
+    backgroundColor: Theme.colors.backgroundSecondary,
+  },
+  outlined: {
+    borderColor: Theme.colors.border,
+    backgroundColor: 'transparent',
+  },
+  focused: {
+    borderColor: Theme.colors.primary,
+    ...Theme.shadows.sm,
   },
   inputError: {
-    borderColor: '#dc3545',
+    borderColor: Theme.colors.error,
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: Theme.spacing.base,
+    paddingVertical: Theme.spacing.md,
+    fontSize: Theme.typography.fontSize.base,
+    color: Theme.colors.textPrimary,
+  },
+  leftIcon: {
+    paddingLeft: Theme.spacing.base,
+    paddingRight: Theme.spacing.xs,
+  },
+  rightIcon: {
+    paddingRight: Theme.spacing.base,
+    paddingLeft: Theme.spacing.xs,
   },
   errorText: {
-    fontSize: 14,
-    color: '#dc3545',
-    marginTop: 4,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.error,
+    marginTop: Theme.spacing.xs,
   },
   helperText: {
-    fontSize: 14,
-    color: '#6c757d',
-    marginTop: 4,
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.textSecondary,
+    marginTop: Theme.spacing.xs,
   },
 });
