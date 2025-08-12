@@ -52,7 +52,7 @@ export class AuthService {
       return { user: data.user, error: null };
     } catch (error) {
       const appError = handleSupabaseError(error as Error);
-      return { user: null, error: appError };
+      return { user: null, error: new Error(appError.message) };
     }
   }
 
@@ -82,7 +82,7 @@ export class AuthService {
       return { user: data.user, error: null };
     } catch (error) {
       const appError = handleSupabaseError(error as Error);
-      return { user: null, error: appError };
+      return { user: null, error: new Error(appError.message) };
     }
   }
 
@@ -202,17 +202,32 @@ export class AuthService {
         return { error: new Error('No authenticated user') };
       }
 
-      const { error } = await supabase.from('users').insert({
+      // Insert minimal required fields to avoid 400s from missing FKs or columns
+      const basePayload: Record<string, any> = {
         id: user.id,
         email: user.email || '',
         name: userData.name,
-        church_id: userData.church_id,
-        service_id: userData.service_id,
-        roles: ['member'], // Default role
+        roles: ['member'],
         created_at: new Date().toISOString(),
-      });
+        updated_at: new Date().toISOString(),
+      };
+      const payload = {
+        ...basePayload,
+        ...(userData.church_id ? { church_id: userData.church_id } : {}),
+      };
+      const { error } = await supabase
+        .from('users')
+        .upsert(payload, {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        });
 
       if (error) {
+        // Surface full error info in dev to diagnose 400s
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.error('createUserProfile error:', error);
+        }
         return { error: new Error(error.message) };
       }
 
