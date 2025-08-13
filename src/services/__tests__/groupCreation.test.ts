@@ -4,13 +4,20 @@ jest.mock('../supabase', () => ({
 }));
 
 jest.mock('../permissions');
+jest.mock('../notifications', () => ({
+  sendGroupRequestNotification: jest.fn(),
+  sendJoinRequestNotification: jest.fn(),
+}));
 
 import { groupCreationService } from '../groupCreation';
 import { permissionService } from '../permissions';
+import { sendGroupRequestNotification, sendJoinRequestNotification } from '../notifications';
 import type { CreateGroupData } from '../admin';
 
 const mockSupabase = global.mockSupabaseClient;
 const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
+const mockSendGroupRequestNotification = sendGroupRequestNotification as jest.MockedFunction<typeof sendGroupRequestNotification>;
+const mockSendJoinRequestNotification = sendJoinRequestNotification as jest.MockedFunction<typeof sendJoinRequestNotification>;
 
 describe('GroupCreationService', () => {
   beforeEach(() => {
@@ -53,12 +60,25 @@ describe('GroupCreationService', () => {
         })
       } as any);
 
+      // Mock creator name fetch for notification
+      mockSupabase.from.mockReturnValueOnce({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { name: 'Test User' },
+              error: null
+            })
+          })
+        })
+      } as any);
+
       const result = await groupCreationService.createGroupRequest(mockGroupData, 'user1');
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
       expect(result.data!.status).toBe('pending');
       expect(mockPermissionService.canAccessChurchData).toHaveBeenCalledWith('church1');
+      expect(mockSendGroupRequestNotification).toHaveBeenCalledWith('church1', 'Test Group', 'Test User');
     });
 
     it('should return error when user lacks church access', async () => {
@@ -609,11 +629,35 @@ describe('GroupCreationService', () => {
         })
       } as any);
 
+      // Mock requester and group info fetch for notification
+      mockSupabase.from.mockReturnValueOnce({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { name: 'Test User' },
+              error: null
+            })
+          })
+        })
+      } as any);
+
+      mockSupabase.from.mockReturnValueOnce({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { title: 'Test Group' },
+              error: null
+            })
+          })
+        })
+      } as any);
+
       const result = await groupCreationService.createJoinRequest('group1', 'user1', true, 'Please let me join');
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
       expect(result.data!.status).toBe('pending');
+      expect(mockSendJoinRequestNotification).toHaveBeenCalledWith('group1', 'Test Group', 'Test User');
     });
 
     it('should return error for non-approved group', async () => {

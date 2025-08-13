@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { GroupCard } from '../../components/groups';
+import { GroupCard, CreateGroupModal } from '../../components/groups';
 import { useGroupsByChurch, useGroupMembership } from '../../hooks/useGroups';
 import { useAuthStore } from '../../stores/auth';
 import { useErrorHandler, useLoadingState } from '../../hooks';
-import { ErrorMessage, EmptyState } from '../../components/ui';
+import { ErrorMessage, EmptyState, Button } from '../../components/ui';
 import type { GroupWithDetails } from '../../types/database';
 
 export default function GroupsScreen() {
@@ -20,6 +20,7 @@ export default function GroupsScreen() {
   const { userProfile } = useAuthStore();
   const { handleError } = useErrorHandler();
   const { isLoading: isRefreshing, withLoading } = useLoadingState();
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const {
     data: groups,
@@ -44,6 +45,14 @@ export default function GroupsScreen() {
 
   const handleGroupPress = (group: GroupWithDetails) => {
     router.push(`/group/${group.id}`);
+  };
+
+  const handleCreateGroup = () => {
+    setShowCreateModal(true);
+  };
+
+  const handleCreateSuccess = () => {
+    refetch(); // Refresh the groups list
   };
 
   const renderGroupItem = ({ item: group }: { item: GroupWithDetails }) => {
@@ -120,6 +129,14 @@ export default function GroupsScreen() {
             <Text style={styles.subtitle}>
               Discover and join Bible study groups in your church community
             </Text>
+            {userProfile?.church_id && (
+              <Button
+                title="Create New Group"
+                onPress={handleCreateGroup}
+                variant="primary"
+                style={styles.createButton}
+              />
+            )}
           </View>
         }
         ListEmptyComponent={renderEmptyState}
@@ -131,6 +148,12 @@ export default function GroupsScreen() {
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+      />
+      
+      <CreateGroupModal
+        isVisible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleCreateSuccess}
       />
     </View>
   );
@@ -195,5 +218,8 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     margin: 16,
+  },
+  createButton: {
+    marginTop: 16,
   },
 });

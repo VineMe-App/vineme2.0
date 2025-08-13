@@ -13,7 +13,7 @@ Notifications.setNotificationHandler({
 });
 
 export interface NotificationData {
-  type: 'friend_request' | 'event_reminder' | 'group_update';
+  type: 'friend_request' | 'event_reminder' | 'group_update' | 'group_request' | 'join_request';
   id: string;
   title: string;
   body: string;
@@ -178,6 +178,13 @@ export const handleNotificationResponse = (
     case 'group_update':
       router.push(`/group/${id}`);
       break;
+    case 'group_request':
+      // Navigate to admin groups management screen
+      router.push('/(tabs)/profile'); // TODO: Update when admin screens are implemented
+      break;
+    case 'join_request':
+      router.push(`/group/${id}`);
+      break;
     default:
       router.push('/(tabs)');
   }
@@ -305,5 +312,99 @@ export const updateNotificationSettings = async (
   } catch (error) {
     console.error('Error updating notification settings:', error);
     return false;
+  }
+};
+
+/**
+ * Send group creation request notification to church admins
+ */
+export const sendGroupRequestNotification = async (
+  churchId: string,
+  groupTitle: string,
+  creatorName: string
+): Promise<void> => {
+  try {
+    // Get all church admins
+    const { data: admins, error } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('church_id', churchId)
+      .eq('role', 'church_admin');
+
+    if (error) {
+      console.error('Error fetching church admins:', error);
+      return;
+    }
+
+    if (!admins || admins.length === 0) {
+      console.warn('No church admins found for notification');
+      return;
+    }
+
+    // Send notification to each admin
+    const notification: NotificationData = {
+      type: 'group_request',
+      id: churchId,
+      title: 'New Group Request',
+      body: `${creatorName} has requested to create "${groupTitle}"`,
+      data: { churchId, groupTitle, creatorName },
+    };
+
+    // For now, we'll just log this. In a real app, you'd send push notifications
+    console.log('Group request notification:', notification);
+    
+    // TODO: Implement actual push notification sending to admins
+    // This would typically be handled by your backend service
+  } catch (error) {
+    console.error('Error sending group request notification:', error);
+  }
+};
+
+/**
+ * Send join request notification to group leaders
+ */
+export const sendJoinRequestNotification = async (
+  groupId: string,
+  groupTitle: string,
+  requesterName: string
+): Promise<void> => {
+  try {
+    // Get all group leaders
+    const { data: leaders, error } = await supabase
+      .from('group_memberships')
+      .select(`
+        user_id,
+        user:users(id, name)
+      `)
+      .eq('group_id', groupId)
+      .eq('role', 'leader')
+      .eq('status', 'active');
+
+    if (error) {
+      console.error('Error fetching group leaders:', error);
+      return;
+    }
+
+    if (!leaders || leaders.length === 0) {
+      console.warn('No group leaders found for notification');
+      return;
+    }
+
+    // Send notification to each leader
+    const notification: NotificationData = {
+      type: 'join_request',
+      id: groupId,
+      title: 'New Join Request',
+      body: `${requesterName} wants to join "${groupTitle}"`,
+      data: { groupId, groupTitle, requesterName },
+    };
+
+    // For now, we'll just log this. In a real app, you'd send push notifications
+    console.log('Join request notification:', notification);
+    
+    // TODO: Implement actual push notification sending to leaders
+    // This would typically be handled by your backend service
+  } catch (error) {
+    console.error('Error sending join request notification:', error);
   }
 };

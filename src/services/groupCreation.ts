@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
+import { sendGroupRequestNotification, sendJoinRequestNotification } from './notifications';
 import type { Group, GroupMembership } from '../types/database';
 import type { CreateGroupData, UpdateGroupData, AdminServiceResponse } from './admin';
 
@@ -66,6 +67,22 @@ export class GroupCreationService {
         // If membership creation fails, we should clean up the group
         await supabase.from('groups').delete().eq('id', group.id);
         return { data: null, error: new Error('Failed to create group leadership') };
+      }
+
+      // Get creator name for notification
+      const { data: creator } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', creatorId)
+        .single();
+
+      // Send notification to church admins
+      if (creator) {
+        await sendGroupRequestNotification(
+          groupData.church_id,
+          group.title,
+          creator.name
+        );
       }
 
       return { data: group, error: null };
@@ -471,6 +488,21 @@ export class GroupCreationService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Get requester and group info for notification
+      const [requesterResult, groupResult] = await Promise.all([
+        supabase.from('users').select('name').eq('id', userId).single(),
+        supabase.from('groups').select('title').eq('id', groupId).single(),
+      ]);
+
+      // Send notification to group leaders
+      if (requesterResult.data && groupResult.data) {
+        await sendJoinRequestNotification(
+          groupId,
+          groupResult.data.title,
+          requesterResult.data.name
+        );
       }
 
       // TODO: Store contact consent and message in a separate table
