@@ -20,6 +20,7 @@ export interface SignUpCredentials {
 export interface OnboardingData {
   name: string;
   church_id?: string;
+  service_id?: string;
   interests: string[];
   preferred_meeting_night: string;
 }

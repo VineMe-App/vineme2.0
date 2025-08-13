@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -18,7 +19,9 @@ import {
   useUploadAvatar,
   useDeleteAvatar,
 } from '../../hooks/useUsers';
-import type { UserWithDetails } from '../../types/database';
+import type { UserWithDetails, Service } from '../../types/database';
+import { churchService } from '../../services/churches';
+import { STORAGE_KEYS } from '../../utils/constants';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -33,6 +36,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 }) => {
   const [name, setName] = useState(user.name || '');
   const [nameError, setNameError] = useState('');
+  const [availableServices, setAvailableServices] = useState<Service[]>([]);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(
+    (user as any)?.service?.id || (user as any)?.service_id
+  );
+  const [canChangeService, setCanChangeService] = useState<boolean>(false);
+  const [servicePickerOpen, setServicePickerOpen] = useState<boolean>(false);
 
   const updateProfileMutation = useUpdateUserProfile();
   const uploadAvatarMutation = useUploadAvatar();
@@ -42,6 +51,25 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     if (visible) {
       setName(user.name || '');
       setNameError('');
+      // Load one-time service change flag and available services
+      (async () => {
+        try {
+          const key = `${STORAGE_KEYS.SERVICE_CHANGE_USED_PREFIX}${user.id}`;
+          const used = await AsyncStorage.getItem(key);
+          setCanChangeService(!used);
+        } catch {
+          setCanChangeService(true);
+        }
+
+        const churchId = (user as any)?.church?.id || (user as any)?.church_id;
+        if (churchId) {
+          const { data } = await churchService.getServicesByChurch(churchId);
+          setAvailableServices(data || []);
+        } else {
+          setAvailableServices([]);
+        }
+        setSelectedServiceId((user as any)?.service?.id || (user as any)?.service_id);
+      })();
     }
   }, [visible, user.name]);
 
@@ -71,6 +99,26 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       onClose();
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile. Please try again.');
+    }
+  };
+
+  const handleConfirmServiceChange = async () => {
+    try {
+      if (!selectedServiceId) {
+        Alert.alert('Select a service', 'Please select a service first.');
+        return;
+      }
+      await updateProfileMutation.mutateAsync({
+        userId: user.id,
+        updates: { service_id: selectedServiceId },
+      });
+      const key = `${STORAGE_KEYS.SERVICE_CHANGE_USED_PREFIX}${user.id}`;
+      await AsyncStorage.setItem(key, 'true');
+      setCanChangeService(false);
+      setServicePickerOpen(false);
+      Alert.alert('Updated', 'Your service has been updated.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update service. Please try again.');
     }
   };
 
@@ -244,6 +292,55 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Service</Text>
                   <Text style={styles.infoValue}>{user.service.name}</Text>
+                </View>
+              )}
+
+              {!user.service && (user as any)?.service_id && (
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Service</Text>
+                  <Text style={styles.infoValue}>Selected</Text>
+                </View>
+              )}
+
+              {canChangeService && availableServices.length > 0 && (
+                <View style={{ marginTop: 12 }}>
+                  {!servicePickerOpen ? (
+                    <Button title="Change Service" onPress={() => setServicePickerOpen(true)} />
+                  ) : (
+                    <View style={styles.servicePicker}>
+                      {availableServices.map((svc) => (
+                        <TouchableOpacity
+                          key={svc.id}
+                          style={[
+                            styles.serviceItem,
+                            selectedServiceId === svc.id && styles.serviceItemSelected,
+                          ]}
+                          onPress={() => setSelectedServiceId(svc.id)}
+                          disabled={updateProfileMutation.isPending}
+                        >
+                          <Text
+                            style={[
+                              styles.serviceName,
+                              selectedServiceId === svc.id && styles.serviceNameSelected,
+                            ]}
+                          >
+                            {svc.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                      <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                        <Button
+                          title="Save Service"
+                          onPress={handleConfirmServiceChange}
+                        />
+                        <Button
+                          title="Cancel"
+                          variant="secondary" as={undefined as any}
+                          onPress={() => setServicePickerOpen(false)}
+                        />
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
 

@@ -39,6 +39,7 @@ export default function OnboardingFlow() {
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     name: '',
     church_id: undefined,
+    service_id: undefined,
     interests: [],
     preferred_meeting_night: '',
   });
@@ -114,6 +115,7 @@ export default function OnboardingFlow() {
       const success = await createUserProfile({
         name: data.name,
         church_id: data.church_id,
+        service_id: data.service_id,
       });
 
       if (!success) {
