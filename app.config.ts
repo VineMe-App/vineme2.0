@@ -32,8 +32,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    eas: {
+      projectId: '9f3ad2a7-f137-45bc-8194-feb084e8d252',
+    },
   },
-  plugins: ['expo-router', 'expo-secure-store'],
+  plugins: ['expo-router', 'expo-secure-store', 'expo-notifications'],
   experiments: {
     typedRoutes: true,
   },

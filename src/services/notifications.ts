@@ -58,7 +58,15 @@ export const getPushToken = async (): Promise<string | null> => {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return null;
 
-    const token = await Notifications.getExpoPushTokenAsync();
+    // On development builds, projectId must be provided explicitly
+    const { default: Constants } = await import('expo-constants');
+    const projectId =
+      (Constants?.expoConfig as any)?.extra?.eas?.projectId ||
+      (Constants as any)?.easConfig?.projectId;
+
+    const token = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined
+    );
 
     return token.data;
   } catch (error) {
@@ -226,9 +234,11 @@ export const sendEventReminderNotification = async (
       data: { eventId, eventTitle },
     };
 
-    const notificationId = await scheduleLocalNotification(notification, {
-      date: reminderTime,
-    });
+    const notificationId = await scheduleLocalNotification(
+      notification,
+      // Cast to satisfy varying NotificationTriggerInput types across SDKs
+      reminderTime as unknown as Notifications.NotificationTriggerInput
+    );
 
     return notificationId;
   } catch (error) {

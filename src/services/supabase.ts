@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Read public runtime config from environment variables.
 // These are statically inlined by Expo at build time.
@@ -12,7 +13,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-const isWeb = typeof window !== 'undefined';
+const isWeb = Platform.OS === 'web';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
