@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { authService } from './auth';
 import type { DatabaseUser } from '../types/database';
 
-export type UserRole = 'user' | 'church_admin' | 'superadmin';
+export type UserRole = 'user' | 'church_admin' | 'group_leader' | 'superadmin';
 export type Permission = 
   | 'read_own_data'
   | 'update_own_data'
@@ -10,6 +10,9 @@ export type Permission =
   | 'manage_church_events'
   | 'manage_church_groups'
   | 'manage_church_users'
+  | 'manage_group_details'
+  | 'manage_group_members'
+  | 'create_groups'
   | 'manage_all_data';
 
 export interface PermissionCheck {
@@ -125,6 +128,22 @@ export class PermissionService {
           return { hasPermission: true };
         }
         return { hasPermission: false, reason: 'Insufficient permissions for church management' };
+
+      case 'create_groups':
+        // All authenticated users can create groups (subject to approval)
+        if (user.church_id) {
+          return { hasPermission: true };
+        }
+        return { hasPermission: false, reason: 'User must be associated with a church to create groups' };
+
+      case 'manage_group_details':
+      case 'manage_group_members':
+        // Group leaders can manage their groups, church admins can manage all groups in their church
+        if (user.roles.includes('church_admin') && user.church_id) {
+          return { hasPermission: true };
+        }
+        // For specific group permissions, we need to check group leadership in canManageGroupMembership
+        return { hasPermission: true }; // Will be validated at the group level
 
       case 'manage_all_data':
         // Only superadmin can manage all data
@@ -281,6 +300,14 @@ export class PermissionService {
     if (user.roles.includes('church_admin')) {
       permissions.push('manage_church_events', 'manage_church_groups', 'manage_church_users');
     }
+
+    // All users can create groups if they're in a church
+    if (user.church_id) {
+      permissions.push('create_groups');
+    }
+
+    // Group leaders get group management permissions (specific groups checked at runtime)
+    permissions.push('manage_group_details', 'manage_group_members');
 
     if (user.roles.includes('superadmin')) {
       permissions.push('manage_all_data');

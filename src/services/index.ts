@@ -7,6 +7,8 @@ export { groupService } from './groups';
 export { eventService } from './events';
 export { friendshipService } from './friendships';
 export { permissionService } from './permissions';
+export { groupAdminService, userAdminService } from './admin';
+export { groupCreationService } from './groupCreation';
 export type { AuthResponse, SignUpData, SignInData } from './auth';
 export type { UpdateUserProfileData, UserServiceResponse } from './users';
 export type {
@@ -20,3 +22,13 @@ export type {
   FriendshipWithUser,
   FriendshipStatus,
 } from './friendships';
+export type {
+  AdminServiceResponse,
+  GroupWithAdminDetails,
+  GroupJoinRequest,
+  GroupApprovalHistory,
+  UserWithGroupStatus,
+  ChurchUserSummary,
+  CreateGroupData,
+  UpdateGroupData,
+} from './admin';

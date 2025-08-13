@@ -1,0 +1,495 @@
+import { supabase } from './supabase';
+import { permissionService } from './permissions';
+import type { Group, GroupMembership } from '../types/database';
+import type { CreateGroupData, UpdateGroupData, AdminServiceResponse } from './admin';
+
+/**
+ * Service for group creation and leader management
+ */
+export class GroupCreationService {
+  /**
+   * Create a new group request
+   */
+  async createGroupRequest(
+    groupData: CreateGroupData,
+    creatorId: string
+  ): Promise<AdminServiceResponse<Group>> {
+    try {
+      // Check permission to create groups (basic user permission)
+      const permissionCheck = await permissionService.canAccessChurchData(groupData.church_id);
+      if (!permissionCheck.hasPermission) {
+        return { 
+          data: null, 
+          error: new Error(permissionCheck.reason || 'Access denied to create group in this church') 
+        };
+      }
+
+      // Validate RLS compliance
+      const rlsCheck = await permissionService.validateRLSCompliance('groups', 'insert', {
+        church_id: groupData.church_id
+      });
+      if (!rlsCheck.hasPermission) {
+        return { 
+          data: null, 
+          error: new Error(rlsCheck.reason || 'RLS policy violation') 
+        };
+      }
+
+      // Create the group with pending status
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .insert({
+          ...groupData,
+          status: 'pending',
+          created_by: creatorId,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (groupError) {
+        return { data: null, error: new Error(groupError.message) };
+      }
+
+      // Automatically add creator as leader
+      const { error: membershipError } = await supabase
+        .from('group_memberships')
+        .insert({
+          group_id: group.id,
+          user_id: creatorId,
+          role: 'leader',
+          status: 'active',
+          joined_at: new Date().toISOString(),
+        });
+
+      if (membershipError) {
+        // If membership creation fails, we should clean up the group
+        await supabase.from('groups').delete().eq('id', group.id);
+        return { data: null, error: new Error('Failed to create group leadership') };
+      }
+
+      return { data: group, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Failed to create group request'),
+      };
+    }
+  }
+
+  /**
+   * Update group details (for group leaders)
+   */
+  async updateGroupDetails(
+    groupId: string,
+    updates: UpdateGroupData,
+    userId: string
+  ): Promise<AdminServiceResponse<Group>> {
+    try {
+      // Check if user can manage this group
+      const membershipCheck = await permissionService.canManageGroupMembership(groupId, userId);
+      if (!membershipCheck.hasPermission) {
+        return { 
+          data: null, 
+          error: new Error(membershipCheck.reason || 'Access denied to manage group') 
+        };
+      }
+
+      // Verify user is a leader of this group
+      const { data: membership, error: membershipError } = await supabase
+        .from('group_memberships')
+        .select('role')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (membershipError || !membership || membership.role !== 'leader') {
+        return { 
+          data: null, 
+          error: new Error('Only group leaders can update group details') 
+        };
+      }
+
+      // Update the group
+      const { data, error } = await supabase
+        .from('groups')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', groupId)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Failed to update group details'),
+      };
+    }
+  }
+
+  /**
+   * Promote a member to leader
+   */
+  async promoteToLeader(
+    groupId: string,
+    userId: string,
+    promoterId: string
+  ): Promise<AdminServiceResponse<GroupMembership>> {
+    try {
+      // Check if promoter can manage this group
+      const membershipCheck = await permissionService.canManageGroupMembership(groupId, promoterId);
+      if (!membershipCheck.hasPermission) {
+        return { 
+          data: null, 
+          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        };
+      }
+
+      // Verify promoter is a leader of this group
+      const { data: promoterMembership, error: promoterError } = await supabase
+        .from('group_memberships')
+        .select('role')
+        .eq('group_id', groupId)
+        .eq('user_id', promoterId)
+        .eq('status', 'active')
+        .single();
+
+      if (promoterError || !promoterMembership || promoterMembership.role !== 'leader') {
+        return { 
+          data: null, 
+          error: new Error('Only group leaders can promote members') 
+        };
+      }
+
+      // Verify target user is a member of this group
+      const { data: targetMembership, error: targetError } = await supabase
+        .from('group_memberships')
+        .select('*')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (targetError || !targetMembership) {
+        return { 
+          data: null, 
+          error: new Error('User is not a member of this group') 
+        };
+      }
+
+      if (targetMembership.role === 'leader') {
+        return { 
+          data: null, 
+          error: new Error('User is already a leader') 
+        };
+      }
+
+      // Promote to leader
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .update({
+          role: 'leader',
+        })
+        .eq('id', targetMembership.id)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Failed to promote to leader'),
+      };
+    }
+  }
+
+  /**
+   * Demote a leader to member
+   */
+  async demoteFromLeader(
+    groupId: string,
+    userId: string,
+    demoterId: string
+  ): Promise<AdminServiceResponse<GroupMembership>> {
+    try {
+      // Check if demoter can manage this group
+      const membershipCheck = await permissionService.canManageGroupMembership(groupId, demoterId);
+      if (!membershipCheck.hasPermission) {
+        return { 
+          data: null, 
+          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        };
+      }
+
+      // Verify demoter is a leader of this group
+      const { data: demoterMembership, error: demoterError } = await supabase
+        .from('group_memberships')
+        .select('role')
+        .eq('group_id', groupId)
+        .eq('user_id', demoterId)
+        .eq('status', 'active')
+        .single();
+
+      if (demoterError || !demoterMembership || demoterMembership.role !== 'leader') {
+        return { 
+          data: null, 
+          error: new Error('Only group leaders can demote members') 
+        };
+      }
+
+      // Get all leaders in the group
+      const { data: allLeaders, error: leadersError } = await supabase
+        .from('group_memberships')
+        .select('id, user_id')
+        .eq('group_id', groupId)
+        .eq('role', 'leader')
+        .eq('status', 'active');
+
+      if (leadersError) {
+        return { data: null, error: new Error('Failed to check group leadership') };
+      }
+
+      // Prevent demoting the last leader
+      if (allLeaders && allLeaders.length === 1 && allLeaders[0].user_id === userId) {
+        return { 
+          data: null, 
+          error: new Error('Cannot demote the last leader of the group') 
+        };
+      }
+
+      // Verify target user is a leader of this group
+      const { data: targetMembership, error: targetError } = await supabase
+        .from('group_memberships')
+        .select('*')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (targetError || !targetMembership) {
+        return { 
+          data: null, 
+          error: new Error('User is not a member of this group') 
+        };
+      }
+
+      if (targetMembership.role !== 'leader') {
+        return { 
+          data: null, 
+          error: new Error('User is not a leader') 
+        };
+      }
+
+      // Demote to member
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .update({
+          role: 'member',
+        })
+        .eq('id', targetMembership.id)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Failed to demote from leader'),
+      };
+    }
+  }
+
+  /**
+   * Remove a member from the group
+   */
+  async removeMember(
+    groupId: string,
+    userId: string,
+    removerId: string
+  ): Promise<AdminServiceResponse<boolean>> {
+    try {
+      // Check if remover can manage this group
+      const membershipCheck = await permissionService.canManageGroupMembership(groupId, removerId);
+      if (!membershipCheck.hasPermission) {
+        return { 
+          data: null, 
+          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        };
+      }
+
+      // Verify remover is a leader of this group
+      const { data: removerMembership, error: removerError } = await supabase
+        .from('group_memberships')
+        .select('role')
+        .eq('group_id', groupId)
+        .eq('user_id', removerId)
+        .eq('status', 'active')
+        .single();
+
+      if (removerError || !removerMembership || removerMembership.role !== 'leader') {
+        return { 
+          data: null, 
+          error: new Error('Only group leaders can remove members') 
+        };
+      }
+
+      // If removing a leader, check if they're the last leader
+      const { data: targetMembership, error: targetError } = await supabase
+        .from('group_memberships')
+        .select('role')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (targetError || !targetMembership) {
+        return { 
+          data: null, 
+          error: new Error('User is not a member of this group') 
+        };
+      }
+
+      if (targetMembership.role === 'leader') {
+        // Check if this is the last leader
+        const { data: allLeaders, error: leadersError } = await supabase
+          .from('group_memberships')
+          .select('id')
+          .eq('group_id', groupId)
+          .eq('role', 'leader')
+          .eq('status', 'active');
+
+        if (leadersError) {
+          return { data: null, error: new Error('Failed to check group leadership') };
+        }
+
+        if (allLeaders && allLeaders.length === 1) {
+          return { 
+            data: null, 
+            error: new Error('Cannot remove the last leader of the group') 
+          };
+        }
+      }
+
+      // Remove the member by setting status to inactive
+      const { error } = await supabase
+        .from('group_memberships')
+        .update({ status: 'inactive' })
+        .eq('group_id', groupId)
+        .eq('user_id', userId);
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: true, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Failed to remove member'),
+      };
+    }
+  }
+
+  /**
+   * Create a join request (pending membership)
+   */
+  async createJoinRequest(
+    groupId: string,
+    userId: string,
+    contactConsent: boolean = false,
+    message?: string
+  ): Promise<AdminServiceResponse<GroupMembership>> {
+    try {
+      // Check if user can join groups in this church
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .select('church_id, status')
+        .eq('id', groupId)
+        .single();
+
+      if (groupError || !group) {
+        return { data: null, error: new Error('Group not found') };
+      }
+
+      if (group.status !== 'approved') {
+        return { data: null, error: new Error('Group is not accepting new members') };
+      }
+
+      const churchAccessCheck = await permissionService.canAccessChurchData(group.church_id);
+      if (!churchAccessCheck.hasPermission) {
+        return { 
+          data: null, 
+          error: new Error(churchAccessCheck.reason || 'Access denied to join this group') 
+        };
+      }
+
+      // Check if user is already a member or has a pending request
+      const { data: existingMembership } = await supabase
+        .from('group_memberships')
+        .select('status')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .single();
+
+      if (existingMembership) {
+        if (existingMembership.status === 'active') {
+          return { data: null, error: new Error('User is already a member of this group') };
+        }
+        if (existingMembership.status === 'pending') {
+          return { data: null, error: new Error('User already has a pending request for this group') };
+        }
+      }
+
+      // Create pending membership
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .insert({
+          group_id: groupId,
+          user_id: userId,
+          role: 'member',
+          status: 'pending',
+          joined_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      // TODO: Store contact consent and message in a separate table
+      // For now, we'll just log it
+      console.log('Join request created:', {
+        membershipId: data.id,
+        contactConsent,
+        message,
+      });
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Failed to create join request'),
+      };
+    }
+  }
+}
+
+// Export singleton instance
+export const groupCreationService = new GroupCreationService();

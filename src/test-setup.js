@@ -5,6 +5,14 @@ global.__DEV__ = true;
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 
+// Mock React Native Platform
+jest.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    select: jest.fn((obj) => obj.ios || obj.default),
+  },
+}));
+
 // Mock Expo modules
 jest.mock('expo-constants', () => ({
   expoConfig: {
@@ -56,6 +64,8 @@ const mockSupabaseClient = {
     and: jest.fn().mockReturnThis(),
     in: jest.fn().mockReturnThis(),
     contains: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     single: jest.fn(() => Promise.resolve({ data: null, error: null })),
     maybeSingle: jest.fn(() => Promise.resolve({ data: null, error: null })),
   })),
