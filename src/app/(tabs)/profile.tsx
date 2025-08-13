@@ -290,7 +290,8 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Admin Tools</Text>
             <View style={styles.adminActions}>
-              <PermissionGate permission="manage_church_events">
+              {/* Events management temporarily disabled - coming soon */}
+              {/* <PermissionGate permission="manage_church_events">
                 <Button
                   title="Manage Events"
                   onPress={() => {
@@ -303,7 +304,7 @@ export default function ProfileScreen() {
                   size="small"
                   style={styles.adminButton}
                 />
-              </PermissionGate>
+              </PermissionGate> */}
 
               <PermissionGate permission="manage_church_groups">
                 <Button

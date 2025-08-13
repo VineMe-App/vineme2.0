@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,26 +8,45 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { GroupCard, CreateGroupModal } from '../../components/groups';
+import { 
+  GroupCard, 
+  CreateGroupModal, 
+  GroupsMapView, 
+  ViewToggle,
+  FilterPanel,
+  FilterButton,
+  SearchBar,
+  type ViewMode 
+} from '../../components/groups';
 import { useGroupsByChurch, useGroupMembership } from '../../hooks/useGroups';
-import { useAuthStore } from '../../stores/auth';
+import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
 import { ErrorMessage, EmptyState, Button } from '../../components/ui';
+import { applyGroupFilters, getActiveFiltersDescription } from '../../utils/groupFilters';
 import type { GroupWithDetails } from '../../types/database';
 
 export default function GroupsScreen() {
   const router = useRouter();
   const { userProfile } = useAuthStore();
+  const { filters } = useGroupFiltersStore();
   const { handleError } = useErrorHandler();
-  const { isLoading: isRefreshing, withLoading } = useLoadingState();
+  const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [currentView, setCurrentView] = useState<ViewMode>('list');
 
   const {
-    data: groups,
+    data: allGroups,
     isLoading,
     error,
     refetch,
   } = useGroupsByChurch(userProfile?.church_id);
+
+  // Apply filters to groups
+  const filteredGroups = useMemo(() => {
+    if (!allGroups) return [];
+    return applyGroupFilters(allGroups, filters);
+  }, [allGroups, filters]);
 
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {
@@ -67,21 +86,48 @@ export default function GroupsScreen() {
     );
   };
 
-  const renderEmptyState = () => (
-    <EmptyState
-      icon={<Text style={{ fontSize: 48 }}>📖</Text>}
-      title="No Groups Found"
-      message={
-        userProfile?.church_id
-          ? 'There are no Bible study groups available in your church yet.'
-          : 'Please complete your profile to see groups from your church.'
+  const renderEmptyState = () => {
+    const hasFilters = filters.meetingDays.length > 0 || 
+                      filters.categories.length > 0 || 
+                      filters.searchQuery.length > 0;
+    
+    return (
+      <EmptyState
+        icon={<Text style={{ fontSize: 48 }}>📖</Text>}
+        title={hasFilters ? "No Groups Match Your Filters" : "No Groups Found"}
+        message={
+          hasFilters
+            ? `No groups found matching: ${getActiveFiltersDescription(filters)}`
+            : userProfile?.church_id
+            ? 'There are no Bible study groups available in your church yet.'
+            : 'Please complete your profile to see groups from your church.'
+        }
+      />
+    );
+  };
+
+  const renderListView = () => (
+    <FlatList
+      data={filteredGroups}
+      renderItem={renderGroupItem}
+      keyExtractor={(item) => item.id}
+      ListEmptyComponent={renderEmptyState}
+      refreshControl={
+        <RefreshControl
+          refreshing={isLoadingFn('refresh')}
+          onRefresh={handleRefresh}
+        />
       }
-      actionTitle={!userProfile?.church_id ? 'Complete Profile' : undefined}
-      onAction={
-        !userProfile?.church_id
-          ? () => router.push('/(tabs)/profile')
-          : undefined
-      }
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.listContent}
+    />
+  );
+
+  const renderMapView = () => (
+    <GroupsMapView
+      groups={filteredGroups}
+      onGroupPress={handleGroupPress}
+      isLoading={isLoading}
     />
   );
 
@@ -93,7 +139,7 @@ export default function GroupsScreen() {
     />
   );
 
-  if (isLoading && !groups) {
+  if (isLoading && !allGroups) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -110,7 +156,7 @@ export default function GroupsScreen() {
     );
   }
 
-  if (error && !groups) {
+  if (error && !allGroups) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -126,35 +172,38 @@ export default function GroupsScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={groups || []}
-        renderItem={renderGroupItem}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.title}>Bible Study Groups</Text>
-            <Text style={styles.subtitle}>
-              Discover and join Bible study groups in your church community
-            </Text>
-            {userProfile?.church_id && (
-              <Button
-                title="Create New Group"
-                onPress={handleCreateGroup}
-                variant="primary"
-                style={styles.createButton}
-              />
-            )}
-          </View>
-        }
-        ListEmptyComponent={renderEmptyState}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing || isLoading}
-            onRefresh={handleRefresh}
+      <View style={styles.header}>
+        <Text style={styles.title}>Bible Study Groups</Text>
+        <Text style={styles.subtitle}>
+          Discover and join Bible study groups in your church community
+        </Text>
+        {userProfile?.church_id && (
+          <Button
+            title="Create New Group"
+            onPress={handleCreateGroup}
+            variant="primary"
+            style={styles.createButton}
           />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        )}
+      </View>
+
+      <SearchBar placeholder="Search groups..." />
+
+      <View style={styles.controlsContainer}>
+        <ViewToggle
+          currentView={currentView}
+          onViewChange={setCurrentView}
+        />
+        <FilterButton onPress={() => setShowFilterPanel(true)} />
+      </View>
+
+      <View style={styles.contentContainer}>
+        {currentView === 'list' ? renderListView() : renderMapView()}
+      </View>
+
+      <FilterPanel
+        isVisible={showFilterPanel}
+        onClose={() => setShowFilterPanel(false)}
       />
 
       <CreateGroupModal
@@ -207,6 +256,16 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#666',
+  },
+  controlsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  contentContainer: {
+    flex: 1,
   },
   listContent: {
     flexGrow: 1,

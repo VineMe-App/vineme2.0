@@ -15,7 +15,7 @@ import {
   useFriends,
   useReceivedFriendRequests,
 } from '../../hooks/useFriendships';
-import { EventCard } from '../../components/events/EventCard';
+// import { EventCard } from '../../components/events/EventCard'; // Events disabled
 import { GroupCard } from '../../components/groups/GroupCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -31,11 +31,12 @@ export default function HomeScreen() {
   const userId = user?.id;
 
   // Fetch dashboard data
-  const {
-    data: upcomingEvents,
-    isLoading: eventsLoading,
-    refetch: refetchEvents,
-  } = useUpcomingEvents(churchId || '', 3);
+  // Events temporarily disabled - coming soon
+  // const {
+  //   data: upcomingEvents,
+  //   isLoading: eventsLoading,
+  //   refetch: refetchEvents,
+  // } = useUpcomingEvents(churchId || '', 3);
 
   const {
     data: userGroupMemberships,
@@ -64,16 +65,16 @@ export default function HomeScreen() {
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
-      refetchEvents(),
+      // refetchEvents(), // Events disabled
       refetchGroups(),
       refetchFriends(),
       refetchRequests(),
     ]);
     setRefreshing(false);
-  }, [refetchEvents, refetchGroups, refetchFriends, refetchRequests]);
+  }, [refetchGroups, refetchFriends, refetchRequests]);
 
   const isLoading =
-    eventsLoading || groupsLoading || friendsLoading || requestsLoading;
+    groupsLoading || friendsLoading || requestsLoading;
 
   if (isLoading && !refreshing) {
     return (
@@ -124,8 +125,8 @@ export default function HomeScreen() {
           <Text style={styles.statLabel}>Groups</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Text style={styles.statNumber}>{upcomingEvents?.length || 0}</Text>
-          <Text style={styles.statLabel}>Upcoming Events</Text>
+          <Text style={styles.statNumber}>🚧</Text>
+          <Text style={styles.statLabel}>Events Soon</Text>
         </Card>
         <Card style={styles.statCard}>
           <Text style={styles.statNumber}>{acceptedFriends.length}</Text>
@@ -133,33 +134,28 @@ export default function HomeScreen() {
         </Card>
       </View>
 
-      {/* Upcoming Events Section */}
+      {/* Events Coming Soon Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Upcoming Events</Text>
+          <Text style={styles.sectionTitle}>Events Coming Soon!</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/events')}>
-            <Text style={styles.seeAllText}>See All</Text>
+            <Text style={styles.seeAllText}>Learn More</Text>
           </TouchableOpacity>
         </View>
 
-        {upcomingEvents && upcomingEvents.length > 0 ? (
-          <View style={styles.horizontalList}>
-            {upcomingEvents.map((event) => (
-              <View key={event.id} style={styles.horizontalCard}>
-                <EventCard
-                  event={event}
-                  onPress={() => router.push(`/event/${event.id}`)}
-                />
-              </View>
-            ))}
-          </View>
-        ) : (
-          <EmptyState
-            title="No upcoming events"
-            message="Check back later for new events from your church"
-            icon={<Text style={styles.emptyIcon}>📅</Text>}
-          />
-        )}
+        <EmptyState
+          title="Events Feature in Development"
+          message="We're working on bringing you an amazing events experience. Check the Events tab for more details!"
+          icon={<Text style={styles.emptyIcon}>🚧</Text>}
+          action={
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push('/(tabs)/events')}
+            >
+              <Text style={styles.actionButtonText}>See What's Coming</Text>
+            </TouchableOpacity>
+          }
+        />
       </View>
 
       {/* My Groups Section */}
@@ -213,11 +209,11 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.quickActionCard}
+            style={[styles.quickActionCard, styles.comingSoonCard]}
             onPress={() => router.push('/(tabs)/events')}
           >
-            <Text style={styles.quickActionIcon}>📅</Text>
-            <Text style={styles.quickActionText}>View Events</Text>
+            <Text style={styles.quickActionIcon}>🚧</Text>
+            <Text style={styles.quickActionText}>Events Soon</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -368,6 +364,11 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   notificationCard: {
+    backgroundColor: '#fff3cd',
+    borderColor: '#ffeaa7',
+    borderWidth: 1,
+  },
+  comingSoonCard: {
     backgroundColor: '#fff3cd',
     borderColor: '#ffeaa7',
     borderWidth: 1,

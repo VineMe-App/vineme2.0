@@ -36,7 +36,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       projectId: '9f3ad2a7-f137-45bc-8194-feb084e8d252',
     },
   },
-  plugins: ['expo-router', 'expo-secure-store', 'expo-notifications'],
+  plugins: [
+    'expo-router', 
+    'expo-secure-store', 
+    'expo-notifications',
+    [
+      'expo-location',
+      {
+        locationAlwaysAndWhenInUsePermission: 'Allow VineMe to use your location to show nearby groups on the map.',
+      },
+    ],
+  ],
   experiments: {
     typedRoutes: true,
   },

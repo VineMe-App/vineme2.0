@@ -47,7 +47,7 @@
   - Create notification system for new join requests
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
 
-- [ ] 7. Add map view and location services to groups screen
+- [x] 7. Add map view and location services to groups screen
   - Install and configure React Native Maps or similar mapping library
   - Create MapView component for displaying groups as pins
   - Implement location services for geocoding group addresses
@@ -55,7 +55,7 @@
   - Create toggle between list and map views in groups screen
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 8. Implement group filtering and search functionality
+- [x] 8. Implement group filtering and search functionality
   - Create FilterPanel component with meeting day and category filters
   - Add filter state management using Zustand store
   - Implement filter application to both list and map views
@@ -63,7 +63,7 @@
   - Add clear filters and reset functionality
   - _Requirements: 6.5, 6.6, 6.7_
 
-- [ ] 9. Disable events features with coming soon messaging
+- [x] 9. Disable events features with coming soon messaging
   - Add ComingSoonBanner component overlay for events tab
   - Disable events tab navigation and show coming soon message
   - Hide events sections from home screen

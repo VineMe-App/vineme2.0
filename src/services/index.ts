@@ -10,6 +10,7 @@ export { permissionService } from './permissions';
 export { groupAdminService, userAdminService } from './admin';
 export { groupCreationService } from './groupCreation';
 export { joinRequestService } from './joinRequests';
+export { locationService } from './location';
 export type { AuthResponse, SignUpData, SignInData } from './auth';
 export type { UpdateUserProfileData, UserServiceResponse } from './users';
 export type {
@@ -37,3 +38,4 @@ export type {
   GroupServiceResponse as JoinRequestServiceResponse,
   CreateJoinRequestData,
 } from './joinRequests';
+export type { Coordinates, Address, LocationPermissionStatus } from './location';

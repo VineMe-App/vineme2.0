@@ -4,6 +4,7 @@ export { Badge } from './Badge';
 export { Button } from './Button';
 export { Card } from './Card';
 export { Checkbox } from './Checkbox';
+export { ComingSoonBanner } from './ComingSoonBanner';
 export { Divider } from './Divider';
 export { Input } from './Input';
 export { LoadingSpinner } from './LoadingSpinner';

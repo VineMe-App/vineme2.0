@@ -64,10 +64,11 @@ export default function TabLayout() {
         options={{
           title: 'Events',
           tabBarLabel: 'Events',
-          headerTitle: 'Church Events',
+          headerTitle: 'Events - Coming Soon!',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           ),
+          tabBarBadge: '🚧',
         }}
       />
       <Tabs.Screen

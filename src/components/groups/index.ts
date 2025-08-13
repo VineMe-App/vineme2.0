@@ -8,3 +8,8 @@ export { JoinRequestModal } from './JoinRequestModal';
 export { JoinRequestCard } from './JoinRequestCard';
 export { JoinRequestsPanel } from './JoinRequestsPanel';
 export { JoinRequestNotifications } from './JoinRequestNotifications';
+export { GroupsMapView } from './GroupsMapView';
+export { ViewToggle, type ViewMode } from './ViewToggle';
+export { FilterPanel } from './FilterPanel';
+export { FilterButton } from './FilterButton';
+export { SearchBar } from './SearchBar';
