@@ -13,6 +13,7 @@ import {
   useUserProfile,
   useUserGroupMemberships,
   useUserFriendships,
+  useDeleteAccount,
 } from '@/hooks/useUsers';
 import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const deleteAccountMutation = useDeleteAccount();
 
   const {
     data: userProfile,
@@ -72,6 +74,30 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    if (!user?.id) return;
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account data. This action cannot be undone. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccountMutation.mutateAsync(user.id);
+              await signOut();
+              router.replace('/(auth)/sign-in');
+            } catch (e) {
+              Alert.alert('Error', 'Failed to delete account. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (profileError) {
@@ -304,6 +330,12 @@ export default function ProfileScreen() {
           <Button
             title="Sign Out"
             onPress={handleSignOut}
+            variant="danger"
+            style={styles.signOutButton}
+          />
+          <Button
+            title="Delete Account"
+            onPress={handleDeleteAccount}
             variant="danger"
             style={styles.signOutButton}
           />

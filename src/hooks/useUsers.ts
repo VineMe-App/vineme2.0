@@ -219,3 +219,21 @@ export const useDeleteAvatar = () => {
     },
   });
 };
+
+/**
+ * Hook to delete account
+ */
+export const useDeleteAccount = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await userService.deleteAccount(userId);
+      if (error) throw error;
+      return data;
+    },
+    onSettled: () => {
+      // Clear cached user data on delete attempts
+      queryClient.clear();
+    },
+  });
+};

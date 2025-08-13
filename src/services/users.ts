@@ -60,6 +60,25 @@ export class UserService {
   }
 
   /**
+   * Delete user account (soft delete recommended). This implementation
+   * removes the row from 'users' and signs out; ensure RLS and cascades as needed.
+   */
+  async deleteAccount(userId: string): Promise<UserServiceResponse<boolean>> {
+    try {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+      return { data: true, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Failed to delete account'),
+      };
+    }
+  }
+
+  /**
    * Update user profile
    */
   async updateUserProfile(

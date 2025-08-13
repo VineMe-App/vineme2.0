@@ -72,13 +72,15 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[1] === 'onboarding';
+    // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id])
+    const inAllowedStacks = segments[0] === 'group' || segments[0] === 'event';
 
     if (user) {
       // User is authenticated
       if (!onboardingCompleted && !inOnboarding) {
         // User needs onboarding
         router.replace('/(auth)/onboarding');
-      } else if (onboardingCompleted && !inTabsGroup) {
+      } else if (onboardingCompleted && !(inTabsGroup || inAllowedStacks)) {
         // User completed onboarding, go to main app
         router.replace('/(tabs)');
       }
