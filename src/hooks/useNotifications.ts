@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '@/utils/constants';
 import {
   registerForPushNotifications,
   unregisterFromPushNotifications,
@@ -22,10 +24,18 @@ export const useNotifications = () => {
   const queryClient = useQueryClient();
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+
+  // Load onboarding completion flag
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED)
+      .then((v) => setOnboardingCompleted(v === 'true'))
+      .catch(() => setOnboardingCompleted(false));
+  }, []);
 
   // Register for notifications when user is authenticated
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && onboardingCompleted) {
       registerForPushNotifications(user.id);
     }
 
@@ -34,7 +44,7 @@ export const useNotifications = () => {
         unregisterFromPushNotifications(user.id);
       }
     };
-  }, [user?.id]);
+  }, [user?.id, onboardingCompleted]);
 
   // Set up notification listeners
   useEffect(() => {

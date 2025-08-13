@@ -22,6 +22,7 @@ export class UserService {
     userId: string
   ): Promise<UserServiceResponse<UserWithDetails>> {
     try {
+      // Explicitly disambiguate friendships relation alias to avoid ambiguous embedding
       const { data, error } = await supabase
         .from('users')
         .select(
@@ -33,8 +34,8 @@ export class UserService {
             *,
             group:groups(*)
           ),
-          friendships:friendships(
-            *,
+          friendships:friendships!friendships_user_id_fkey(
+            id, user_id, friend_id, status, created_at, updated_at,
             friend:users!friendships_friend_id_fkey(id, name, avatar_url)
           )
         `

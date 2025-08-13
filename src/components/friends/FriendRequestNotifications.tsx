@@ -4,7 +4,7 @@ import { Avatar } from '../ui/Avatar';
 import type { FriendshipWithUser } from '../../types/database';
 
 interface FriendRequestNotificationsProps {
-  requests: FriendshipWithUser[];
+  requests?: FriendshipWithUser[];
   onPress?: () => void;
   maxDisplay?: number;
 }
@@ -14,10 +14,11 @@ export function FriendRequestNotifications({
   onPress,
   maxDisplay = 3,
 }: FriendRequestNotificationsProps) {
-  const displayRequests = requests.slice(0, maxDisplay);
-  const remainingCount = Math.max(0, requests.length - maxDisplay);
+  const safeRequests = Array.isArray(requests) ? requests : [];
+  const displayRequests = safeRequests.slice(0, maxDisplay);
+  const remainingCount = Math.max(0, safeRequests.length - maxDisplay);
 
-  if (requests.length === 0) {
+  if (safeRequests.length === 0) {
     return null;
   }
 
@@ -30,7 +31,7 @@ export function FriendRequestNotifications({
       <View style={styles.header}>
         <Text style={styles.title}>Friend Requests</Text>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{requests.length}</Text>
+          <Text style={styles.badgeText}>{safeRequests.length}</Text>
         </View>
       </View>
 

@@ -11,9 +11,13 @@ class GlobalErrorHandler {
   private errorQueue: ErrorReport[] = [];
   private maxQueueSize = 50;
 
-  logError(error: Error | AppError, context?: Record<string, any>, userId?: string) {
+  logError(
+    error: Error | AppError,
+    context?: Record<string, any>,
+    userId?: string
+  ) {
     const appError = 'type' in error ? error : handleSupabaseError(error);
-    
+
     const report: ErrorReport = {
       error: appError,
       timestamp: new Date(),
@@ -23,7 +27,7 @@ class GlobalErrorHandler {
 
     // Add to queue
     this.errorQueue.push(report);
-    
+
     // Keep queue size manageable
     if (this.errorQueue.length > this.maxQueueSize) {
       this.errorQueue.shift();
@@ -72,24 +76,28 @@ class GlobalErrorHandler {
 
 export const globalErrorHandler = new GlobalErrorHandler();
 
-// Global error handlers for unhandled promise rejections and errors
-if (typeof window !== 'undefined') {
+// Global error handlers for unhandled promise rejections and errors (web only)
+// Avoid referencing window on React Native/Hermes where it may be undefined
+// eslint-disable-next-line no-undef
+if (
+  typeof window !== 'undefined' &&
+  typeof (window as any).addEventListener === 'function'
+) {
   window.addEventListener('unhandledrejection', (event) => {
     globalErrorHandler.logError(
-      event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+      event.reason instanceof Error
+        ? event.reason
+        : new Error(String(event.reason)),
       { type: 'unhandledPromiseRejection' }
     );
   });
 
   window.addEventListener('error', (event) => {
-    globalErrorHandler.logError(
-      event.error || new Error(event.message),
-      { 
-        type: 'globalError',
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno,
-      }
-    );
+    globalErrorHandler.logError(event.error || new Error(event.message), {
+      type: 'globalError',
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    });
   });
 }

@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Keys for secure storage
 export const SECURE_STORAGE_KEYS = {
@@ -18,7 +19,7 @@ export interface SecureStorageOptions {
 }
 
 class SecureStorageService {
-  private isWeb = typeof window !== 'undefined';
+  private isWeb = Platform.OS === 'web';
 
   /**
    * Store sensitive data securely
