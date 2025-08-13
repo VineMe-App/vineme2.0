@@ -14,6 +14,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onPress,
   membershipStatus,
 }) => {
+  if (!group) return null;
   const formatMeetingTime = (day: string, time: string) => {
     return `${day}s at ${time}`;
   };
@@ -68,9 +69,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </Text>
 
           <View style={styles.details}>
-            <Text style={styles.meetingTime}>
-              📅 {formatMeetingTime(group.meeting_day, group.meeting_time)}
-            </Text>
+            {group.meeting_day && group.meeting_time && (
+              <Text style={styles.meetingTime}>
+                📅 {formatMeetingTime(group.meeting_day, group.meeting_time)}
+              </Text>
+            )}
             <Text style={styles.location}>
               📍 {formatLocation(group.location)}
             </Text>

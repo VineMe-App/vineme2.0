@@ -50,12 +50,15 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
  */
 export const getPushToken = async (): Promise<string | null> => {
   try {
+    // Skip web unless properly configured with VAPID; prevents runtime error on web
+    if (Platform.OS === 'web') {
+      return null;
+    }
+
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return null;
 
-    const token = await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PUBLIC_PROJECT_ID, // Add this to your .env
-    });
+    const token = await Notifications.getExpoPushTokenAsync();
 
     return token.data;
   } catch (error) {

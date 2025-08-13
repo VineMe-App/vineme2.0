@@ -57,7 +57,7 @@ export default function GroupsScreen() {
 
   const renderEmptyState = () => (
     <EmptyState
-      icon="📖"
+      icon={<Text style={{ fontSize: 48 }}>📖</Text>}
       title="No Groups Found"
       message={
         userProfile?.church_id
