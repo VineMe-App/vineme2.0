@@ -55,7 +55,7 @@ export class EventService {
             avatar_url,
             email
           ),
-          church:churches(
+          church:churches!events_church_id_fkey(
             id,
             name,
             address,
@@ -108,7 +108,7 @@ export class EventService {
             avatar_url,
             email
           ),
-          church:churches(
+          church:churches!events_church_id_fkey(
             id,
             name,
             address,
@@ -178,7 +178,7 @@ export class EventService {
               avatar_url,
               email
             ),
-            church:churches(
+            church:churches!events_church_id_fkey(
               id,
               name,
               address

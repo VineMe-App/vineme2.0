@@ -32,7 +32,11 @@ export class UserService {
           service:services(*),
           group_memberships:group_memberships(
             *,
-            group:groups(*)
+            group:groups(
+              *,
+              service:services(*),
+              church:churches!groups_church_id_fkey(id, name)
+            )
           ),
           friendships:friendships!friendships_user_id_fkey(
             id, user_id, friend_id, status, created_at, updated_at,
@@ -73,7 +77,10 @@ export class UserService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to delete account'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to delete account'),
       };
     }
   }
@@ -87,15 +94,31 @@ export class UserService {
   ): Promise<UserServiceResponse<DatabaseUser>> {
     try {
       // Check permission to modify user resource
-      const permissionCheck = await permissionService.canModifyResource('user', userId, userId);
+      const permissionCheck = await permissionService.canModifyResource(
+        'user',
+        userId,
+        userId
+      );
       if (!permissionCheck.hasPermission) {
-        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to modify user profile') };
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to modify user profile'
+          ),
+        };
       }
 
       // Validate RLS compliance
-      const rlsCheck = await permissionService.validateRLSCompliance('users', 'update', { id: userId });
+      const rlsCheck = await permissionService.validateRLSCompliance(
+        'users',
+        'update',
+        { id: userId }
+      );
       if (!rlsCheck.hasPermission) {
-        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+        return {
+          data: null,
+          error: new Error(rlsCheck.reason || 'RLS policy violation'),
+        };
       }
 
       const { data, error } = await supabase

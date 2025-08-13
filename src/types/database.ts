@@ -48,7 +48,7 @@ export interface Group {
   whatsapp_link?: string;
   image_url?: string;
   service_id: string;
-  church_id: string[];
+  church_id: string;
   status: 'pending' | 'approved' | 'denied' | 'closed';
   created_at: string;
   updated_at?: string;

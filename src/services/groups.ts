@@ -62,7 +62,7 @@ export class GroupService {
           )
         `
         )
-        .contains('church_id', [churchId])
+        .eq('church_id', churchId)
         .eq('status', 'approved')
         .order('title');
 
@@ -458,7 +458,7 @@ export class GroupService {
         .limit(limit);
 
       if (churchId) {
-        queryBuilder = queryBuilder.contains('church_id', [churchId]);
+        queryBuilder = queryBuilder.eq('church_id', churchId);
       }
 
       const { data, error } = await queryBuilder.order('title');
