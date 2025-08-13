@@ -165,8 +165,7 @@ export class GroupService {
           *,
           group:groups(
             *,
-            service:services(*),
-            
+            service:services(*)
           )
         `
         )
@@ -194,7 +193,8 @@ export class GroupService {
   }
 
   /**
-   * Join a group
+   * Join a group (deprecated - use joinRequestService.createJoinRequest instead)
+   * This method is kept for backward compatibility but now creates a join request
    */
   async joinGroup(
     groupId: string,
@@ -202,33 +202,9 @@ export class GroupService {
     role: 'member' | 'leader' = 'member'
   ): Promise<GroupServiceResponse<GroupMembership>> {
     try {
-      // Check permission to manage group membership
-      const permissionCheck = await permissionService.canManageGroupMembership(
-        groupId,
-        userId
-      );
-      if (!permissionCheck.hasPermission) {
-        return {
-          data: null,
-          error: new Error(
-            permissionCheck.reason || 'Access denied to manage group membership'
-          ),
-        };
-      }
-
-      // Validate RLS compliance for group membership insertion
-      const rlsCheck = await permissionService.validateRLSCompliance(
-        'group_memberships',
-        'insert',
-        { user_id: userId }
-      );
-      if (!rlsCheck.hasPermission) {
-        return {
-          data: null,
-          error: new Error(rlsCheck.reason || 'RLS policy violation'),
-        };
-      }
-
+      // For backward compatibility, this now creates a join request instead
+      // of immediate membership. The request will need to be approved by group leaders.
+      
       // Check if user is already a member
       const { data: existingMembership } = await supabase
         .from('group_memberships')
@@ -244,33 +220,22 @@ export class GroupService {
             error: new Error('User is already a member of this group'),
           };
         }
-
-        // Reactivate existing membership
-        const { data, error } = await supabase
-          .from('group_memberships')
-          .update({
-            status: 'active',
-            joined_at: new Date().toISOString(),
-          })
-          .eq('id', existingMembership.id)
-          .select()
-          .single();
-
-        if (error) {
-          return { data: null, error: new Error(error.message) };
+        if (existingMembership.status === 'pending') {
+          return {
+            data: null,
+            error: new Error('User already has a pending request for this group'),
+          };
         }
-
-        return { data, error: null };
       }
 
-      // Create new membership
+      // Create pending membership instead of active membership
       const { data, error } = await supabase
         .from('group_memberships')
         .insert({
           group_id: groupId,
           user_id: userId,
           role,
-          status: 'active',
+          status: 'pending',
           joined_at: new Date().toISOString(),
         })
         .select()

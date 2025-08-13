@@ -5,6 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   church_id?: string;
   avatar_url?: string;
   service_id?: string;
@@ -60,7 +61,18 @@ export interface GroupMembership {
   user_id: string;
   role: 'member' | 'leader' | 'admin';
   joined_at: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
+}
+
+export interface GroupJoinRequest {
+  id: string;
+  group_id: string;
+  user_id: string;
+  contact_consent: boolean;
+  message?: string;
+  status: 'pending' | 'approved' | 'declined';
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface Event {
@@ -116,11 +128,18 @@ export interface GroupMembershipWithUser extends GroupMembership {
   user?: User;
 }
 
+export interface GroupJoinRequestWithUser extends GroupJoinRequest {
+  user?: User;
+  group?: Group;
+}
+
 export interface GroupWithDetails extends Group {
   service?: Service;
   church?: Church;
   memberships?: GroupMembershipWithUser[];
+  join_requests?: GroupJoinRequestWithUser[];
   member_count?: number;
+  pending_requests_count?: number;
 }
 
 export interface EventWithDetails extends Event {

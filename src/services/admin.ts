@@ -438,7 +438,7 @@ export class GroupAdminService {
           group_id,
           user_id,
           status,
-          joined_at as created_at,
+          joined_at,
           user:users(id, name, email, avatar_url)
         `
         )
@@ -459,7 +459,7 @@ export class GroupAdminService {
           user: item.user,
           contact_consent: true, // Default for now, can be enhanced later
           status: 'pending',
-          created_at: item.created_at,
+          created_at: item.joined_at,
         })) || [];
 
       return { data: requests, error: null };

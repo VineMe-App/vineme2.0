@@ -14,11 +14,14 @@ import { useRouter } from 'expo-router';
 import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
+import { GroupLeaderPanel } from './GroupLeaderPanel';
+import { JoinRequestModal } from './JoinRequestModal';
 import {
   useJoinGroup,
   useLeaveGroup,
   useGroupMembers,
 } from '../../hooks/useGroups';
+import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import type { GroupMembershipWithUser } from '../../types/database';
 import { useAuthStore } from '../../stores/auth';
 
@@ -38,12 +41,14 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [showJoinRequestModal, setShowJoinRequestModal] = useState(false);
 
   const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
   const { data: members, isLoading: membersLoading } = useGroupMembers(
     group.id
   );
+  const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
 
   const formatMeetingTime = (day: string, time: string) => {
     return `${day}s at ${time}`;
@@ -57,25 +62,13 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     return 'Location TBD';
   };
 
-  const handleJoinGroup = async () => {
+  const handleJoinGroup = () => {
     if (!userProfile) {
       Alert.alert('Error', 'You must be signed in to join a group');
       return;
     }
 
-    try {
-      await joinGroupMutation.mutateAsync({
-        groupId: group.id,
-        userId: userProfile.id,
-      });
-      onMembershipChange?.();
-      Alert.alert('Success', 'You have successfully joined the group!');
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to join group'
-      );
-    }
+    setShowJoinRequestModal(true);
   };
 
   const handleLeaveGroup = () => {
@@ -132,6 +125,24 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     : regularMembers.slice(0, 6);
 
   const isLoading = joinGroupMutation.isPending || leaveGroupMutation.isPending;
+
+  // Check if current user is a leader of this group
+  const userMembership = members?.find(m => m.user_id === userProfile?.id);
+  const isGroupLeader = userMembership?.role === 'leader';
+
+  // Check if user has a pending join request for this group
+  const pendingRequest = userJoinRequests?.find(
+    request => request.group_id === group.id && request.status === 'pending'
+  );
+
+  const handleGroupUpdated = () => {
+    onMembershipChange?.();
+  };
+
+  const handleJoinRequestSubmitted = () => {
+    setShowJoinRequestModal(false);
+    onMembershipChange?.();
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -275,6 +286,14 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           </View>
         )}
 
+        {/* Group Leader Panel */}
+        {isGroupLeader && (
+          <GroupLeaderPanel
+            group={group}
+            onGroupUpdated={handleGroupUpdated}
+          />
+        )}
+
         {/* Action Buttons */}
         <View style={styles.actionSection}>
           {membershipStatus ? (
@@ -295,15 +314,34 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                 disabled={isLoading}
               />
             </View>
+          ) : pendingRequest ? (
+            <View style={styles.pendingRequestContainer}>
+              <Text style={styles.pendingRequestText}>
+                ⏳ Your join request is pending approval
+              </Text>
+              <Text style={styles.pendingRequestSubtext}>
+                Group leaders will review your request and get back to you soon.
+              </Text>
+            </View>
           ) : (
             <Button
-              title="Join Group"
+              title="Request to Join"
               onPress={handleJoinGroup}
               loading={isLoading}
               disabled={isLoading}
             />
           )}
         </View>
+
+        {/* Join Request Modal */}
+        {userProfile && (
+          <JoinRequestModal
+            visible={showJoinRequestModal}
+            onClose={() => setShowJoinRequestModal(false)}
+            group={group}
+            userId={userProfile.id}
+          />
+        )}
       </View>
     </ScrollView>
   );
@@ -461,5 +499,26 @@ const styles = StyleSheet.create({
   whatsappButton: {
     backgroundColor: '#25D366',
     borderColor: '#25D366',
+  },
+  pendingRequestContainer: {
+    padding: 16,
+    backgroundColor: '#fff3cd',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+    alignItems: 'center',
+  },
+  pendingRequestText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  pendingRequestSubtext: {
+    fontSize: 14,
+    color: '#856404',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

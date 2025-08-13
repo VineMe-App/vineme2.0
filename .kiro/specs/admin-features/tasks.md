@@ -31,7 +31,7 @@
   - Wire up manage users button in profile to navigate to admin screen
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 8.1, 8.2_
 
-- [ ] 5. Implement group leader management capabilities
+- [x] 5. Implement group leader management capabilities
   - Create group leader panel within group detail screen
   - Add edit group details functionality for group leaders
   - Implement member role management (promote/demote leaders)
@@ -39,7 +39,7 @@
   - Create permission checks to ensure only group leaders can access management features
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 8.2, 8.4_
 
-- [ ] 6. Build join request management system
+- [x] 6. Build join request management system
   - Modify group joining to create pending requests instead of immediate membership
   - Create join request consent form for contact information sharing
   - Implement group leader join request approval interface
