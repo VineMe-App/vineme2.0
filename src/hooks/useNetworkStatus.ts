@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-
-// Note: For a real implementation, you would use @react-native-netinfo/netinfo
-// For now, we'll create a mock implementation that can be easily replaced
+import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 
 interface NetworkState {
   isConnected: boolean;
@@ -13,36 +11,29 @@ export function useNetworkStatus() {
   const [networkState, setNetworkState] = useState<NetworkState>({
     isConnected: true,
     isInternetReachable: true,
-    type: 'wifi',
+    type: 'unknown',
   });
 
   useEffect(() => {
-    // Mock implementation - in a real app, you would use NetInfo
-    // const unsubscribe = NetInfo.addEventListener(state => {
-    //   setNetworkState({
-    //     isConnected: state.isConnected ?? false,
-    //     isInternetReachable: state.isInternetReachable ?? false,
-    //     type: state.type,
-    //   });
-    // });
-
-    // For now, we'll simulate network status
-    const checkConnection = () => {
-      // In a real implementation, this would be handled by NetInfo
-      // For React Native, we'll assume connected by default
+    // Get initial network state
+    NetInfo.fetch().then((state: NetInfoState) => {
       setNetworkState({
-        isConnected: true,
-        isInternetReachable: true,
-        type: 'wifi',
+        isConnected: state.isConnected ?? false,
+        isInternetReachable: state.isInternetReachable ?? false,
+        type: state.type,
       });
-    };
+    });
 
-    checkConnection();
+    // Subscribe to network state changes
+    const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
+      setNetworkState({
+        isConnected: state.isConnected ?? false,
+        isInternetReachable: state.isInternetReachable ?? false,
+        type: state.type,
+      });
+    });
 
-    // In a real implementation, you would return the NetInfo unsubscribe function
-    return () => {
-      // unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
   return networkState;

@@ -7,16 +7,18 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { Theme } from '../../utils/theme';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  testID?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -28,8 +30,24 @@ export const Button: React.FC<ButtonProps> = ({
   loading = false,
   style,
   textStyle,
+  testID,
 }) => {
   const isDisabled = disabled || loading;
+
+  const getLoadingColor = () => {
+    switch (variant) {
+      case 'primary':
+      case 'danger':
+        return Theme.colors.white;
+      case 'secondary':
+      case 'outline':
+        return Theme.colors.primary;
+      case 'ghost':
+        return Theme.colors.textSecondary;
+      default:
+        return Theme.colors.primary;
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -43,9 +61,13 @@ export const Button: React.FC<ButtonProps> = ({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.7}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled }}
+      accessibilityLabel={title}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#fff' : '#007AFF'} />
+        <ActivityIndicator color={getLoadingColor()} />
       ) : (
         <Text
           style={[
@@ -64,59 +86,79 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 8,
+    borderRadius: Theme.borderRadius.base,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'transparent',
+    minHeight: Theme.layout.touchTarget,
   },
   primary: {
-    backgroundColor: '#007AFF',
+    backgroundColor: Theme.colors.primary,
   },
   secondary: {
-    backgroundColor: '#f8f9fa',
-    borderColor: '#dee2e6',
+    backgroundColor: Theme.colors.backgroundSecondary,
+    borderColor: Theme.colors.border,
   },
   danger: {
-    backgroundColor: '#dc3545',
+    backgroundColor: Theme.colors.error,
+  },
+  ghost: {
+    backgroundColor: 'transparent',
+  },
+  outline: {
+    backgroundColor: 'transparent',
+    borderColor: Theme.colors.primary,
   },
   small: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.xs,
     minHeight: 32,
   },
   medium: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 44,
+    paddingHorizontal: Theme.spacing.base,
+    paddingVertical: Theme.spacing.md,
+    minHeight: Theme.layout.touchTarget,
   },
   large: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.base,
     minHeight: 52,
   },
   disabled: {
     opacity: 0.6,
   },
   text: {
-    fontWeight: '600',
+    fontWeight: Theme.typography.fontWeight.semiBold,
+    textAlign: 'center',
   },
   primaryText: {
-    color: '#fff',
+    color: Theme.colors.white,
+    fontSize: Theme.typography.fontSize.base,
   },
   secondaryText: {
-    color: '#495057',
+    color: Theme.colors.textPrimary,
+    fontSize: Theme.typography.fontSize.base,
   },
   dangerText: {
-    color: '#fff',
+    color: Theme.colors.white,
+    fontSize: Theme.typography.fontSize.base,
+  },
+  ghostText: {
+    color: Theme.colors.textSecondary,
+    fontSize: Theme.typography.fontSize.base,
+  },
+  outlineText: {
+    color: Theme.colors.primary,
+    fontSize: Theme.typography.fontSize.base,
   },
   smallText: {
-    fontSize: 14,
+    fontSize: Theme.typography.fontSize.sm,
   },
   mediumText: {
-    fontSize: 16,
+    fontSize: Theme.typography.fontSize.base,
   },
   largeText: {
-    fontSize: 18,
+    fontSize: Theme.typography.fontSize.lg,
   },
 });

@@ -26,12 +26,14 @@ interface GroupDetailProps {
   group: GroupWithDetails;
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
   onMembershipChange?: () => void;
+  onShare?: () => void;
 }
 
 export const GroupDetail: React.FC<GroupDetailProps> = ({
   group,
   membershipStatus,
   onMembershipChange,
+  onShare,
 }) => {
   const router = useRouter();
   const { userProfile } = useAuthStore();
@@ -139,21 +141,28 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>{group.title}</Text>
-          {membershipStatus && (
-            <View
-              style={[styles.statusBadge, styles[`${membershipStatus}Badge`]]}
-            >
-              <Text
-                style={[styles.statusText, styles[`${membershipStatus}Text`]]}
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>{group.title}</Text>
+            {membershipStatus && (
+              <View
+                style={[styles.statusBadge, styles[`${membershipStatus}Badge`]]}
               >
-                {membershipStatus === 'member'
-                  ? 'Member'
-                  : membershipStatus === 'leader'
-                    ? 'Leader'
-                    : 'Admin'}
-              </Text>
-            </View>
+                <Text
+                  style={[styles.statusText, styles[`${membershipStatus}Text`]]}
+                >
+                  {membershipStatus === 'member'
+                    ? 'Member'
+                    : membershipStatus === 'leader'
+                      ? 'Leader'
+                      : 'Admin'}
+                </Text>
+              </View>
+            )}
+          </View>
+          {onShare && (
+            <TouchableOpacity onPress={onShare} style={styles.shareButton}>
+              <Text style={styles.shareIcon}>📤</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -319,12 +328,23 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
+  titleSection: {
+    flex: 1,
+    marginRight: 12,
+  },
+  shareButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  shareIcon: {
+    fontSize: 20,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    flex: 1,
-    marginRight: 12,
+    marginBottom: 8,
   },
   statusBadge: {
     paddingHorizontal: 12,

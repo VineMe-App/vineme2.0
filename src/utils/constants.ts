@@ -101,4 +101,5 @@ export const STORAGE_KEYS = {
   USER_PREFERENCES: 'user_preferences',
   ONBOARDING_COMPLETED: 'onboarding_completed',
   ONBOARDING_DATA: 'onboarding_data',
+  SERVICE_CHANGE_USED_PREFIX: 'service_change_used_',
 } as const;

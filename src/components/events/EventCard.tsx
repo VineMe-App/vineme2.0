@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Linking,
 } from 'react-native';
 import type { EventWithDetails } from '../../types/database';
 import { formatDateTime, isToday } from '../../utils/helpers';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface EventCardProps {
   event: EventWithDetails;
@@ -117,7 +117,15 @@ export const EventCard: React.FC<EventCardProps> = ({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.content}>
         {event.image_url && (
-          <Image source={{ uri: event.image_url }} style={styles.image} />
+          <OptimizedImage 
+            source={{ uri: event.image_url }} 
+            style={styles.image}
+            quality="medium"
+            lazy={true}
+            maxWidth={400}
+            maxHeight={120}
+            resizeMode="cover"
+          />
         )}
 
         <View style={styles.info}>

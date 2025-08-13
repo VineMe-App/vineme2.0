@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,18 +6,20 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GroupCard } from '../../components/groups';
 import { useGroupsByChurch, useGroupMembership } from '../../hooks/useGroups';
 import { useAuthStore } from '../../stores/auth';
+import { useErrorHandler, useLoadingState } from '../../hooks';
+import { ErrorMessage, EmptyState } from '../../components/ui';
 import type { GroupWithDetails } from '../../types/database';
 
 export default function GroupsScreen() {
   const router = useRouter();
   const { userProfile } = useAuthStore();
-  const [refreshing, setRefreshing] = useState(false);
+  const { handleError } = useErrorHandler();
+  const { isLoading: isRefreshing, withLoading } = useLoadingState();
 
   const {
     data: groups,
@@ -27,14 +29,17 @@ export default function GroupsScreen() {
   } = useGroupsByChurch(userProfile?.church_id);
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await refetch();
-    } catch (error) {
-      console.error('Failed to refresh groups:', error);
-    } finally {
-      setRefreshing(false);
-    }
+    await withLoading('refresh', async () => {
+      try {
+        await refetch();
+      } catch (error) {
+        handleError(error as Error, {
+          context: { action: 'refresh_groups', churchId: userProfile?.church_id },
+          showAlert: false, // Don't show alert for refresh errors, just show in UI
+        });
+        throw error; // Re-throw so the error state is maintained
+      }
+    });
   };
 
   const handleGroupPress = (group: GroupWithDetails) => {
@@ -51,23 +56,25 @@ export default function GroupsScreen() {
   };
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyStateTitle}>No Groups Found</Text>
-      <Text style={styles.emptyStateText}>
-        {userProfile?.church_id
+    <EmptyState
+      icon={<Text style={{ fontSize: 48 }}>📖</Text>}
+      title="No Groups Found"
+      message={
+        userProfile?.church_id
           ? 'There are no Bible study groups available in your church yet.'
-          : 'Please complete your profile to see groups from your church.'}
-      </Text>
-    </View>
+          : 'Please complete your profile to see groups from your church.'
+      }
+      actionTitle={!userProfile?.church_id ? 'Complete Profile' : undefined}
+      onAction={!userProfile?.church_id ? () => router.push('/(tabs)/profile') : undefined}
+    />
   );
 
   const renderErrorState = () => (
-    <View style={styles.errorState}>
-      <Text style={styles.errorTitle}>Unable to Load Groups</Text>
-      <Text style={styles.errorText}>
-        {error instanceof Error ? error.message : 'Something went wrong'}
-      </Text>
-    </View>
+    <ErrorMessage
+      error={error!}
+      onRetry={handleRefresh}
+      style={styles.errorContainer}
+    />
   );
 
   if (isLoading && !groups) {
@@ -117,7 +124,10 @@ export default function GroupsScreen() {
         }
         ListEmptyComponent={renderEmptyState}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl 
+            refreshing={isRefreshing || isLoading} 
+            onRefresh={handleRefresh} 
+          />
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
@@ -183,44 +193,7 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 16,
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-    marginTop: 64,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  errorState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-    marginTop: 64,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#dc3545',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
+  errorContainer: {
+    margin: 16,
   },
 });

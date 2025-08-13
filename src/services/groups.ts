@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { permissionService } from './permissions';
 import type {
   Group,
   GroupWithDetails,
@@ -32,13 +33,25 @@ export class GroupService {
     churchId: string
   ): Promise<GroupServiceResponse<GroupWithDetails[]>> {
     try {
+      // Check permission to access church data
+      const permissionCheck = await permissionService.canAccessChurchData(churchId);
+      if (!permissionCheck.hasPermission) {
+        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to church data') };
+      }
+
+      // Validate RLS compliance
+      const rlsCheck = await permissionService.validateRLSCompliance('groups', 'select', { church_id: [churchId] });
+      if (!rlsCheck.hasPermission) {
+        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+      }
+
       const { data, error } = await supabase
         .from('groups')
         .select(
           `
           *,
           service:services(*),
-          church:churches(*),
+          
           memberships:group_memberships(
             id,
             user_id,
@@ -49,7 +62,7 @@ export class GroupService {
           )
         `
         )
-        .contains('church_id', [churchId])
+        .eq('church_id', churchId)
         .eq('status', 'approved')
         .order('title');
 
@@ -89,7 +102,7 @@ export class GroupService {
           `
           *,
           service:services(*),
-          church:churches(*),
+          
           memberships:group_memberships(
             id,
             user_id,
@@ -140,7 +153,7 @@ export class GroupService {
           group:groups(
             *,
             service:services(*),
-            church:churches(*)
+            
           )
         `
         )
@@ -176,6 +189,18 @@ export class GroupService {
     role: 'member' | 'leader' = 'member'
   ): Promise<GroupServiceResponse<GroupMembership>> {
     try {
+      // Check permission to manage group membership
+      const permissionCheck = await permissionService.canManageGroupMembership(groupId, userId);
+      if (!permissionCheck.hasPermission) {
+        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to manage group membership') };
+      }
+
+      // Validate RLS compliance for group membership insertion
+      const rlsCheck = await permissionService.validateRLSCompliance('group_memberships', 'insert', { user_id: userId });
+      if (!rlsCheck.hasPermission) {
+        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+      }
+
       // Check if user is already a member
       const { data: existingMembership } = await supabase
         .from('group_memberships')
@@ -245,6 +270,12 @@ export class GroupService {
     userId: string
   ): Promise<GroupServiceResponse<boolean>> {
     try {
+      // Check permission to manage group membership
+      const permissionCheck = await permissionService.canManageGroupMembership(groupId, userId);
+      if (!permissionCheck.hasPermission) {
+        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to manage group membership') };
+      }
+
       const { error } = await supabase
         .from('group_memberships')
         .update({ status: 'inactive' })
@@ -413,7 +444,7 @@ export class GroupService {
           `
           *,
           service:services(*),
-          church:churches(*),
+          
           memberships:group_memberships(
             id,
             user_id,
@@ -427,7 +458,7 @@ export class GroupService {
         .limit(limit);
 
       if (churchId) {
-        queryBuilder = queryBuilder.contains('church_id', [churchId]);
+        queryBuilder = queryBuilder.eq('church_id', churchId);
       }
 
       const { data, error } = await queryBuilder.order('title');

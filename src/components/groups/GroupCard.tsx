@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { GroupWithDetails } from '../../types/database';
+import { OptimizedImage } from '../ui/OptimizedImage';
 
 interface GroupCardProps {
   group: GroupWithDetails;
@@ -13,6 +14,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onPress,
   membershipStatus,
 }) => {
+  if (!group) return null;
   const formatMeetingTime = (day: string, time: string) => {
     return `${day}s at ${time}`;
   };
@@ -29,7 +31,15 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.content}>
         {group.image_url && (
-          <Image source={{ uri: group.image_url }} style={styles.image} />
+          <OptimizedImage 
+            source={{ uri: group.image_url }} 
+            style={styles.image}
+            quality="medium"
+            lazy={true}
+            maxWidth={400}
+            maxHeight={120}
+            resizeMode="cover"
+          />
         )}
 
         <View style={styles.info}>
@@ -59,9 +69,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </Text>
 
           <View style={styles.details}>
-            <Text style={styles.meetingTime}>
-              📅 {formatMeetingTime(group.meeting_day, group.meeting_time)}
-            </Text>
+            {group.meeting_day && group.meeting_time && (
+              <Text style={styles.meetingTime}>
+                📅 {formatMeetingTime(group.meeting_day, group.meeting_time)}
+              </Text>
+            )}
             <Text style={styles.location}>
               📍 {formatLocation(group.location)}
             </Text>

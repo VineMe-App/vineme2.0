@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { permissionService } from './permissions';
 import type { DatabaseUser, UserWithDetails } from '../types/database';
 
 export interface UpdateUserProfileData {
@@ -21,6 +22,7 @@ export class UserService {
     userId: string
   ): Promise<UserServiceResponse<UserWithDetails>> {
     try {
+      // Explicitly disambiguate friendships relation alias to avoid ambiguous embedding
       const { data, error } = await supabase
         .from('users')
         .select(
@@ -30,10 +32,14 @@ export class UserService {
           service:services(*),
           group_memberships:group_memberships(
             *,
-            group:groups(*)
+            group:groups(
+              *,
+              service:services(*),
+              church:churches!groups_church_id_fkey(id, name)
+            )
           ),
-          friendships:friendships(
-            *,
+          friendships:friendships!friendships_user_id_fkey(
+            id, user_id, friend_id, status, created_at, updated_at,
             friend:users!friendships_friend_id_fkey(id, name, avatar_url)
           )
         `
@@ -58,6 +64,28 @@ export class UserService {
   }
 
   /**
+   * Delete user account (soft delete recommended). This implementation
+   * removes the row from 'users' and signs out; ensure RLS and cascades as needed.
+   */
+  async deleteAccount(userId: string): Promise<UserServiceResponse<boolean>> {
+    try {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+      return { data: true, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to delete account'),
+      };
+    }
+  }
+
+  /**
    * Update user profile
    */
   async updateUserProfile(
@@ -65,6 +93,34 @@ export class UserService {
     updates: UpdateUserProfileData
   ): Promise<UserServiceResponse<DatabaseUser>> {
     try {
+      // Check permission to modify user resource
+      const permissionCheck = await permissionService.canModifyResource(
+        'user',
+        userId,
+        userId
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to modify user profile'
+          ),
+        };
+      }
+
+      // Validate RLS compliance
+      const rlsCheck = await permissionService.validateRLSCompliance(
+        'users',
+        'update',
+        { id: userId }
+      );
+      if (!rlsCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(rlsCheck.reason || 'RLS policy violation'),
+        };
+      }
+
       const { data, error } = await supabase
         .from('users')
         .update({

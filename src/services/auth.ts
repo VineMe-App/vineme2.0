@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { secureStorage, SECURE_STORAGE_KEYS } from '../utils/secureStorage';
+import { permissionService } from './permissions';
 import type { User } from '@supabase/supabase-js';
 import type { DatabaseUser } from '../types/database';
 import { handleSupabaseError, retryWithBackoff } from '../utils/errorHandling';
@@ -38,10 +40,19 @@ export class AuthService {
         return result;
       });
 
+      // Store authentication session securely
+      if (data.session) {
+        await secureStorage.storeAuthSession({
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+          expiresAt: data.session.expires_at,
+        });
+      }
+
       return { user: data.user, error: null };
     } catch (error) {
       const appError = handleSupabaseError(error as Error);
-      return { user: null, error: appError };
+      return { user: null, error: new Error(appError.message) };
     }
   }
 
@@ -71,7 +82,7 @@ export class AuthService {
       return { user: data.user, error: null };
     } catch (error) {
       const appError = handleSupabaseError(error as Error);
-      return { user: null, error: appError };
+      return { user: null, error: new Error(appError.message) };
     }
   }
 
@@ -85,6 +96,12 @@ export class AuthService {
       if (error) {
         return { error: new Error(error.message) };
       }
+
+      // Clear secure storage on sign out
+      await secureStorage.clearAuthSession();
+      
+      // Clear permission cache
+      permissionService.clearUserCache();
 
       return { error: null };
     } catch (error) {
@@ -100,18 +117,17 @@ export class AuthService {
   async getCurrentUser(): Promise<User | null> {
     try {
       const {
-        data: { user },
+        data: { session },
         error,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
 
       if (error) {
-        console.error('Error getting current user:', error.message);
+        // Treat missing-session as unauthenticated without noisy logs
         return null;
       }
 
-      return user;
-    } catch (error) {
-      console.error('Error getting current user:', error);
+      return session?.user ?? null;
+    } catch {
       return null;
     }
   }
@@ -186,17 +202,34 @@ export class AuthService {
         return { error: new Error('No authenticated user') };
       }
 
-      const { error } = await supabase.from('users').insert({
+      // Insert minimal required fields to avoid 400s from missing FKs or columns
+      const payload: Record<string, any> = {
         id: user.id,
         email: user.email || '',
         name: userData.name,
-        church_id: userData.church_id,
-        service_id: userData.service_id,
-        roles: ['member'], // Default role
-        created_at: new Date().toISOString(),
-      });
+        roles: ['user'],
+        updated_at: new Date().toISOString(),
+      };
+
+      if (userData.church_id) {
+        payload.church_id = userData.church_id;
+      }
+      if (userData.service_id) {
+        payload.service_id = userData.service_id;
+      }
+      const { error } = await supabase
+        .from('users')
+        .upsert(payload, {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        });
 
       if (error) {
+        // Surface full error info in dev to diagnose 400s
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.error('createUserProfile error:', error);
+        }
         return { error: new Error(error.message) };
       }
 
@@ -210,10 +243,87 @@ export class AuthService {
   }
 
   /**
+   * Check if current session is valid and refresh if needed
+   */
+  async validateAndRefreshSession(): Promise<{ user: User | null; error: Error | null }> {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        return { user: null, error: new Error(error.message) };
+      }
+
+      if (!data.session) {
+        // Try to get session from secure storage
+        const storedSession = await secureStorage.getAuthSession();
+        if (storedSession.accessToken) {
+          // Session exists in storage but not in Supabase client
+          // This might indicate the session expired, clear storage
+          await secureStorage.clearAuthSession();
+        }
+        return { user: null, error: new Error('No active session') };
+      }
+
+      // Check if session is close to expiring (within 5 minutes)
+      const expiresAt = data.session.expires_at;
+      const now = Math.floor(Date.now() / 1000);
+      const fiveMinutes = 5 * 60;
+
+      if (expiresAt && (expiresAt - now) < fiveMinutes) {
+        // Refresh the session
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          await secureStorage.clearAuthSession();
+          return { user: null, error: new Error('Session refresh failed') };
+        }
+
+        if (refreshData.session) {
+          // Update secure storage with new session
+          await secureStorage.storeAuthSession({
+            accessToken: refreshData.session.access_token,
+            refreshToken: refreshData.session.refresh_token,
+            expiresAt: refreshData.session.expires_at,
+          });
+          
+          return { user: refreshData.session.user, error: null };
+        }
+      }
+
+      return { user: data.session.user, error: null };
+    } catch (error) {
+      return {
+        user: null,
+        error: error instanceof Error ? error : new Error('Session validation failed'),
+      };
+    }
+  }
+
+  /**
    * Listen to authentication state changes
    */
   onAuthStateChange(callback: (user: User | null) => void) {
-    return supabase.auth.onAuthStateChange((event, session) => {
+    return supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Store new session securely
+        await secureStorage.storeAuthSession({
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at,
+        });
+      } else if (event === 'SIGNED_OUT') {
+        // Clear secure storage and permission cache
+        await secureStorage.clearAuthSession();
+        permissionService.clearUserCache();
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        // Update stored session
+        await secureStorage.storeAuthSession({
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at,
+        });
+      }
+      
       callback(session?.user || null);
     });
   }

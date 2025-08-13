@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupService } from '../services/groups';
 import type { GroupWithDetails, GroupMembership } from '../types/database';
 import type { GroupReferralData } from '../services/groups';
+import { performanceMonitor } from '../utils/performance';
 
 // Query keys
 export const groupKeys = {
@@ -19,20 +20,35 @@ export const groupKeys = {
 };
 
 /**
- * Hook to get groups by church
+ * Hook to get groups by church with performance monitoring
  */
 export const useGroupsByChurch = (churchId: string | undefined) => {
   return useQuery({
     queryKey: groupKeys.byChurch(churchId || ''),
     queryFn: async () => {
       if (!churchId) throw new Error('Church ID is required');
+      
+      const startTime = Date.now();
       const { data, error } = await groupService.getGroupsByChurch(churchId);
+      const duration = Date.now() - startTime;
+      
+      // Record query performance
+      performanceMonitor.recordQueryPerformance(
+        `groups_by_church_${churchId}`,
+        duration,
+        false // This is a fresh fetch, not a cache hit
+      );
+      
       if (error) throw error;
       return data;
     },
     enabled: !!churchId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    meta: {
+      // Add metadata for React Query DevTools
+      description: 'Fetch groups by church with performance monitoring',
+    },
   });
 };
 
@@ -130,7 +146,7 @@ export const useSearchGroups = (
 };
 
 /**
- * Hook to join a group
+ * Hook to join a group with optimistic updates
  */
 export const useJoinGroup = () => {
   const queryClient = useQueryClient();
@@ -153,29 +169,68 @@ export const useJoinGroup = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, { groupId, userId }) => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
-      queryClient.invalidateQueries({ queryKey: groupKeys.userGroups(userId) });
-      queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
-      queryClient.invalidateQueries({
-        queryKey: groupKeys.membership(groupId, userId),
+    // Optimistic update
+    onMutate: async ({ groupId, userId, role = 'member' }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: groupKeys.membership(groupId, userId) });
+      await queryClient.cancelQueries({ queryKey: groupKeys.userGroups(userId) });
+
+      // Snapshot previous values
+      const previousMembership = queryClient.getQueryData(groupKeys.membership(groupId, userId));
+      const previousUserGroups = queryClient.getQueryData(groupKeys.userGroups(userId));
+
+      // Optimistically update membership
+      queryClient.setQueryData(groupKeys.membership(groupId, userId), {
+        isMember: true,
+        membership: {
+          id: `temp-${Date.now()}`,
+          group_id: groupId,
+          user_id: userId,
+          role,
+          joined_at: new Date().toISOString(),
+        },
       });
 
-      // Update membership cache
+      // Optimistically add to user groups if we have that data
+      if (previousUserGroups) {
+        const group = queryClient.getQueryData(groupKeys.byId(groupId)) as GroupWithDetails;
+        if (group) {
+          queryClient.setQueryData(groupKeys.userGroups(userId), [
+            ...(previousUserGroups as GroupWithDetails[]),
+            group,
+          ]);
+        }
+      }
+
+      return { previousMembership, previousUserGroups };
+    },
+    onSuccess: (data, { groupId, userId }) => {
+      // Update with real data
       queryClient.setQueryData(groupKeys.membership(groupId, userId), {
         isMember: true,
         membership: data,
       });
+
+      // Invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.userGroups(userId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
     },
-    onError: (error) => {
+    onError: (error, { groupId, userId }, context) => {
+      // Revert optimistic updates
+      if (context?.previousMembership) {
+        queryClient.setQueryData(groupKeys.membership(groupId, userId), context.previousMembership);
+      }
+      if (context?.previousUserGroups) {
+        queryClient.setQueryData(groupKeys.userGroups(userId), context.previousUserGroups);
+      }
       console.error('Failed to join group:', error);
     },
   });
 };
 
 /**
- * Hook to leave a group
+ * Hook to leave a group with optimistic updates
  */
 export const useLeaveGroup = () => {
   const queryClient = useQueryClient();
@@ -192,22 +247,52 @@ export const useLeaveGroup = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, { groupId, userId }) => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
-      queryClient.invalidateQueries({ queryKey: groupKeys.userGroups(userId) });
-      queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
-      queryClient.invalidateQueries({
-        queryKey: groupKeys.membership(groupId, userId),
-      });
+    // Optimistic update
+    onMutate: async ({ groupId, userId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: groupKeys.membership(groupId, userId) });
+      await queryClient.cancelQueries({ queryKey: groupKeys.userGroups(userId) });
 
-      // Update membership cache
+      // Snapshot previous values
+      const previousMembership = queryClient.getQueryData(groupKeys.membership(groupId, userId));
+      const previousUserGroups = queryClient.getQueryData(groupKeys.userGroups(userId));
+
+      // Optimistically update membership
       queryClient.setQueryData(groupKeys.membership(groupId, userId), {
         isMember: false,
         membership: undefined,
       });
+
+      // Optimistically remove from user groups if we have that data
+      if (previousUserGroups) {
+        queryClient.setQueryData(
+          groupKeys.userGroups(userId),
+          (previousUserGroups as GroupWithDetails[]).filter(group => group.id !== groupId)
+        );
+      }
+
+      return { previousMembership, previousUserGroups };
     },
-    onError: (error) => {
+    onSuccess: (data, { groupId, userId }) => {
+      // Update with real data
+      queryClient.setQueryData(groupKeys.membership(groupId, userId), {
+        isMember: false,
+        membership: undefined,
+      });
+
+      // Invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.userGroups(userId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
+    },
+    onError: (error, { groupId, userId }, context) => {
+      // Revert optimistic updates
+      if (context?.previousMembership) {
+        queryClient.setQueryData(groupKeys.membership(groupId, userId), context.previousMembership);
+      }
+      if (context?.previousUserGroups) {
+        queryClient.setQueryData(groupKeys.userGroups(userId), context.previousUserGroups);
+      }
       console.error('Failed to leave group:', error);
     },
   });

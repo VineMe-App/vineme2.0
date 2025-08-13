@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { GroupDetail } from '../../components/groups';
 import { useGroup, useGroupMembership } from '../../hooks/useGroups';
 import { useAuthStore } from '../../stores/auth';
+import { shareGroup } from '../../utils/deepLinking';
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,6 +26,12 @@ export default function GroupDetailScreen() {
     // Refetch both group data and membership status
     refetchGroup();
     refetchMembership();
+  };
+
+  const handleShare = () => {
+    if (group) {
+      shareGroup(group.id, group.title);
+    }
   };
 
   if (groupLoading) {
@@ -50,6 +58,7 @@ export default function GroupDetailScreen() {
         group={group}
         membershipStatus={membershipStatus}
         onMembershipChange={handleMembershipChange}
+        onShare={handleShare}
       />
     </View>
   );

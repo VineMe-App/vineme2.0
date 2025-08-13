@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
-import type { Church } from '@/types/database';
+import type { Church, Service } from '@/types/database';
 import { churchService } from '@/services/churches';
 
 export default function ChurchStep({
@@ -18,15 +18,24 @@ export default function ChurchStep({
   isLoading,
 }: OnboardingStepProps) {
   const [churches, setChurches] = useState<Church[]>([]);
-  const [selectedChurchId, setSelectedChurchId] = useState<string | undefined>(
-    data.church_id
-  );
+  const [selectedChurchId, setSelectedChurchId] = useState<string | undefined>(data.church_id);
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(data.service_id);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadChurches();
   }, []);
+
+  useEffect(() => {
+    if (selectedChurchId) {
+      loadServices(selectedChurchId);
+    } else {
+      setServices([]);
+      setSelectedServiceId(undefined);
+    }
+  }, [selectedChurchId]);
 
   const loadChurches = async () => {
     try {
@@ -51,13 +60,28 @@ export default function ChurchStep({
     }
   };
 
+  const loadServices = async (churchId: string) => {
+    try {
+      const { data: svc, error } = await churchService.getServicesByChurch(churchId);
+      if (!error && svc) {
+        setServices(svc);
+        // Reset service if it doesn't belong to the new church
+        if (!svc.find((s) => s.id === selectedServiceId)) {
+          setSelectedServiceId(undefined);
+        }
+      }
+    } catch {
+      // Non-blocking
+    }
+  };
+
   const handleChurchSelect = (churchId: string) => {
     setSelectedChurchId(churchId);
   };
 
   const handleNext = () => {
     if (selectedChurchId) {
-      onNext({ church_id: selectedChurchId });
+      onNext({ church_id: selectedChurchId, service_id: selectedServiceId });
     }
   };
 
@@ -150,6 +174,44 @@ export default function ChurchStep({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.churchListContent}
         />
+
+        {selectedChurchId && (
+          <>
+            <Text style={[styles.title, { marginTop: 16 }]}>Select a service (optional)</Text>
+            <View>
+              {services.map((svc) => (
+                <TouchableOpacity
+                  key={svc.id}
+                  style={[
+                    styles.churchItem,
+                    selectedServiceId === svc.id && styles.churchItemSelected,
+                  ]}
+                  onPress={() => setSelectedServiceId(svc.id)}
+                  disabled={isLoading}
+                >
+                  <View style={styles.churchInfo}>
+                    <Text
+                      style={[
+                        styles.churchName,
+                        selectedServiceId === svc.id && styles.churchNameSelected,
+                      ]}
+                    >
+                      {svc.name}
+                    </Text>
+                    <Text style={styles.churchAddress}>
+                      {svc.day_of_week !== undefined ? `Meets on ${svc.day_of_week}` : ''}
+                    </Text>
+                  </View>
+                  {selectedServiceId === svc.id && (
+                    <View style={styles.checkmark}>
+                      <Text style={styles.checkmarkText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
       </View>
 
       <View style={styles.footer}>

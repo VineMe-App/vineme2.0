@@ -6,6 +6,7 @@ export { userService } from './users';
 export { groupService } from './groups';
 export { eventService } from './events';
 export { friendshipService } from './friendships';
+export { permissionService } from './permissions';
 export type { AuthResponse, SignUpData, SignInData } from './auth';
 export type { UpdateUserProfileData, UserServiceResponse } from './users';
 export type {
