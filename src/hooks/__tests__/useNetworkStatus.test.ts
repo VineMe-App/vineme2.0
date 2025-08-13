@@ -28,7 +28,7 @@ describe('useNetworkStatus', () => {
 
   it('should update network state when connection changes', async () => {
     let networkListener: (state: any) => void = () => {};
-    
+
     mockNetInfo.addEventListener.mockImplementation((listener) => {
       networkListener = listener;
       return () => {};

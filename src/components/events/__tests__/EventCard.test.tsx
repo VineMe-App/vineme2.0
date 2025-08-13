@@ -75,7 +75,7 @@ describe('EventCard', () => {
   });
 
   it('should display price when event has cost', () => {
-    const paidEvent = { ...mockEvent, price: 25.00 };
+    const paidEvent = { ...mockEvent, price: 25.0 };
     render(<EventCard event={paidEvent} />);
 
     expect(screen.getByText('$25.00')).toBeTruthy();

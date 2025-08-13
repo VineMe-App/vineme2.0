@@ -11,7 +11,10 @@ export class NetworkError extends Error implements AppError {
   type: 'network' = 'network';
   retryable = true;
 
-  constructor(message: string, public originalError?: Error) {
+  constructor(
+    message: string,
+    public originalError?: Error
+  ) {
     super(message);
     this.name = 'NetworkError';
   }
@@ -21,7 +24,10 @@ export class AuthError extends Error implements AppError {
   type: 'auth' = 'auth';
   retryable = false;
 
-  constructor(message: string, public originalError?: Error) {
+  constructor(
+    message: string,
+    public originalError?: Error
+  ) {
     super(message);
     this.name = 'AuthError';
   }
@@ -31,7 +37,10 @@ export class ValidationError extends Error implements AppError {
   type: 'validation' = 'validation';
   retryable = false;
 
-  constructor(message: string, public originalError?: Error) {
+  constructor(
+    message: string,
+    public originalError?: Error
+  ) {
     super(message);
     this.name = 'ValidationError';
   }
@@ -41,7 +50,10 @@ export class PermissionError extends Error implements AppError {
   type: 'permission' = 'permission';
   retryable = false;
 
-  constructor(message: string, public originalError?: Error) {
+  constructor(
+    message: string,
+    public originalError?: Error
+  ) {
     super(message);
     this.name = 'PermissionError';
   }
@@ -54,29 +66,48 @@ export function handleSupabaseError(error: PostgrestError | Error): AppError {
       case 'PGRST116': // No rows found
         return new ValidationError('The requested resource was not found');
       case 'PGRST301': // Row level security violation
-        return new PermissionError('You do not have permission to access this resource');
+        return new PermissionError(
+          'You do not have permission to access this resource'
+        );
       case '42501': // Insufficient privilege
-        return new PermissionError('Insufficient permissions for this operation');
+        return new PermissionError(
+          'Insufficient permissions for this operation'
+        );
       case '23505': // Unique violation
         return new ValidationError('This record already exists');
       case '23503': // Foreign key violation
         return new ValidationError('Invalid reference to related data');
       default:
         if (error.message.includes('JWT')) {
-          return new AuthError('Authentication required. Please sign in again.');
+          return new AuthError(
+            'Authentication required. Please sign in again.'
+          );
         }
-        return new NetworkError(error.message || 'Database operation failed', error);
+        return new NetworkError(
+          error.message || 'Database operation failed',
+          error
+        );
     }
   }
 
   // Handle network errors
   if (error.message.includes('fetch') || error.message.includes('network')) {
-    return new NetworkError('Network connection failed. Please check your internet connection.', error);
+    return new NetworkError(
+      'Network connection failed. Please check your internet connection.',
+      error
+    );
   }
 
   // Handle auth errors
-  if (error.message.includes('auth') || error.message.includes('unauthorized') || error.message.includes('JWT')) {
-    return new AuthError('Authentication required. Please sign in again.', error);
+  if (
+    error.message.includes('auth') ||
+    error.message.includes('unauthorized') ||
+    error.message.includes('JWT')
+  ) {
+    return new AuthError(
+      'Authentication required. Please sign in again.',
+      error
+    );
   }
 
   // Default to unknown error
@@ -97,7 +128,7 @@ export function getErrorMessage(error: AppError): string {
     case 'validation':
       return error.message;
     case 'permission':
-      return 'You don\'t have permission to perform this action.';
+      return "You don't have permission to perform this action.";
     default:
       return 'Something went wrong. Please try again.';
   }
@@ -115,10 +146,10 @@ export async function retryWithBackoff<T>(
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       // Convert to app error to check retryability
       const appError = handleSupabaseError(lastError);
-      
+
       // Don't retry non-retryable errors or if we've reached max retries
       if (!appError.retryable || attempt === maxRetries) {
         throw appError;
@@ -126,7 +157,7 @@ export async function retryWithBackoff<T>(
 
       // Exponential backoff with jitter
       const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 100;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 

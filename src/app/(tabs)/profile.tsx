@@ -92,7 +92,10 @@ export default function ProfileScreen() {
               await signOut();
               router.replace('/(auth)/sign-in');
             } catch (e) {
-              Alert.alert('Error', 'Failed to delete account. Please try again.');
+              Alert.alert(
+                'Error',
+                'Failed to delete account. Please try again.'
+              );
             }
           },
         },
@@ -291,32 +294,31 @@ export default function ProfileScreen() {
                 <Button
                   title="Manage Events"
                   onPress={() => {
-                    Alert.alert('Admin Feature', 'Event management coming soon!');
+                    Alert.alert(
+                      'Admin Feature',
+                      'Event management coming soon!'
+                    );
                   }}
                   variant="secondary"
                   size="small"
                   style={styles.adminButton}
                 />
               </PermissionGate>
-              
+
               <PermissionGate permission="manage_church_groups">
                 <Button
                   title="Manage Groups"
-                  onPress={() => {
-                    Alert.alert('Admin Feature', 'Group management coming soon!');
-                  }}
+                  onPress={() => router.push('/admin/manage-groups')}
                   variant="secondary"
                   size="small"
                   style={styles.adminButton}
                 />
               </PermissionGate>
-              
+
               <PermissionGate permission="manage_church_users">
                 <Button
                   title="Manage Users"
-                  onPress={() => {
-                    Alert.alert('Admin Feature', 'User management coming soon!');
-                  }}
+                  onPress={() => router.push('/admin/manage-users')}
                   variant="secondary"
                   size="small"
                   style={styles.adminButton}

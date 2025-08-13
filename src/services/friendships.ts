@@ -24,9 +24,16 @@ export class FriendshipService {
   ): Promise<FriendshipServiceResponse<DatabaseFriendship>> {
     try {
       // Validate RLS compliance for friendship creation
-      const rlsCheck = await permissionService.validateRLSCompliance('friendships', 'insert', { user_id: userId });
+      const rlsCheck = await permissionService.validateRLSCompliance(
+        'friendships',
+        'insert',
+        { user_id: userId }
+      );
       if (!rlsCheck.hasPermission) {
-        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+        return {
+          data: null,
+          error: new Error(rlsCheck.reason || 'RLS policy violation'),
+        };
       }
 
       // Check if friendship already exists

@@ -97,7 +97,9 @@ describe('Auth Store', () => {
     });
 
     expect(result.current.user?.name).toBe('Updated Name');
-    expect(result.current.user?.avatar_url).toBe('https://example.com/avatar.jpg');
+    expect(result.current.user?.avatar_url).toBe(
+      'https://example.com/avatar.jpg'
+    );
     expect(result.current.isAuthenticated).toBe(true);
   });
 

@@ -21,21 +21,27 @@ describe('Error Handling', () => {
       const error = { code: 'PGRST301', message: 'RLS violation' };
       const result = handleSupabaseError(error as any);
       expect(result).toBeInstanceOf(PermissionError);
-      expect(result.message).toBe('You do not have permission to access this resource');
+      expect(result.message).toBe(
+        'You do not have permission to access this resource'
+      );
     });
 
     it('should handle JWT errors', () => {
       const error = new Error('JWT expired');
       const result = handleSupabaseError(error);
       expect(result).toBeInstanceOf(AuthError);
-      expect(result.message).toBe('Authentication required. Please sign in again.');
+      expect(result.message).toBe(
+        'Authentication required. Please sign in again.'
+      );
     });
 
     it('should handle network errors', () => {
       const error = new Error('fetch failed');
       const result = handleSupabaseError(error);
       expect(result).toBeInstanceOf(NetworkError);
-      expect(result.message).toBe('Network connection failed. Please check your internet connection.');
+      expect(result.message).toBe(
+        'Network connection failed. Please check your internet connection.'
+      );
     });
 
     it('should handle unknown errors', () => {
@@ -50,7 +56,9 @@ describe('Error Handling', () => {
     it('should return appropriate message for network errors', () => {
       const error = new NetworkError('Network failed');
       const message = getErrorMessage(error);
-      expect(message).toBe('Connection problem. Please check your internet and try again.');
+      expect(message).toBe(
+        'Connection problem. Please check your internet and try again.'
+      );
     });
 
     it('should return appropriate message for auth errors', () => {
@@ -68,7 +76,7 @@ describe('Error Handling', () => {
     it('should return appropriate message for permission errors', () => {
       const error = new PermissionError('Permission denied');
       const message = getErrorMessage(error);
-      expect(message).toBe('You don\'t have permission to perform this action.');
+      expect(message).toBe("You don't have permission to perform this action.");
     });
   });
 

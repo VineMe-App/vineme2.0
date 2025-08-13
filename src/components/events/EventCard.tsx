@@ -117,8 +117,8 @@ export const EventCard: React.FC<EventCardProps> = ({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.content}>
         {event.image_url && (
-          <OptimizedImage 
-            source={{ uri: event.image_url }} 
+          <OptimizedImage
+            source={{ uri: event.image_url }}
             style={styles.image}
             quality="medium"
             lazy={true}

@@ -31,7 +31,10 @@ describe('Security Integration', () => {
     });
 
     it('should have required storage methods', () => {
-      const { secureStorage, SECURE_STORAGE_KEYS } = require('../../utils/secureStorage');
+      const {
+        secureStorage,
+        SECURE_STORAGE_KEYS,
+      } = require('../../utils/secureStorage');
       expect(secureStorage).toBeDefined();
       expect(SECURE_STORAGE_KEYS).toBeDefined();
       expect(typeof secureStorage.setItem).toBe('function');
@@ -109,7 +112,7 @@ describe('Security Integration', () => {
       // This test ensures the TypeScript compilation is working
       const permissionsModule = require('../permissions');
       const secureStorageModule = require('../../utils/secureStorage');
-      
+
       expect(permissionsModule).toBeDefined();
       expect(secureStorageModule).toBeDefined();
     });

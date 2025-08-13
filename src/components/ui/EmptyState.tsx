@@ -10,7 +10,13 @@ interface EmptyStateProps {
   testID?: string;
 }
 
-export function EmptyState({ title, message, icon, action, testID }: EmptyStateProps) {
+export function EmptyState({
+  title,
+  message,
+  icon,
+  action,
+  testID,
+}: EmptyStateProps) {
   return (
     <View style={styles.container} testID={testID}>
       {icon && <View style={styles.iconContainer}>{icon}</View>}

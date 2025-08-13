@@ -1,5 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import GroupsScreen from '@/app/(tabs)/groups';
 import * as groupsService from '@/services/groups';
@@ -65,9 +70,7 @@ const createTestQueryClient = () =>
 const renderWithProviders = (component: React.ReactElement) => {
   const queryClient = createTestQueryClient();
   return render(
-    <QueryClientProvider client={queryClient}>
-      {component}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
   );
 };
 
@@ -89,7 +92,9 @@ describe('Groups Flow Integration', () => {
       expect(screen.getByText('Prayer Group')).toBeTruthy();
     });
 
-    expect(mockGroupsService.getGroupsByChurch).toHaveBeenCalledWith('church-1');
+    expect(mockGroupsService.getGroupsByChurch).toHaveBeenCalledWith(
+      'church-1'
+    );
   });
 
   it('should handle groups loading error', async () => {
@@ -164,16 +169,25 @@ describe('Groups Flow Integration', () => {
 
     await waitFor(() => {
       expect(screen.getByText('No groups found')).toBeTruthy();
-      expect(screen.getByText('There are no groups available at this time.')).toBeTruthy();
+      expect(
+        screen.getByText('There are no groups available at this time.')
+      ).toBeTruthy();
     });
   });
 
   it('should show loading state while fetching groups', () => {
     mockGroupsService.getGroupsByChurch.mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve({
-        data: mockGroups,
-        error: null,
-      }), 100))
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                data: mockGroups,
+                error: null,
+              }),
+            100
+          )
+        )
     );
 
     renderWithProviders(<GroupsScreen />);
@@ -202,7 +216,10 @@ describe('Groups Flow Integration', () => {
     fireEvent.press(joinButton);
 
     await waitFor(() => {
-      expect(mockGroupsService.joinGroup).toHaveBeenCalledWith('group-1', 'user-1');
+      expect(mockGroupsService.joinGroup).toHaveBeenCalledWith(
+        'group-1',
+        'user-1'
+      );
     });
   });
 });

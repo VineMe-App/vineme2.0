@@ -149,12 +149,20 @@ export function useSendFriendRequest() {
       if (!user?.id) return;
 
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: friendshipKeys.sentRequests(user.id) });
-      await queryClient.cancelQueries({ queryKey: friendshipKeys.status(user.id, friendId) });
+      await queryClient.cancelQueries({
+        queryKey: friendshipKeys.sentRequests(user.id),
+      });
+      await queryClient.cancelQueries({
+        queryKey: friendshipKeys.status(user.id, friendId),
+      });
 
       // Snapshot previous values
-      const previousSentRequests = queryClient.getQueryData(friendshipKeys.sentRequests(user.id));
-      const previousStatus = queryClient.getQueryData(friendshipKeys.status(user.id, friendId));
+      const previousSentRequests = queryClient.getQueryData(
+        friendshipKeys.sentRequests(user.id)
+      );
+      const previousStatus = queryClient.getQueryData(
+        friendshipKeys.status(user.id, friendId)
+      );
 
       // Optimistically add to sent requests
       const optimisticRequest: FriendshipWithUser = {
@@ -173,10 +181,10 @@ export function useSendFriendRequest() {
       };
 
       if (previousSentRequests) {
-        queryClient.setQueryData(
-          friendshipKeys.sentRequests(user.id),
-          [...(previousSentRequests as FriendshipWithUser[]), optimisticRequest]
-        );
+        queryClient.setQueryData(friendshipKeys.sentRequests(user.id), [
+          ...(previousSentRequests as FriendshipWithUser[]),
+          optimisticRequest,
+        ]);
       }
 
       // Update status
@@ -201,10 +209,16 @@ export function useSendFriendRequest() {
 
       // Revert optimistic updates
       if (context?.previousSentRequests) {
-        queryClient.setQueryData(friendshipKeys.sentRequests(user.id), context.previousSentRequests);
+        queryClient.setQueryData(
+          friendshipKeys.sentRequests(user.id),
+          context.previousSentRequests
+        );
       }
       if (context?.previousStatus) {
-        queryClient.setQueryData(friendshipKeys.status(user.id, friendId), context.previousStatus);
+        queryClient.setQueryData(
+          friendshipKeys.status(user.id, friendId),
+          context.previousStatus
+        );
       }
     },
   });
@@ -232,29 +246,43 @@ export function useAcceptFriendRequest() {
       if (!user?.id) return;
 
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: friendshipKeys.friends(user.id) });
-      await queryClient.cancelQueries({ queryKey: friendshipKeys.receivedRequests(user.id) });
+      await queryClient.cancelQueries({
+        queryKey: friendshipKeys.friends(user.id),
+      });
+      await queryClient.cancelQueries({
+        queryKey: friendshipKeys.receivedRequests(user.id),
+      });
 
       // Snapshot previous values
-      const previousFriends = queryClient.getQueryData(friendshipKeys.friends(user.id));
-      const previousReceivedRequests = queryClient.getQueryData(friendshipKeys.receivedRequests(user.id));
+      const previousFriends = queryClient.getQueryData(
+        friendshipKeys.friends(user.id)
+      );
+      const previousReceivedRequests = queryClient.getQueryData(
+        friendshipKeys.receivedRequests(user.id)
+      );
 
       // Find the request being accepted
-      const receivedRequests = previousReceivedRequests as FriendshipWithUser[] || [];
-      const acceptedRequest = receivedRequests.find(req => req.id === friendshipId);
+      const receivedRequests =
+        (previousReceivedRequests as FriendshipWithUser[]) || [];
+      const acceptedRequest = receivedRequests.find(
+        (req) => req.id === friendshipId
+      );
 
       if (acceptedRequest) {
         // Move from received requests to friends
-        const updatedFriendship = { ...acceptedRequest, status: 'accepted' as const };
-        
-        queryClient.setQueryData(
-          friendshipKeys.friends(user.id),
-          [...(previousFriends as FriendshipWithUser[] || []), updatedFriendship]
-        );
+        const updatedFriendship = {
+          ...acceptedRequest,
+          status: 'accepted' as const,
+        };
+
+        queryClient.setQueryData(friendshipKeys.friends(user.id), [
+          ...((previousFriends as FriendshipWithUser[]) || []),
+          updatedFriendship,
+        ]);
 
         queryClient.setQueryData(
           friendshipKeys.receivedRequests(user.id),
-          receivedRequests.filter(req => req.id !== friendshipId)
+          receivedRequests.filter((req) => req.id !== friendshipId)
         );
       }
 
@@ -277,10 +305,16 @@ export function useAcceptFriendRequest() {
 
       // Revert optimistic updates
       if (context?.previousFriends) {
-        queryClient.setQueryData(friendshipKeys.friends(user.id), context.previousFriends);
+        queryClient.setQueryData(
+          friendshipKeys.friends(user.id),
+          context.previousFriends
+        );
       }
       if (context?.previousReceivedRequests) {
-        queryClient.setQueryData(friendshipKeys.receivedRequests(user.id), context.previousReceivedRequests);
+        queryClient.setQueryData(
+          friendshipKeys.receivedRequests(user.id),
+          context.previousReceivedRequests
+        );
       }
     },
   });

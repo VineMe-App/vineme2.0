@@ -5,33 +5,33 @@ export const Colors = {
   primary: '#007AFF',
   primaryLight: '#4DA3FF',
   primaryDark: '#0056CC',
-  
+
   // Secondary colors
   secondary: '#5856D6',
   secondaryLight: '#7B7AE8',
   secondaryDark: '#3F3EA3',
-  
+
   // Semantic colors
   success: '#34C759',
   successLight: '#5ED77A',
   successDark: '#248A3D',
-  
+
   warning: '#FF9500',
   warningLight: '#FFB340',
   warningDark: '#CC7700',
-  
+
   error: '#FF3B30',
   errorLight: '#FF6B62',
   errorDark: '#CC2E25',
-  
+
   info: '#5AC8FA',
   infoLight: '#7DD3FB',
   infoDark: '#48A0C8',
-  
+
   // Neutral colors
   white: '#FFFFFF',
   black: '#000000',
-  
+
   // Gray scale
   gray50: '#F9FAFB',
   gray100: '#F3F4F6',
@@ -43,27 +43,27 @@ export const Colors = {
   gray700: '#374151',
   gray800: '#1F2937',
   gray900: '#111827',
-  
+
   // Background colors
   background: '#FFFFFF',
   backgroundSecondary: '#F9FAFB',
   backgroundTertiary: '#F3F4F6',
-  
+
   // Surface colors
   surface: '#FFFFFF',
   surfaceSecondary: '#F9FAFB',
-  
+
   // Text colors
   textPrimary: '#111827',
   textSecondary: '#6B7280',
   textTertiary: '#9CA3AF',
   textInverse: '#FFFFFF',
-  
+
   // Border colors
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
   borderDark: '#D1D5DB',
-  
+
   // Overlay colors
   overlay: 'rgba(0, 0, 0, 0.5)',
   overlayLight: 'rgba(0, 0, 0, 0.3)',
@@ -78,7 +78,7 @@ export const Typography = {
     semiBold: 'System',
     bold: 'System',
   },
-  
+
   // Font sizes
   fontSize: {
     xs: 12,
@@ -91,7 +91,7 @@ export const Typography = {
     '4xl': 36,
     '5xl': 48,
   },
-  
+
   // Line heights
   lineHeight: {
     xs: 16,
@@ -104,7 +104,7 @@ export const Typography = {
     '4xl': 48,
     '5xl': 60,
   },
-  
+
   // Font weights
   fontWeight: {
     normal: '400',
@@ -194,7 +194,7 @@ export const Layout = {
     lg: 1024,
     xl: 1280,
   },
-  
+
   // Common dimensions
   touchTarget: 44,
   iconSize: {
@@ -205,7 +205,7 @@ export const Layout = {
     xl: 32,
     '2xl': 40,
   },
-  
+
   // Z-index values
   zIndex: {
     hide: -1,

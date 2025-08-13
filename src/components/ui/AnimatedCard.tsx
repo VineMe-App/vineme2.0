@@ -24,10 +24,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
 
   useEffect(() => {
     // Entrance animation
-    const animations = [
-      fadeIn(fadeAnim, 300),
-      scale(scaleAnim, 1, 300),
-    ];
+    const animations = [fadeIn(fadeAnim, 300), scale(scaleAnim, 1, 300)];
 
     Animated.parallel(animations).start();
   }, [fadeAnim, scaleAnim]);
@@ -46,13 +43,13 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
 
   const animatedStyle: ViewStyle = {
     opacity: fadeAnim,
-    transform: [
-      { scale: Animated.multiply(scaleAnim, pressScaleAnim) },
-    ],
+    transform: [{ scale: Animated.multiply(scaleAnim, pressScaleAnim) }],
   };
 
   const CardComponent = (
-    <Animated.View style={[animatedStyle, { marginBottom: animationDelay * 0.1 }]}>
+    <Animated.View
+      style={[animatedStyle, { marginBottom: animationDelay * 0.1 }]}
+    >
       <Card style={style} {...cardProps}>
         {children}
       </Card>

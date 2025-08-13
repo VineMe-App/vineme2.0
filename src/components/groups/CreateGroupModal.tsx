@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Modal, Form, FormField, Input, Select, Button } from '../ui';
 import { useFormContext } from '../ui/Form';
 import { groupCreationService } from '../../services/groupCreation';
@@ -88,8 +82,15 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   };
 
   const handleSubmit = async (values: GroupFormData) => {
-    if (!userProfile?.id || !userProfile?.church_id || !userProfile?.service_id) {
-      Alert.alert('Error', 'Please complete your profile before creating a group.');
+    if (
+      !userProfile?.id ||
+      !userProfile?.church_id ||
+      !userProfile?.service_id
+    ) {
+      Alert.alert(
+        'Error',
+        'Please complete your profile before creating a group.'
+      );
       return;
     }
 
@@ -160,7 +161,9 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       <Form config={formConfig} onSubmit={handleSubmit}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={styles.description}>
-            Create a new Bible study group for your church community. Your request will be reviewed by a church admin before the group becomes active.
+            Create a new Bible study group for your church community. Your
+            request will be reviewed by a church admin before the group becomes
+            active.
           </Text>
 
           <FormField name="title">
@@ -279,7 +282,9 @@ const styles = StyleSheet.create({
 });
 
 // Submit button component that uses form context
-const SubmitButton: React.FC<{ isSubmitting: boolean }> = ({ isSubmitting }) => {
+const SubmitButton: React.FC<{ isSubmitting: boolean }> = ({
+  isSubmitting,
+}) => {
   const { validateForm, values } = useFormContext();
 
   const handleSubmit = () => {

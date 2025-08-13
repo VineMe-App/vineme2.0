@@ -24,7 +24,7 @@ export const Divider: React.FC<DividerProps> = ({
   testID,
 }) => {
   const isHorizontal = orientation === 'horizontal';
-  
+
   const dividerStyle = [
     styles.divider,
     isHorizontal ? styles.horizontal : styles.vertical,
@@ -32,7 +32,8 @@ export const Divider: React.FC<DividerProps> = ({
       [isHorizontal ? 'height' : 'width']: thickness,
       backgroundColor: variant === 'solid' ? color : 'transparent',
       borderStyle: variant === 'dashed' ? 'dashed' : 'solid',
-      [isHorizontal ? 'borderTopWidth' : 'borderLeftWidth']: variant === 'dashed' ? thickness : 0,
+      [isHorizontal ? 'borderTopWidth' : 'borderLeftWidth']:
+        variant === 'dashed' ? thickness : 0,
       [isHorizontal ? 'borderTopColor' : 'borderLeftColor']: color,
     },
     style,

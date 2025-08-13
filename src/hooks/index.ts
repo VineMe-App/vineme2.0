@@ -53,4 +53,8 @@ export { useNetworkStatus } from './useNetworkStatus';
 export { useAsyncOperation } from './useAsyncOperation';
 export { useErrorHandler } from './useErrorHandler';
 export { useLoadingState } from './useLoadingState';
-export { usePermissions, useRoleCheck, usePermissionCheck } from './usePermissions';
+export {
+  usePermissions,
+  useRoleCheck,
+  usePermissionCheck,
+} from './usePermissions';

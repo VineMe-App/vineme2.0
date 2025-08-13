@@ -32,11 +32,11 @@ export class AuthService {
           email,
           password,
         });
-        
+
         if (result.error) {
           throw result.error;
         }
-        
+
         return result;
       });
 
@@ -71,11 +71,11 @@ export class AuthService {
             },
           },
         });
-        
+
         if (result.error) {
           throw result.error;
         }
-        
+
         return result;
       });
 
@@ -99,7 +99,7 @@ export class AuthService {
 
       // Clear secure storage on sign out
       await secureStorage.clearAuthSession();
-      
+
       // Clear permission cache
       permissionService.clearUserCache();
 
@@ -217,12 +217,10 @@ export class AuthService {
       if (userData.service_id) {
         payload.service_id = userData.service_id;
       }
-      const { error } = await supabase
-        .from('users')
-        .upsert(payload, {
-          onConflict: 'id',
-          ignoreDuplicates: false,
-        });
+      const { error } = await supabase.from('users').upsert(payload, {
+        onConflict: 'id',
+        ignoreDuplicates: false,
+      });
 
       if (error) {
         // Surface full error info in dev to diagnose 400s
@@ -245,10 +243,13 @@ export class AuthService {
   /**
    * Check if current session is valid and refresh if needed
    */
-  async validateAndRefreshSession(): Promise<{ user: User | null; error: Error | null }> {
+  async validateAndRefreshSession(): Promise<{
+    user: User | null;
+    error: Error | null;
+  }> {
     try {
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         return { user: null, error: new Error(error.message) };
       }
@@ -269,10 +270,11 @@ export class AuthService {
       const now = Math.floor(Date.now() / 1000);
       const fiveMinutes = 5 * 60;
 
-      if (expiresAt && (expiresAt - now) < fiveMinutes) {
+      if (expiresAt && expiresAt - now < fiveMinutes) {
         // Refresh the session
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        
+        const { data: refreshData, error: refreshError } =
+          await supabase.auth.refreshSession();
+
         if (refreshError) {
           await secureStorage.clearAuthSession();
           return { user: null, error: new Error('Session refresh failed') };
@@ -285,7 +287,7 @@ export class AuthService {
             refreshToken: refreshData.session.refresh_token,
             expiresAt: refreshData.session.expires_at,
           });
-          
+
           return { user: refreshData.session.user, error: null };
         }
       }
@@ -294,7 +296,10 @@ export class AuthService {
     } catch (error) {
       return {
         user: null,
-        error: error instanceof Error ? error : new Error('Session validation failed'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Session validation failed'),
       };
     }
   }
@@ -323,7 +328,7 @@ export class AuthService {
           expiresAt: session.expires_at,
         });
       }
-      
+
       callback(session?.user || null);
     });
   }

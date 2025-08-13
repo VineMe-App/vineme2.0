@@ -20,7 +20,8 @@ export const PERFORMANCE_CONFIG = {
     // Retry configuration
     retry: {
       count: 3,
-      delay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      delay: (attemptIndex: number) =>
+        Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     // Network mode
     networkMode: {

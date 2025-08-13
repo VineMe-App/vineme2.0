@@ -5,10 +5,14 @@ export * from './errorHandling';
 export * from './globalErrorHandler';
 export * from './theme';
 export { secureStorage, SECURE_STORAGE_KEYS } from './secureStorage';
-export { performanceMonitor, usePerformanceMonitor, withPerformanceMonitoring } from './performance';
-export { 
-  bundleOptimizer, 
-  CodeSplitting, 
-  MemoryOptimization, 
-  PerformanceHints 
+export {
+  performanceMonitor,
+  usePerformanceMonitor,
+  withPerformanceMonitoring,
+} from './performance';
+export {
+  bundleOptimizer,
+  CodeSplitting,
+  MemoryOptimization,
+  PerformanceHints,
 } from './bundleOptimization';

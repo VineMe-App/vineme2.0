@@ -1,5 +1,11 @@
 import React, { Component, ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { globalErrorHandler } from '../utils/globalErrorHandler';
 
 interface Props {
@@ -21,9 +27,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      retryCount: 0 
+    this.state = {
+      hasError: false,
+      retryCount: 0,
     };
   }
 
@@ -49,11 +55,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   handleRetry = () => {
     if (this.state.retryCount < this.maxRetries) {
-      this.setState({ 
-        hasError: false, 
-        error: undefined, 
+      this.setState({
+        hasError: false,
+        error: undefined,
         errorInfo: undefined,
-        retryCount: this.state.retryCount + 1 
+        retryCount: this.state.retryCount + 1,
       });
     }
   };
@@ -61,11 +67,11 @@ export class ErrorBoundary extends Component<Props, State> {
   handleReload = () => {
     // In a real app, you might want to reload the entire app
     // For now, we'll just reset the error boundary
-    this.setState({ 
-      hasError: false, 
-      error: undefined, 
+    this.setState({
+      hasError: false,
+      error: undefined,
       errorInfo: undefined,
-      retryCount: 0 
+      retryCount: 0,
     });
   };
 
@@ -83,11 +89,11 @@ export class ErrorBoundary extends Component<Props, State> {
           <View style={styles.iconContainer}>
             <Text style={styles.icon}>⚠️</Text>
           </View>
-          
+
           <Text style={styles.title}>Something went wrong</Text>
-          
+
           <Text style={styles.message}>
-            We're sorry, but something unexpected happened. 
+            We're sorry, but something unexpected happened.
             {canRetry ? ' Please try again.' : ' Please restart the app.'}
           </Text>
 
@@ -111,13 +117,19 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <View style={styles.buttonContainer}>
             {canRetry ? (
-              <TouchableOpacity style={styles.primaryButton} onPress={this.handleRetry}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={this.handleRetry}
+              >
                 <Text style={styles.primaryButtonText}>
                   Try Again ({this.maxRetries - this.state.retryCount} left)
                 </Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.primaryButton} onPress={this.handleReload}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={this.handleReload}
+              >
                 <Text style={styles.primaryButtonText}>Restart App</Text>
               </TouchableOpacity>
             )}

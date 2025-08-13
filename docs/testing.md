@@ -35,12 +35,14 @@ src/
 ## Running Tests
 
 ### All Tests
+
 ```bash
 npm test                      # Run all tests
 npm run test:watch           # Run tests in watch mode
 ```
 
 ### Specific Test Types
+
 ```bash
 npm run test:unit            # Unit tests only
 npm run test:integration     # Integration tests only
@@ -50,6 +52,7 @@ npm run test:ci             # CI-optimized test run
 ```
 
 ### Custom Test Runner
+
 ```bash
 node scripts/test-runner.js all        # Run all test suites
 node scripts/test-runner.js unit       # Run unit tests
@@ -63,24 +66,28 @@ node scripts/test-runner.js coverage   # Run with coverage
 Unit tests focus on testing individual components, functions, and services in isolation.
 
 **Services Tests** (`src/services/__tests__/`)
+
 - Test all CRUD operations
 - Mock Supabase client responses
 - Test error handling scenarios
 - Verify authentication requirements
 
 **Component Tests** (`src/components/**/__tests__/`)
+
 - Test component rendering
 - Test user interactions
 - Test prop handling
 - Test accessibility features
 
 **Hook Tests** (`src/hooks/__tests__/`)
+
 - Test custom hook behavior
 - Test state management
 - Test side effects
 - Mock external dependencies
 
 **Utility Tests** (`src/utils/__tests__/`)
+
 - Test helper functions
 - Test error handling utilities
 - Test data transformations
@@ -91,12 +98,14 @@ Unit tests focus on testing individual components, functions, and services in is
 Integration tests verify that different parts of the application work together correctly.
 
 **Authentication Flow** (`src/__tests__/integration/auth-flow.test.tsx`)
+
 - Complete sign-in/sign-up process
 - Form validation
 - Error handling
 - State management integration
 
 **Groups Flow** (`src/__tests__/integration/groups-flow.test.tsx`)
+
 - Group listing and filtering
 - Group joining/leaving
 - Search functionality
@@ -107,6 +116,7 @@ Integration tests verify that different parts of the application work together c
 E2E tests simulate complete user journeys through the application.
 
 **User Journey** (`src/__tests__/e2e/user-journey.test.tsx`)
+
 - Complete user workflow from sign-in to feature usage
 - Cross-screen navigation
 - Data persistence
@@ -133,6 +143,7 @@ open coverage/lcov-report/index.html  # View HTML report
 ### 1. Test Structure
 
 Follow the AAA pattern:
+
 - **Arrange**: Set up test data and mocks
 - **Act**: Execute the code being tested
 - **Assert**: Verify the expected outcomes
@@ -142,10 +153,10 @@ it('should create a user profile', async () => {
   // Arrange
   const userData = { name: 'John Doe', email: 'john@example.com' };
   mockSupabase.from.mockReturnValue(mockQuery);
-  
+
   // Act
   const result = await userService.createProfile(userData);
-  
+
   // Assert
   expect(result.error).toBeNull();
   expect(result.data).toEqual(expect.objectContaining(userData));
@@ -173,7 +184,7 @@ beforeEach(() => {
 ```typescript
 it('should be accessible', () => {
   render(<Button onPress={mockPress}>Click me</Button>);
-  
+
   const button = screen.getByRole('button');
   expect(button).toHaveAccessibilityLabel('Click me');
 });
@@ -188,9 +199,9 @@ it('should be accessible', () => {
 ```typescript
 it('should handle loading state', async () => {
   render(<AsyncComponent />);
-  
+
   expect(screen.getByText('Loading...')).toBeTruthy();
-  
+
   await waitFor(() => {
     expect(screen.getByText('Data loaded')).toBeTruthy();
   });
@@ -274,7 +285,7 @@ describe('ComponentName', () => {
   it('should handle user interactions', () => {
     const mockHandler = jest.fn();
     render(<ComponentName {...defaultProps} onAction={mockHandler} />);
-    
+
     fireEvent.press(screen.getByText('Action'));
     expect(mockHandler).toHaveBeenCalled();
   });

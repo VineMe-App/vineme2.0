@@ -13,7 +13,12 @@ Notifications.setNotificationHandler({
 });
 
 export interface NotificationData {
-  type: 'friend_request' | 'event_reminder' | 'group_update' | 'group_request' | 'join_request';
+  type:
+    | 'friend_request'
+    | 'event_reminder'
+    | 'group_update'
+    | 'group_request'
+    | 'join_request';
   id: string;
   title: string;
   body: string;
@@ -78,22 +83,25 @@ export const getPushToken = async (): Promise<string | null> => {
 /**
  * Register device for push notifications
  */
-export const registerForPushNotifications = async (userId: string): Promise<void> => {
+export const registerForPushNotifications = async (
+  userId: string
+): Promise<void> => {
   try {
     const token = await getPushToken();
     if (!token) return;
 
     // Store the token in the database
-    const { error } = await supabase
-      .from('user_push_tokens')
-      .upsert({
+    const { error } = await supabase.from('user_push_tokens').upsert(
+      {
         user_id: userId,
         push_token: token,
         platform: Platform.OS,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,platform'
-      });
+      },
+      {
+        onConflict: 'user_id,platform',
+      }
+    );
 
     if (error) {
       console.error('Error storing push token:', error);
@@ -106,7 +114,9 @@ export const registerForPushNotifications = async (userId: string): Promise<void
 /**
  * Unregister device from push notifications
  */
-export const unregisterFromPushNotifications = async (userId: string): Promise<void> => {
+export const unregisterFromPushNotifications = async (
+  userId: string
+): Promise<void> => {
   try {
     const { error } = await supabase
       .from('user_push_tokens')
@@ -148,7 +158,9 @@ export const scheduleLocalNotification = async (
 /**
  * Cancel a scheduled notification
  */
-export const cancelNotification = async (notificationId: string): Promise<void> => {
+export const cancelNotification = async (
+  notificationId: string
+): Promise<void> => {
   await Notifications.cancelScheduledNotificationAsync(notificationId);
 };
 
@@ -226,7 +238,9 @@ export const sendEventReminderNotification = async (
 ): Promise<string | null> => {
   try {
     const eventDateTime = new Date(eventDate);
-    const reminderTime = new Date(eventDateTime.getTime() - reminderMinutes * 60 * 1000);
+    const reminderTime = new Date(
+      eventDateTime.getTime() - reminderMinutes * 60 * 1000
+    );
 
     // Don't schedule if the reminder time is in the past
     if (reminderTime <= new Date()) {
@@ -265,16 +279,19 @@ export const getNotificationSettings = async (userId: string) => {
       .eq('user_id', userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // Not found error
+    if (error && error.code !== 'PGRST116') {
+      // Not found error
       console.error('Error fetching notification settings:', error);
       return null;
     }
 
-    return data || {
-      friend_requests: true,
-      event_reminders: true,
-      group_updates: true,
-    };
+    return (
+      data || {
+        friend_requests: true,
+        event_reminders: true,
+        group_updates: true,
+      }
+    );
   } catch (error) {
     console.error('Error getting notification settings:', error);
     return null;
@@ -293,15 +310,16 @@ export const updateNotificationSettings = async (
   }
 ) => {
   try {
-    const { error } = await supabase
-      .from('user_notification_settings')
-      .upsert({
+    const { error } = await supabase.from('user_notification_settings').upsert(
+      {
         user_id: userId,
         ...settings,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id'
-      });
+      },
+      {
+        onConflict: 'user_id',
+      }
+    );
 
     if (error) {
       console.error('Error updating notification settings:', error);
@@ -352,7 +370,7 @@ export const sendGroupRequestNotification = async (
 
     // For now, we'll just log this. In a real app, you'd send push notifications
     console.log('Group request notification:', notification);
-    
+
     // TODO: Implement actual push notification sending to admins
     // This would typically be handled by your backend service
   } catch (error) {
@@ -372,10 +390,12 @@ export const sendJoinRequestNotification = async (
     // Get all group leaders
     const { data: leaders, error } = await supabase
       .from('group_memberships')
-      .select(`
+      .select(
+        `
         user_id,
         user:users(id, name)
-      `)
+      `
+      )
       .eq('group_id', groupId)
       .eq('role', 'leader')
       .eq('status', 'active');
@@ -401,7 +421,7 @@ export const sendJoinRequestNotification = async (
 
     // For now, we'll just log this. In a real app, you'd send push notifications
     console.log('Join request notification:', notification);
-    
+
     // TODO: Implement actual push notification sending to leaders
     // This would typically be handled by your backend service
   } catch (error) {

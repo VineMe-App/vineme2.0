@@ -20,47 +20,50 @@ export function useAsyncOperation<T = any>(
 ) {
   const { onSuccess, onError, logErrors = true } = options;
   const { user } = useAuthStore();
-  
+
   const [state, setState] = useState<AsyncOperationState<T>>({
     data: null,
     loading: false,
     error: null,
   });
 
-  const execute = useCallback(async (
-    operation: () => Promise<T>,
-    context?: Record<string, any>
-  ): Promise<T | null> => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
+  const execute = useCallback(
+    async (
+      operation: () => Promise<T>,
+      context?: Record<string, any>
+    ): Promise<T | null> => {
+      setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    try {
-      const result = await operation();
-      
-      setState({
-        data: result,
-        loading: false,
-        error: null,
-      });
+      try {
+        const result = await operation();
 
-      onSuccess?.(result);
-      return result;
-    } catch (error) {
-      const appError = handleSupabaseError(error as Error);
-      
-      setState({
-        data: null,
-        loading: false,
-        error: appError,
-      });
+        setState({
+          data: result,
+          loading: false,
+          error: null,
+        });
 
-      if (logErrors) {
-        globalErrorHandler.logError(appError, context, user?.id);
+        onSuccess?.(result);
+        return result;
+      } catch (error) {
+        const appError = handleSupabaseError(error as Error);
+
+        setState({
+          data: null,
+          loading: false,
+          error: appError,
+        });
+
+        if (logErrors) {
+          globalErrorHandler.logError(appError, context, user?.id);
+        }
+
+        onError?.(appError);
+        return null;
       }
-
-      onError?.(appError);
-      return null;
-    }
-  }, [onSuccess, onError, logErrors, user?.id]);
+    },
+    [onSuccess, onError, logErrors, user?.id]
+  );
 
   const reset = useCallback(() => {
     setState({
@@ -70,12 +73,12 @@ export function useAsyncOperation<T = any>(
     });
   }, []);
 
-  const retry = useCallback(async (
-    operation: () => Promise<T>,
-    context?: Record<string, any>
-  ) => {
-    return execute(operation, context);
-  }, [execute]);
+  const retry = useCallback(
+    async (operation: () => Promise<T>, context?: Record<string, any>) => {
+      return execute(operation, context);
+    },
+    [execute]
+  );
 
   return {
     ...state,

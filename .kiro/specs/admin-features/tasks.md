@@ -15,7 +15,7 @@
   - Write tests for group creation and approval workflow
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 3. Build church admin group management interface
+- [x] 3. Build church admin group management interface
   - Create ManageGroupsScreen with group list and status indicators
   - Implement GroupManagementCard component for individual group actions
   - Add approve/decline/close group action handlers
@@ -23,7 +23,7 @@
   - Wire up manage groups button in profile to navigate to admin screen
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 8.1, 8.2_
 
-- [ ] 4. Build church admin user management interface
+- [x] 4. Build church admin user management interface
   - Create ManageUsersScreen with user list and group participation status
   - Implement UserManagementCard component showing user details and group memberships
   - Add filtering for connected vs unconnected users

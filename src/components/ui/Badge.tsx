@@ -4,7 +4,13 @@ import { Theme } from '../../utils/theme';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error';
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'warning'
+    | 'error';
   size?: 'small' | 'medium' | 'large';
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -21,12 +27,7 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   return (
     <View
-      style={[
-        styles.badge,
-        styles[variant],
-        styles[size],
-        style,
-      ]}
+      style={[styles.badge, styles[variant], styles[size], style]}
       testID={testID}
     >
       <Text

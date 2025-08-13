@@ -53,7 +53,9 @@ jest.mock('expo-secure-store', () => ({
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted' })
+  ),
   getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ data: 'test-token' })),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
   cancelScheduledNotificationAsync: jest.fn(),
@@ -89,8 +91,12 @@ const mockSupabaseClient = {
     signInWithPassword: jest.fn(),
     signUp: jest.fn(),
     signOut: jest.fn(),
-    getUser: jest.fn(() => Promise.resolve({ data: { user: null }, error: null })),
-    onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+    getUser: jest.fn(() =>
+      Promise.resolve({ data: { user: null }, error: null })
+    ),
+    onAuthStateChange: jest.fn(() => ({
+      data: { subscription: { unsubscribe: jest.fn() } },
+    })),
   },
   from: jest.fn(() => ({
     select: jest.fn().mockReturnThis(),

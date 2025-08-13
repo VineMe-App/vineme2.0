@@ -5,6 +5,7 @@ This document outlines the performance optimizations implemented in the VineMe m
 ## Overview
 
 The performance optimizations focus on five key areas:
+
 1. React Query caching configuration
 2. Image lazy loading and optimization
 3. Bundle size optimization with code splitting
@@ -14,16 +15,19 @@ The performance optimizations focus on five key areas:
 ## 1. React Query Caching Configuration
 
 ### Enhanced Caching Strategy
+
 - **Stale Time**: 5 minutes for medium-lived data, configurable per query type
 - **Garbage Collection Time**: 30 minutes for long-term caching
 - **Network Mode**: `offlineFirst` for queries, `online` for mutations
 - **Retry Logic**: Smart retry with exponential backoff, avoiding retries for auth/validation errors
 
 ### Configuration Location
+
 - `src/providers/QueryProvider.tsx` - Main configuration
 - `src/config/performance.ts` - Performance presets and settings
 
 ### Key Features
+
 - Automatic network status detection
 - Platform-specific optimizations
 - Error-aware retry logic
@@ -32,9 +36,11 @@ The performance optimizations focus on five key areas:
 ## 2. Image Lazy Loading and Optimization
 
 ### OptimizedImage Component
+
 Location: `src/components/ui/OptimizedImage.tsx`
 
 #### Features
+
 - **Lazy Loading**: Images load only when needed
 - **Quality Control**: Low/medium/high quality settings
 - **Size Optimization**: Automatic resizing based on container dimensions
@@ -44,9 +50,10 @@ Location: `src/components/ui/OptimizedImage.tsx`
 - **Performance Tracking**: Load time and error metrics
 
 #### Usage Example
+
 ```tsx
-<OptimizedImage 
-  source={{ uri: imageUrl }} 
+<OptimizedImage
+  source={{ uri: imageUrl }}
   style={styles.image}
   quality="medium"
   lazy={true}
@@ -57,15 +64,18 @@ Location: `src/components/ui/OptimizedImage.tsx`
 ```
 
 #### Integration
+
 - Updated `EventCard` and `GroupCard` components
 - Available through `src/components/ui/index.ts`
 
 ## 3. Bundle Size Optimization
 
 ### Code Splitting Utilities
+
 Location: `src/utils/bundleOptimization.ts`
 
 #### Features
+
 - **Lazy Loading HOC**: `withLazyLoading` for component-level code splitting
 - **Screen Splitting**: `CodeSplitting.lazyScreen` for route-based splitting
 - **Component Splitting**: `CodeSplitting.lazyComponent` for feature-based splitting
@@ -73,6 +83,7 @@ Location: `src/utils/bundleOptimization.ts`
 - **Bundle Tracking**: Monitor bundle sizes and load times
 
 #### Usage Examples
+
 ```tsx
 // Lazy load a screen
 const LazyScreen = CodeSplitting.lazyScreen(
@@ -88,6 +99,7 @@ const LazyComponent = CodeSplitting.lazyComponent(
 ```
 
 ### Memory Optimization
+
 - Component cleanup utilities
 - Memory usage monitoring
 - Image memory optimization
@@ -96,9 +108,11 @@ const LazyComponent = CodeSplitting.lazyComponent(
 ## 4. Performance Monitoring and Metrics
 
 ### Performance Monitor
+
 Location: `src/utils/performance.ts`
 
 #### Capabilities
+
 - **Timer Management**: Start/stop timers for measuring operations
 - **Metric Recording**: Record custom performance metrics
 - **Automatic Tracking**: Component renders, network requests, queries
@@ -106,6 +120,7 @@ Location: `src/utils/performance.ts`
 - **Export**: JSON export for analytics integration
 
 #### Key Metrics Tracked
+
 - Component render times
 - Network request durations
 - Query performance (cache hits/misses)
@@ -114,6 +129,7 @@ Location: `src/utils/performance.ts`
 - Memory usage patterns
 
 #### Usage Examples
+
 ```tsx
 // Manual timing
 performanceMonitor.startTimer('operation');
@@ -128,14 +144,17 @@ const MonitoredComponent = withPerformanceMonitoring(MyComponent);
 ```
 
 ### Configuration
+
 Location: `src/config/performance.ts`
 
 #### Performance Presets
+
 - **High Performance**: Good network, powerful device
 - **Balanced**: Default configuration
 - **Low Performance**: Slow network, older device
 
 #### Monitoring Thresholds
+
 - Render time: 16ms (60fps target)
 - Query time: 1000ms
 - Image load time: 3000ms
@@ -144,19 +163,23 @@ Location: `src/config/performance.ts`
 ## 5. Optimistic Updates
 
 ### Implementation
+
 Enhanced mutation hooks with optimistic updates for better perceived performance:
 
 #### Groups
+
 - **Join Group**: Immediately shows membership status
 - **Leave Group**: Instantly removes from user's groups
 - **Rollback**: Automatic reversion on failure
 
 #### Friendships
+
 - **Send Request**: Shows pending status immediately
 - **Accept Request**: Moves to friends list instantly
 - **Error Handling**: Reverts optimistic changes on failure
 
 ### Benefits
+
 - Immediate UI feedback
 - Better perceived performance
 - Reduced loading states
@@ -165,10 +188,14 @@ Enhanced mutation hooks with optimistic updates for better perceived performance
 ## Configuration and Customization
 
 ### Performance Config
+
 The performance configuration can be customized based on device capabilities:
 
 ```typescript
-import { getPerformanceConfig, PERFORMANCE_PRESETS } from '../config/performance';
+import {
+  getPerformanceConfig,
+  PERFORMANCE_PRESETS,
+} from '../config/performance';
 
 // Get adaptive configuration
 const config = getPerformanceConfig();
@@ -178,6 +205,7 @@ const lowPerfConfig = PERFORMANCE_PRESETS.low;
 ```
 
 ### Monitoring Configuration
+
 ```typescript
 performanceMonitor.configure({
   enableLogging: __DEV__,
@@ -189,9 +217,11 @@ performanceMonitor.configure({
 ## Testing
 
 ### Performance Tests
+
 Location: `src/utils/__tests__/performance.test.ts`
 
 Tests cover:
+
 - Timer functionality
 - Metric recording
 - Memory management
@@ -200,6 +230,7 @@ Tests cover:
 - Specialized metrics
 
 ### Running Tests
+
 ```bash
 npm test -- --testPathPatterns=performance.test.ts
 ```
@@ -207,6 +238,7 @@ npm test -- --testPathPatterns=performance.test.ts
 ## Best Practices
 
 ### Component Optimization
+
 1. Use `React.memo` for stable props
 2. Use `useMemo` for expensive calculations
 3. Use `useCallback` for stable function references
@@ -214,6 +246,7 @@ npm test -- --testPathPatterns=performance.test.ts
 5. Use proper keys in lists
 
 ### Image Optimization
+
 1. Use WebP format when supported
 2. Implement lazy loading for below-the-fold images
 3. Use appropriate sizes for screen densities
@@ -221,6 +254,7 @@ npm test -- --testPathPatterns=performance.test.ts
 5. Use placeholder images while loading
 
 ### List Optimization
+
 1. Use `FlatList` or `VirtualizedList` for long lists
 2. Implement `getItemLayout` when possible
 3. Use `keyExtractor` for better performance
@@ -228,6 +262,7 @@ npm test -- --testPathPatterns=performance.test.ts
 5. Use `removeClippedSubviews` for very long lists
 
 ### Network Optimization
+
 1. Implement request deduplication
 2. Use appropriate cache strategies
 3. Implement optimistic updates
@@ -237,12 +272,14 @@ npm test -- --testPathPatterns=performance.test.ts
 ## Monitoring and Analytics
 
 ### Production Monitoring
+
 - Performance metrics are sampled at 10% in production
 - Metrics can be exported for analytics platforms
 - Error tracking includes performance context
 - Bundle size tracking for optimization insights
 
 ### Development Tools
+
 - React Query DevTools integration
 - Performance logging in development
 - Bundle analysis utilities
@@ -251,6 +288,7 @@ npm test -- --testPathPatterns=performance.test.ts
 ## Future Enhancements
 
 ### Planned Improvements
+
 1. Native module integration for memory monitoring
 2. Advanced image caching with native modules
 3. Automatic performance regression detection
@@ -258,6 +296,7 @@ npm test -- --testPathPatterns=performance.test.ts
 5. Real-time performance dashboards
 
 ### Metrics to Add
+
 1. Time to Interactive (TTI)
 2. First Contentful Paint (FCP)
 3. Largest Contentful Paint (LCP)
@@ -269,6 +308,7 @@ npm test -- --testPathPatterns=performance.test.ts
 These performance optimizations provide a solid foundation for a fast, responsive mobile application. The modular approach allows for easy customization and extension based on specific needs and device capabilities.
 
 Key benefits achieved:
+
 - ✅ Improved caching strategies
 - ✅ Optimized image loading
 - ✅ Bundle size optimization

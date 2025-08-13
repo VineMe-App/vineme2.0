@@ -1,8 +1,15 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
-import { sendGroupRequestNotification, sendJoinRequestNotification } from './notifications';
+import {
+  sendGroupRequestNotification,
+  sendJoinRequestNotification,
+} from './notifications';
 import type { Group, GroupMembership } from '../types/database';
-import type { CreateGroupData, UpdateGroupData, AdminServiceResponse } from './admin';
+import type {
+  CreateGroupData,
+  UpdateGroupData,
+  AdminServiceResponse,
+} from './admin';
 
 /**
  * Service for group creation and leader management
@@ -17,22 +24,31 @@ export class GroupCreationService {
   ): Promise<AdminServiceResponse<Group>> {
     try {
       // Check permission to create groups (basic user permission)
-      const permissionCheck = await permissionService.canAccessChurchData(groupData.church_id);
+      const permissionCheck = await permissionService.canAccessChurchData(
+        groupData.church_id
+      );
       if (!permissionCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(permissionCheck.reason || 'Access denied to create group in this church') 
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason ||
+              'Access denied to create group in this church'
+          ),
         };
       }
 
       // Validate RLS compliance
-      const rlsCheck = await permissionService.validateRLSCompliance('groups', 'insert', {
-        church_id: groupData.church_id
-      });
+      const rlsCheck = await permissionService.validateRLSCompliance(
+        'groups',
+        'insert',
+        {
+          church_id: groupData.church_id,
+        }
+      );
       if (!rlsCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(rlsCheck.reason || 'RLS policy violation') 
+        return {
+          data: null,
+          error: new Error(rlsCheck.reason || 'RLS policy violation'),
         };
       }
 
@@ -66,7 +82,10 @@ export class GroupCreationService {
       if (membershipError) {
         // If membership creation fails, we should clean up the group
         await supabase.from('groups').delete().eq('id', group.id);
-        return { data: null, error: new Error('Failed to create group leadership') };
+        return {
+          data: null,
+          error: new Error('Failed to create group leadership'),
+        };
       }
 
       // Get creator name for notification
@@ -89,7 +108,10 @@ export class GroupCreationService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to create group request'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to create group request'),
       };
     }
   }
@@ -104,11 +126,16 @@ export class GroupCreationService {
   ): Promise<AdminServiceResponse<Group>> {
     try {
       // Check if user can manage this group
-      const membershipCheck = await permissionService.canManageGroupMembership(groupId, userId);
+      const membershipCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        userId
+      );
       if (!membershipCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(membershipCheck.reason || 'Access denied to manage group') 
+        return {
+          data: null,
+          error: new Error(
+            membershipCheck.reason || 'Access denied to manage group'
+          ),
         };
       }
 
@@ -122,9 +149,9 @@ export class GroupCreationService {
         .single();
 
       if (membershipError || !membership || membership.role !== 'leader') {
-        return { 
-          data: null, 
-          error: new Error('Only group leaders can update group details') 
+        return {
+          data: null,
+          error: new Error('Only group leaders can update group details'),
         };
       }
 
@@ -147,7 +174,10 @@ export class GroupCreationService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to update group details'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to update group details'),
       };
     }
   }
@@ -162,11 +192,16 @@ export class GroupCreationService {
   ): Promise<AdminServiceResponse<GroupMembership>> {
     try {
       // Check if promoter can manage this group
-      const membershipCheck = await permissionService.canManageGroupMembership(groupId, promoterId);
+      const membershipCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        promoterId
+      );
       if (!membershipCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        return {
+          data: null,
+          error: new Error(
+            membershipCheck.reason || 'Access denied to manage group membership'
+          ),
         };
       }
 
@@ -179,10 +214,14 @@ export class GroupCreationService {
         .eq('status', 'active')
         .single();
 
-      if (promoterError || !promoterMembership || promoterMembership.role !== 'leader') {
-        return { 
-          data: null, 
-          error: new Error('Only group leaders can promote members') 
+      if (
+        promoterError ||
+        !promoterMembership ||
+        promoterMembership.role !== 'leader'
+      ) {
+        return {
+          data: null,
+          error: new Error('Only group leaders can promote members'),
         };
       }
 
@@ -196,16 +235,16 @@ export class GroupCreationService {
         .single();
 
       if (targetError || !targetMembership) {
-        return { 
-          data: null, 
-          error: new Error('User is not a member of this group') 
+        return {
+          data: null,
+          error: new Error('User is not a member of this group'),
         };
       }
 
       if (targetMembership.role === 'leader') {
-        return { 
-          data: null, 
-          error: new Error('User is already a leader') 
+        return {
+          data: null,
+          error: new Error('User is already a leader'),
         };
       }
 
@@ -227,7 +266,10 @@ export class GroupCreationService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to promote to leader'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to promote to leader'),
       };
     }
   }
@@ -242,11 +284,16 @@ export class GroupCreationService {
   ): Promise<AdminServiceResponse<GroupMembership>> {
     try {
       // Check if demoter can manage this group
-      const membershipCheck = await permissionService.canManageGroupMembership(groupId, demoterId);
+      const membershipCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        demoterId
+      );
       if (!membershipCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        return {
+          data: null,
+          error: new Error(
+            membershipCheck.reason || 'Access denied to manage group membership'
+          ),
         };
       }
 
@@ -259,10 +306,14 @@ export class GroupCreationService {
         .eq('status', 'active')
         .single();
 
-      if (demoterError || !demoterMembership || demoterMembership.role !== 'leader') {
-        return { 
-          data: null, 
-          error: new Error('Only group leaders can demote members') 
+      if (
+        demoterError ||
+        !demoterMembership ||
+        demoterMembership.role !== 'leader'
+      ) {
+        return {
+          data: null,
+          error: new Error('Only group leaders can demote members'),
         };
       }
 
@@ -275,14 +326,21 @@ export class GroupCreationService {
         .eq('status', 'active');
 
       if (leadersError) {
-        return { data: null, error: new Error('Failed to check group leadership') };
+        return {
+          data: null,
+          error: new Error('Failed to check group leadership'),
+        };
       }
 
       // Prevent demoting the last leader
-      if (allLeaders && allLeaders.length === 1 && allLeaders[0].user_id === userId) {
-        return { 
-          data: null, 
-          error: new Error('Cannot demote the last leader of the group') 
+      if (
+        allLeaders &&
+        allLeaders.length === 1 &&
+        allLeaders[0].user_id === userId
+      ) {
+        return {
+          data: null,
+          error: new Error('Cannot demote the last leader of the group'),
         };
       }
 
@@ -296,16 +354,16 @@ export class GroupCreationService {
         .single();
 
       if (targetError || !targetMembership) {
-        return { 
-          data: null, 
-          error: new Error('User is not a member of this group') 
+        return {
+          data: null,
+          error: new Error('User is not a member of this group'),
         };
       }
 
       if (targetMembership.role !== 'leader') {
-        return { 
-          data: null, 
-          error: new Error('User is not a leader') 
+        return {
+          data: null,
+          error: new Error('User is not a leader'),
         };
       }
 
@@ -327,7 +385,10 @@ export class GroupCreationService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to demote from leader'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to demote from leader'),
       };
     }
   }
@@ -342,11 +403,16 @@ export class GroupCreationService {
   ): Promise<AdminServiceResponse<boolean>> {
     try {
       // Check if remover can manage this group
-      const membershipCheck = await permissionService.canManageGroupMembership(groupId, removerId);
+      const membershipCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        removerId
+      );
       if (!membershipCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        return {
+          data: null,
+          error: new Error(
+            membershipCheck.reason || 'Access denied to manage group membership'
+          ),
         };
       }
 
@@ -359,10 +425,14 @@ export class GroupCreationService {
         .eq('status', 'active')
         .single();
 
-      if (removerError || !removerMembership || removerMembership.role !== 'leader') {
-        return { 
-          data: null, 
-          error: new Error('Only group leaders can remove members') 
+      if (
+        removerError ||
+        !removerMembership ||
+        removerMembership.role !== 'leader'
+      ) {
+        return {
+          data: null,
+          error: new Error('Only group leaders can remove members'),
         };
       }
 
@@ -376,9 +446,9 @@ export class GroupCreationService {
         .single();
 
       if (targetError || !targetMembership) {
-        return { 
-          data: null, 
-          error: new Error('User is not a member of this group') 
+        return {
+          data: null,
+          error: new Error('User is not a member of this group'),
         };
       }
 
@@ -392,13 +462,16 @@ export class GroupCreationService {
           .eq('status', 'active');
 
         if (leadersError) {
-          return { data: null, error: new Error('Failed to check group leadership') };
+          return {
+            data: null,
+            error: new Error('Failed to check group leadership'),
+          };
         }
 
         if (allLeaders && allLeaders.length === 1) {
-          return { 
-            data: null, 
-            error: new Error('Cannot remove the last leader of the group') 
+          return {
+            data: null,
+            error: new Error('Cannot remove the last leader of the group'),
           };
         }
       }
@@ -418,7 +491,8 @@ export class GroupCreationService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to remove member'),
+        error:
+          error instanceof Error ? error : new Error('Failed to remove member'),
       };
     }
   }
@@ -445,14 +519,21 @@ export class GroupCreationService {
       }
 
       if (group.status !== 'approved') {
-        return { data: null, error: new Error('Group is not accepting new members') };
+        return {
+          data: null,
+          error: new Error('Group is not accepting new members'),
+        };
       }
 
-      const churchAccessCheck = await permissionService.canAccessChurchData(group.church_id);
+      const churchAccessCheck = await permissionService.canAccessChurchData(
+        group.church_id
+      );
       if (!churchAccessCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(churchAccessCheck.reason || 'Access denied to join this group') 
+        return {
+          data: null,
+          error: new Error(
+            churchAccessCheck.reason || 'Access denied to join this group'
+          ),
         };
       }
 
@@ -466,10 +547,18 @@ export class GroupCreationService {
 
       if (existingMembership) {
         if (existingMembership.status === 'active') {
-          return { data: null, error: new Error('User is already a member of this group') };
+          return {
+            data: null,
+            error: new Error('User is already a member of this group'),
+          };
         }
         if (existingMembership.status === 'pending') {
-          return { data: null, error: new Error('User already has a pending request for this group') };
+          return {
+            data: null,
+            error: new Error(
+              'User already has a pending request for this group'
+            ),
+          };
         }
       }
 
@@ -517,7 +606,10 @@ export class GroupCreationService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to create join request'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to create join request'),
       };
     }
   }

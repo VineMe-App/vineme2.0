@@ -37,9 +37,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [name, setName] = useState(user.name || '');
   const [nameError, setNameError] = useState('');
   const [availableServices, setAvailableServices] = useState<Service[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(
-    (user as any)?.service?.id || (user as any)?.service_id
-  );
+  const [selectedServiceId, setSelectedServiceId] = useState<
+    string | undefined
+  >((user as any)?.service?.id || (user as any)?.service_id);
   const [canChangeService, setCanChangeService] = useState<boolean>(false);
   const [servicePickerOpen, setServicePickerOpen] = useState<boolean>(false);
 
@@ -68,7 +68,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         } else {
           setAvailableServices([]);
         }
-        setSelectedServiceId((user as any)?.service?.id || (user as any)?.service_id);
+        setSelectedServiceId(
+          (user as any)?.service?.id || (user as any)?.service_id
+        );
       })();
     }
   }, [visible, user.name]);
@@ -305,7 +307,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               {canChangeService && availableServices.length > 0 && (
                 <View style={{ marginTop: 12 }}>
                   {!servicePickerOpen ? (
-                    <Button title="Change Service" onPress={() => setServicePickerOpen(true)} />
+                    <Button
+                      title="Change Service"
+                      onPress={() => setServicePickerOpen(true)}
+                    />
                   ) : (
                     <View style={styles.servicePicker}>
                       {availableServices.map((svc) => (
@@ -313,7 +318,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                           key={svc.id}
                           style={[
                             styles.serviceItem,
-                            selectedServiceId === svc.id && styles.serviceItemSelected,
+                            selectedServiceId === svc.id &&
+                              styles.serviceItemSelected,
                           ]}
                           onPress={() => setSelectedServiceId(svc.id)}
                           disabled={updateProfileMutation.isPending}
@@ -321,21 +327,25 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                           <Text
                             style={[
                               styles.serviceName,
-                              selectedServiceId === svc.id && styles.serviceNameSelected,
+                              selectedServiceId === svc.id &&
+                                styles.serviceNameSelected,
                             ]}
                           >
                             {svc.name}
                           </Text>
                         </TouchableOpacity>
                       ))}
-                      <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                      <View
+                        style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}
+                      >
                         <Button
                           title="Save Service"
                           onPress={handleConfirmServiceChange}
                         />
                         <Button
                           title="Cancel"
-                          variant="secondary" as={undefined as any}
+                          variant="secondary"
+                          as={undefined as any}
                           onPress={() => setServicePickerOpen(false)}
                         />
                       </View>

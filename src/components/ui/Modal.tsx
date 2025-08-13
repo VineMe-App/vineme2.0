@@ -62,9 +62,7 @@ export const Modal: React.FC<ModalProps> = ({
             )}
           </View>
         )}
-        <View style={styles.body}>
-          {children}
-        </View>
+        <View style={styles.body}>{children}</View>
       </View>
     );
 

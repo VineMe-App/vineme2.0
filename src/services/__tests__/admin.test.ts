@@ -1,15 +1,17 @@
 // Mock the supabase module before importing anything else
+import { groupAdminService, userAdminService } from '../admin';
+import { permissionService } from '../permissions';
+
 jest.mock('../supabase', () => ({
-  supabase: global.mockSupabaseClient
+  supabase: global.mockSupabaseClient,
 }));
 
 jest.mock('../permissions');
 
-import { groupAdminService, userAdminService } from '../admin';
-import { permissionService } from '../permissions';
-
 const mockSupabase = global.mockSupabaseClient;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
 
 describe('GroupAdminService', () => {
   beforeEach(() => {
@@ -36,8 +38,12 @@ describe('GroupAdminService', () => {
   describe('getChurchGroups', () => {
     it('should return church groups when user has permission', async () => {
       // Mock permission checks
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock database response
       const mockGroups = [
@@ -48,9 +54,9 @@ describe('GroupAdminService', () => {
           church_id: 'church1',
           memberships: [
             { id: '1', status: 'active' },
-            { id: '2', status: 'active' }
-          ]
-        }
+            { id: '2', status: 'active' },
+          ],
+        },
       ];
 
       mockSupabase.from.mockReturnValue({
@@ -58,8 +64,8 @@ describe('GroupAdminService', () => {
         eq: jest.fn().mockReturnThis(),
         order: jest.fn().mockResolvedValue({
           data: mockGroups,
-          error: null
-        })
+          error: null,
+        }),
       } as any);
 
       const result = await groupAdminService.getChurchGroups('church1', true);
@@ -67,14 +73,18 @@ describe('GroupAdminService', () => {
       expect(result.error).toBeNull();
       expect(result.data).toHaveLength(1);
       expect(result.data![0].member_count).toBe(2);
-      expect(mockPermissionService.hasPermission).toHaveBeenCalledWith('manage_church_groups');
-      expect(mockPermissionService.canAccessChurchData).toHaveBeenCalledWith('church1');
+      expect(mockPermissionService.hasPermission).toHaveBeenCalledWith(
+        'manage_church_groups'
+      );
+      expect(mockPermissionService.canAccessChurchData).toHaveBeenCalledWith(
+        'church1'
+      );
     });
 
     it('should return error when user lacks permission', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ 
-        hasPermission: false, 
-        reason: 'Access denied' 
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: false,
+        reason: 'Access denied',
       });
 
       const result = await groupAdminService.getChurchGroups('church1');
@@ -85,10 +95,12 @@ describe('GroupAdminService', () => {
     });
 
     it('should return error when church access is denied', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ 
-        hasPermission: false, 
-        reason: 'Church access denied' 
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: false,
+        reason: 'Church access denied',
       });
 
       const result = await groupAdminService.getChurchGroups('church1');
@@ -99,16 +111,20 @@ describe('GroupAdminService', () => {
     });
 
     it('should handle database errors', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         order: jest.fn().mockResolvedValue({
           data: null,
-          error: { message: 'Database error' }
-        })
+          error: { message: 'Database error' },
+        }),
       } as any);
 
       const result = await groupAdminService.getChurchGroups('church1', true);
@@ -121,8 +137,12 @@ describe('GroupAdminService', () => {
 
   describe('approveGroup', () => {
     it('should approve a pending group', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock existing group check
       mockSupabase.from.mockReturnValueOnce({
@@ -130,10 +150,10 @@ describe('GroupAdminService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { id: 'group1', status: 'pending', church_id: 'church1' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock update operation
@@ -143,11 +163,11 @@ describe('GroupAdminService', () => {
             select: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: { id: 'group1', status: 'approved' },
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       const result = await groupAdminService.approveGroup('group1', 'admin1');
@@ -158,18 +178,22 @@ describe('GroupAdminService', () => {
     });
 
     it('should return error for non-pending group', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { id: 'group1', status: 'approved', church_id: 'church1' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       const result = await groupAdminService.approveGroup('group1', 'admin1');
@@ -180,17 +204,19 @@ describe('GroupAdminService', () => {
     });
 
     it('should return error when group not found', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: null,
-              error: { message: 'Not found' }
-            })
-          })
-        })
+              error: { message: 'Not found' },
+            }),
+          }),
+        }),
       } as any);
 
       const result = await groupAdminService.approveGroup('group1', 'admin1');
@@ -203,8 +229,12 @@ describe('GroupAdminService', () => {
 
   describe('declineGroup', () => {
     it('should decline a pending group', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock existing group check
       mockSupabase.from.mockReturnValueOnce({
@@ -212,10 +242,10 @@ describe('GroupAdminService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { id: 'group1', status: 'pending', church_id: 'church1' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock update operation
@@ -225,14 +255,18 @@ describe('GroupAdminService', () => {
             select: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: { id: 'group1', status: 'denied' },
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupAdminService.declineGroup('group1', 'admin1', 'Not suitable');
+      const result = await groupAdminService.declineGroup(
+        'group1',
+        'admin1',
+        'Not suitable'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
@@ -242,8 +276,12 @@ describe('GroupAdminService', () => {
 
   describe('closeGroup', () => {
     it('should close an approved group', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock existing group check
       mockSupabase.from.mockReturnValueOnce({
@@ -251,10 +289,10 @@ describe('GroupAdminService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { id: 'group1', status: 'approved', church_id: 'church1' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock update operation
@@ -264,14 +302,18 @@ describe('GroupAdminService', () => {
             select: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: { id: 'group1', status: 'closed' },
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupAdminService.closeGroup('group1', 'admin1', 'No longer active');
+      const result = await groupAdminService.closeGroup(
+        'group1',
+        'admin1',
+        'No longer active'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
@@ -279,18 +321,22 @@ describe('GroupAdminService', () => {
     });
 
     it('should return error for non-approved group', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { id: 'group1', status: 'pending', church_id: 'church1' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       const result = await groupAdminService.closeGroup('group1', 'admin1');
@@ -303,7 +349,9 @@ describe('GroupAdminService', () => {
 
   describe('getGroupRequests', () => {
     it('should return pending join requests', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       const mockRequests = [
         {
@@ -312,8 +360,8 @@ describe('GroupAdminService', () => {
           user_id: 'user1',
           status: 'pending',
           joined_at: '2024-01-01T00:00:00Z',
-          user: { id: 'user1', name: 'John Doe', email: 'john@example.com' }
-        }
+          user: { id: 'user1', name: 'John Doe', email: 'john@example.com' },
+        },
       ];
 
       mockSupabase.from.mockReturnValue({
@@ -322,11 +370,11 @@ describe('GroupAdminService', () => {
             eq: jest.fn().mockReturnValue({
               order: jest.fn().mockResolvedValue({
                 data: mockRequests,
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       const result = await groupAdminService.getGroupRequests('group1');
@@ -338,9 +386,9 @@ describe('GroupAdminService', () => {
     });
 
     it('should return error when user cannot manage group', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ 
-        hasPermission: false, 
-        reason: 'Access denied' 
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: false,
+        reason: 'Access denied',
       });
 
       const result = await groupAdminService.getGroupRequests('group1');
@@ -353,7 +401,9 @@ describe('GroupAdminService', () => {
 
   describe('approveJoinRequest', () => {
     it('should approve a pending join request', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock request fetch
       mockSupabase.from.mockReturnValueOnce({
@@ -361,19 +411,19 @@ describe('GroupAdminService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { group_id: 'group1', user_id: 'user1', status: 'pending' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock update operation
       mockSupabase.from.mockReturnValueOnce({
         update: jest.fn().mockReturnValue({
           eq: jest.fn().mockResolvedValue({
-            error: null
-          })
-        })
+            error: null,
+          }),
+        }),
       } as any);
 
       const result = await groupAdminService.approveJoinRequest('req1');
@@ -383,17 +433,19 @@ describe('GroupAdminService', () => {
     });
 
     it('should return error for non-pending request', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { group_id: 'group1', user_id: 'user1', status: 'active' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       const result = await groupAdminService.approveJoinRequest('req1');
@@ -406,7 +458,9 @@ describe('GroupAdminService', () => {
 
   describe('declineJoinRequest', () => {
     it('should decline a pending join request', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock request fetch
       mockSupabase.from.mockReturnValueOnce({
@@ -414,19 +468,19 @@ describe('GroupAdminService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { group_id: 'group1', user_id: 'user1', status: 'pending' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock delete operation
       mockSupabase.from.mockReturnValueOnce({
         delete: jest.fn().mockReturnValue({
           eq: jest.fn().mockResolvedValue({
-            error: null
-          })
-        })
+            error: null,
+          }),
+        }),
       } as any);
 
       const result = await groupAdminService.declineJoinRequest('req1');
@@ -444,8 +498,12 @@ describe('UserAdminService', () => {
 
   describe('getChurchUsers', () => {
     it('should return church users with group status', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       const mockUsers = [
         {
@@ -453,15 +511,15 @@ describe('UserAdminService', () => {
           name: 'John Doe',
           church_id: 'church1',
           group_memberships: [
-            { id: 'mem1', status: 'active', group: { status: 'approved' } }
-          ]
+            { id: 'mem1', status: 'active', group: { status: 'approved' } },
+          ],
         },
         {
           id: 'user2',
           name: 'Jane Smith',
           church_id: 'church1',
-          group_memberships: []
-        }
+          group_memberships: [],
+        },
       ];
 
       mockSupabase.from.mockReturnValue({
@@ -469,10 +527,10 @@ describe('UserAdminService', () => {
           eq: jest.fn().mockReturnValue({
             order: jest.fn().mockResolvedValue({
               data: mockUsers,
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       const result = await userAdminService.getChurchUsers('church1');
@@ -486,9 +544,9 @@ describe('UserAdminService', () => {
     });
 
     it('should return error when user lacks permission', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ 
-        hasPermission: false, 
-        reason: 'Access denied' 
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: false,
+        reason: 'Access denied',
       });
 
       const result = await userAdminService.getChurchUsers('church1');
@@ -501,8 +559,12 @@ describe('UserAdminService', () => {
 
   describe('getUnconnectedUsers', () => {
     it('should return only unconnected users', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock the getChurchUsers call
       const mockUsers = [
@@ -510,19 +572,19 @@ describe('UserAdminService', () => {
           id: 'user1',
           name: 'John Doe',
           is_connected: true,
-          group_count: 1
+          group_count: 1,
         },
         {
           id: 'user2',
           name: 'Jane Smith',
           is_connected: false,
-          group_count: 0
-        }
+          group_count: 0,
+        },
       ];
 
       jest.spyOn(userAdminService, 'getChurchUsers').mockResolvedValue({
         data: mockUsers as any,
-        error: null
+        error: null,
       });
 
       const result = await userAdminService.getUnconnectedUsers('church1');
@@ -536,7 +598,9 @@ describe('UserAdminService', () => {
 
   describe('getUserGroupHistory', () => {
     it('should return user group membership history', async () => {
-      mockPermissionService.canModifyResource.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canModifyResource.mockResolvedValue({
+        hasPermission: true,
+      });
 
       const mockHistory = [
         {
@@ -545,8 +609,8 @@ describe('UserAdminService', () => {
           group_id: 'group1',
           status: 'active',
           joined_at: '2024-01-01T00:00:00Z',
-          group: { id: 'group1', title: 'Test Group', status: 'approved' }
-        }
+          group: { id: 'group1', title: 'Test Group', status: 'approved' },
+        },
       ];
 
       mockSupabase.from.mockReturnValue({
@@ -554,10 +618,10 @@ describe('UserAdminService', () => {
           eq: jest.fn().mockReturnValue({
             order: jest.fn().mockResolvedValue({
               data: mockHistory,
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       const result = await userAdminService.getUserGroupHistory('user1');
@@ -568,9 +632,9 @@ describe('UserAdminService', () => {
     });
 
     it('should return error when user cannot access user data', async () => {
-      mockPermissionService.canModifyResource.mockResolvedValue({ 
-        hasPermission: false, 
-        reason: 'Access denied' 
+      mockPermissionService.canModifyResource.mockResolvedValue({
+        hasPermission: false,
+        reason: 'Access denied',
       });
 
       const result = await userAdminService.getUserGroupHistory('user1');
@@ -583,18 +647,20 @@ describe('UserAdminService', () => {
 
   describe('getChurchSummary', () => {
     it('should return church statistics', async () => {
-      mockPermissionService.hasPermission.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.hasPermission.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock getChurchUsers
       const mockUsers = [
         { id: 'user1', is_connected: true },
         { id: 'user2', is_connected: false },
-        { id: 'user3', is_connected: true }
+        { id: 'user3', is_connected: true },
       ];
 
       jest.spyOn(userAdminService, 'getChurchUsers').mockResolvedValue({
         data: mockUsers as any,
-        error: null
+        error: null,
       });
 
       // Mock groups query
@@ -603,10 +669,10 @@ describe('UserAdminService', () => {
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockResolvedValue({
               data: [{ id: 'group1' }, { id: 'group2' }],
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock pending requests query
@@ -615,10 +681,10 @@ describe('UserAdminService', () => {
           eq: jest.fn().mockReturnValue({
             in: jest.fn().mockResolvedValue({
               data: [{ id: 'req1' }],
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       const result = await userAdminService.getChurchSummary('church1');
@@ -629,7 +695,7 @@ describe('UserAdminService', () => {
         connected_users: 2,
         unconnected_users: 1,
         active_groups: 2,
-        pending_requests: 1
+        pending_requests: 1,
       });
     });
   });

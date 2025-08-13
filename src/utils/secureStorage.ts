@@ -11,7 +11,8 @@ export const SECURE_STORAGE_KEYS = {
   LAST_AUTH_TIME: 'last_auth_time',
 } as const;
 
-export type SecureStorageKey = typeof SECURE_STORAGE_KEYS[keyof typeof SECURE_STORAGE_KEYS];
+export type SecureStorageKey =
+  (typeof SECURE_STORAGE_KEYS)[keyof typeof SECURE_STORAGE_KEYS];
 
 export interface SecureStorageOptions {
   requireAuthentication?: boolean;
@@ -37,12 +38,16 @@ class SecureStorageService {
         // On native, use Expo SecureStore
         await SecureStore.setItemAsync(key, value, {
           requireAuthentication: options.requireAuthentication || false,
-          authenticationPrompt: options.authenticationPrompt || 'Authenticate to access secure data',
+          authenticationPrompt:
+            options.authenticationPrompt ||
+            'Authenticate to access secure data',
         });
       }
     } catch (error) {
       console.error(`Failed to store secure item ${key}:`, error);
-      throw new Error(`Failed to store secure data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to store secure data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -62,7 +67,9 @@ class SecureStorageService {
         // On native, use Expo SecureStore
         return await SecureStore.getItemAsync(key, {
           requireAuthentication: options.requireAuthentication || false,
-          authenticationPrompt: options.authenticationPrompt || 'Authenticate to access secure data',
+          authenticationPrompt:
+            options.authenticationPrompt ||
+            'Authenticate to access secure data',
         });
       }
     } catch (error) {
@@ -83,7 +90,9 @@ class SecureStorageService {
       }
     } catch (error) {
       console.error(`Failed to remove secure item ${key}:`, error);
-      throw new Error(`Failed to remove secure data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to remove secure data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -105,10 +114,12 @@ class SecureStorageService {
   async clearAll(): Promise<void> {
     try {
       const keys = Object.values(SECURE_STORAGE_KEYS);
-      await Promise.all(keys.map(key => this.removeItem(key)));
+      await Promise.all(keys.map((key) => this.removeItem(key)));
     } catch (error) {
       console.error('Failed to clear secure storage:', error);
-      throw new Error(`Failed to clear secure storage: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to clear secure storage: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -120,7 +131,9 @@ class SecureStorageService {
       await AsyncStorage.setItem(key, value);
     } catch (error) {
       console.error(`Failed to store non-sensitive item ${key}:`, error);
-      throw new Error(`Failed to store data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to store data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -162,7 +175,7 @@ class SecureStorageService {
    */
   async isBiometricAvailable(): Promise<boolean> {
     if (this.isWeb) return false;
-    
+
     try {
       return await SecureStore.isAvailableAsync();
     } catch {
@@ -174,7 +187,10 @@ class SecureStorageService {
    * Enable/disable biometric authentication for secure storage
    */
   async setBiometricEnabled(enabled: boolean): Promise<void> {
-    await this.setItem(SECURE_STORAGE_KEYS.BIOMETRIC_ENABLED, enabled.toString());
+    await this.setItem(
+      SECURE_STORAGE_KEYS.BIOMETRIC_ENABLED,
+      enabled.toString()
+    );
   }
 
   /**
@@ -194,17 +210,25 @@ class SecureStorageService {
     expiresAt?: number;
   }): Promise<void> {
     const biometricEnabled = await this.isBiometricEnabled();
-    const options: SecureStorageOptions = biometricEnabled 
-      ? { 
+    const options: SecureStorageOptions = biometricEnabled
+      ? {
           requireAuthentication: true,
-          authenticationPrompt: 'Authenticate to access your session'
+          authenticationPrompt: 'Authenticate to access your session',
         }
       : {};
 
     await Promise.all([
-      this.setItem(SECURE_STORAGE_KEYS.AUTH_TOKEN, sessionData.accessToken, options),
-      sessionData.refreshToken 
-        ? this.setItem(SECURE_STORAGE_KEYS.REFRESH_TOKEN, sessionData.refreshToken, options)
+      this.setItem(
+        SECURE_STORAGE_KEYS.AUTH_TOKEN,
+        sessionData.accessToken,
+        options
+      ),
+      sessionData.refreshToken
+        ? this.setItem(
+            SECURE_STORAGE_KEYS.REFRESH_TOKEN,
+            sessionData.refreshToken,
+            options
+          )
         : Promise.resolve(),
       this.setItem(SECURE_STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString()),
     ]);
@@ -219,10 +243,10 @@ class SecureStorageService {
     lastAuthTime: number | null;
   }> {
     const biometricEnabled = await this.isBiometricEnabled();
-    const options: SecureStorageOptions = biometricEnabled 
-      ? { 
+    const options: SecureStorageOptions = biometricEnabled
+      ? {
           requireAuthentication: true,
-          authenticationPrompt: 'Authenticate to access your session'
+          authenticationPrompt: 'Authenticate to access your session',
         }
       : {};
 

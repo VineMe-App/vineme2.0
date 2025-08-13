@@ -21,9 +21,9 @@ export const getPlatformInfo = (): PlatformInfo => {
     typeof versionRaw === 'string'
       ? versionRaw
       : typeof versionRaw === 'number'
-      ? String(versionRaw)
-      : 'unknown';
-  
+        ? String(versionRaw)
+        : 'unknown';
+
   return {
     platform: Platform.OS as 'ios' | 'android' | 'web',
     isDevice: Device.isDevice,
@@ -37,30 +37,36 @@ export const getPlatformInfo = (): PlatformInfo => {
 /**
  * Determine device type based on screen dimensions
  */
-const getDeviceType = (width: number, height: number): 'phone' | 'tablet' | 'desktop' | 'unknown' => {
+const getDeviceType = (
+  width: number,
+  height: number
+): 'phone' | 'tablet' | 'desktop' | 'unknown' => {
   const minDimension = Math.min(width, height);
   const maxDimension = Math.max(width, height);
-  
+
   if (Platform.OS === 'web') {
     return width > 1024 ? 'desktop' : width > 768 ? 'tablet' : 'phone';
   }
-  
+
   // For mobile platforms
   if (minDimension >= 768) {
     return 'tablet';
   } else if (minDimension >= 320) {
     return 'phone';
   }
-  
+
   return 'unknown';
 };
 
 /**
  * Determine screen size category
  */
-const getScreenSize = (width: number, height: number): 'small' | 'medium' | 'large' => {
+const getScreenSize = (
+  width: number,
+  height: number
+): 'small' | 'medium' | 'large' => {
   const minDimension = Math.min(width, height);
-  
+
   if (minDimension < 375) {
     return 'small';
   } else if (minDimension < 768) {
@@ -155,7 +161,7 @@ export const testPlatformFeatures = () => {
     sharing: true,
     haptics: Device.isDevice && (isIOS() || isAndroid()),
   };
-  
+
   return {
     platformInfo: info,
     supportedFeatures: features,
@@ -168,7 +174,7 @@ export const testPlatformFeatures = () => {
 export const logPlatformInfo = () => {
   const info = getPlatformInfo();
   const features = testPlatformFeatures();
-  
+
   console.log('=== Platform Information ===');
   console.log('Platform:', info.platform);
   console.log('Device Type:', info.deviceType);

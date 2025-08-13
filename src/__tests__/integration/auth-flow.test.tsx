@@ -1,5 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import SignInScreen from '@/app/(auth)/sign-in';
 import * as authService from '@/services/auth';
@@ -39,9 +44,7 @@ const createTestQueryClient = () =>
 const renderWithProviders = (component: React.ReactElement) => {
   const queryClient = createTestQueryClient();
   return render(
-    <QueryClientProvider client={queryClient}>
-      {component}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
   );
 };
 
@@ -74,7 +77,10 @@ describe('Authentication Flow Integration', () => {
     fireEvent.press(signInButton);
 
     await waitFor(() => {
-      expect(mockAuthService.signIn).toHaveBeenCalledWith('test@example.com', 'password123');
+      expect(mockAuthService.signIn).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123'
+      );
     });
 
     await waitFor(() => {
@@ -126,16 +132,25 @@ describe('Authentication Flow Integration', () => {
     fireEvent.press(signInButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Please enter a valid email address')).toBeTruthy();
+      expect(
+        screen.getByText('Please enter a valid email address')
+      ).toBeTruthy();
     });
   });
 
   it('should show loading state during sign in', async () => {
     mockAuthService.signIn.mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve({
-        data: { user: null, session: null },
-        error: null,
-      }), 100))
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                data: { user: null, session: null },
+                error: null,
+              }),
+            100
+          )
+        )
     );
 
     renderWithProviders(<SignInScreen />);

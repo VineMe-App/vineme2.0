@@ -92,26 +92,34 @@ export class GroupAdminService {
   ): Promise<AdminServiceResponse<GroupWithAdminDetails[]>> {
     try {
       // Check permission to manage church groups
-      const permissionCheck = await permissionService.hasPermission('manage_church_groups');
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_groups'
+      );
       if (!permissionCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(permissionCheck.reason || 'Access denied to manage church groups') 
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church groups'
+          ),
         };
       }
 
       // Verify user can access this church's data
-      const churchAccessCheck = await permissionService.canAccessChurchData(churchId);
+      const churchAccessCheck =
+        await permissionService.canAccessChurchData(churchId);
       if (!churchAccessCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(churchAccessCheck.reason || 'Access denied to church data') 
+        return {
+          data: null,
+          error: new Error(
+            churchAccessCheck.reason || 'Access denied to church data'
+          ),
         };
       }
 
       let query = supabase
         .from('groups')
-        .select(`
+        .select(
+          `
           *,
           service:services(*),
           church:churches(*),
@@ -124,7 +132,8 @@ export class GroupAdminService {
             joined_at,
             user:users(id, name, avatar_url, email)
           )
-        `)
+        `
+        )
         .eq('church_id', churchId)
         .order('created_at', { ascending: false });
 
@@ -139,16 +148,22 @@ export class GroupAdminService {
       }
 
       // Add member count and format data
-      const groupsWithDetails = data?.map((group) => ({
-        ...group,
-        member_count: group.memberships?.filter((m: any) => m.status === 'active').length || 0,
-      })) || [];
+      const groupsWithDetails =
+        data?.map((group) => ({
+          ...group,
+          member_count:
+            group.memberships?.filter((m: any) => m.status === 'active')
+              .length || 0,
+        })) || [];
 
       return { data: groupsWithDetails, error: null };
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get church groups'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get church groups'),
       };
     }
   }
@@ -163,11 +178,15 @@ export class GroupAdminService {
   ): Promise<AdminServiceResponse<Group>> {
     try {
       // Check permission to manage church groups
-      const permissionCheck = await permissionService.hasPermission('manage_church_groups');
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_groups'
+      );
       if (!permissionCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(permissionCheck.reason || 'Access denied to manage church groups') 
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church groups'
+          ),
         };
       }
 
@@ -183,15 +202,22 @@ export class GroupAdminService {
       }
 
       if (existingGroup.status !== 'pending') {
-        return { data: null, error: new Error('Group is not pending approval') };
+        return {
+          data: null,
+          error: new Error('Group is not pending approval'),
+        };
       }
 
       // Verify admin can access this church's data
-      const churchAccessCheck = await permissionService.canAccessChurchData(existingGroup.church_id);
+      const churchAccessCheck = await permissionService.canAccessChurchData(
+        existingGroup.church_id
+      );
       if (!churchAccessCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(churchAccessCheck.reason || 'Access denied to church data') 
+        return {
+          data: null,
+          error: new Error(
+            churchAccessCheck.reason || 'Access denied to church data'
+          ),
         };
       }
 
@@ -217,7 +243,8 @@ export class GroupAdminService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to approve group'),
+        error:
+          error instanceof Error ? error : new Error('Failed to approve group'),
       };
     }
   }
@@ -232,11 +259,15 @@ export class GroupAdminService {
   ): Promise<AdminServiceResponse<Group>> {
     try {
       // Check permission to manage church groups
-      const permissionCheck = await permissionService.hasPermission('manage_church_groups');
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_groups'
+      );
       if (!permissionCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(permissionCheck.reason || 'Access denied to manage church groups') 
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church groups'
+          ),
         };
       }
 
@@ -252,15 +283,22 @@ export class GroupAdminService {
       }
 
       if (existingGroup.status !== 'pending') {
-        return { data: null, error: new Error('Group is not pending approval') };
+        return {
+          data: null,
+          error: new Error('Group is not pending approval'),
+        };
       }
 
       // Verify admin can access this church's data
-      const churchAccessCheck = await permissionService.canAccessChurchData(existingGroup.church_id);
+      const churchAccessCheck = await permissionService.canAccessChurchData(
+        existingGroup.church_id
+      );
       if (!churchAccessCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(churchAccessCheck.reason || 'Access denied to church data') 
+        return {
+          data: null,
+          error: new Error(
+            churchAccessCheck.reason || 'Access denied to church data'
+          ),
         };
       }
 
@@ -286,7 +324,8 @@ export class GroupAdminService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to decline group'),
+        error:
+          error instanceof Error ? error : new Error('Failed to decline group'),
       };
     }
   }
@@ -301,11 +340,15 @@ export class GroupAdminService {
   ): Promise<AdminServiceResponse<Group>> {
     try {
       // Check permission to manage church groups
-      const permissionCheck = await permissionService.hasPermission('manage_church_groups');
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_groups'
+      );
       if (!permissionCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(permissionCheck.reason || 'Access denied to manage church groups') 
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church groups'
+          ),
         };
       }
 
@@ -321,15 +364,22 @@ export class GroupAdminService {
       }
 
       if (existingGroup.status !== 'approved') {
-        return { data: null, error: new Error('Only approved groups can be closed') };
+        return {
+          data: null,
+          error: new Error('Only approved groups can be closed'),
+        };
       }
 
       // Verify admin can access this church's data
-      const churchAccessCheck = await permissionService.canAccessChurchData(existingGroup.church_id);
+      const churchAccessCheck = await permissionService.canAccessChurchData(
+        existingGroup.church_id
+      );
       if (!churchAccessCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(churchAccessCheck.reason || 'Access denied to church data') 
+        return {
+          data: null,
+          error: new Error(
+            churchAccessCheck.reason || 'Access denied to church data'
+          ),
         };
       }
 
@@ -355,7 +405,8 @@ export class GroupAdminService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to close group'),
+        error:
+          error instanceof Error ? error : new Error('Failed to close group'),
       };
     }
   }
@@ -363,27 +414,34 @@ export class GroupAdminService {
   /**
    * Get join requests for a group
    */
-  async getGroupRequests(groupId: string): Promise<AdminServiceResponse<GroupJoinRequest[]>> {
+  async getGroupRequests(
+    groupId: string
+  ): Promise<AdminServiceResponse<GroupJoinRequest[]>> {
     try {
       // Check if user can manage this group's membership
-      const membershipCheck = await permissionService.canManageGroupMembership(groupId);
+      const membershipCheck =
+        await permissionService.canManageGroupMembership(groupId);
       if (!membershipCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        return {
+          data: null,
+          error: new Error(
+            membershipCheck.reason || 'Access denied to manage group membership'
+          ),
         };
       }
 
       const { data, error } = await supabase
         .from('group_memberships')
-        .select(`
+        .select(
+          `
           id,
           group_id,
           user_id,
           status,
           joined_at as created_at,
           user:users(id, name, email, avatar_url)
-        `)
+        `
+        )
         .eq('group_id', groupId)
         .eq('status', 'pending')
         .order('joined_at', { ascending: false });
@@ -393,21 +451,25 @@ export class GroupAdminService {
       }
 
       // Transform to match GroupJoinRequest interface
-      const requests: GroupJoinRequest[] = data?.map((item) => ({
-        id: item.id,
-        group_id: item.group_id,
-        user_id: item.user_id,
-        user: item.user,
-        contact_consent: true, // Default for now, can be enhanced later
-        status: 'pending',
-        created_at: item.created_at,
-      })) || [];
+      const requests: GroupJoinRequest[] =
+        data?.map((item) => ({
+          id: item.id,
+          group_id: item.group_id,
+          user_id: item.user_id,
+          user: item.user,
+          contact_consent: true, // Default for now, can be enhanced later
+          status: 'pending',
+          created_at: item.created_at,
+        })) || [];
 
       return { data: requests, error: null };
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get group requests'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get group requests'),
       };
     }
   }
@@ -415,7 +477,9 @@ export class GroupAdminService {
   /**
    * Approve a join request
    */
-  async approveJoinRequest(requestId: string): Promise<AdminServiceResponse<boolean>> {
+  async approveJoinRequest(
+    requestId: string
+  ): Promise<AdminServiceResponse<boolean>> {
     try {
       // Get the request details first
       const { data: request, error: fetchError } = await supabase
@@ -433,11 +497,15 @@ export class GroupAdminService {
       }
 
       // Check if user can manage this group's membership
-      const membershipCheck = await permissionService.canManageGroupMembership(request.group_id);
+      const membershipCheck = await permissionService.canManageGroupMembership(
+        request.group_id
+      );
       if (!membershipCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        return {
+          data: null,
+          error: new Error(
+            membershipCheck.reason || 'Access denied to manage group membership'
+          ),
         };
       }
 
@@ -458,7 +526,10 @@ export class GroupAdminService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to approve join request'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to approve join request'),
       };
     }
   }
@@ -466,7 +537,9 @@ export class GroupAdminService {
   /**
    * Decline a join request
    */
-  async declineJoinRequest(requestId: string): Promise<AdminServiceResponse<boolean>> {
+  async declineJoinRequest(
+    requestId: string
+  ): Promise<AdminServiceResponse<boolean>> {
     try {
       // Get the request details first
       const { data: request, error: fetchError } = await supabase
@@ -484,11 +557,15 @@ export class GroupAdminService {
       }
 
       // Check if user can manage this group's membership
-      const membershipCheck = await permissionService.canManageGroupMembership(request.group_id);
+      const membershipCheck = await permissionService.canManageGroupMembership(
+        request.group_id
+      );
       if (!membershipCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(membershipCheck.reason || 'Access denied to manage group membership') 
+        return {
+          data: null,
+          error: new Error(
+            membershipCheck.reason || 'Access denied to manage group membership'
+          ),
         };
       }
 
@@ -506,7 +583,10 @@ export class GroupAdminService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to decline join request'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to decline join request'),
       };
     }
   }
@@ -553,29 +633,39 @@ export class UserAdminService {
   /**
    * Get all users from a church with group status
    */
-  async getChurchUsers(churchId: string): Promise<AdminServiceResponse<UserWithGroupStatus[]>> {
+  async getChurchUsers(
+    churchId: string
+  ): Promise<AdminServiceResponse<UserWithGroupStatus[]>> {
     try {
       // Check permission to manage church users
-      const permissionCheck = await permissionService.hasPermission('manage_church_users');
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_users'
+      );
       if (!permissionCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(permissionCheck.reason || 'Access denied to manage church users') 
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church users'
+          ),
         };
       }
 
       // Verify user can access this church's data
-      const churchAccessCheck = await permissionService.canAccessChurchData(churchId);
+      const churchAccessCheck =
+        await permissionService.canAccessChurchData(churchId);
       if (!churchAccessCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(churchAccessCheck.reason || 'Access denied to church data') 
+        return {
+          data: null,
+          error: new Error(
+            churchAccessCheck.reason || 'Access denied to church data'
+          ),
         };
       }
 
       const { data, error } = await supabase
         .from('users')
-        .select(`
+        .select(
+          `
           *,
           church:churches(*),
           service:services(*),
@@ -587,7 +677,8 @@ export class UserAdminService {
             joined_at,
             group:groups(id, title, status)
           )
-        `)
+        `
+        )
         .eq('church_id', churchId)
         .order('name');
 
@@ -596,24 +687,30 @@ export class UserAdminService {
       }
 
       // Transform to include group status
-      const usersWithStatus: UserWithGroupStatus[] = data?.map((user) => {
-        const activeGroups = user.group_memberships?.filter(
-          (m: any) => m.status === 'active' && m.group?.status === 'approved'
-        ) || [];
+      const usersWithStatus: UserWithGroupStatus[] =
+        data?.map((user) => {
+          const activeGroups =
+            user.group_memberships?.filter(
+              (m: any) =>
+                m.status === 'active' && m.group?.status === 'approved'
+            ) || [];
 
-        return {
-          ...user,
-          group_count: activeGroups.length,
-          is_connected: activeGroups.length > 0,
-          last_activity: user.updated_at,
-        };
-      }) || [];
+          return {
+            ...user,
+            group_count: activeGroups.length,
+            is_connected: activeGroups.length > 0,
+            last_activity: user.updated_at,
+          };
+        }) || [];
 
       return { data: usersWithStatus, error: null };
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get church users'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get church users'),
       };
     }
   }
@@ -621,14 +718,20 @@ export class UserAdminService {
   /**
    * Get users who are not connected to any groups
    */
-  async getUnconnectedUsers(churchId: string): Promise<AdminServiceResponse<UserWithGroupStatus[]>> {
+  async getUnconnectedUsers(
+    churchId: string
+  ): Promise<AdminServiceResponse<UserWithGroupStatus[]>> {
     try {
       // Check permission to manage church users
-      const permissionCheck = await permissionService.hasPermission('manage_church_users');
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_users'
+      );
       if (!permissionCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(permissionCheck.reason || 'Access denied to manage church users') 
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church users'
+          ),
         };
       }
 
@@ -639,13 +742,18 @@ export class UserAdminService {
       }
 
       // Filter to only unconnected users
-      const unconnectedUsers = allUsersResult.data.filter(user => !user.is_connected);
+      const unconnectedUsers = allUsersResult.data.filter(
+        (user) => !user.is_connected
+      );
 
       return { data: unconnectedUsers, error: null };
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get unconnected users'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get unconnected users'),
       };
     }
   }
@@ -653,23 +761,32 @@ export class UserAdminService {
   /**
    * Get a user's group membership history
    */
-  async getUserGroupHistory(userId: string): Promise<AdminServiceResponse<GroupMembership[]>> {
+  async getUserGroupHistory(
+    userId: string
+  ): Promise<AdminServiceResponse<GroupMembership[]>> {
     try {
       // Check if current user can access this user's data
-      const resourceCheck = await permissionService.canModifyResource('user', userId);
+      const resourceCheck = await permissionService.canModifyResource(
+        'user',
+        userId
+      );
       if (!resourceCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(resourceCheck.reason || 'Access denied to user data') 
+        return {
+          data: null,
+          error: new Error(
+            resourceCheck.reason || 'Access denied to user data'
+          ),
         };
       }
 
       const { data, error } = await supabase
         .from('group_memberships')
-        .select(`
+        .select(
+          `
           *,
           group:groups(id, title, status, church_id)
-        `)
+        `
+        )
         .eq('user_id', userId)
         .order('joined_at', { ascending: false });
 
@@ -681,7 +798,10 @@ export class UserAdminService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get user group history'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get user group history'),
       };
     }
   }
@@ -689,14 +809,20 @@ export class UserAdminService {
   /**
    * Get church summary statistics
    */
-  async getChurchSummary(churchId: string): Promise<AdminServiceResponse<ChurchUserSummary>> {
+  async getChurchSummary(
+    churchId: string
+  ): Promise<AdminServiceResponse<ChurchUserSummary>> {
     try {
       // Check permission to manage church users
-      const permissionCheck = await permissionService.hasPermission('manage_church_users');
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_users'
+      );
       if (!permissionCheck.hasPermission) {
-        return { 
-          data: null, 
-          error: new Error(permissionCheck.reason || 'Access denied to manage church users') 
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church users'
+          ),
         };
       }
 
@@ -707,7 +833,7 @@ export class UserAdminService {
       }
 
       const users = usersResult.data;
-      const connectedUsers = users.filter(user => user.is_connected);
+      const connectedUsers = users.filter((user) => user.is_connected);
 
       // Get active groups count
       const { data: groups, error: groupsError } = await supabase
@@ -725,7 +851,7 @@ export class UserAdminService {
         .from('group_memberships')
         .select('id')
         .eq('status', 'pending')
-        .in('group_id', groups?.map(g => g.id) || []);
+        .in('group_id', groups?.map((g) => g.id) || []);
 
       if (requestsError) {
         return { data: null, error: new Error(requestsError.message) };
@@ -743,7 +869,10 @@ export class UserAdminService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get church summary'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get church summary'),
       };
     }
   }

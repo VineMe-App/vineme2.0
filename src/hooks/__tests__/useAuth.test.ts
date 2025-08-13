@@ -46,11 +46,17 @@ describe('useAuth', () => {
     const { result } = renderHook(() => useAuth());
 
     await act(async () => {
-      const response = await result.current.signIn('test@example.com', 'password');
+      const response = await result.current.signIn(
+        'test@example.com',
+        'password'
+      );
       expect(response.error).toBeNull();
     });
 
-    expect(mockAuthService.signIn).toHaveBeenCalledWith('test@example.com', 'password');
+    expect(mockAuthService.signIn).toHaveBeenCalledWith(
+      'test@example.com',
+      'password'
+    );
   });
 
   it('should handle sign in error', async () => {
@@ -63,7 +69,10 @@ describe('useAuth', () => {
     const { result } = renderHook(() => useAuth());
 
     await act(async () => {
-      const response = await result.current.signIn('test@example.com', 'wrong-password');
+      const response = await result.current.signIn(
+        'test@example.com',
+        'wrong-password'
+      );
       expect(response.error).toBe(mockError);
     });
   });
@@ -78,11 +87,17 @@ describe('useAuth', () => {
     const { result } = renderHook(() => useAuth());
 
     await act(async () => {
-      const response = await result.current.signUp('test@example.com', 'password');
+      const response = await result.current.signUp(
+        'test@example.com',
+        'password'
+      );
       expect(response.error).toBeNull();
     });
 
-    expect(mockAuthService.signUp).toHaveBeenCalledWith('test@example.com', 'password');
+    expect(mockAuthService.signUp).toHaveBeenCalledWith(
+      'test@example.com',
+      'password'
+    );
   });
 
   it('should handle sign out', async () => {

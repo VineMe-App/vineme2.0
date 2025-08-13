@@ -3,7 +3,7 @@ import { authService } from './auth';
 import type { DatabaseUser } from '../types/database';
 
 export type UserRole = 'user' | 'church_admin' | 'group_leader' | 'superadmin';
-export type Permission = 
+export type Permission =
   | 'read_own_data'
   | 'update_own_data'
   | 'read_church_data'
@@ -89,15 +89,18 @@ export class PermissionService {
     const user = await this.getCurrentUserWithCache();
     if (!user) return false;
 
-    return roles.some(role => user.roles.includes(role));
+    return roles.some((role) => user.roles.includes(role));
   }
 
   /**
    * Check if user has permission for a specific action
    */
-  async hasPermission(permission: Permission, resourceId?: string): Promise<PermissionCheck> {
+  async hasPermission(
+    permission: Permission,
+    resourceId?: string
+  ): Promise<PermissionCheck> {
     const user = await this.getCurrentUserWithCache();
-    
+
     if (!user) {
       return { hasPermission: false, reason: 'User not authenticated' };
     }
@@ -118,7 +121,10 @@ export class PermissionService {
         if (user.church_id) {
           return { hasPermission: true };
         }
-        return { hasPermission: false, reason: 'User not associated with a church' };
+        return {
+          hasPermission: false,
+          reason: 'User not associated with a church',
+        };
 
       case 'manage_church_events':
       case 'manage_church_groups':
@@ -127,14 +133,20 @@ export class PermissionService {
         if (user.roles.includes('church_admin') && user.church_id) {
           return { hasPermission: true };
         }
-        return { hasPermission: false, reason: 'Insufficient permissions for church management' };
+        return {
+          hasPermission: false,
+          reason: 'Insufficient permissions for church management',
+        };
 
       case 'create_groups':
         // All authenticated users can create groups (subject to approval)
         if (user.church_id) {
           return { hasPermission: true };
         }
-        return { hasPermission: false, reason: 'User must be associated with a church to create groups' };
+        return {
+          hasPermission: false,
+          reason: 'User must be associated with a church to create groups',
+        };
 
       case 'manage_group_details':
       case 'manage_group_members':
@@ -159,7 +171,7 @@ export class PermissionService {
    */
   async canAccessChurchData(churchId: string): Promise<PermissionCheck> {
     const user = await this.getCurrentUserWithCache();
-    
+
     if (!user) {
       return { hasPermission: false, reason: 'User not authenticated' };
     }
@@ -180,9 +192,13 @@ export class PermissionService {
   /**
    * Check if user can modify a specific resource
    */
-  async canModifyResource(resourceType: 'user' | 'group' | 'event', resourceId: string, ownerId?: string): Promise<PermissionCheck> {
+  async canModifyResource(
+    resourceType: 'user' | 'group' | 'event',
+    resourceId: string,
+    ownerId?: string
+  ): Promise<PermissionCheck> {
     const user = await this.getCurrentUserWithCache();
-    
+
     if (!user) {
       return { hasPermission: false, reason: 'User not authenticated' };
     }
@@ -206,7 +222,7 @@ export class PermissionService {
           .select('church_id')
           .eq('id', resourceId)
           .single();
-        
+
         if (group && group.church_id.includes(user.church_id)) {
           return { hasPermission: true };
         }
@@ -218,7 +234,7 @@ export class PermissionService {
           .select('church_id')
           .eq('id', resourceId)
           .single();
-        
+
         if (event && event.church_id === user.church_id) {
           return { hasPermission: true };
         }
@@ -230,22 +246,28 @@ export class PermissionService {
           .select('church_id')
           .eq('id', resourceId)
           .single();
-        
+
         if (targetUser && targetUser.church_id === user.church_id) {
           return { hasPermission: true };
         }
       }
     }
 
-    return { hasPermission: false, reason: 'Insufficient permissions to modify resource' };
+    return {
+      hasPermission: false,
+      reason: 'Insufficient permissions to modify resource',
+    };
   }
 
   /**
    * Check if user can manage group memberships
    */
-  async canManageGroupMembership(groupId: string, targetUserId?: string): Promise<PermissionCheck> {
+  async canManageGroupMembership(
+    groupId: string,
+    targetUserId?: string
+  ): Promise<PermissionCheck> {
     const user = await this.getCurrentUserWithCache();
-    
+
     if (!user) {
       return { hasPermission: false, reason: 'User not authenticated' };
     }
@@ -264,7 +286,10 @@ export class PermissionService {
       .eq('status', 'active')
       .single();
 
-    if (membership && (membership.role === 'leader' || membership.role === 'admin')) {
+    if (
+      membership &&
+      (membership.role === 'leader' || membership.role === 'admin')
+    ) {
       return { hasPermission: true };
     }
 
@@ -275,13 +300,16 @@ export class PermissionService {
         .select('church_id')
         .eq('id', groupId)
         .single();
-      
+
       if (group && group.church_id.includes(user.church_id)) {
         return { hasPermission: true };
       }
     }
 
-    return { hasPermission: false, reason: 'Insufficient permissions to manage group membership' };
+    return {
+      hasPermission: false,
+      reason: 'Insufficient permissions to manage group membership',
+    };
   }
 
   /**
@@ -298,7 +326,11 @@ export class PermissionService {
     }
 
     if (user.roles.includes('church_admin')) {
-      permissions.push('manage_church_events', 'manage_church_groups', 'manage_church_users');
+      permissions.push(
+        'manage_church_events',
+        'manage_church_groups',
+        'manage_church_users'
+      );
     }
 
     // All users can create groups if they're in a church
@@ -319,9 +351,13 @@ export class PermissionService {
   /**
    * Validate RLS compliance for a query
    */
-  async validateRLSCompliance(table: string, operation: 'select' | 'insert' | 'update' | 'delete', filters: Record<string, any> = {}): Promise<PermissionCheck> {
+  async validateRLSCompliance(
+    table: string,
+    operation: 'select' | 'insert' | 'update' | 'delete',
+    filters: Record<string, any> = {}
+  ): Promise<PermissionCheck> {
     const user = await this.getCurrentUserWithCache();
-    
+
     if (!user) {
       return { hasPermission: false, reason: 'User not authenticated' };
     }
@@ -335,7 +371,10 @@ export class PermissionService {
       case 'users':
         if (operation === 'select' || operation === 'update') {
           // Users can only access their own data or users from their church
-          if (filters.id === user.id || (user.church_id && filters.church_id === user.church_id)) {
+          if (
+            filters.id === user.id ||
+            (user.church_id && filters.church_id === user.church_id)
+          ) {
             return { hasPermission: true };
           }
         }
@@ -353,7 +392,11 @@ export class PermissionService {
       case 'events':
         if (operation === 'select') {
           // Users can view public events from their church
-          if (user.church_id && filters.church_id === user.church_id && filters.is_public !== false) {
+          if (
+            user.church_id &&
+            filters.church_id === user.church_id &&
+            filters.is_public !== false
+          ) {
             return { hasPermission: true };
           }
         }
@@ -364,7 +407,10 @@ export class PermissionService {
           // Users can create their own memberships
           return { hasPermission: true };
         }
-        if ((operation === 'select' || operation === 'update') && filters.user_id === user.id) {
+        if (
+          (operation === 'select' || operation === 'update') &&
+          filters.user_id === user.id
+        ) {
           // Users can view/update their own memberships
           return { hasPermission: true };
         }
@@ -375,7 +421,10 @@ export class PermissionService {
           // Users can create friendships where they are the requester
           return { hasPermission: true };
         }
-        if (operation === 'select' && (filters.user_id === user.id || filters.friend_id === user.id)) {
+        if (
+          operation === 'select' &&
+          (filters.user_id === user.id || filters.friend_id === user.id)
+        ) {
           // Users can view friendships they're involved in
           return { hasPermission: true };
         }
@@ -389,7 +438,10 @@ export class PermissionService {
         break;
     }
 
-    return { hasPermission: false, reason: `RLS policy violation for ${table}.${operation}` };
+    return {
+      hasPermission: false,
+      reason: `RLS policy violation for ${table}.${operation}`,
+    };
   }
 }
 

@@ -1,5 +1,10 @@
 import React from 'react';
-import { render, fireEvent, waitFor, screen } from '@testing-library/react-native';
+import {
+  render,
+  fireEvent,
+  waitFor,
+  screen,
+} from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { CreateGroupModal } from '../CreateGroupModal';
 import { groupCreationService } from '../../../services/groupCreation';
@@ -17,8 +22,12 @@ jest.mock('../../../hooks', () => ({
 // Mock Alert
 jest.spyOn(Alert, 'alert');
 
-const mockGroupCreationService = groupCreationService as jest.Mocked<typeof groupCreationService>;
-const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
+const mockGroupCreationService = groupCreationService as jest.Mocked<
+  typeof groupCreationService
+>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<
+  typeof useAuthStore
+>;
 
 describe('CreateGroupModal', () => {
   const mockOnClose = jest.fn();
@@ -99,7 +108,9 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    const timeInput = screen.getByPlaceholderText('e.g., 19:00 (24-hour format)');
+    const timeInput = screen.getByPlaceholderText(
+      'e.g., 19:00 (24-hour format)'
+    );
     fireEvent.changeText(timeInput, 'invalid-time');
     fireEvent(timeInput, 'blur');
 
@@ -132,7 +143,9 @@ describe('CreateGroupModal', () => {
       'Test Group'
     );
     fireEvent.changeText(
-      screen.getByPlaceholderText('Describe your group\'s purpose, target audience, and what to expect...'),
+      screen.getByPlaceholderText(
+        "Describe your group's purpose, target audience, and what to expect..."
+      ),
       'A test group for testing purposes'
     );
     fireEvent.changeText(
@@ -140,7 +153,9 @@ describe('CreateGroupModal', () => {
       '19:00'
     );
     fireEvent.changeText(
-      screen.getByPlaceholderText('e.g., Church Room 101, or 123 Main St, City'),
+      screen.getByPlaceholderText(
+        'e.g., Church Room 101, or 123 Main St, City'
+      ),
       'Church Room 101'
     );
 
@@ -198,7 +213,9 @@ describe('CreateGroupModal', () => {
       'Test Group'
     );
     fireEvent.changeText(
-      screen.getByPlaceholderText('Describe your group\'s purpose, target audience, and what to expect...'),
+      screen.getByPlaceholderText(
+        "Describe your group's purpose, target audience, and what to expect..."
+      ),
       'A test group for testing purposes'
     );
     fireEvent.changeText(
@@ -206,7 +223,9 @@ describe('CreateGroupModal', () => {
       '19:00'
     );
     fireEvent.changeText(
-      screen.getByPlaceholderText('e.g., Church Room 101, or 123 Main St, City'),
+      screen.getByPlaceholderText(
+        'e.g., Church Room 101, or 123 Main St, City'
+      ),
       'Church Room 101'
     );
 
@@ -253,7 +272,9 @@ describe('CreateGroupModal', () => {
       'Test Group'
     );
     fireEvent.changeText(
-      screen.getByPlaceholderText('Describe your group\'s purpose, target audience, and what to expect...'),
+      screen.getByPlaceholderText(
+        "Describe your group's purpose, target audience, and what to expect..."
+      ),
       'A test group for testing purposes'
     );
     fireEvent.changeText(
@@ -261,7 +282,9 @@ describe('CreateGroupModal', () => {
       '19:00'
     );
     fireEvent.changeText(
-      screen.getByPlaceholderText('e.g., Church Room 101, or 123 Main St, City'),
+      screen.getByPlaceholderText(
+        'e.g., Church Room 101, or 123 Main St, City'
+      ),
       'Church Room 101'
     );
 

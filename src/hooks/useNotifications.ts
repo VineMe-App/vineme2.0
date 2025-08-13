@@ -24,7 +24,9 @@ export const useNotifications = () => {
   const queryClient = useQueryClient();
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
-  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<
+    boolean | null
+  >(null);
 
   // Load onboarding completion flag
   useEffect(() => {
@@ -49,24 +51,24 @@ export const useNotifications = () => {
   // Set up notification listeners
   useEffect(() => {
     // Listen for notifications received while app is running
-    notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification) => {
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
         console.log('Notification received:', notification);
         // You can handle the notification here if needed
-      }
-    );
+      });
 
     // Listen for user interactions with notifications
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
         console.log('Notification response:', response);
         handleNotificationResponse(response, router);
-      }
-    );
+      });
 
     return () => {
       if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
+        Notifications.removeNotificationSubscription(
+          notificationListener.current
+        );
       }
       if (responseListener.current) {
         Notifications.removeNotificationSubscription(responseListener.current);
@@ -75,8 +77,10 @@ export const useNotifications = () => {
   }, [router]);
 
   return {
-    registerForPushNotifications: (userId: string) => registerForPushNotifications(userId),
-    unregisterFromPushNotifications: (userId: string) => unregisterFromPushNotifications(userId),
+    registerForPushNotifications: (userId: string) =>
+      registerForPushNotifications(userId),
+    unregisterFromPushNotifications: (userId: string) =>
+      unregisterFromPushNotifications(userId),
   };
 };
 
@@ -103,7 +107,9 @@ export const useNotificationSettings = (userId?: string) => {
       group_updates?: boolean;
     }) => updateNotificationSettings(userId!, newSettings),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notificationSettings', userId] });
+      queryClient.invalidateQueries({
+        queryKey: ['notificationSettings', userId],
+      });
     },
   });
 
@@ -131,7 +137,13 @@ export const useEventReminders = () => {
       eventTitle: string;
       eventDate: string;
       reminderMinutes?: number;
-    }) => sendEventReminderNotification(eventId, eventTitle, eventDate, reminderMinutes),
+    }) =>
+      sendEventReminderNotification(
+        eventId,
+        eventTitle,
+        eventDate,
+        reminderMinutes
+      ),
   });
 
   const cancelReminderMutation = useMutation({

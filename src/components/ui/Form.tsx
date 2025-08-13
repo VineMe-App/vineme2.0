@@ -69,7 +69,7 @@ export const Form: React.FC<FormProps> = ({
   // Initialize form state
   const [values, setValues] = useState<FormValues>(() => {
     const initialValues: FormValues = {};
-    Object.keys(config).forEach(key => {
+    Object.keys(config).forEach((key) => {
       initialValues[key] = config[key].initialValue || '';
     });
     return initialValues;
@@ -79,74 +79,98 @@ export const Form: React.FC<FormProps> = ({
   const [touched, setTouchedState] = useState<{ [key: string]: boolean }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const validateField = useCallback((name: string, value: any): string | undefined => {
-    const fieldConfig = config[name];
-    if (!fieldConfig?.rules) return undefined;
+  const validateField = useCallback(
+    (name: string, value: any): string | undefined => {
+      const fieldConfig = config[name];
+      if (!fieldConfig?.rules) return undefined;
 
-    const { rules } = fieldConfig;
+      const { rules } = fieldConfig;
 
-    // Required validation
-    if (rules.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
-      return 'This field is required';
-    }
+      // Required validation
+      if (
+        rules.required &&
+        (!value || (typeof value === 'string' && value.trim() === ''))
+      ) {
+        return 'This field is required';
+      }
 
-    // Skip other validations if field is empty and not required
-    if (!value || (typeof value === 'string' && value.trim() === '')) {
+      // Skip other validations if field is empty and not required
+      if (!value || (typeof value === 'string' && value.trim() === '')) {
+        return undefined;
+      }
+
+      // Min length validation
+      if (
+        rules.minLength &&
+        typeof value === 'string' &&
+        value.length < rules.minLength
+      ) {
+        return `Must be at least ${rules.minLength} characters`;
+      }
+
+      // Max length validation
+      if (
+        rules.maxLength &&
+        typeof value === 'string' &&
+        value.length > rules.maxLength
+      ) {
+        return `Must be no more than ${rules.maxLength} characters`;
+      }
+
+      // Pattern validation
+      if (
+        rules.pattern &&
+        typeof value === 'string' &&
+        !rules.pattern.test(value)
+      ) {
+        return 'Invalid format';
+      }
+
+      // Custom validation
+      if (rules.custom) {
+        return rules.custom(value);
+      }
+
       return undefined;
-    }
+    },
+    [config]
+  );
 
-    // Min length validation
-    if (rules.minLength && typeof value === 'string' && value.length < rules.minLength) {
-      return `Must be at least ${rules.minLength} characters`;
-    }
+  const setValue = useCallback(
+    (name: string, value: any) => {
+      setValues((prev) => ({ ...prev, [name]: value }));
 
-    // Max length validation
-    if (rules.maxLength && typeof value === 'string' && value.length > rules.maxLength) {
-      return `Must be no more than ${rules.maxLength} characters`;
-    }
-
-    // Pattern validation
-    if (rules.pattern && typeof value === 'string' && !rules.pattern.test(value)) {
-      return 'Invalid format';
-    }
-
-    // Custom validation
-    if (rules.custom) {
-      return rules.custom(value);
-    }
-
-    return undefined;
-  }, [config]);
-
-  const setValue = useCallback((name: string, value: any) => {
-    setValues(prev => ({ ...prev, [name]: value }));
-    
-    // Validate field if it has been touched
-    if (touched[name]) {
-      const error = validateField(name, value);
-      setErrors(prev => ({ ...prev, [name]: error }));
-    }
-  }, [touched, validateField]);
+      // Validate field if it has been touched
+      if (touched[name]) {
+        const error = validateField(name, value);
+        setErrors((prev) => ({ ...prev, [name]: error }));
+      }
+    },
+    [touched, validateField]
+  );
 
   const setError = useCallback((name: string, error: string | undefined) => {
-    setErrors(prev => ({ ...prev, [name]: error }));
+    setErrors((prev) => ({ ...prev, [name]: error }));
   }, []);
 
-  const setTouched = useCallback((name: string, isTouched: boolean) => {
-    setTouchedState(prev => ({ ...prev, [name]: isTouched }));
-    
-    // Validate field when it becomes touched
-    if (isTouched) {
-      const error = validateField(name, values[name]);
-      setErrors(prev => ({ ...prev, [name]: error }));
-    }
-  }, [values, validateField]);
+  const setTouched = useCallback(
+    (name: string, isTouched: boolean) => {
+      setTouchedState((prev) => ({ ...prev, [name]: isTouched }));
+
+      // Validate field when it becomes touched
+      if (isTouched) {
+        const error = validateField(name, values[name]);
+        setErrors((prev) => ({ ...prev, [name]: error }));
+      }
+    },
+    [values, validateField]
+  );
 
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
     let isValid = true;
 
-    Object.keys(config).forEach(name => {
+    Object.keys(config).forEach((name) => {
       const error = validateField(name, values[name]);
       if (error) {
         newErrors[name] = error;
@@ -155,10 +179,10 @@ export const Form: React.FC<FormProps> = ({
     });
 
     setErrors(newErrors);
-    
+
     // Mark all fields as touched
     const allTouched: { [key: string]: boolean } = {};
-    Object.keys(config).forEach(name => {
+    Object.keys(config).forEach((name) => {
       allTouched[name] = true;
     });
     setTouchedState(allTouched);
@@ -168,7 +192,7 @@ export const Form: React.FC<FormProps> = ({
 
   const resetForm = useCallback(() => {
     const initialValues: FormValues = {};
-    Object.keys(config).forEach(key => {
+    Object.keys(config).forEach((key) => {
       initialValues[key] = config[key].initialValue || '';
     });
     setValues(initialValues);
@@ -181,7 +205,7 @@ export const Form: React.FC<FormProps> = ({
     if (isSubmitting) return;
 
     setIsSubmitting(true);
-    
+
     try {
       if (validateForm()) {
         await onSubmit(values);
@@ -234,9 +258,12 @@ interface FormFieldProps {
 export const FormField: React.FC<FormFieldProps> = ({ name, children }) => {
   const { values, errors, touched, setValue, setTouched } = useFormContext();
 
-  const handleChange = useCallback((value: any) => {
-    setValue(name, value);
-  }, [name, setValue]);
+  const handleChange = useCallback(
+    (value: any) => {
+      setValue(name, value);
+    },
+    [name, setValue]
+  );
 
   const handleBlur = useCallback(() => {
     setTouched(name, true);

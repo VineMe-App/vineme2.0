@@ -35,7 +35,10 @@ export default function GroupsScreen() {
         await refetch();
       } catch (error) {
         handleError(error as Error, {
-          context: { action: 'refresh_groups', churchId: userProfile?.church_id },
+          context: {
+            action: 'refresh_groups',
+            churchId: userProfile?.church_id,
+          },
           showAlert: false, // Don't show alert for refresh errors, just show in UI
         });
         throw error; // Re-throw so the error state is maintained
@@ -74,7 +77,11 @@ export default function GroupsScreen() {
           : 'Please complete your profile to see groups from your church.'
       }
       actionTitle={!userProfile?.church_id ? 'Complete Profile' : undefined}
-      onAction={!userProfile?.church_id ? () => router.push('/(tabs)/profile') : undefined}
+      onAction={
+        !userProfile?.church_id
+          ? () => router.push('/(tabs)/profile')
+          : undefined
+      }
     />
   );
 
@@ -141,15 +148,15 @@ export default function GroupsScreen() {
         }
         ListEmptyComponent={renderEmptyState}
         refreshControl={
-          <RefreshControl 
-            refreshing={isRefreshing || isLoading} 
-            onRefresh={handleRefresh} 
+          <RefreshControl
+            refreshing={isRefreshing || isLoading}
+            onRefresh={handleRefresh}
           />
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
       />
-      
+
       <CreateGroupModal
         isVisible={showCreateModal}
         onClose={() => setShowCreateModal(false)}

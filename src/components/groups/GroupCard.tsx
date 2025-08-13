@@ -31,8 +31,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.content}>
         {group.image_url && (
-          <OptimizedImage 
-            source={{ uri: group.image_url }} 
+          <OptimizedImage
+            source={{ uri: group.image_url }}
             style={styles.image}
             quality="medium"
             lazy={true}

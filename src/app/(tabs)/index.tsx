@@ -1,17 +1,20 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
-  RefreshControl 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { useAuthStore } from '../../stores/auth';
 import { router } from 'expo-router';
 import { useUpcomingEvents } from '../../hooks/useEvents';
 import { useUserGroupMemberships } from '../../hooks/useUsers';
-import { useFriends, useReceivedFriendRequests } from '../../hooks/useFriendships';
+import {
+  useFriends,
+  useReceivedFriendRequests,
+} from '../../hooks/useFriendships';
 import { EventCard } from '../../components/events/EventCard';
 import { GroupCard } from '../../components/groups/GroupCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -22,34 +25,34 @@ import { FriendRequestNotifications } from '../../components/friends/FriendReque
 
 export default function HomeScreen() {
   const { user, userProfile } = useAuthStore();
-  
+
   // Get user's church ID for filtering data
   const churchId = userProfile?.church_id;
   const userId = user?.id;
 
   // Fetch dashboard data
-  const { 
-    data: upcomingEvents, 
-    isLoading: eventsLoading, 
-    refetch: refetchEvents 
+  const {
+    data: upcomingEvents,
+    isLoading: eventsLoading,
+    refetch: refetchEvents,
   } = useUpcomingEvents(churchId || '', 3);
-  
-  const { 
-    data: userGroupMemberships, 
-    isLoading: groupsLoading, 
-    refetch: refetchGroups 
+
+  const {
+    data: userGroupMemberships,
+    isLoading: groupsLoading,
+    refetch: refetchGroups,
   } = useUserGroupMemberships(userId);
-  
-  const { 
-    data: friends, 
-    isLoading: friendsLoading, 
-    refetch: refetchFriends 
+
+  const {
+    data: friends,
+    isLoading: friendsLoading,
+    refetch: refetchFriends,
   } = useFriends(userId);
-  
-  const { 
-    data: pendingFriendRequests, 
-    isLoading: requestsLoading, 
-    refetch: refetchRequests 
+
+  const {
+    data: pendingFriendRequests,
+    isLoading: requestsLoading,
+    refetch: refetchRequests,
   } = useReceivedFriendRequests(userId);
 
   // Calculate dashboard stats
@@ -69,7 +72,8 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [refetchEvents, refetchGroups, refetchFriends, refetchRequests]);
 
-  const isLoading = eventsLoading || groupsLoading || friendsLoading || requestsLoading;
+  const isLoading =
+    eventsLoading || groupsLoading || friendsLoading || requestsLoading;
 
   if (isLoading && !refreshing) {
     return (
@@ -80,7 +84,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -89,9 +93,9 @@ export default function HomeScreen() {
       {/* Header with user info */}
       <View style={styles.header}>
         <View style={styles.userSection}>
-          <Avatar 
-            uri={userProfile?.avatar_url} 
-            name={userProfile?.name || user?.email || 'User'} 
+          <Avatar
+            uri={userProfile?.avatar_url}
+            name={userProfile?.name || user?.email || 'User'}
             size={60}
           />
           <View style={styles.userInfo}>
@@ -101,10 +105,10 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>Welcome back to VineMe</Text>
           </View>
         </View>
-        
+
         {/* Friend request notifications */}
         {pendingRequests.length > 0 && (
-          <FriendRequestNotifications 
+          <FriendRequestNotifications
             requests={pendingRequests}
             onPress={() => router.push('/(tabs)/profile')}
           />
@@ -114,7 +118,9 @@ export default function HomeScreen() {
       {/* Dashboard stats */}
       <View style={styles.statsSection}>
         <Card style={styles.statCard}>
-          <Text style={styles.statNumber}>{userGroupMemberships?.length || 0}</Text>
+          <Text style={styles.statNumber}>
+            {userGroupMemberships?.length || 0}
+          </Text>
           <Text style={styles.statLabel}>Groups</Text>
         </Card>
         <Card style={styles.statCard}>
@@ -135,7 +141,7 @@ export default function HomeScreen() {
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>
-        
+
         {upcomingEvents && upcomingEvents.length > 0 ? (
           <View style={styles.horizontalList}>
             {upcomingEvents.map((event) => (
@@ -164,7 +170,7 @@ export default function HomeScreen() {
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>
-        
+
         {userGroupMemberships && userGroupMemberships.length > 0 ? (
           <View style={styles.horizontalList}>
             {userGroupMemberships.slice(0, 3).map((membership) => (
@@ -183,7 +189,7 @@ export default function HomeScreen() {
             message="Join a Bible study group to connect with your community"
             icon={<Text style={styles.emptyIcon}>👥</Text>}
             action={
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => router.push('/(tabs)/groups')}
               >

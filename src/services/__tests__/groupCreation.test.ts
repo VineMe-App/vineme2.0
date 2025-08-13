@@ -1,6 +1,14 @@
 // Mock the supabase module before importing anything else
+import { groupCreationService } from '../groupCreation';
+import { permissionService } from '../permissions';
+import {
+  sendGroupRequestNotification,
+  sendJoinRequestNotification,
+} from '../notifications';
+import type { CreateGroupData } from '../admin';
+
 jest.mock('../supabase', () => ({
-  supabase: global.mockSupabaseClient
+  supabase: global.mockSupabaseClient,
 }));
 
 jest.mock('../permissions');
@@ -9,15 +17,18 @@ jest.mock('../notifications', () => ({
   sendJoinRequestNotification: jest.fn(),
 }));
 
-import { groupCreationService } from '../groupCreation';
-import { permissionService } from '../permissions';
-import { sendGroupRequestNotification, sendJoinRequestNotification } from '../notifications';
-import type { CreateGroupData } from '../admin';
-
 const mockSupabase = global.mockSupabaseClient;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
-const mockSendGroupRequestNotification = sendGroupRequestNotification as jest.MockedFunction<typeof sendGroupRequestNotification>;
-const mockSendJoinRequestNotification = sendJoinRequestNotification as jest.MockedFunction<typeof sendJoinRequestNotification>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
+const mockSendGroupRequestNotification =
+  sendGroupRequestNotification as jest.MockedFunction<
+    typeof sendGroupRequestNotification
+  >;
+const mockSendJoinRequestNotification =
+  sendJoinRequestNotification as jest.MockedFunction<
+    typeof sendJoinRequestNotification
+  >;
 
 describe('GroupCreationService', () => {
   beforeEach(() => {
@@ -33,12 +44,16 @@ describe('GroupCreationService', () => {
       location: { address: '123 Test St' },
       service_id: 'service1',
       church_id: 'church1',
-      whatsapp_link: 'https://chat.whatsapp.com/test'
+      whatsapp_link: 'https://chat.whatsapp.com/test',
     };
 
     it('should create a group request successfully', async () => {
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.validateRLSCompliance.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.validateRLSCompliance.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock group creation
       const mockGroup = { id: 'group1', ...mockGroupData, status: 'pending' };
@@ -47,17 +62,17 @@ describe('GroupCreationService', () => {
           select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: mockGroup,
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock membership creation
       mockSupabase.from.mockReturnValueOnce({
         insert: jest.fn().mockResolvedValue({
-          error: null
-        })
+          error: null,
+        }),
       } as any);
 
       // Mock creator name fetch for notification
@@ -66,28 +81,40 @@ describe('GroupCreationService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { name: 'Test User' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.createGroupRequest(mockGroupData, 'user1');
+      const result = await groupCreationService.createGroupRequest(
+        mockGroupData,
+        'user1'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
       expect(result.data!.status).toBe('pending');
-      expect(mockPermissionService.canAccessChurchData).toHaveBeenCalledWith('church1');
-      expect(mockSendGroupRequestNotification).toHaveBeenCalledWith('church1', 'Test Group', 'Test User');
+      expect(mockPermissionService.canAccessChurchData).toHaveBeenCalledWith(
+        'church1'
+      );
+      expect(mockSendGroupRequestNotification).toHaveBeenCalledWith(
+        'church1',
+        'Test Group',
+        'Test User'
+      );
     });
 
     it('should return error when user lacks church access', async () => {
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ 
-        hasPermission: false, 
-        reason: 'Access denied' 
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: false,
+        reason: 'Access denied',
       });
 
-      const result = await groupCreationService.createGroupRequest(mockGroupData, 'user1');
+      const result = await groupCreationService.createGroupRequest(
+        mockGroupData,
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
       expect(result.error!.message).toBe('Access denied');
@@ -95,13 +122,18 @@ describe('GroupCreationService', () => {
     });
 
     it('should return error when RLS compliance fails', async () => {
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.validateRLSCompliance.mockResolvedValue({ 
-        hasPermission: false, 
-        reason: 'RLS violation' 
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.validateRLSCompliance.mockResolvedValue({
+        hasPermission: false,
+        reason: 'RLS violation',
       });
 
-      const result = await groupCreationService.createGroupRequest(mockGroupData, 'user1');
+      const result = await groupCreationService.createGroupRequest(
+        mockGroupData,
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
       expect(result.error!.message).toBe('RLS violation');
@@ -109,38 +141,45 @@ describe('GroupCreationService', () => {
     });
 
     it('should clean up group if membership creation fails', async () => {
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
-      mockPermissionService.validateRLSCompliance.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
+      mockPermissionService.validateRLSCompliance.mockResolvedValue({
+        hasPermission: true,
+      });
 
       const mockGroup = { id: 'group1', ...mockGroupData, status: 'pending' };
-      
+
       // Mock successful group creation
       mockSupabase.from.mockReturnValueOnce({
         insert: jest.fn().mockReturnValue({
           select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: mockGroup,
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock failed membership creation
       mockSupabase.from.mockReturnValueOnce({
         insert: jest.fn().mockResolvedValue({
-          error: { message: 'Membership creation failed' }
-        })
+          error: { message: 'Membership creation failed' },
+        }),
       } as any);
 
       // Mock group cleanup
       mockSupabase.from.mockReturnValueOnce({
         delete: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({})
-        })
+          eq: jest.fn().mockResolvedValue({}),
+        }),
       } as any);
 
-      const result = await groupCreationService.createGroupRequest(mockGroupData, 'user1');
+      const result = await groupCreationService.createGroupRequest(
+        mockGroupData,
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
       expect(result.error!.message).toBe('Failed to create group leadership');
@@ -151,11 +190,13 @@ describe('GroupCreationService', () => {
   describe('updateGroupDetails', () => {
     const mockUpdates = {
       title: 'Updated Group',
-      description: 'Updated description'
+      description: 'Updated description',
     };
 
     it('should update group details when user is leader', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock membership check
       mockSupabase.from.mockReturnValueOnce({
@@ -165,12 +206,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock update operation
@@ -181,14 +222,18 @@ describe('GroupCreationService', () => {
             select: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: mockUpdatedGroup,
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.updateGroupDetails('group1', mockUpdates, 'user1');
+      const result = await groupCreationService.updateGroupDetails(
+        'group1',
+        mockUpdates,
+        'user1'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
@@ -196,7 +241,9 @@ describe('GroupCreationService', () => {
     });
 
     it('should return error when user is not a leader', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
@@ -205,28 +252,38 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'member' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.updateGroupDetails('group1', mockUpdates, 'user1');
+      const result = await groupCreationService.updateGroupDetails(
+        'group1',
+        mockUpdates,
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
-      expect(result.error!.message).toBe('Only group leaders can update group details');
+      expect(result.error!.message).toBe(
+        'Only group leaders can update group details'
+      );
       expect(result.data).toBeNull();
     });
 
     it('should return error when user cannot manage group', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ 
-        hasPermission: false, 
-        reason: 'Access denied' 
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: false,
+        reason: 'Access denied',
       });
 
-      const result = await groupCreationService.updateGroupDetails('group1', mockUpdates, 'user1');
+      const result = await groupCreationService.updateGroupDetails(
+        'group1',
+        mockUpdates,
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
       expect(result.error!.message).toBe('Access denied');
@@ -236,7 +293,9 @@ describe('GroupCreationService', () => {
 
   describe('promoteToLeader', () => {
     it('should promote member to leader', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock promoter check
       mockSupabase.from.mockReturnValueOnce({
@@ -246,12 +305,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock target member check
@@ -262,12 +321,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { id: 'mem1', role: 'member' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock promotion update
@@ -278,14 +337,18 @@ describe('GroupCreationService', () => {
             select: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: mockUpdatedMembership,
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.promoteToLeader('group1', 'user2', 'user1');
+      const result = await groupCreationService.promoteToLeader(
+        'group1',
+        'user2',
+        'user1'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
@@ -293,7 +356,9 @@ describe('GroupCreationService', () => {
     });
 
     it('should return error when promoter is not a leader', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
@@ -302,23 +367,31 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'member' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.promoteToLeader('group1', 'user2', 'user1');
+      const result = await groupCreationService.promoteToLeader(
+        'group1',
+        'user2',
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
-      expect(result.error!.message).toBe('Only group leaders can promote members');
+      expect(result.error!.message).toBe(
+        'Only group leaders can promote members'
+      );
       expect(result.data).toBeNull();
     });
 
     it('should return error when target user is already a leader', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock promoter check
       mockSupabase.from.mockReturnValueOnce({
@@ -328,12 +401,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock target member check
@@ -344,15 +417,19 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { id: 'mem1', role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.promoteToLeader('group1', 'user2', 'user1');
+      const result = await groupCreationService.promoteToLeader(
+        'group1',
+        'user2',
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
       expect(result.error!.message).toBe('User is already a leader');
@@ -362,7 +439,9 @@ describe('GroupCreationService', () => {
 
   describe('demoteFromLeader', () => {
     it('should demote leader to member when not last leader', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock demoter check
       mockSupabase.from.mockReturnValueOnce({
@@ -372,12 +451,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock all leaders check
@@ -388,13 +467,13 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockResolvedValue({
                 data: [
                   { id: 'mem1', user_id: 'user1' },
-                  { id: 'mem2', user_id: 'user2' }
+                  { id: 'mem2', user_id: 'user2' },
                 ],
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock target member check
@@ -405,12 +484,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { id: 'mem2', role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock demotion update
@@ -421,14 +500,18 @@ describe('GroupCreationService', () => {
             select: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: mockUpdatedMembership,
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.demoteFromLeader('group1', 'user2', 'user1');
+      const result = await groupCreationService.demoteFromLeader(
+        'group1',
+        'user2',
+        'user1'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
@@ -436,7 +519,9 @@ describe('GroupCreationService', () => {
     });
 
     it('should return error when trying to demote last leader', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock demoter check
       mockSupabase.from.mockReturnValueOnce({
@@ -446,12 +531,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock all leaders check - only one leader
@@ -461,24 +546,32 @@ describe('GroupCreationService', () => {
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockResolvedValue({
                 data: [{ id: 'mem1', user_id: 'user2' }],
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.demoteFromLeader('group1', 'user2', 'user1');
+      const result = await groupCreationService.demoteFromLeader(
+        'group1',
+        'user2',
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
-      expect(result.error!.message).toBe('Cannot demote the last leader of the group');
+      expect(result.error!.message).toBe(
+        'Cannot demote the last leader of the group'
+      );
       expect(result.data).toBeNull();
     });
   });
 
   describe('removeMember', () => {
     it('should remove member from group', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock remover check
       mockSupabase.from.mockReturnValueOnce({
@@ -488,12 +581,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock target member check
@@ -504,12 +597,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'member' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock removal update
@@ -517,20 +610,26 @@ describe('GroupCreationService', () => {
         update: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockResolvedValue({
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.removeMember('group1', 'user2', 'user1');
+      const result = await groupCreationService.removeMember(
+        'group1',
+        'user2',
+        'user1'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toBe(true);
     });
 
     it('should return error when trying to remove last leader', async () => {
-      mockPermissionService.canManageGroupMembership.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canManageGroupMembership.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock remover check
       mockSupabase.from.mockReturnValueOnce({
@@ -540,12 +639,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock target member check - is a leader
@@ -556,12 +655,12 @@ describe('GroupCreationService', () => {
               eq: jest.fn().mockReturnValue({
                 single: jest.fn().mockResolvedValue({
                   data: { role: 'leader' },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock all leaders check - only one leader
@@ -571,24 +670,32 @@ describe('GroupCreationService', () => {
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockResolvedValue({
                 data: [{ id: 'mem1' }],
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.removeMember('group1', 'user2', 'user1');
+      const result = await groupCreationService.removeMember(
+        'group1',
+        'user2',
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
-      expect(result.error!.message).toBe('Cannot remove the last leader of the group');
+      expect(result.error!.message).toBe(
+        'Cannot remove the last leader of the group'
+      );
       expect(result.data).toBeNull();
     });
   });
 
   describe('createJoinRequest', () => {
     it('should create join request for approved group', async () => {
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock group check
       mockSupabase.from.mockReturnValueOnce({
@@ -596,10 +703,10 @@ describe('GroupCreationService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { church_id: 'church1', status: 'approved' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock existing membership check
@@ -609,11 +716,11 @@ describe('GroupCreationService', () => {
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: null,
-                error: { code: 'PGRST116' } // Not found
-              })
-            })
-          })
-        })
+                error: { code: 'PGRST116' }, // Not found
+              }),
+            }),
+          }),
+        }),
       } as any);
 
       // Mock join request creation
@@ -623,10 +730,10 @@ describe('GroupCreationService', () => {
           select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: mockMembership,
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock requester and group info fetch for notification
@@ -635,10 +742,10 @@ describe('GroupCreationService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { name: 'Test User' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       mockSupabase.from.mockReturnValueOnce({
@@ -646,35 +753,49 @@ describe('GroupCreationService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { title: 'Test Group' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.createJoinRequest('group1', 'user1', true, 'Please let me join');
+      const result = await groupCreationService.createJoinRequest(
+        'group1',
+        'user1',
+        true,
+        'Please let me join'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toBeTruthy();
       expect(result.data!.status).toBe('pending');
-      expect(mockSendJoinRequestNotification).toHaveBeenCalledWith('group1', 'Test Group', 'Test User');
+      expect(mockSendJoinRequestNotification).toHaveBeenCalledWith(
+        'group1',
+        'Test Group',
+        'Test User'
+      );
     });
 
     it('should return error for non-approved group', async () => {
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { church_id: 'church1', status: 'pending' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.createJoinRequest('group1', 'user1');
+      const result = await groupCreationService.createJoinRequest(
+        'group1',
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
       expect(result.error!.message).toBe('Group is not accepting new members');
@@ -682,7 +803,9 @@ describe('GroupCreationService', () => {
     });
 
     it('should return error when user already has active membership', async () => {
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock group check
       mockSupabase.from.mockReturnValueOnce({
@@ -690,10 +813,10 @@ describe('GroupCreationService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { church_id: 'church1', status: 'approved' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock existing membership check - user is already active
@@ -703,22 +826,29 @@ describe('GroupCreationService', () => {
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: { status: 'active' },
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.createJoinRequest('group1', 'user1');
+      const result = await groupCreationService.createJoinRequest(
+        'group1',
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
-      expect(result.error!.message).toBe('User is already a member of this group');
+      expect(result.error!.message).toBe(
+        'User is already a member of this group'
+      );
       expect(result.data).toBeNull();
     });
 
     it('should return error when user already has pending request', async () => {
-      mockPermissionService.canAccessChurchData.mockResolvedValue({ hasPermission: true });
+      mockPermissionService.canAccessChurchData.mockResolvedValue({
+        hasPermission: true,
+      });
 
       // Mock group check
       mockSupabase.from.mockReturnValueOnce({
@@ -726,10 +856,10 @@ describe('GroupCreationService', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: { church_id: 'church1', status: 'approved' },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       } as any);
 
       // Mock existing membership check - user has pending request
@@ -739,17 +869,22 @@ describe('GroupCreationService', () => {
             eq: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: { status: 'pending' },
-                error: null
-              })
-            })
-          })
-        })
+                error: null,
+              }),
+            }),
+          }),
+        }),
       } as any);
 
-      const result = await groupCreationService.createJoinRequest('group1', 'user1');
+      const result = await groupCreationService.createJoinRequest(
+        'group1',
+        'user1'
+      );
 
       expect(result.error).toBeTruthy();
-      expect(result.error!.message).toBe('User already has a pending request for this group');
+      expect(result.error!.message).toBe(
+        'User already has a pending request for this group'
+      );
       expect(result.data).toBeNull();
     });
   });

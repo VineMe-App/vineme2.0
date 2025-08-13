@@ -17,7 +17,7 @@ function RootLayoutNav() {
   const [onboardingCompleted, setOnboardingCompleted] = useState<
     boolean | null
   >(null);
-  
+
   // Initialize notifications
   useNotifications();
 
@@ -25,12 +25,12 @@ function RootLayoutNav() {
     // Initialize auth state when app starts
     initialize();
     checkOnboardingStatus();
-    
+
     // Log platform information for debugging
     if (__DEV__) {
       logPlatformInfo();
     }
-    
+
     // Handle deep links
     const handleInitialUrl = async () => {
       const initialUrl = await Linking.getInitialURL();
@@ -41,14 +41,14 @@ function RootLayoutNav() {
         }, 1000);
       }
     };
-    
+
     handleInitialUrl();
-    
+
     // Listen for incoming deep links while app is running
     const subscription = Linking.addEventListener('url', ({ url }) => {
       handleDeepLink(url, router);
     });
-    
+
     return () => {
       subscription?.remove();
     };

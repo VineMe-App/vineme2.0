@@ -46,7 +46,9 @@ describe('FriendCard', () => {
 
   it('should handle friend without avatar', () => {
     const friendWithoutAvatar = { ...mockFriend, avatar_url: null };
-    render(<FriendCard friend={friendWithoutAvatar} onMessage={mockOnMessage} />);
+    render(
+      <FriendCard friend={friendWithoutAvatar} onMessage={mockOnMessage} />
+    );
 
     const avatar = screen.getByTestId('friend-avatar-user-1');
     expect(avatar).toBeTruthy();

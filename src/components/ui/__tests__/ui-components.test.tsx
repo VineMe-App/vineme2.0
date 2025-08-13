@@ -38,7 +38,10 @@ describe('UI Components', () => {
     // Test validation rules without rendering components
     const validateField = (rules: any, value: any): string | undefined => {
       // Required validation
-      if (rules.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
+      if (
+        rules.required &&
+        (!value || (typeof value === 'string' && value.trim() === ''))
+      ) {
         return 'This field is required';
       }
 
@@ -48,17 +51,29 @@ describe('UI Components', () => {
       }
 
       // Min length validation
-      if (rules.minLength && typeof value === 'string' && value.length < rules.minLength) {
+      if (
+        rules.minLength &&
+        typeof value === 'string' &&
+        value.length < rules.minLength
+      ) {
         return `Must be at least ${rules.minLength} characters`;
       }
 
       // Max length validation
-      if (rules.maxLength && typeof value === 'string' && value.length > rules.maxLength) {
+      if (
+        rules.maxLength &&
+        typeof value === 'string' &&
+        value.length > rules.maxLength
+      ) {
         return `Must be no more than ${rules.maxLength} characters`;
       }
 
       // Pattern validation
-      if (rules.pattern && typeof value === 'string' && !rules.pattern.test(value)) {
+      if (
+        rules.pattern &&
+        typeof value === 'string' &&
+        !rules.pattern.test(value)
+      ) {
         return 'Invalid format';
       }
 
@@ -72,7 +87,7 @@ describe('UI Components', () => {
 
     it('validates required fields correctly', () => {
       const rules = { required: true };
-      
+
       expect(validateField(rules, '')).toBe('This field is required');
       expect(validateField(rules, '   ')).toBe('This field is required');
       expect(validateField(rules, null)).toBe('This field is required');
@@ -82,7 +97,7 @@ describe('UI Components', () => {
 
     it('validates minimum length correctly', () => {
       const rules = { minLength: 3 };
-      
+
       expect(validateField(rules, 'ab')).toBe('Must be at least 3 characters');
       expect(validateField(rules, 'abc')).toBeUndefined();
       expect(validateField(rules, 'abcd')).toBeUndefined();
@@ -91,15 +106,17 @@ describe('UI Components', () => {
 
     it('validates maximum length correctly', () => {
       const rules = { maxLength: 5 };
-      
-      expect(validateField(rules, 'abcdef')).toBe('Must be no more than 5 characters');
+
+      expect(validateField(rules, 'abcdef')).toBe(
+        'Must be no more than 5 characters'
+      );
       expect(validateField(rules, 'abcde')).toBeUndefined();
       expect(validateField(rules, 'abc')).toBeUndefined();
     });
 
     it('validates email pattern correctly', () => {
       const rules = { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ };
-      
+
       expect(validateField(rules, 'invalid-email')).toBe('Invalid format');
       expect(validateField(rules, 'test@')).toBe('Invalid format');
       expect(validateField(rules, '@example.com')).toBe('Invalid format');
@@ -107,21 +124,24 @@ describe('UI Components', () => {
     });
 
     it('validates custom rules correctly', () => {
-      const rules = { 
-        custom: (value: string) => value === 'forbidden' ? 'This value is not allowed' : undefined 
+      const rules = {
+        custom: (value: string) =>
+          value === 'forbidden' ? 'This value is not allowed' : undefined,
       };
-      
-      expect(validateField(rules, 'forbidden')).toBe('This value is not allowed');
+
+      expect(validateField(rules, 'forbidden')).toBe(
+        'This value is not allowed'
+      );
       expect(validateField(rules, 'allowed')).toBeUndefined();
     });
 
     it('combines multiple validation rules', () => {
-      const rules = { 
-        required: true, 
+      const rules = {
+        required: true,
         minLength: 3,
-        pattern: /^[a-zA-Z]+$/
+        pattern: /^[a-zA-Z]+$/,
       };
-      
+
       expect(validateField(rules, '')).toBe('This field is required');
       expect(validateField(rules, 'ab')).toBe('Must be at least 3 characters');
       expect(validateField(rules, '123')).toBe('Invalid format');

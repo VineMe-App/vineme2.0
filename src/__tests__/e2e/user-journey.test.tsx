@@ -1,5 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from '@/app/_layout';
 import * as authService from '@/services/auth';
@@ -27,12 +32,20 @@ jest.mock('expo-router', () => ({
 // Mock auth store
 let mockUser: any = null;
 const mockAuthStore = {
-  get user() { return mockUser; },
-  get isAuthenticated() { return !!mockUser; },
+  get user() {
+    return mockUser;
+  },
+  get isAuthenticated() {
+    return !!mockUser;
+  },
   isLoading: false,
-  setUser: jest.fn((user) => { mockUser = user; }),
+  setUser: jest.fn((user) => {
+    mockUser = user;
+  }),
   setLoading: jest.fn(),
-  clearUser: jest.fn(() => { mockUser = null; }),
+  clearUser: jest.fn(() => {
+    mockUser = null;
+  }),
 };
 
 jest.mock('@/stores/auth', () => ({
@@ -50,9 +63,7 @@ const createTestQueryClient = () =>
 const renderWithProviders = (component: React.ReactElement) => {
   const queryClient = createTestQueryClient();
   return render(
-    <QueryClientProvider client={queryClient}>
-      {component}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
   );
 };
 
@@ -131,7 +142,10 @@ describe('Complete User Journey E2E', () => {
 
     // Verify sign in was called
     await waitFor(() => {
-      expect(mockAuthService.signIn).toHaveBeenCalledWith('test@example.com', 'password123');
+      expect(mockAuthService.signIn).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123'
+      );
     });
 
     // Step 2: Navigate to Groups tab
@@ -151,7 +165,10 @@ describe('Complete User Journey E2E', () => {
     fireEvent.press(joinButton);
 
     await waitFor(() => {
-      expect(mockGroupsService.joinGroup).toHaveBeenCalledWith('group-1', 'user-1');
+      expect(mockGroupsService.joinGroup).toHaveBeenCalledWith(
+        'group-1',
+        'user-1'
+      );
     });
 
     // Step 4: Navigate to Events tab
@@ -166,9 +183,16 @@ describe('Complete User Journey E2E', () => {
 
     // Verify all services were called correctly
     expect(mockAuthService.signIn).toHaveBeenCalledTimes(1);
-    expect(mockGroupsService.getGroupsByChurch).toHaveBeenCalledWith('church-1');
-    expect(mockGroupsService.joinGroup).toHaveBeenCalledWith('group-1', 'user-1');
-    expect(mockEventsService.getEventsByChurch).toHaveBeenCalledWith('church-1');
+    expect(mockGroupsService.getGroupsByChurch).toHaveBeenCalledWith(
+      'church-1'
+    );
+    expect(mockGroupsService.joinGroup).toHaveBeenCalledWith(
+      'group-1',
+      'user-1'
+    );
+    expect(mockEventsService.getEventsByChurch).toHaveBeenCalledWith(
+      'church-1'
+    );
   });
 
   it('should handle error states gracefully throughout the journey', async () => {
@@ -204,7 +228,9 @@ describe('Complete User Journey E2E', () => {
 
   it('should handle offline state during user journey', async () => {
     // Mock network error
-    mockAuthService.signIn.mockRejectedValue(new Error('Network request failed'));
+    mockAuthService.signIn.mockRejectedValue(
+      new Error('Network request failed')
+    );
 
     renderWithProviders(<App />);
 

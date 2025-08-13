@@ -14,10 +14,10 @@ const COVERAGE_THRESHOLD = {
 function runCommand(command, options = {}) {
   try {
     console.log(`\n🔄 Running: ${command}`);
-    const result = execSync(command, { 
-      stdio: 'inherit', 
+    const result = execSync(command, {
+      stdio: 'inherit',
       encoding: 'utf8',
-      ...options 
+      ...options,
     });
     return { success: true, result };
   } catch (error) {
@@ -27,8 +27,12 @@ function runCommand(command, options = {}) {
 }
 
 function checkCoverageThreshold() {
-  const coveragePath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
-  
+  const coveragePath = path.join(
+    process.cwd(),
+    'coverage',
+    'coverage-summary.json'
+  );
+
   if (!fs.existsSync(coveragePath)) {
     console.warn('⚠️  Coverage summary not found, skipping threshold check');
     return true;
@@ -37,7 +41,7 @@ function checkCoverageThreshold() {
   try {
     const coverage = JSON.parse(fs.readFileSync(coveragePath, 'utf8'));
     const total = coverage.total;
-    
+
     console.log('\n📊 Coverage Summary:');
     console.log(`  Statements: ${total.statements.pct}%`);
     console.log(`  Branches: ${total.branches.pct}%`);
@@ -45,8 +49,8 @@ function checkCoverageThreshold() {
     console.log(`  Lines: ${total.lines.pct}%`);
 
     const failed = [];
-    
-    Object.keys(COVERAGE_THRESHOLD).forEach(key => {
+
+    Object.keys(COVERAGE_THRESHOLD).forEach((key) => {
       if (total[key].pct < COVERAGE_THRESHOLD[key]) {
         failed.push(`${key}: ${total[key].pct}% < ${COVERAGE_THRESHOLD[key]}%`);
       }
@@ -54,7 +58,7 @@ function checkCoverageThreshold() {
 
     if (failed.length > 0) {
       console.error('\n❌ Coverage threshold not met:');
-      failed.forEach(failure => console.error(`  ${failure}`));
+      failed.forEach((failure) => console.error(`  ${failure}`));
       return false;
     }
 
@@ -109,7 +113,7 @@ function main() {
     case 'all':
     default:
       console.log('\n🎯 Running all test suites...');
-      
+
       // Run unit tests
       console.log('\n1️⃣ Unit Tests');
       const allUnitResult = runCommand('npm run test:unit');

@@ -1,3 +1,4 @@
+import React from 'react';
 import { Platform } from 'react-native';
 
 interface PerformanceMetric {
@@ -34,7 +35,7 @@ class PerformanceMonitor {
 
   endTimer(name: string, metadata?: Record<string, any>): number | null {
     if (!this.shouldRecord()) return null;
-    
+
     const startTime = this.timers.get(name);
     if (!startTime) {
       console.warn(`Performance timer "${name}" was not started`);
@@ -43,12 +44,16 @@ class PerformanceMonitor {
 
     const duration = Date.now() - startTime;
     this.timers.delete(name);
-    
+
     this.recordMetric(name, duration, metadata);
     return duration;
   }
 
-  recordMetric(name: string, value: number, metadata?: Record<string, any>): void {
+  recordMetric(
+    name: string,
+    value: number,
+    metadata?: Record<string, any>
+  ): void {
     if (!this.shouldRecord()) return;
 
     const metric: PerformanceMetric = {
@@ -75,7 +80,7 @@ class PerformanceMonitor {
 
   getMetrics(name?: string): PerformanceMetric[] {
     if (name) {
-      return this.metrics.filter(metric => metric.name === name);
+      return this.metrics.filter((metric) => metric.name === name);
     }
     return [...this.metrics];
   }
@@ -83,7 +88,7 @@ class PerformanceMonitor {
   getAverageMetric(name: string): number | null {
     const metrics = this.getMetrics(name);
     if (metrics.length === 0) return null;
-    
+
     const sum = metrics.reduce((acc, metric) => acc + metric.value, 0);
     return sum / metrics.length;
   }
@@ -99,9 +104,9 @@ class PerformanceMonitor {
 
     // Note: React Native doesn't have direct memory APIs like web
     // This is a placeholder for future native module integration
-    this.recordMetric('memory_usage', 0, { 
+    this.recordMetric('memory_usage', 0, {
       context,
-      note: 'Memory monitoring requires native module integration'
+      note: 'Memory monitoring requires native module integration',
     });
   }
 
@@ -128,7 +133,11 @@ class PerformanceMonitor {
   }
 
   // Query performance monitoring
-  recordQueryPerformance(queryKey: string, duration: number, cacheHit: boolean): void {
+  recordQueryPerformance(
+    queryKey: string,
+    duration: number,
+    cacheHit: boolean
+  ): void {
     this.recordMetric('query_performance', duration, {
       queryKey,
       cacheHit,
@@ -152,15 +161,18 @@ class PerformanceMonitor {
 
   private generateSummary(): Record<string, any> {
     const summary: Record<string, any> = {};
-    
+
     // Group metrics by name
-    const groupedMetrics = this.metrics.reduce((acc, metric) => {
-      if (!acc[metric.name]) {
-        acc[metric.name] = [];
-      }
-      acc[metric.name].push(metric.value);
-      return acc;
-    }, {} as Record<string, number[]>);
+    const groupedMetrics = this.metrics.reduce(
+      (acc, metric) => {
+        if (!acc[metric.name]) {
+          acc[metric.name] = [];
+        }
+        acc[metric.name].push(metric.value);
+        return acc;
+      },
+      {} as Record<string, number[]>
+    );
 
     // Calculate statistics for each metric type
     Object.entries(groupedMetrics).forEach(([name, values]) => {
@@ -206,11 +218,12 @@ export function withPerformanceMonitoring<T extends object>(
   Component: React.ComponentType<T>,
   componentName?: string
 ) {
-  const name = componentName || Component.displayName || Component.name || 'Unknown';
-  
+  const name =
+    componentName || Component.displayName || Component.name || 'Unknown';
+
   return function PerformanceMonitoredComponent(props: T) {
     const { startRender, endRender } = usePerformanceMonitor(name);
-    
+
     React.useEffect(() => {
       startRender();
       return endRender;
