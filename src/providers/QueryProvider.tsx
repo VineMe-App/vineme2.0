@@ -25,7 +25,7 @@ const ReactQueryDevtools =
 
 const performanceConfig = getPerformanceConfig();
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // Optimized caching configuration from performance config

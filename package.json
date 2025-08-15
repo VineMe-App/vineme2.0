@@ -4,8 +4,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "npx expo start --dev-client --android",
+    "ios": "npx expo start --dev-client --ios",
     "web": "expo start --web",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
@@ -21,7 +21,7 @@
     "test:ios": "expo start --ios --clear",
     "test:android": "expo start --android --clear",
     "build:ios": "expo build:ios",
-    "build:android": "expo build:android",
+    "build": "eas build --profile development --platform android",
     "preview:ios": "expo install --ios && expo start --ios",
     "preview:android": "expo install --android && expo start --android"
   },

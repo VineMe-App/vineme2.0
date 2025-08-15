@@ -93,6 +93,53 @@ The app uses the following environment variables:
 - `EXPO_PUBLIC_SUPABASE_URL`: Your Supabase project URL
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
 
+## Running on a physical Android device over USB (ADB)
+
+If you prefer a stable connection without relying on Wi‑Fi/tunnels, you can forward the Metro port over USB.
+
+Prerequisites:
+
+- Enable Developer Options and USB debugging on your Android device.
+- Install Android Platform Tools (adb) and ensure it is on your PATH.
+- Connect the device via USB and trust the computer.
+
+Steps:
+
+1. Verify adb sees your device:
+
+   ```bash
+   adb devices
+   # should list your device as 'device' (not 'unauthorized')
+   ```
+
+2. Reverse-forward Metro (React Native bundler) port 8081 from device → host:
+
+   ```bash
+   adb reverse tcp:8081 tcp:8081
+   ```
+
+3. Start Expo with your environment variables (only needed if not auto-loaded):
+
+   ```bash
+   EXPO_PUBLIC_SUPABASE_URL=YOUR_URL \
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_KEY \
+   npx expo start --dev-client -c
+   ```
+
+   If your project loads `.env` automatically, you can omit the prefixes:
+
+   ```bash
+   npx expo start --dev-client -c
+   ```
+
+4. Open your development build (Expo Dev Client) on the device and tap “Open from QR/URL”. Because of adb reverse, it can load `exp://127.0.0.1:8081` (Expo will usually resolve this automatically when you scan the QR from the terminal/web UI).
+
+Notes:
+
+- Use `--dev-client` for custom dev clients. For Expo Go, you don’t need adb reverse, but LAN/tunnel must be reachable.
+- If you change networks or unplug the device, re-run `adb reverse tcp:8081 tcp:8081`.
+- For iOS, use the simulator or a dev client over Wi‑Fi; USB port forwarding is not available like adb.
+
 ## Contributing
 
 1. Follow the existing code style (enforced by ESLint and Prettier)

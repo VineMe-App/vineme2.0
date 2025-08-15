@@ -1,4 +1,13 @@
-import * as Location from 'expo-location';
+// expo-location is optional in dev client; gate usage to avoid native module errors
+let Location: typeof import('expo-location') | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  Location = require('expo-location');
+} catch {
+  Location = null;
+}
+
+const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 
 export interface Coordinates {
   latitude: number;
@@ -35,6 +44,7 @@ class LocationService {
    */
   async requestLocationPermission(): Promise<LocationPermissionStatus> {
     try {
+      if (!Location) return { granted: false, canAskAgain: false };
       const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
       
       this.permissionStatus = {
@@ -58,6 +68,7 @@ class LocationService {
     }
 
     try {
+      if (!Location) return { granted: false, canAskAgain: false };
       const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
       
       this.permissionStatus = {
@@ -80,12 +91,29 @@ class LocationService {
       if (!address || address.trim().length === 0) {
         return null;
       }
+      // Try expo-location first if available
+      if (Location?.geocodeAsync) {
+        const results = await Location.geocodeAsync(address);
+        if (results && results.length > 0) {
+          const { latitude, longitude } = results[0];
+          return { latitude, longitude };
+        }
+      }
 
-      const results = await Location.geocodeAsync(address);
-      
-      if (results && results.length > 0) {
-        const { latitude, longitude } = results[0];
-        return { latitude, longitude };
+      // Fallback to Mapbox Geocoding if token is provided
+      if (MAPBOX_TOKEN) {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          address
+        )}.json?access_token=${MAPBOX_TOKEN}&limit=1`;
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const json = await resp.json();
+          const feature = json?.features?.[0];
+          if (feature?.center?.length === 2) {
+            const [lon, lat] = feature.center;
+            return { latitude: lat, longitude: lon };
+          }
+        }
       }
 
       return null;
@@ -100,6 +128,7 @@ class LocationService {
    */
   async reverseGeocode(coordinates: Coordinates): Promise<Address | null> {
     try {
+      if (!Location?.reverseGeocodeAsync) return null;
       const results = await Location.reverseGeocodeAsync(coordinates);
       
       if (results && results.length > 0) {
@@ -146,6 +175,7 @@ class LocationService {
    */
   async getCurrentLocation(): Promise<Coordinates | null> {
     try {
+      if (!Location) return null;
       const permission = await this.getLocationPermissionStatus();
       
       if (!permission.granted) {

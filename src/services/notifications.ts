@@ -2,6 +2,8 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../utils/constants';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -13,6 +15,21 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+// Ensure Android notification channel exists
+const ensureAndroidNotificationChannel = async () => {
+  if (Platform.OS !== 'android') return;
+  try {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  } catch (e) {
+    console.warn('[Notifications] Failed to set Android notification channel', e);
+  }
+};
 
 export interface NotificationData {
   type:
@@ -35,6 +52,8 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
     console.warn('Push notifications only work on physical devices');
     return false;
   }
+
+  await ensureAndroidNotificationChannel();
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
@@ -65,8 +84,24 @@ export const getPushToken = async (): Promise<string | null> => {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return null;
 
-    // On development builds, projectId must be provided explicitly
+    // On Android, FCM must be configured or Firebase will not initialize
     const { default: Constants } = await import('expo-constants');
+    const googleServicesConfigured = Boolean(
+      (Constants as any)?.expoConfig?.android?.googleServicesFile ||
+        (Constants as any)?.android?.googleServicesFile
+    );
+
+    // Optional env-based override so you can enable only when configured
+    const envPushEnabled = process.env.EXPO_PUBLIC_ENABLE_PUSH === 'true';
+
+    if (Platform.OS === 'android' && !googleServicesConfigured && !envPushEnabled) {
+      console.warn(
+        '[Notifications] Android push not configured (no google-services.json). Skipping token fetch.'
+      );
+      return null;
+    }
+
+    // On development builds, projectId must be provided explicitly
     const projectId =
       (Constants?.expoConfig as any)?.extra?.eas?.projectId ||
       (Constants as any)?.easConfig?.projectId;
@@ -75,9 +110,21 @@ export const getPushToken = async (): Promise<string | null> => {
       projectId ? { projectId } : undefined
     );
 
-    return token.data;
+    const tokenStr = token.data;
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.PUSH_TOKEN, tokenStr);
+    } catch {}
+    if (__DEV__) console.log('[Notifications] Expo push token:', tokenStr);
+    return tokenStr;
   } catch (error) {
-    console.error('Error getting push token:', error);
+    // Common Android case: FCM not initialized. Provide a clearer hint.
+    if (Platform.OS === 'android') {
+      console.warn(
+        'Error getting push token on Android. Ensure FCM is set up: https://docs.expo.dev/push-notifications/fcm-credentials/'
+      );
+    }
+    // Downgrade to warn to reduce noise during development without FCM
+    console.warn('Error getting push token:', error);
     return null;
   }
 };
@@ -110,6 +157,18 @@ export const registerForPushNotifications = async (
     }
   } catch (error) {
     console.error('Error registering for push notifications:', error);
+  }
+};
+
+/**
+ * Read stored Expo push token if available
+ */
+export const getStoredPushToken = async (): Promise<string | null> => {
+  try {
+    const v = await AsyncStorage.getItem(STORAGE_KEYS.PUSH_TOKEN);
+    return v || null;
+  } catch {
+    return null;
   }
 };
 

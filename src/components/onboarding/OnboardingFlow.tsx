@@ -86,6 +86,11 @@ export default function OnboardingFlow() {
     // Save data to local storage
     await saveOnboardingData(updatedData);
 
+    if (__DEV__) {
+      const step = ONBOARDING_STEPS[currentStepIndex]?.id;
+      console.log('[Onboarding] Next pressed:', step, updatedData);
+    }
+
     // If this is the last step, complete onboarding
     if (currentStepIndex === ONBOARDING_STEPS.length - 1) {
       await completeOnboarding(updatedData);
@@ -111,6 +116,7 @@ export default function OnboardingFlow() {
     setError(null);
 
     try {
+      if (__DEV__) console.log('[Onboarding] Creating user profile...', { hasUser: !!user });
       // Create user profile in database
       const success = await createUserProfile({
         name: data.name,
@@ -119,6 +125,7 @@ export default function OnboardingFlow() {
       });
 
       if (!success) {
+        if (__DEV__) console.log('[Onboarding] createUserProfile returned false');
         setError('Failed to create user profile. Please try again.');
         setIsLoading(false);
         return;
@@ -131,6 +138,7 @@ export default function OnboardingFlow() {
       await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
 
       // Navigate to main app
+      if (__DEV__) console.log('[Onboarding] Completed. Navigating to /(tabs)');
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Error completing onboarding:', error);

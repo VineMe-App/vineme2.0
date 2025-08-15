@@ -102,4 +102,5 @@ export const STORAGE_KEYS = {
   ONBOARDING_COMPLETED: 'onboarding_completed',
   ONBOARDING_DATA: 'onboarding_data',
   SERVICE_CHANGE_USED_PREFIX: 'service_change_used_',
+  PUSH_TOKEN: 'expo_push_token',
 } as const;

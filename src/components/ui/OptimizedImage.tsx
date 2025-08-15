@@ -118,7 +118,11 @@ export function OptimizedImage({
     setIsLoading(true);
     setHasError(false);
     setLoadStartTime(Date.now());
-    performanceMonitor.startTimer(`image_load_${source}`);
+    const sourceKey =
+      typeof source === 'number'
+        ? `asset_${String(source)}`
+        : (source as { uri: string }).uri || 'unknown';
+    performanceMonitor.startTimer(`image_load_${sourceKey}`);
     onLoadStart?.();
   }, [source, onLoadStart]);
 
@@ -128,13 +132,20 @@ export function OptimizedImage({
     if (loadStartTime) {
       const loadTime = Date.now() - loadStartTime;
       performanceMonitor.recordMetric('image_load_time', loadTime, {
-        source: typeof source === 'string' ? source : 'local',
+        source:
+          typeof source === 'number'
+            ? 'local'
+            : (source as { uri?: string }).uri || 'unknown',
         quality,
         lazy,
       });
     }
 
-    performanceMonitor.endTimer(`image_load_${source}`);
+    const sourceKey =
+      typeof source === 'number'
+        ? `asset_${String(source)}`
+        : (source as { uri: string }).uri || 'unknown';
+    performanceMonitor.endTimer(`image_load_${sourceKey}`);
     onLoadEnd?.();
   }, [source, loadStartTime, quality, lazy, onLoadEnd]);
 
@@ -143,7 +154,10 @@ export function OptimizedImage({
       setIsLoading(false);
       setHasError(true);
       performanceMonitor.recordMetric('image_load_error', 1, {
-        source: typeof source === 'string' ? source : 'local',
+        source:
+          typeof source === 'number'
+            ? 'local'
+            : (source as { uri?: string }).uri || 'unknown',
         error: error?.nativeEvent?.error || 'Unknown error',
       });
       onError?.(error);

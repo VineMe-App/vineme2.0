@@ -6,6 +6,17 @@
       "env": {},
       "disabled": true,
       "autoApprove": []
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=knwlfuysipixbwuzvyen"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_09087b05735c79463bb1de46bdefc425f812bd33"
+      }
     }
   }
 }

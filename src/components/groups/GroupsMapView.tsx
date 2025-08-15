@@ -7,7 +7,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import MapView, { Marker, Callout, Region } from 'react-native-maps';
+import MapView, { Marker, Callout, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { locationService, Coordinates } from '../../services/location';
 import { Button } from '../ui';
 import type { GroupWithDetails } from '../../types/database';
@@ -194,6 +194,7 @@ export const GroupsMapView: React.FC<GroupsMapViewProps> = ({
       <MapView
         ref={mapRef}
         style={styles.map}
+        provider={PROVIDER_GOOGLE}
         initialRegion={region}
         showsUserLocation={!locationPermissionDenied}
         showsMyLocationButton={!locationPermissionDenied}

@@ -76,13 +76,10 @@ class GlobalErrorHandler {
 
 export const globalErrorHandler = new GlobalErrorHandler();
 
-// Global error handlers for unhandled promise rejections and errors (web only)
-// Avoid referencing window on React Native/Hermes where it may be undefined
+// Global error handlers for unhandled promise rejections and errors
+// Web environment
 // eslint-disable-next-line no-undef
-if (
-  typeof window !== 'undefined' &&
-  typeof (window as any).addEventListener === 'function'
-) {
+if (typeof window !== 'undefined' && typeof (window as any).addEventListener === 'function') {
   window.addEventListener('unhandledrejection', (event) => {
     globalErrorHandler.logError(
       event.reason instanceof Error
@@ -99,5 +96,25 @@ if (
       lineno: event.lineno,
       colno: event.colno,
     });
+  });
+}
+
+// React Native environment (Hermes/JSC): capture JS exceptions
+// eslint-disable-next-line no-undef
+if (typeof global !== 'undefined' && (global as any).ErrorUtils && typeof (global as any).ErrorUtils.setGlobalHandler === 'function') {
+  const originalHandler = (global as any).ErrorUtils.getGlobalHandler?.();
+  (global as any).ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
+    try {
+      globalErrorHandler.logError(error instanceof Error ? error : new Error(String(error)), {
+        type: 'reactNativeGlobalError',
+        isFatal,
+      });
+    } catch {}
+
+    if (typeof originalHandler === 'function') {
+      try {
+        originalHandler(error, isFatal);
+      } catch {}
+    }
   });
 }

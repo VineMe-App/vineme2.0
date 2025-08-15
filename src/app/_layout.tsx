@@ -6,6 +6,7 @@ import { QueryProvider } from '@/providers/QueryProvider';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { ErrorBoundary, OfflineBanner } from '@/components';
+import { DevToolsOverlay } from '@/components/devtools/DevToolsOverlay';
 import { handleDeepLink } from '@/utils/deepLinking';
 import { useNotifications } from '@/hooks/useNotifications';
 import { logPlatformInfo } from '@/utils/platformTesting';
@@ -75,16 +76,28 @@ function RootLayoutNav() {
     // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id])
     const inAllowedStacks = segments[0] === 'group' || segments[0] === 'event';
 
+    // Treat onboarding as done if a profile exists OR the persisted flag is set
+    const isOnboardingDone = !!userProfile || onboardingCompleted;
+
+    if (__DEV__) {
+      console.log('[NavDebug] isInitialized:', isInitialized, 'onboardingCompleted:', onboardingCompleted);
+      console.log('[NavDebug] segments:', segments);
+      console.log('[NavDebug] user:', !!user, 'profile:', !!userProfile);
+    }
+
     if (user) {
       // User is authenticated
-      if (!onboardingCompleted && !inOnboarding) {
+      if (!isOnboardingDone && !inOnboarding) {
+        if (__DEV__) console.log('[NavDebug] redirect -> /(auth)/onboarding');
         // User needs onboarding
         router.replace('/(auth)/onboarding');
-      } else if (onboardingCompleted && !(inTabsGroup || inAllowedStacks)) {
+      } else if (isOnboardingDone && !(inTabsGroup || inAllowedStacks)) {
+        if (__DEV__) console.log('[NavDebug] redirect -> /(tabs)');
         // User completed onboarding, go to main app
         router.replace('/(tabs)');
       }
     } else if (!inAuthGroup) {
+      if (__DEV__) console.log('[NavDebug] redirect -> /(auth)/sign-in');
       // User is not signed in and not in auth group, redirect to sign in
       router.replace('/(auth)/sign-in');
     }
@@ -98,6 +111,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
       </Stack>
+      {__DEV__ && <DevToolsOverlay />}
     </>
   );
 }
