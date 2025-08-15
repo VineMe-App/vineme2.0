@@ -13,7 +13,14 @@ export type Permission =
   | 'manage_group_details'
   | 'manage_group_members'
   | 'create_groups'
-  | 'manage_all_data';
+  | 'manage_all_data'
+  | 'approve_groups'
+  | 'decline_groups'
+  | 'close_groups'
+  | 'view_admin_dashboard'
+  | 'manage_join_requests'
+  | 'promote_demote_members'
+  | 'remove_group_members';
 
 export interface PermissionCheck {
   hasPermission: boolean;
@@ -129,13 +136,17 @@ export class PermissionService {
       case 'manage_church_events':
       case 'manage_church_groups':
       case 'manage_church_users':
+      case 'approve_groups':
+      case 'decline_groups':
+      case 'close_groups':
+      case 'view_admin_dashboard':
         // Church admins can manage their church's data
         if (user.roles.includes('church_admin') && user.church_id) {
           return { hasPermission: true };
         }
         return {
           hasPermission: false,
-          reason: 'Insufficient permissions for church management',
+          reason: 'Church admin role required for this action',
         };
 
       case 'create_groups':
@@ -150,11 +161,17 @@ export class PermissionService {
 
       case 'manage_group_details':
       case 'manage_group_members':
+      case 'manage_join_requests':
+      case 'promote_demote_members':
+      case 'remove_group_members':
         // Group leaders can manage their groups, church admins can manage all groups in their church
         if (user.roles.includes('church_admin') && user.church_id) {
           return { hasPermission: true };
         }
-        // For specific group permissions, we need to check group leadership in canManageGroupMembership
+        // For specific group permissions, we need to check group leadership
+        if (resourceId) {
+          return await this.canManageGroupMembership(resourceId);
+        }
         return { hasPermission: true }; // Will be validated at the group level
 
       case 'manage_all_data':
@@ -313,6 +330,73 @@ export class PermissionService {
   }
 
   /**
+   * Check if user is a group leader for a specific group
+   */
+  async isGroupLeader(groupId: string): Promise<PermissionCheck> {
+    const user = await this.getCurrentUserWithCache();
+
+    if (!user) {
+      return { hasPermission: false, reason: 'User not authenticated' };
+    }
+
+    // Superadmin has all permissions
+    if (user.roles.includes('superadmin')) {
+      return { hasPermission: true };
+    }
+
+    // Church admins can act as group leaders for their church's groups
+    if (user.roles.includes('church_admin') && user.church_id) {
+      const { data: group } = await supabase
+        .from('groups')
+        .select('church_id')
+        .eq('id', groupId)
+        .single();
+
+      if (group && group.church_id.includes(user.church_id)) {
+        return { hasPermission: true };
+      }
+    }
+
+    // Check if user is actually a leader of this group
+    const { data: membership } = await supabase
+      .from('group_memberships')
+      .select('role')
+      .eq('group_id', groupId)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .single();
+
+    if (membership && membership.role === 'leader') {
+      return { hasPermission: true };
+    }
+
+    return {
+      hasPermission: false,
+      reason: 'User is not a leader of this group',
+    };
+  }
+
+  /**
+   * Check if user is a church admin
+   */
+  async isChurchAdmin(): Promise<PermissionCheck> {
+    const user = await this.getCurrentUserWithCache();
+
+    if (!user) {
+      return { hasPermission: false, reason: 'User not authenticated' };
+    }
+
+    if (user.roles.includes('superadmin') || user.roles.includes('church_admin')) {
+      return { hasPermission: true };
+    }
+
+    return {
+      hasPermission: false,
+      reason: 'User is not a church admin',
+    };
+  }
+
+  /**
    * Get user's effective permissions
    */
   async getUserPermissions(): Promise<Permission[]> {
@@ -329,7 +413,11 @@ export class PermissionService {
       permissions.push(
         'manage_church_events',
         'manage_church_groups',
-        'manage_church_users'
+        'manage_church_users',
+        'approve_groups',
+        'decline_groups',
+        'close_groups',
+        'view_admin_dashboard'
       );
     }
 
@@ -339,7 +427,13 @@ export class PermissionService {
     }
 
     // Group leaders get group management permissions (specific groups checked at runtime)
-    permissions.push('manage_group_details', 'manage_group_members');
+    permissions.push(
+      'manage_group_details',
+      'manage_group_members',
+      'manage_join_requests',
+      'promote_demote_members',
+      'remove_group_members'
+    );
 
     if (user.roles.includes('superadmin')) {
       permissions.push('manage_all_data');

@@ -155,6 +155,7 @@ export const ChurchMemberOnly: React.FC<ChurchMemberOnlyProps> = ({
 interface PermissionGateProps {
   children: React.ReactNode;
   permission: Permission;
+  resourceId?: string;
   fallback?: React.ReactNode;
 }
 
@@ -164,9 +165,127 @@ interface PermissionGateProps {
 export const PermissionGate: React.FC<PermissionGateProps> = ({
   children,
   permission,
+  resourceId,
   fallback,
-}) => (
-  <RoleBasedRender requiredPermissions={[permission]} fallback={fallback}>
-    {children}
-  </RoleBasedRender>
-);
+}) => {
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    checkPermission();
+  }, [permission, resourceId]);
+
+  const checkPermission = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await permissionService.hasPermission(permission, resourceId);
+      setHasAccess(result.hasPermission);
+    } catch (error) {
+      console.error('Error checking permission:', error);
+      setHasAccess(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <View />;
+  }
+
+  if (!hasAccess) {
+    return fallback ? <>{fallback}</> : null;
+  }
+
+  return <>{children}</>;
+};
+
+interface GroupLeaderOnlyProps {
+  children: React.ReactNode;
+  groupId: string;
+  fallback?: React.ReactNode;
+}
+
+/**
+ * Convenience component for group leader-only content
+ */
+export const GroupLeaderOnly: React.FC<GroupLeaderOnlyProps> = ({
+  children,
+  groupId,
+  fallback,
+}) => {
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    checkGroupLeadership();
+  }, [groupId]);
+
+  const checkGroupLeadership = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await permissionService.isGroupLeader(groupId);
+      setHasAccess(result.hasPermission);
+    } catch (error) {
+      console.error('Error checking group leadership:', error);
+      setHasAccess(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <View />;
+  }
+
+  if (!hasAccess) {
+    return fallback ? <>{fallback}</> : null;
+  }
+
+  return <>{children}</>;
+};
+
+interface ChurchAdminOnlyProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}
+
+/**
+ * Convenience component for church admin-only content
+ */
+export const ChurchAdminOnly: React.FC<ChurchAdminOnlyProps> = ({
+  children,
+  fallback,
+}) => {
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    checkChurchAdmin();
+  }, []);
+
+  const checkChurchAdmin = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await permissionService.isChurchAdmin();
+      setHasAccess(result.hasPermission);
+    } catch (error) {
+      console.error('Error checking church admin:', error);
+      setHasAccess(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <View />;
+  }
+
+  if (!hasAccess) {
+    return fallback ? <>{fallback}</> : null;
+  }
+
+  return <>{children}</>;
+};

@@ -14,6 +14,8 @@ import { userAdminService } from '@/services/admin';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { UserManagementCard } from '@/components/admin/UserManagementCard';
+import { AdminErrorBoundary } from '@/components/ui/AdminErrorBoundary';
+import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { router } from 'expo-router';
 
 type FilterType = 'all' | 'connected' | 'unconnected';
@@ -102,16 +104,38 @@ export default function ManageUsersScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Manage Users</Text>
-      </View>
+    <ChurchAdminOnly
+      fallback={
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>Manage Users</Text>
+          </View>
+          <View style={styles.errorContainer}>
+            <ErrorMessage
+              message="You do not have permission to access this page. Church admin role required."
+              onRetry={() => router.back()}
+            />
+          </View>
+        </View>
+      }
+    >
+      <AdminErrorBoundary>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>Manage Users</Text>
+          </View>
 
       {/* Summary Stats */}
       {churchSummary && (
@@ -227,10 +251,12 @@ export default function ManageUsersScreen() {
                 />
               ))}
             </View>
-          )}
-        </ScrollView>
-      )}
-    </View>
+            )}
+          </ScrollView>
+        )}
+        </View>
+      </AdminErrorBoundary>
+    </ChurchAdminOnly>
   );
 }
 

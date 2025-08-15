@@ -71,7 +71,7 @@
   - Add clear messaging about events feature availability
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
 
-- [ ] 10. Enhance permission system for admin features
+- [x] 10. Enhance permission system for admin features
   - Update permission service to handle church admin and group leader roles
   - Add role-based UI rendering for admin interface elements
   - Implement permission checks before allowing admin actions
@@ -79,7 +79,7 @@
   - Add permission validation to all admin service methods
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
 
-- [ ] 11. Create group creation UI and workflow
+- [x] 11. Create group creation UI and workflow
   - Build CreateGroupModal with multi-step form
   - Add location picker with map integration for group location
   - Implement schedule picker for meeting day and time

@@ -21,6 +21,8 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
+import { AdminErrorBoundary, AdminActionError } from '@/components/ui/AdminErrorBoundary';
+import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 
 interface GroupManagementCardProps {
   group: GroupWithAdminDetails;
@@ -227,6 +229,7 @@ export default function ManageGroupsScreen() {
   const [selectedGroup, setSelectedGroup] =
     useState<GroupWithAdminDetails | null>(null);
   const [showMembersModal, setShowMembersModal] = useState(false);
+  const [actionError, setActionError] = useState<Error | null>(null);
 
   // Get church groups
   const {
@@ -258,8 +261,10 @@ export default function ManageGroupsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+      setActionError(null);
     },
     onError: (error: Error) => {
+      setActionError(error);
       Alert.alert('Error', error.message || 'Failed to approve group');
     },
   });
@@ -284,8 +289,10 @@ export default function ManageGroupsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+      setActionError(null);
     },
     onError: (error: Error) => {
+      setActionError(error);
       Alert.alert('Error', error.message || 'Failed to decline group');
     },
   });
@@ -310,8 +317,10 @@ export default function ManageGroupsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+      setActionError(null);
     },
     onError: (error: Error) => {
+      setActionError(error);
       Alert.alert('Error', error.message || 'Failed to close group');
     },
   });
@@ -391,16 +400,49 @@ export default function ManageGroupsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Manage Groups</Text>
-      </View>
+    <ChurchAdminOnly
+      fallback={
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>Manage Groups</Text>
+          </View>
+          <View style={styles.errorContainer}>
+            <ErrorMessage
+              message="You do not have permission to access this page. Church admin role required."
+              onRetry={() => router.back()}
+            />
+          </View>
+        </View>
+      }
+    >
+      <AdminErrorBoundary>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>Manage Groups</Text>
+          </View>
+
+          {actionError && (
+            <AdminActionError
+              error={actionError}
+              onDismiss={() => setActionError(null)}
+              onRetry={() => {
+                setActionError(null);
+                refetch();
+              }}
+            />
+          )}
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -450,15 +492,17 @@ export default function ManageGroupsScreen() {
         </ScrollView>
       )}
 
-      <GroupMembersModal
-        visible={showMembersModal}
-        group={selectedGroup}
-        onClose={() => {
-          setShowMembersModal(false);
-          setSelectedGroup(null);
-        }}
-      />
-    </View>
+          <GroupMembersModal
+            visible={showMembersModal}
+            group={selectedGroup}
+            onClose={() => {
+              setShowMembersModal(false);
+              setSelectedGroup(null);
+            }}
+          />
+        </View>
+      </AdminErrorBoundary>
+    </ChurchAdminOnly>
   );
 }
 

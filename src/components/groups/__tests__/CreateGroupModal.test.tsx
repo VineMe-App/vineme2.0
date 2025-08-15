@@ -13,6 +13,8 @@ import { useAuthStore } from '../../../stores/auth';
 // Mock dependencies
 jest.mock('../../../services/groupCreation');
 jest.mock('../../../stores/auth');
+jest.mock('../../../services/location');
+jest.mock('@react-native-community/datetimepicker', () => 'DateTimePicker');
 jest.mock('../../../hooks', () => ({
   useErrorHandler: () => ({
     handleError: jest.fn(),
@@ -62,12 +64,11 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    expect(screen.getByText('Create New Group')).toBeTruthy();
+    expect(screen.getByText('Create New Group - Basic Information')).toBeTruthy();
     expect(screen.getByText('Group Title')).toBeTruthy();
     expect(screen.getByText('Description')).toBeTruthy();
-    expect(screen.getByText('Meeting Day')).toBeTruthy();
-    expect(screen.getByText('Meeting Time')).toBeTruthy();
-    expect(screen.getByText('Meeting Location')).toBeTruthy();
+    // Step indicator should show step 1
+    expect(screen.getByText('1')).toBeTruthy();
   });
 
   it('does not render when not visible', () => {
@@ -79,10 +80,10 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    expect(screen.queryByText('Create New Group')).toBeNull();
+    expect(screen.queryByText('Create New Group - Basic Information')).toBeNull();
   });
 
-  it('validates required fields', async () => {
+  it('validates required fields on first step', async () => {
     render(
       <CreateGroupModal
         isVisible={true}
@@ -91,15 +92,15 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    const submitButton = screen.getByText('Submit Request');
-    fireEvent.press(submitButton);
+    const nextButton = screen.getByText('Next');
+    fireEvent.press(nextButton);
 
     await waitFor(() => {
       expect(screen.getByText('This field is required')).toBeTruthy();
     });
   });
 
-  it('validates meeting time format', async () => {
+  it('navigates through steps correctly', async () => {
     render(
       <CreateGroupModal
         isVisible={true}
@@ -108,18 +109,28 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    const timeInput = screen.getByPlaceholderText(
-      'e.g., 19:00 (24-hour format)'
+    // Fill first step
+    fireEvent.changeText(
+      screen.getByPlaceholderText('e.g., Young Adults Bible Study'),
+      'Test Group'
     );
-    fireEvent.changeText(timeInput, 'invalid-time');
-    fireEvent(timeInput, 'blur');
+    fireEvent.changeText(
+      screen.getByPlaceholderText(
+        "Describe your group's purpose, target audience, and what to expect..."
+      ),
+      'A test group for testing purposes'
+    );
+
+    // Go to next step
+    fireEvent.press(screen.getByText('Next'));
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid format')).toBeTruthy();
+      expect(screen.getByText('Create New Group - Meeting Schedule')).toBeTruthy();
+      expect(screen.getByText('Meeting Day')).toBeTruthy();
     });
   });
 
-  it('submits form with valid data', async () => {
+  it('submits form with valid data through all steps', async () => {
     mockGroupCreationService.createGroupRequest.mockResolvedValue({
       data: {
         id: 'group-1',
@@ -137,7 +148,7 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    // Fill in the form
+    // Step 1: Basic Information
     fireEvent.changeText(
       screen.getByPlaceholderText('e.g., Young Adults Bible Study'),
       'Test Group'
@@ -148,45 +159,59 @@ describe('CreateGroupModal', () => {
       ),
       'A test group for testing purposes'
     );
-    fireEvent.changeText(
-      screen.getByPlaceholderText('e.g., 19:00 (24-hour format)'),
-      '19:00'
-    );
+    fireEvent.press(screen.getByText('Next'));
+
+    // Step 2: Schedule
+    await waitFor(() => {
+      expect(screen.getByText('Meeting Day')).toBeTruthy();
+    });
+
+    const daySelect = screen.getByText('Select a day of the week');
+    fireEvent.press(daySelect);
+    fireEvent.press(screen.getByText('Wednesday'));
+
+    // Mock time selection
+    fireEvent.press(screen.getByText('Select meeting time'));
+    fireEvent.press(screen.getByText('Next'));
+
+    // Step 3: Location
+    await waitFor(() => {
+      expect(screen.getByText('Meeting Location')).toBeTruthy();
+    });
+
     fireEvent.changeText(
       screen.getByPlaceholderText(
         'e.g., Church Room 101, or 123 Main St, City'
       ),
       'Church Room 101'
     );
+    fireEvent.press(screen.getByText('Next'));
 
-    // Select meeting day
-    const daySelect = screen.getByText('Select a day of the week');
-    fireEvent.press(daySelect);
-    fireEvent.press(screen.getByText('Wednesday'));
+    // Step 4: Review and Submit
+    await waitFor(() => {
+      expect(screen.getByText('Submit Request')).toBeTruthy();
+    });
 
-    // Submit form
-    const submitButton = screen.getByText('Submit Request');
-    fireEvent.press(submitButton);
+    fireEvent.press(screen.getByText('Submit Request'));
 
     await waitFor(() => {
       expect(mockGroupCreationService.createGroupRequest).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           title: 'Test Group',
           description: 'A test group for testing purposes',
           meeting_day: 'wednesday',
-          meeting_time: '19:00',
-          location: {
+          location: expect.objectContaining({
             address: 'Church Room 101',
-          },
+          }),
           service_id: 'service-1',
           church_id: 'church-1',
-        },
+        }),
         'user-1'
       );
     });
 
     expect(Alert.alert).toHaveBeenCalledWith(
-      'Group Request Submitted',
+      'Group Request Submitted! 🎉',
       expect.stringContaining('Your group creation request has been submitted'),
       expect.any(Array)
     );
@@ -207,7 +232,8 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    // Fill in required fields
+    // Navigate through steps quickly for testing
+    // Step 1
     fireEvent.changeText(
       screen.getByPlaceholderText('e.g., Young Adults Bible Study'),
       'Test Group'
@@ -218,25 +244,31 @@ describe('CreateGroupModal', () => {
       ),
       'A test group for testing purposes'
     );
-    fireEvent.changeText(
-      screen.getByPlaceholderText('e.g., 19:00 (24-hour format)'),
-      '19:00'
-    );
-    fireEvent.changeText(
-      screen.getByPlaceholderText(
-        'e.g., Church Room 101, or 123 Main St, City'
-      ),
-      'Church Room 101'
-    );
+    fireEvent.press(screen.getByText('Next'));
 
-    // Select meeting day
-    const daySelect = screen.getByText('Select a day of the week');
-    fireEvent.press(daySelect);
-    fireEvent.press(screen.getByText('Wednesday'));
+    // Step 2
+    await waitFor(() => {
+      const daySelect = screen.getByText('Select a day of the week');
+      fireEvent.press(daySelect);
+      fireEvent.press(screen.getByText('Wednesday'));
+    });
+    fireEvent.press(screen.getByText('Next'));
 
-    // Submit form
-    const submitButton = screen.getByText('Submit Request');
-    fireEvent.press(submitButton);
+    // Step 3
+    await waitFor(() => {
+      fireEvent.changeText(
+        screen.getByPlaceholderText(
+          'e.g., Church Room 101, or 123 Main St, City'
+        ),
+        'Church Room 101'
+      );
+    });
+    fireEvent.press(screen.getByText('Next'));
+
+    // Step 4 - Submit
+    await waitFor(() => {
+      fireEvent.press(screen.getByText('Submit Request'));
+    });
 
     await waitFor(() => {
       expect(mockGroupCreationService.createGroupRequest).toHaveBeenCalled();
@@ -266,7 +298,8 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    // Fill in required fields
+    // Navigate through all steps quickly
+    // Step 1
     fireEvent.changeText(
       screen.getByPlaceholderText('e.g., Young Adults Bible Study'),
       'Test Group'
@@ -277,25 +310,31 @@ describe('CreateGroupModal', () => {
       ),
       'A test group for testing purposes'
     );
-    fireEvent.changeText(
-      screen.getByPlaceholderText('e.g., 19:00 (24-hour format)'),
-      '19:00'
-    );
-    fireEvent.changeText(
-      screen.getByPlaceholderText(
-        'e.g., Church Room 101, or 123 Main St, City'
-      ),
-      'Church Room 101'
-    );
+    fireEvent.press(screen.getByText('Next'));
 
-    // Select meeting day
-    const daySelect = screen.getByText('Select a day of the week');
-    fireEvent.press(daySelect);
-    fireEvent.press(screen.getByText('Wednesday'));
+    // Step 2
+    await waitFor(() => {
+      const daySelect = screen.getByText('Select a day of the week');
+      fireEvent.press(daySelect);
+      fireEvent.press(screen.getByText('Wednesday'));
+    });
+    fireEvent.press(screen.getByText('Next'));
 
-    // Submit form
-    const submitButton = screen.getByText('Submit Request');
-    fireEvent.press(submitButton);
+    // Step 3
+    await waitFor(() => {
+      fireEvent.changeText(
+        screen.getByPlaceholderText(
+          'e.g., Church Room 101, or 123 Main St, City'
+        ),
+        'Church Room 101'
+      );
+    });
+    fireEvent.press(screen.getByText('Next'));
+
+    // Step 4 - Submit
+    await waitFor(() => {
+      fireEvent.press(screen.getByText('Submit Request'));
+    });
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(

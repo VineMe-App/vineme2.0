@@ -19,7 +19,7 @@ import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
-import { AdminOnly, PermissionGate } from '@/components/ui/RoleBasedRender';
+import { AdminOnly, PermissionGate, ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
@@ -286,7 +286,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Admin Features */}
-        <AdminOnly>
+        <ChurchAdminOnly>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Admin Tools</Text>
             <View style={styles.adminActions}>
@@ -327,7 +327,7 @@ export default function ProfileScreen() {
               </PermissionGate>
             </View>
           </View>
-        </AdminOnly>
+        </ChurchAdminOnly>
 
         <View style={styles.actionsSection}>
           <Button

@@ -21,7 +21,10 @@ export {
   SuperAdminOnly,
   ChurchMemberOnly,
   PermissionGate,
+  GroupLeaderOnly,
+  ChurchAdminOnly,
 } from './RoleBasedRender';
+export { AdminErrorBoundary, AdminActionError } from './AdminErrorBoundary';
 export { AnimatedCard } from './AnimatedCard';
 
 // Form components

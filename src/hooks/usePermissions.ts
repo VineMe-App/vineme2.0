@@ -23,6 +23,8 @@ interface UsePermissionsReturn {
     groupId: string,
     targetUserId?: string
   ) => Promise<PermissionCheck>;
+  isGroupLeader: (groupId: string) => Promise<PermissionCheck>;
+  isChurchAdmin: () => Promise<PermissionCheck>;
   getUserPermissions: () => Promise<Permission[]>;
   clearCache: () => void;
   isLoading: boolean;
@@ -189,6 +191,42 @@ export const usePermissions = (): UsePermissionsReturn => {
     }
   }, []);
 
+  const isGroupLeader = useCallback(
+    async (groupId: string): Promise<PermissionCheck> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await permissionService.isGroupLeader(groupId);
+        return result;
+      } catch (error) {
+        handleError(error, 'check group leadership');
+        return {
+          hasPermission: false,
+          reason: 'Group leadership check failed',
+        };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const isChurchAdmin = useCallback(async (): Promise<PermissionCheck> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await permissionService.isChurchAdmin();
+      return result;
+    } catch (error) {
+      handleError(error, 'check church admin');
+      return { hasPermission: false, reason: 'Church admin check failed' };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const clearCache = useCallback(() => {
     permissionService.clearUserCache();
   }, []);
@@ -200,6 +238,8 @@ export const usePermissions = (): UsePermissionsReturn => {
     canAccessChurchData,
     canModifyResource,
     canManageGroupMembership,
+    isGroupLeader,
+    isChurchAdmin,
     getUserPermissions,
     clearCache,
     isLoading,
