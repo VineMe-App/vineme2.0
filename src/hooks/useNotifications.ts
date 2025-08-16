@@ -12,6 +12,11 @@ import {
   updateNotificationSettings,
   sendEventReminderNotification,
   cancelNotification,
+  getUnreadNotifications,
+  getUserNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  getAdminNotificationCounts,
 } from '../services/notifications';
 import { useAuthStore } from '../stores/auth';
 
@@ -175,5 +180,87 @@ export const useNotificationPermissions = () => {
   return {
     checkPermissions,
     requestPermissions,
+  };
+};
+
+/**
+ * Hook for managing admin notifications
+ */
+export const useAdminNotifications = (userId?: string) => {
+  const queryClient = useQueryClient();
+
+  // Get unread notifications
+  const {
+    data: unreadNotifications,
+    isLoading: isLoadingUnread,
+    error: unreadError,
+  } = useQuery({
+    queryKey: ['admin-notifications', 'unread', userId],
+    queryFn: () => getUnreadNotifications(userId!),
+    enabled: !!userId,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+  });
+
+  // Get all notifications
+  const {
+    data: allNotifications,
+    isLoading: isLoadingAll,
+    error: allError,
+  } = useQuery({
+    queryKey: ['admin-notifications', 'all', userId],
+    queryFn: () => getUserNotifications(userId!),
+    enabled: !!userId,
+    refetchInterval: 60000, // Refetch every minute
+  });
+
+  // Get notification counts
+  const {
+    data: notificationCounts,
+    isLoading: isLoadingCounts,
+    error: countsError,
+  } = useQuery({
+    queryKey: ['admin-notifications', 'counts', userId],
+    queryFn: () => getAdminNotificationCounts(userId!),
+    enabled: !!userId,
+    refetchInterval: 15000, // Refetch every 15 seconds for badge updates
+  });
+
+  // Mark notification as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: markNotificationAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['admin-notifications', userId],
+      });
+    },
+  });
+
+  // Mark all as read mutation
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => markAllNotificationsAsRead(userId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['admin-notifications', userId],
+      });
+    },
+  });
+
+  // Refresh notifications
+  const refreshNotifications = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['admin-notifications', userId],
+    });
+  };
+
+  return {
+    unreadNotifications: unreadNotifications || [],
+    allNotifications: allNotifications || [],
+    notificationCounts: notificationCounts || { group_requests: 0, join_requests: 0, total: 0 },
+    isLoading: isLoadingUnread || isLoadingAll || isLoadingCounts,
+    error: unreadError || allError || countsError,
+    markAsRead: markAsReadMutation.mutate,
+    markAllAsRead: markAllAsReadMutation.mutate,
+    refreshNotifications,
+    isMarkingAsRead: markAsReadMutation.isPending || markAllAsReadMutation.isPending,
   };
 };

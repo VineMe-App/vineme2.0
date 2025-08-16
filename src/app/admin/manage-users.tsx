@@ -10,12 +10,19 @@ import {
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
-import { userAdminService } from '@/services/admin';
+import { adminServiceWrapper } from '@/services/adminServiceWrapper';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { UserManagementCard } from '@/components/admin/UserManagementCard';
 import { AdminErrorBoundary } from '@/components/ui/AdminErrorBoundary';
+import { 
+  AdminLoadingCard,
+  AdminSkeletonLoader,
+  AdminLoadingList,
+} from '@/components/ui/AdminLoadingStates';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
+import { useAdminNotifications } from '@/hooks/useNotifications';
+import { useAdminAsyncOperation } from '@/hooks/useAdminAsyncOperation';
 import { router } from 'expo-router';
 
 type FilterType = 'all' | 'connected' | 'unconnected';
@@ -23,6 +30,9 @@ type FilterType = 'all' | 'connected' | 'unconnected';
 export default function ManageUsersScreen() {
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<FilterType>('all');
+
+  // Get admin notifications for real-time updates
+  const { refreshNotifications } = useAdminNotifications(user?.id);
 
   const {
     data: users,
@@ -35,28 +45,57 @@ export default function ManageUsersScreen() {
       if (!user?.church_id) {
         throw new Error('No church ID found');
       }
-      const result = await userAdminService.getChurchUsers(user.church_id);
+      const result = await adminServiceWrapper.getChurchUsers(
+        user.church_id,
+        { context: { screen: 'manage-users' } }
+      );
       if (result.error) {
         throw result.error;
       }
       return result.data || [];
     },
     enabled: !!user?.church_id,
+    refetchInterval: 60000, // Refetch every minute for real-time updates
+    retry: (failureCount, error) => {
+      // Don't retry permission errors
+      if (error.message.toLowerCase().includes('permission')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const { data: churchSummary, refetch: refetchSummary } = useQuery({
+  const { 
+    data: churchSummary, 
+    isLoading: summaryLoading,
+    error: summaryError,
+    refetch: refetchSummary 
+  } = useQuery({
     queryKey: ['admin', 'church-summary', user?.church_id],
     queryFn: async () => {
       if (!user?.church_id) {
         throw new Error('No church ID found');
       }
-      const result = await userAdminService.getChurchSummary(user.church_id);
+      const result = await adminServiceWrapper.getChurchSummary(
+        user.church_id,
+        { context: { screen: 'manage-users', section: 'summary' } }
+      );
       if (result.error) {
         throw result.error;
       }
       return result.data;
     },
     enabled: !!user?.church_id,
+    refetchInterval: 60000, // Refetch every minute for real-time updates
+    retry: (failureCount, error) => {
+      // Don't retry permission errors
+      if (error.message.toLowerCase().includes('permission')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const filteredUsers = useMemo(() => {
@@ -74,6 +113,7 @@ export default function ManageUsersScreen() {
 
   const handleRefresh = async () => {
     await Promise.all([refetch(), refetchSummary()]);
+    refreshNotifications(); // Refresh notifications as well
   };
 
   const handleUserPress = (userId: string) => {
@@ -138,7 +178,19 @@ export default function ManageUsersScreen() {
           </View>
 
       {/* Summary Stats */}
-      {churchSummary && (
+      {summaryLoading ? (
+        <View style={styles.summaryContainer}>
+          <AdminSkeletonLoader lines={1} showAvatar={false} showActions={false} />
+        </View>
+      ) : summaryError ? (
+        <View style={styles.summaryContainer}>
+          <ErrorMessage
+            error="Failed to load summary statistics"
+            onRetry={refetchSummary}
+            showRetry={true}
+          />
+        </View>
+      ) : churchSummary && (
         <View style={styles.summaryContainer}>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryNumber}>
@@ -158,6 +210,12 @@ export default function ManageUsersScreen() {
             </Text>
             <Text style={styles.summaryLabel}>Unconnected</Text>
           </View>
+          <TouchableOpacity
+            style={styles.refreshSummaryButton}
+            onPress={handleRefresh}
+          >
+            <Text style={styles.refreshSummaryButtonText}>↻</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -214,9 +272,12 @@ export default function ManageUsersScreen() {
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" />
-          <Text style={styles.loadingText}>Loading users...</Text>
+        <View style={styles.content}>
+          <AdminLoadingCard
+            title="Loading Users"
+            message="Fetching church members and their group participation..."
+          />
+          <AdminLoadingList count={5} showAvatar={true} showActions={false} />
         </View>
       ) : (
         <ScrollView
@@ -293,6 +354,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     gap: 12,
+    alignItems: 'center',
+  },
+  refreshSummaryButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  refreshSummaryButtonText: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: 'bold',
   },
   summaryCard: {
     flex: 1,

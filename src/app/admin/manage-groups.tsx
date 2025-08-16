@@ -12,17 +12,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import {
-  groupAdminService,
   type GroupWithAdminDetails,
 } from '@/services/admin';
+import { adminServiceWrapper } from '@/services/adminServiceWrapper';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
-import { AdminErrorBoundary, AdminActionError } from '@/components/ui/AdminErrorBoundary';
+import { NotificationBadge } from '@/components/ui/NotificationBadge';
+import { 
+  AdminErrorBoundary, 
+  AdminActionError, 
+  AdminLoadingOverlay,
+  AdminRetryableError,
+} from '@/components/ui/AdminErrorBoundary';
+import { 
+  AdminLoadingCard,
+  AdminSkeletonLoader,
+  AdminLoadingList,
+} from '@/components/ui/AdminLoadingStates';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
+import { useAdminNotifications } from '@/hooks/useNotifications';
+import { useAdminAsyncOperation } from '@/hooks/useAdminAsyncOperation';
 
 interface GroupManagementCardProps {
   group: GroupWithAdminDetails;
@@ -230,8 +243,64 @@ export default function ManageGroupsScreen() {
     useState<GroupWithAdminDetails | null>(null);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [actionError, setActionError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  // Get church groups
+  // Get admin notifications for real-time updates
+  const { notificationCounts, refreshNotifications } = useAdminNotifications(user?.id);
+
+  // Enhanced async operations for admin actions
+  const approveOperation = useAdminAsyncOperation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+      refreshNotifications();
+      setActionError(null);
+      setRetryCount(0);
+    },
+    onError: (error) => {
+      setActionError(error);
+    },
+    onRetry: (count) => {
+      setRetryCount(count);
+    },
+    showSuccessAlert: true,
+    maxRetries: 3,
+  });
+
+  const declineOperation = useAdminAsyncOperation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+      refreshNotifications();
+      setActionError(null);
+      setRetryCount(0);
+    },
+    onError: (error) => {
+      setActionError(error);
+    },
+    onRetry: (count) => {
+      setRetryCount(count);
+    },
+    showSuccessAlert: true,
+    maxRetries: 3,
+  });
+
+  const closeOperation = useAdminAsyncOperation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+      refreshNotifications();
+      setActionError(null);
+      setRetryCount(0);
+    },
+    onError: (error) => {
+      setActionError(error);
+    },
+    onRetry: (count) => {
+      setRetryCount(count);
+    },
+    showSuccessAlert: true,
+    maxRetries: 3,
+  });
+
+  // Get church groups with enhanced error handling
   const {
     data: groups,
     isLoading,
@@ -241,91 +310,33 @@ export default function ManageGroupsScreen() {
     queryKey: ['admin-groups', user?.church_id],
     queryFn: async () => {
       if (!user?.church_id) throw new Error('No church ID found');
-      const result = await groupAdminService.getChurchGroups(
+      const result = await adminServiceWrapper.getChurchGroups(
         user.church_id,
-        true
+        true,
+        { context: { screen: 'manage-groups' } }
       );
       if (result.error) throw result.error;
       return result.data || [];
     },
     enabled: !!user?.church_id,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    retry: (failureCount, error) => {
+      // Don't retry permission errors
+      if (error.message.toLowerCase().includes('permission')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Approve group mutation
-  const approveGroupMutation = useMutation({
-    mutationFn: async (groupId: string) => {
-      if (!user?.id) throw new Error('No user ID found');
-      const result = await groupAdminService.approveGroup(groupId, user.id);
-      if (result.error) throw result.error;
-      return result.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
-      setActionError(null);
-    },
-    onError: (error: Error) => {
-      setActionError(error);
-      Alert.alert('Error', error.message || 'Failed to approve group');
-    },
-  });
+  // Enhanced action handlers with optimistic updates
+  const handleApprove = async (groupId: string) => {
+    if (!user?.id) {
+      Alert.alert('Error', 'User not found');
+      return;
+    }
 
-  // Decline group mutation
-  const declineGroupMutation = useMutation({
-    mutationFn: async ({
-      groupId,
-      reason,
-    }: {
-      groupId: string;
-      reason?: string;
-    }) => {
-      if (!user?.id) throw new Error('No user ID found');
-      const result = await groupAdminService.declineGroup(
-        groupId,
-        user.id,
-        reason
-      );
-      if (result.error) throw result.error;
-      return result.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
-      setActionError(null);
-    },
-    onError: (error: Error) => {
-      setActionError(error);
-      Alert.alert('Error', error.message || 'Failed to decline group');
-    },
-  });
-
-  // Close group mutation
-  const closeGroupMutation = useMutation({
-    mutationFn: async ({
-      groupId,
-      reason,
-    }: {
-      groupId: string;
-      reason?: string;
-    }) => {
-      if (!user?.id) throw new Error('No user ID found');
-      const result = await groupAdminService.closeGroup(
-        groupId,
-        user.id,
-        reason
-      );
-      if (result.error) throw result.error;
-      return result.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
-      setActionError(null);
-    },
-    onError: (error: Error) => {
-      setActionError(error);
-      Alert.alert('Error', error.message || 'Failed to close group');
-    },
-  });
-
-  const handleApprove = (groupId: string) => {
     Alert.alert(
       'Approve Group',
       'Are you sure you want to approve this group?',
@@ -333,13 +344,36 @@ export default function ManageGroupsScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Approve',
-          onPress: () => approveGroupMutation.mutate(groupId),
+          onPress: async () => {
+            await approveOperation.executeWithOptimisticUpdate(
+              async () => {
+                const result = await adminServiceWrapper.approveGroup(
+                  groupId,
+                  user.id,
+                  undefined,
+                  { context: { action: 'approve', groupId } }
+                );
+                if (result.error) throw result.error;
+                return result.data;
+              },
+              // Optimistic update: immediately show group as approved
+              groups?.map(g => 
+                g.id === groupId ? { ...g, status: 'approved' } : g
+              ) || [],
+              { action: 'approve', groupId }
+            );
+          },
         },
       ]
     );
   };
 
-  const handleDecline = (groupId: string) => {
+  const handleDecline = async (groupId: string) => {
+    if (!user?.id) {
+      Alert.alert('Error', 'User not found');
+      return;
+    }
+
     Alert.alert(
       'Decline Group',
       'Are you sure you want to decline this group? You can optionally provide a reason.',
@@ -348,13 +382,36 @@ export default function ManageGroupsScreen() {
         {
           text: 'Decline',
           style: 'destructive',
-          onPress: () => declineGroupMutation.mutate({ groupId }),
+          onPress: async () => {
+            await declineOperation.executeWithOptimisticUpdate(
+              async () => {
+                const result = await adminServiceWrapper.declineGroup(
+                  groupId,
+                  user.id,
+                  undefined,
+                  { context: { action: 'decline', groupId } }
+                );
+                if (result.error) throw result.error;
+                return result.data;
+              },
+              // Optimistic update: immediately show group as denied
+              groups?.map(g => 
+                g.id === groupId ? { ...g, status: 'denied' } : g
+              ) || [],
+              { action: 'decline', groupId }
+            );
+          },
         },
       ]
     );
   };
 
-  const handleClose = (groupId: string) => {
+  const handleClose = async (groupId: string) => {
+    if (!user?.id) {
+      Alert.alert('Error', 'User not found');
+      return;
+    }
+
     Alert.alert(
       'Close Group',
       'Are you sure you want to close this group? This will make it inactive.',
@@ -363,11 +420,31 @@ export default function ManageGroupsScreen() {
         {
           text: 'Close',
           style: 'destructive',
-          onPress: () => closeGroupMutation.mutate({ groupId }),
+          onPress: async () => {
+            await closeOperation.executeWithOptimisticUpdate(
+              async () => {
+                const result = await adminServiceWrapper.closeGroup(
+                  groupId,
+                  user.id,
+                  undefined,
+                  { context: { action: 'close', groupId } }
+                );
+                if (result.error) throw result.error;
+                return result.data;
+              },
+              // Optimistic update: immediately show group as closed
+              groups?.map(g => 
+                g.id === groupId ? { ...g, status: 'closed' } : g
+              ) || [],
+              { action: 'close', groupId }
+            );
+          },
         },
       ]
     );
   };
+
+
 
   const handleViewMembers = (group: GroupWithAdminDetails) => {
     setSelectedGroup(group);
@@ -375,9 +452,9 @@ export default function ManageGroupsScreen() {
   };
 
   const isActionLoading =
-    approveGroupMutation.isPending ||
-    declineGroupMutation.isPending ||
-    closeGroupMutation.isPending;
+    approveOperation.loading ||
+    declineOperation.loading ||
+    closeOperation.loading;
 
   if (error) {
     return (
@@ -430,24 +507,67 @@ export default function ManageGroupsScreen() {
             >
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>Manage Groups</Text>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>Manage Groups</Text>
+              {notificationCounts.group_requests > 0 && (
+                <NotificationBadge 
+                  count={notificationCounts.group_requests} 
+                  size="medium"
+                  style={styles.headerBadge}
+                />
+              )}
+            </View>
           </View>
 
           {actionError && (
-            <AdminActionError
+            <AdminRetryableError
               error={actionError}
-              onDismiss={() => setActionError(null)}
+              retryCount={retryCount}
+              maxRetries={3}
               onRetry={() => {
+                // Retry the last failed operation
+                if (approveOperation.error) {
+                  // Re-trigger approve operation
+                } else if (declineOperation.error) {
+                  // Re-trigger decline operation
+                } else if (closeOperation.error) {
+                  // Re-trigger close operation
+                }
                 setActionError(null);
-                refetch();
+              }}
+              onDismiss={() => {
+                setActionError(null);
+                setRetryCount(0);
+                approveOperation.reset();
+                declineOperation.reset();
+                closeOperation.reset();
               }}
             />
           )}
 
+          {/* Loading overlay for admin operations */}
+          <AdminLoadingOverlay
+            visible={isActionLoading}
+            message={
+              approveOperation.loading ? 'Approving group...' :
+              declineOperation.loading ? 'Declining group...' :
+              closeOperation.loading ? 'Closing group...' :
+              'Processing...'
+            }
+            onCancel={() => {
+              approveOperation.cancel();
+              declineOperation.cancel();
+              closeOperation.cancel();
+            }}
+          />
+
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" />
-          <Text style={styles.loadingText}>Loading groups...</Text>
+        <View style={styles.content}>
+          <AdminLoadingCard
+            title="Loading Groups"
+            message="Fetching church groups and their details..."
+          />
+          <AdminLoadingList count={3} showActions={true} />
         </View>
       ) : (
         <ScrollView
@@ -460,13 +580,24 @@ export default function ManageGroupsScreen() {
           {groups && groups.length > 0 ? (
             <>
               <View style={styles.summary}>
-                <Text style={styles.summaryText}>
-                  {groups.length} total groups
-                </Text>
-                <Text style={styles.summaryText}>
-                  {groups.filter((g) => g.status === 'pending').length} pending
-                  approval
-                </Text>
+                <View style={styles.summaryStats}>
+                  <Text style={styles.summaryText}>
+                    {groups.length} total groups
+                  </Text>
+                  <Text style={styles.summaryText}>
+                    {groups.filter((g) => g.status === 'pending').length} pending
+                    approval
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  onPress={() => {
+                    refetch();
+                    refreshNotifications();
+                  }}
+                >
+                  <Text style={styles.refreshButtonText}>Refresh</Text>
+                </TouchableOpacity>
               </View>
 
               {groups.map((group) => (
@@ -528,10 +659,20 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: '500',
   },
+  titleContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1a1a1a',
+  },
+  headerBadge: {
+    top: -4,
+    right: -12,
   },
   loadingContainer: {
     flex: 1,
@@ -550,10 +691,25 @@ const styles = StyleSheet.create({
   summary: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 24,
     padding: 16,
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
+  },
+  summaryStats: {
+    flex: 1,
+  },
+  refreshButton: {
+    backgroundColor: '#e5e7eb',
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  refreshButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#374151',
   },
   summaryText: {
     fontSize: 14,

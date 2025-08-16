@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Button } from './Button';
 import { ErrorMessage } from './ErrorMessage';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface AdminErrorBoundaryProps {
   children: React.ReactNode;
@@ -167,6 +168,157 @@ interface AdminActionErrorProps {
   onDismiss?: () => void;
 }
 
+interface AdminLoadingOverlayProps {
+  visible: boolean;
+  message?: string;
+  onCancel?: () => void;
+}
+
+/**
+ * Loading overlay for admin operations with cancel option
+ */
+export const AdminLoadingOverlay: React.FC<AdminLoadingOverlayProps> = ({
+  visible,
+  message = 'Processing...',
+  onCancel,
+}) => {
+  if (!visible) return null;
+
+  return (
+    <View style={styles.loadingOverlay}>
+      <View style={styles.loadingContent}>
+        <LoadingSpinner size="large" />
+        <Text style={styles.loadingMessage}>{message}</Text>
+        {onCancel && (
+          <Button
+            title="Cancel"
+            onPress={onCancel}
+            variant="secondary"
+            size="small"
+            style={styles.cancelButton}
+          />
+        )}
+      </View>
+    </View>
+  );
+};
+
+interface AdminRetryableErrorProps {
+  error: Error | null;
+  onRetry: () => void;
+  onDismiss?: () => void;
+  retryCount?: number;
+  maxRetries?: number;
+}
+
+/**
+ * Enhanced error component with retry logic and backoff
+ */
+export const AdminRetryableError: React.FC<AdminRetryableErrorProps> = ({
+  error,
+  onRetry,
+  onDismiss,
+  retryCount = 0,
+  maxRetries = 3,
+}) => {
+  if (!error) return null;
+
+  const isPermissionError = (error: Error): boolean => {
+    const permissionKeywords = [
+      'permission',
+      'unauthorized',
+      'access denied',
+      'insufficient',
+      'church admin',
+      'group leader',
+      'role required',
+    ];
+    
+    return permissionKeywords.some(keyword =>
+      error.message.toLowerCase().includes(keyword)
+    );
+  };
+
+  const isNetworkError = (error: Error): boolean => {
+    const networkKeywords = [
+      'network',
+      'fetch',
+      'connection',
+      'timeout',
+      'offline',
+    ];
+    
+    return networkKeywords.some(keyword =>
+      error.message.toLowerCase().includes(keyword)
+    );
+  };
+
+  const canRetry = (): boolean => {
+    // Don't allow retry for permission errors
+    if (isPermissionError(error)) return false;
+    
+    // Allow retry for network errors and other retryable errors
+    return retryCount < maxRetries;
+  };
+
+  const getErrorMessage = (error: Error): string => {
+    if (isPermissionError(error)) {
+      return 'You do not have permission to perform this action. Please contact your church administrator.';
+    }
+    
+    if (isNetworkError(error)) {
+      return 'Unable to connect to the server. Please check your internet connection and try again.';
+    }
+
+    return error.message || 'An unexpected error occurred. Please try again.';
+  };
+
+  const getRetryButtonText = (): string => {
+    if (retryCount === 0) return 'Try Again';
+    return `Try Again (${retryCount}/${maxRetries})`;
+  };
+
+  return (
+    <View style={styles.retryableErrorContainer}>
+      <View style={styles.errorHeader}>
+        <Text style={styles.errorIcon}>⚠️</Text>
+        <Text style={styles.errorTitle}>Operation Failed</Text>
+      </View>
+      
+      <Text style={styles.errorDescription}>
+        {getErrorMessage(error)}
+      </Text>
+
+      {retryCount > 0 && (
+        <Text style={styles.retryInfo}>
+          Attempt {retryCount} of {maxRetries}
+        </Text>
+      )}
+
+      <View style={styles.errorActions}>
+        {canRetry() && (
+          <Button
+            title={getRetryButtonText()}
+            onPress={onRetry}
+            variant="primary"
+            size="small"
+            style={styles.retryButton}
+          />
+        )}
+        {onDismiss && (
+          <Button
+            title="Dismiss"
+            onPress={onDismiss}
+            variant="secondary"
+            size="small"
+            style={styles.dismissButton}
+          />
+        )}
+      </View>
+    </View>
+  );
+};
+
 /**
  * Component for displaying admin action errors
  */
@@ -209,7 +361,7 @@ export const AdminActionError: React.FC<AdminActionErrorProps> = ({
   return (
     <View style={styles.actionErrorContainer}>
       <ErrorMessage
-        message={getErrorMessage(error)}
+        error={getErrorMessage(error)}
         onRetry={onRetry}
         style={styles.actionError}
       />
@@ -284,5 +436,75 @@ const styles = StyleSheet.create({
   },
   dismissButton: {
     alignSelf: 'flex-end',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 32,
+    alignItems: 'center',
+    minWidth: 200,
+  },
+  loadingMessage: {
+    fontSize: 16,
+    color: '#1a1a1a',
+    marginTop: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  cancelButton: {
+    marginTop: 8,
+  },
+  retryableErrorContainer: {
+    backgroundColor: '#fff5f5',
+    borderRadius: 12,
+    padding: 20,
+    margin: 16,
+    borderWidth: 1,
+    borderColor: '#fed7d7',
+  },
+  errorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  errorIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#c53030',
+  },
+  errorDescription: {
+    fontSize: 14,
+    color: '#4a5568',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  retryInfo: {
+    fontSize: 12,
+    color: '#718096',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  errorActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  retryButton: {
+    flex: 1,
   },
 });

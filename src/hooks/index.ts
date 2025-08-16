@@ -51,6 +51,7 @@ export {
 } from './useFriendships';
 export { useNetworkStatus } from './useNetworkStatus';
 export { useAsyncOperation } from './useAsyncOperation';
+export { useAdminAsyncOperation, useAdminBatchOperation } from './useAdminAsyncOperation';
 export { useErrorHandler } from './useErrorHandler';
 export { useLoadingState } from './useLoadingState';
 export {

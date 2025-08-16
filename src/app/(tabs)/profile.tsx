@@ -23,6 +23,7 @@ import { AdminOnly, PermissionGate, ChurchAdminOnly } from '@/components/ui/Role
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
+import { AdminDashboardSummary } from '@/components/admin/AdminDashboardSummary';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
@@ -287,6 +288,9 @@ export default function ProfileScreen() {
 
         {/* Admin Features */}
         <ChurchAdminOnly>
+          {/* Admin Dashboard Summary */}
+          <AdminDashboardSummary onRefresh={handleRefresh} />
+          
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Admin Tools</Text>
             <View style={styles.adminActions}>

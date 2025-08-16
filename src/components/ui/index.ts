@@ -24,8 +24,21 @@ export {
   GroupLeaderOnly,
   ChurchAdminOnly,
 } from './RoleBasedRender';
-export { AdminErrorBoundary, AdminActionError } from './AdminErrorBoundary';
+export { 
+  AdminErrorBoundary, 
+  AdminActionError, 
+  AdminLoadingOverlay,
+  AdminRetryableError,
+} from './AdminErrorBoundary';
+export {
+  AdminLoadingCard,
+  AdminBatchLoading,
+  AdminSkeletonLoader,
+  AdminLoadingList,
+  AdminRetryLoading,
+} from './AdminLoadingStates';
 export { AnimatedCard } from './AnimatedCard';
+export { NotificationBadge } from './NotificationBadge';
 
 // Form components
 export { Form, FormField, useFormContext } from './Form';

@@ -395,6 +395,132 @@ export const updateNotificationSettings = async (
 };
 
 /**
+ * Get unread notifications for a user
+ */
+export const getUnreadNotifications = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('read', false)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching unread notifications:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting unread notifications:', error);
+    return [];
+  }
+};
+
+/**
+ * Get all notifications for a user
+ */
+export const getUserNotifications = async (userId: string, limit: number = 50) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching user notifications:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting user notifications:', error);
+    return [];
+  }
+};
+
+/**
+ * Mark notification as read
+ */
+export const markNotificationAsRead = async (notificationId: string) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('id', notificationId);
+
+    if (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    return false;
+  }
+};
+
+/**
+ * Mark all notifications as read for a user
+ */
+export const markAllNotificationsAsRead = async (userId: string) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('read', false);
+
+    if (error) {
+      console.error('Error marking all notifications as read:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    return false;
+  }
+};
+
+/**
+ * Get notification count by type for admin dashboard
+ */
+export const getAdminNotificationCounts = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('type')
+      .eq('user_id', userId)
+      .eq('read', false);
+
+    if (error) {
+      console.error('Error fetching admin notification counts:', error);
+      return { group_requests: 0, join_requests: 0, total: 0 };
+    }
+
+    const counts = data?.reduce((acc, notification) => {
+      if (notification.type === 'group_request') {
+        acc.group_requests++;
+      } else if (notification.type === 'join_request') {
+        acc.join_requests++;
+      }
+      acc.total++;
+      return acc;
+    }, { group_requests: 0, join_requests: 0, total: 0 }) || { group_requests: 0, join_requests: 0, total: 0 };
+
+    return counts;
+  } catch (error) {
+    console.error('Error getting admin notification counts:', error);
+    return { group_requests: 0, join_requests: 0, total: 0 };
+  }
+};
+
+/**
  * Send group creation request notification to church admins
  */
 export const sendGroupRequestNotification = async (
