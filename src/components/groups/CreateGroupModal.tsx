@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { Modal, Form, FormField, Input, Select, Button, Card } from '../ui';
 import { useFormContext } from '../ui/Form';
@@ -9,6 +9,7 @@ import { locationService, type Coordinates } from '../../services/location';
 import type { CreateGroupData } from '../../services/admin';
 import type { SelectOption } from '../ui/Select';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { debounce } from '../../utils';
 
 interface CreateGroupModalProps {
   isVisible: boolean;
@@ -106,23 +107,27 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     }
   }, [isVisible]);
 
-  const handleLocationGeocode = async (address: string) => {
-    if (!address.trim()) {
-      setLocationCoordinates(null);
-      return;
-    }
-
-    setIsGeocodingLocation(true);
-    try {
-      const coordinates = await locationService.geocodeAddress(address);
-      setLocationCoordinates(coordinates);
-    } catch (error) {
-      console.warn('Failed to geocode address:', error);
-      setLocationCoordinates(null);
-    } finally {
-      setIsGeocodingLocation(false);
-    }
-  };
+  // Debounce geocoding to prevent jank while typing
+  const debouncedGeocode = useMemo(
+    () =>
+      debounce(async (address: string) => {
+        if (!address.trim()) {
+          setLocationCoordinates(null);
+          return;
+        }
+        setIsGeocodingLocation(true);
+        try {
+          const coordinates = await locationService.geocodeAddress(address);
+          setLocationCoordinates(coordinates);
+        } catch (error) {
+          console.warn('Failed to geocode address:', error);
+          setLocationCoordinates(null);
+        } finally {
+          setIsGeocodingLocation(false);
+        }
+      }, 500),
+    []
+  );
 
   const handleTimeChange = (event: any, selectedDate?: Date) => {
     setShowTimePicker(Platform.OS === 'ios');
@@ -133,18 +138,14 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
   const formatTime = (date: Date): string => {
     return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: false,
+      hour12: true,
     });
   };
 
   const handleSubmit = async (values: GroupFormData) => {
-    if (
-      !userProfile?.id ||
-      !userProfile?.church_id ||
-      !userProfile?.service_id
-    ) {
+    if (!userProfile?.id || !userProfile?.church_id) {
       Alert.alert(
         'Error',
         'Please complete your profile before creating a group.'
@@ -155,6 +156,16 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     setIsSubmitting(true);
 
     try {
+      // Ensure Supabase session is present so RLS sees auth.uid()
+      const { data: session } = await import('../../services/supabase').then(m => m.supabase.auth.getSession());
+      const uid = session?.session?.user?.id;
+      if (!uid || uid !== userProfile.id) {
+        throw new Error('You are not authenticated. Please sign in again.');
+      }
+      if (!userProfile.service_id) {
+        throw new Error('Your profile is missing a service. Please select a service in your profile.');
+      }
+
       const groupData: CreateGroupData = {
         title: values.title.trim(),
         description: values.description.trim(),
@@ -166,6 +177,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             coordinates: locationCoordinates,
           }),
         },
+        // service_id will be enforced server-side via trigger/RLS, but we send it for clarity
         service_id: userProfile.service_id,
         church_id: userProfile.church_id,
       };
@@ -265,7 +277,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   };
 
   const renderBasicStep = () => (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <View>
       <Text style={styles.stepDescription}>
         Let's start with the basic information about your group.
       </Text>
@@ -302,11 +314,11 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           />
         )}
       </FormField>
-    </ScrollView>
+    </View>
   );
 
   const renderScheduleStep = () => (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <View>
       <Text style={styles.stepDescription}>
         When will your group meet?
       </Text>
@@ -356,11 +368,11 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           </View>
         )}
       </FormField>
-    </ScrollView>
+    </View>
   );
 
   const renderLocationStep = () => (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <View>
       <Text style={styles.stepDescription}>
         Where will your group meet?
       </Text>
@@ -373,7 +385,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               value={value}
               onChangeText={(text) => {
                 onChange(text);
-                handleLocationGeocode(text);
+                debouncedGeocode(text);
               }}
               onBlur={onBlur}
               error={error}
@@ -394,14 +406,13 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           </View>
         )}
       </FormField>
-    </ScrollView>
+    </View>
   );
 
-  const renderReviewStep = () => {
+  const ReviewStep: React.FC<{ locationCoordinates: Coordinates | null }> = ({ locationCoordinates }) => {
     const { values } = useFormContext();
-    
     return (
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <View>
         <Text style={styles.stepDescription}>
           Please review your group details before submitting.
         </Text>
@@ -411,24 +422,24 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             <Text style={styles.reviewLabel}>Group Title:</Text>
             <Text style={styles.reviewValue}>{values.title || 'Not set'}</Text>
           </View>
-          
+
           <View style={styles.reviewItem}>
             <Text style={styles.reviewLabel}>Description:</Text>
             <Text style={styles.reviewValue}>{values.description || 'Not set'}</Text>
           </View>
-          
+
           <View style={styles.reviewItem}>
             <Text style={styles.reviewLabel}>Meeting Day:</Text>
             <Text style={styles.reviewValue}>
               {MEETING_DAYS.find(d => d.value === values.meeting_day)?.label || 'Not set'}
             </Text>
           </View>
-          
+
           <View style={styles.reviewItem}>
             <Text style={styles.reviewLabel}>Meeting Time:</Text>
             <Text style={styles.reviewValue}>{values.meeting_time || 'Not set'}</Text>
           </View>
-          
+
           <View style={styles.reviewItem}>
             <Text style={styles.reviewLabel}>Location:</Text>
             <Text style={styles.reviewValue}>{values.location || 'Not set'}</Text>
@@ -446,7 +457,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             You'll receive a notification once it's been approved.
           </Text>
         </View>
-      </ScrollView>
+      </View>
     );
   };
 
@@ -459,7 +470,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       case 'location':
         return renderLocationStep();
       case 'review':
-        return renderReviewStep();
+        return <ReviewStep locationCoordinates={locationCoordinates} />;
       default:
         return renderBasicStep();
     }
@@ -470,16 +481,19 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       isVisible={isVisible}
       onClose={handleClose}
       title={`Create New Group - ${STEP_TITLES[currentStep]}`}
-      size="large"
-      scrollable={false}
+      size="medium"
+      scrollable
       closeOnOverlayPress={!isSubmitting}
       showCloseButton={!isSubmitting}
+      avoidKeyboard
+      keyboardVerticalOffset={0}
+      testID="create-group-modal"
     >
       <Form config={formConfig} onSubmit={handleSubmit}>
-        <View style={styles.container}>
+        <View>
           {renderStepIndicator()}
           
-          <View style={styles.stepContent}>
+          <View>
             {renderCurrentStep()}
           </View>
 
@@ -522,9 +536,6 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   stepIndicator: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -565,7 +576,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
   },
   stepContent: {
-    flex: 1,
     paddingHorizontal: 4,
   },
   stepDescription: {

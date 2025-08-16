@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   ScrollView,
 } from 'react-native';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 import { Theme } from '../../utils/theme';
 
 interface ModalProps extends Omit<RNModalProps, 'children'> {
@@ -21,6 +22,8 @@ interface ModalProps extends Omit<RNModalProps, 'children'> {
   showCloseButton?: boolean;
   closeOnOverlayPress?: boolean;
   scrollable?: boolean;
+  avoidKeyboard?: boolean;
+  keyboardVerticalOffset?: number;
   style?: ViewStyle;
   testID?: string;
 }
@@ -34,6 +37,8 @@ export const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   closeOnOverlayPress = true,
   scrollable = false,
+  avoidKeyboard = true,
+  keyboardVerticalOffset = 0,
   style,
   testID,
   ...modalProps
@@ -45,7 +50,7 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const renderContent = () => {
-    const content = (
+    return (
       <View style={[styles.content, styles[size], style]}>
         {(title || showCloseButton) && (
           <View style={styles.header}>
@@ -62,23 +67,19 @@ export const Modal: React.FC<ModalProps> = ({
             )}
           </View>
         )}
-        <View style={styles.body}>{children}</View>
+        {scrollable ? (
+          <ScrollView
+            style={styles.bodyScroll}
+            contentContainerStyle={styles.bodyScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.body}>{children}</View>
+          </ScrollView>
+        ) : (
+          <View style={styles.body}>{children}</View>
+        )}
       </View>
     );
-
-    if (scrollable) {
-      return (
-        <ScrollView
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {content}
-        </ScrollView>
-      );
-    }
-
-    return content;
   };
 
   return (
@@ -96,9 +97,16 @@ export const Modal: React.FC<ModalProps> = ({
           activeOpacity={1}
           onPress={handleOverlayPress}
         >
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-            {renderContent()}
-          </TouchableOpacity>
+          <KeyboardAvoidingView
+            enabled={avoidKeyboard}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={keyboardVerticalOffset}
+            style={styles.kav}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+              {renderContent()}
+            </TouchableOpacity>
+          </KeyboardAvoidingView>
         </TouchableOpacity>
       </SafeAreaView>
     </RNModal>
@@ -119,17 +127,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Theme.spacing.base,
   },
-  scrollContainer: {
-    maxHeight: '90%',
-  },
-  scrollContent: {
-    justifyContent: 'center',
+  kav: {
+    width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     backgroundColor: Theme.colors.surface,
     borderRadius: Theme.borderRadius.lg,
     ...Theme.shadows.lg,
+    maxHeight: '90%',
+    overflow: 'hidden',
   },
   small: {
     width: '80%',
@@ -175,5 +183,11 @@ const styles = StyleSheet.create({
   },
   body: {
     padding: Theme.spacing.xl,
+  },
+  bodyScroll: {
+    alignSelf: 'stretch',
+  },
+  bodyScrollContent: {
+    paddingBottom: Theme.spacing.xl,
   },
 });

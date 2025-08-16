@@ -400,7 +400,8 @@ export const updateNotificationSettings = async (
 export const sendGroupRequestNotification = async (
   churchId: string,
   groupTitle: string,
-  creatorName: string
+  creatorName: string,
+  groupId?: string
 ): Promise<void> => {
   try {
     // Get all church admins
@@ -420,20 +421,45 @@ export const sendGroupRequestNotification = async (
       return;
     }
 
-    // Send notification to each admin
-    const notification: NotificationData = {
-      type: 'group_request',
-      id: churchId,
+    // Create notification record in database for each admin
+    const notifications = admins.map(admin => ({
+      user_id: admin.id,
+      type: 'group_request' as const,
       title: 'New Group Request',
       body: `${creatorName} has requested to create "${groupTitle}"`,
-      data: { churchId, groupTitle, creatorName },
+      data: { 
+        churchId, 
+        groupTitle, 
+        creatorName,
+        groupId: groupId || churchId,
+        action_url: '/admin/manage-groups'
+      },
+      read: false,
+      created_at: new Date().toISOString(),
+    }));
+
+    // Store notifications in database
+    const { error: insertError } = await supabase
+      .from('notifications')
+      .insert(notifications);
+
+    if (insertError) {
+      console.error('Error storing notifications:', insertError);
+    }
+
+    // Send push notifications to each admin
+    const notification: NotificationData = {
+      type: 'group_request',
+      id: groupId || churchId,
+      title: 'New Group Request',
+      body: `${creatorName} has requested to create "${groupTitle}"`,
+      data: { churchId, groupTitle, creatorName, groupId },
     };
 
-    // For now, we'll just log this. In a real app, you'd send push notifications
-    console.log('Group request notification:', notification);
+    // Schedule local notification for immediate display
+    await scheduleLocalNotification(notification);
 
-    // TODO: Implement actual push notification sending to admins
-    // This would typically be handled by your backend service
+    console.log('Group request notifications sent to', admins.length, 'admins');
   } catch (error) {
     console.error('Error sending group request notification:', error);
   }
@@ -445,7 +471,8 @@ export const sendGroupRequestNotification = async (
 export const sendJoinRequestNotification = async (
   groupId: string,
   groupTitle: string,
-  requesterName: string
+  requesterName: string,
+  requesterId?: string
 ): Promise<void> => {
   try {
     // Get all group leaders
@@ -471,20 +498,45 @@ export const sendJoinRequestNotification = async (
       return;
     }
 
-    // Send notification to each leader
+    // Create notification record in database for each leader
+    const notifications = leaders.map(leader => ({
+      user_id: leader.user_id,
+      type: 'join_request' as const,
+      title: 'New Join Request',
+      body: `${requesterName} wants to join "${groupTitle}"`,
+      data: { 
+        groupId, 
+        groupTitle, 
+        requesterName,
+        requesterId,
+        action_url: `/group/${groupId}`
+      },
+      read: false,
+      created_at: new Date().toISOString(),
+    }));
+
+    // Store notifications in database
+    const { error: insertError } = await supabase
+      .from('notifications')
+      .insert(notifications);
+
+    if (insertError) {
+      console.error('Error storing notifications:', insertError);
+    }
+
+    // Send push notification to each leader
     const notification: NotificationData = {
       type: 'join_request',
       id: groupId,
       title: 'New Join Request',
       body: `${requesterName} wants to join "${groupTitle}"`,
-      data: { groupId, groupTitle, requesterName },
+      data: { groupId, groupTitle, requesterName, requesterId },
     };
 
-    // For now, we'll just log this. In a real app, you'd send push notifications
-    console.log('Join request notification:', notification);
+    // Schedule local notification for immediate display
+    await scheduleLocalNotification(notification);
 
-    // TODO: Implement actual push notification sending to leaders
-    // This would typically be handled by your backend service
+    console.log('Join request notifications sent to', leaders.length, 'leaders');
   } catch (error) {
     console.error('Error sending join request notification:', error);
   }

@@ -18,6 +18,7 @@ interface ErrorHandlerOptions {
 
 export function useErrorHandler() {
   const { signOut } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleError = useCallback(
     (error: Error | AppError, options: ErrorHandlerOptions = {}) => {
@@ -32,7 +33,7 @@ export function useErrorHandler() {
 
       // Log error if requested
       if (logError) {
-        globalErrorHandler.logError(appError, context);
+        globalErrorHandler.logError(appError, context, user?.id);
       }
 
       // Handle auth errors

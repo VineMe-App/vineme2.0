@@ -23,6 +23,16 @@ export class GroupCreationService {
     creatorId: string
   ): Promise<AdminServiceResponse<Group>> {
     try {
+      // Ensure we have an authenticated session so RLS sees auth.uid()
+      const { data: sessionResult } = await supabase.auth.getSession();
+      const effectiveUid = sessionResult?.session?.user?.id;
+      if (!effectiveUid || effectiveUid !== creatorId) {
+        return {
+          data: null,
+          error: new Error('You are not authenticated. Please sign in again.'),
+        };
+      }
+
       // Check permission to create groups (basic user permission)
       const permissionCheck = await permissionService.canAccessChurchData(
         groupData.church_id
@@ -52,20 +62,44 @@ export class GroupCreationService {
         };
       }
 
-      // Create the group with pending status
+      // Ensure service belongs to the same church (helps avoid RLS checks failing)
+      const { data: svc } = await supabase
+        .from('services')
+        .select('id, church_id')
+        .eq('id', groupData.service_id)
+        .single();
+      if (svc && svc.church_id !== groupData.church_id) {
+        return {
+          data: null,
+          error: new Error('Selected service is not part of the chosen church'),
+        };
+      }
+
+      // Diagnostic: confirm DB sees auth context
+      try {
+        const { data: authCtx } = await supabase.rpc('get_auth_context');
+        if (__DEV__) {
+          console.log('[CreateGroupDebug] get_auth_context:', authCtx);
+        }
+      } catch {}
+
+      // Create the group with pending status (service_id will be enforced server-side)
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .insert({
           ...groupData,
           status: 'pending',
-          created_by: creatorId,
           created_at: new Date().toISOString(),
         })
         .select()
         .single();
 
       if (groupError) {
-        return { data: null, error: new Error(groupError.message) };
+        // Provide clearer error for RLS violations
+        const message = groupError.message?.includes('RLS')
+          ? 'RLS policy violation for groups.insert'
+          : groupError.message;
+        return { data: null, error: new Error(message) };
       }
 
       // Automatically add creator as leader

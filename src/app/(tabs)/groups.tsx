@@ -9,8 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
-  GroupCard, 
-  CreateGroupModal, 
+  GroupCard,
   GroupsMapView, 
   ViewToggle,
   FilterPanel,
@@ -31,7 +30,7 @@ export default function GroupsScreen() {
   const { filters } = useGroupFiltersStore();
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  // Create flow now navigates to dedicated page
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [currentView, setCurrentView] = useState<ViewMode>('list');
 
@@ -70,11 +69,11 @@ export default function GroupsScreen() {
   };
 
   const handleCreateGroup = () => {
-    setShowCreateModal(true);
+    router.push('/group/create');
   };
 
   const handleCreateSuccess = () => {
-    refetch(); // Refresh the groups list
+    refetch(); // In case we come back and want to refresh
   };
 
   const renderGroupItem = ({ item: group }: { item: GroupWithDetails }) => {
@@ -206,11 +205,7 @@ export default function GroupsScreen() {
         onClose={() => setShowFilterPanel(false)}
       />
 
-      <CreateGroupModal
-        isVisible={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={handleCreateSuccess}
-      />
+      {/* Create group now handled via /group/create route */}
     </View>
   );
 }
