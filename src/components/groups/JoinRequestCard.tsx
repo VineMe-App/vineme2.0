@@ -15,6 +15,7 @@ import {
   useApproveJoinRequest,
   useDeclineJoinRequest,
   useGetContactInfo,
+  useInitiateContactAction,
 } from '../../hooks/useJoinRequests';
 import type { GroupJoinRequestWithUser } from '../../types/database';
 
@@ -33,6 +34,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   
   const approveRequestMutation = useApproveJoinRequest();
   const declineRequestMutation = useDeclineJoinRequest();
+  const initiateContactMutation = useInitiateContactAction();
   
   const { data: contactInfo } = useGetContactInfo(
     showContactInfo && request.contact_consent ? request.id : undefined,
@@ -113,20 +115,31 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
     );
   };
 
-  const handleContactPress = (type: 'email' | 'phone', value: string) => {
-    const url = type === 'email' ? `mailto:${value}` : `tel:${value}`;
-    
-    Linking.canOpenURL(url)
-      .then((supported) => {
-        if (supported) {
-          Linking.openURL(url);
-        } else {
-          Alert.alert('Error', `Cannot open ${type} app`);
-        }
-      })
-      .catch(() => {
-        Alert.alert('Error', `Failed to open ${type} app`);
+  const handleContactPress = async (type: 'email' | 'phone', value: string) => {
+    try {
+      // Log the contact action first
+      await initiateContactMutation.mutateAsync({
+        requestId: request.id,
+        leaderId: leaderId,
+        actionType: type === 'email' ? 'email' : 'call',
+        contactValue: value,
       });
+
+      // Then open the contact app
+      const url = type === 'email' ? `mailto:${value}` : `tel:${value}`;
+      
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', `Cannot open ${type} app`);
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : `Failed to ${type === 'email' ? 'email' : 'call'} user`
+      );
+    }
   };
 
   const isProcessing = approveRequestMutation.isPending || declineRequestMutation.isPending;
@@ -189,24 +202,34 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
         <View style={styles.contactInfo}>
           <Text style={styles.contactTitle}>Contact Information:</Text>
           <View style={styles.contactDetails}>
-            <TouchableOpacity
-              onPress={() => handleContactPress('email', contactInfo.email)}
-              style={styles.contactItem}
-            >
-              <Text style={styles.contactLabel}>📧 Email:</Text>
-              <Text style={styles.contactValue}>{contactInfo.email}</Text>
-            </TouchableOpacity>
+            {contactInfo.email && (
+              <TouchableOpacity
+                onPress={() => handleContactPress('email', contactInfo.email!)}
+                style={styles.contactItem}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Text style={styles.contactLabel}>📧 Email:</Text>
+                <Text style={styles.contactValue}>{contactInfo.email}</Text>
+              </TouchableOpacity>
+            )}
             
             {contactInfo.phone && (
               <TouchableOpacity
                 onPress={() => handleContactPress('phone', contactInfo.phone)}
                 style={styles.contactItem}
+                disabled={initiateContactMutation.isPending}
               >
                 <Text style={styles.contactLabel}>📱 Phone:</Text>
                 <Text style={styles.contactValue}>{contactInfo.phone}</Text>
               </TouchableOpacity>
             )}
           </View>
+          
+          {(!contactInfo.email && !contactInfo.phone) && (
+            <Text style={styles.noContactText}>
+              Contact information not available due to user privacy settings.
+            </Text>
+          )}
         </View>
       )}
 
@@ -329,6 +352,13 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     flex: 1,
     textDecorationLine: 'underline',
+  },
+  noContactText: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 8,
   },
   actions: {
     flexDirection: 'row',

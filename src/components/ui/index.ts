@@ -39,6 +39,8 @@ export {
 } from './AdminLoadingStates';
 export { AnimatedCard } from './AnimatedCard';
 export { NotificationBadge } from './NotificationBadge';
+export { AccessibleStatusIndicator } from './AccessibleStatusIndicator';
+export { ConfirmationDialog, AdminConfirmations } from './ConfirmationDialog';
 
 // Form components
 export { Form, FormField, useFormContext } from './Form';

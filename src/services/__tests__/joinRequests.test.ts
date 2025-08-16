@@ -1,6 +1,7 @@
 import { joinRequestService } from '../joinRequests';
 import { supabase } from '../supabase';
 import { permissionService } from '../permissions';
+import { contactAuditService } from '../contactAudit';
 
 // Mock dependencies
 jest.mock('../supabase', () => ({
@@ -15,8 +16,16 @@ jest.mock('../permissions', () => ({
   },
 }));
 
+jest.mock('../contactAudit', () => ({
+  contactAuditService: {
+    canShareContact: jest.fn(),
+    logContactAccess: jest.fn(),
+  },
+}));
+
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
+const mockContactAuditService = contactAuditService as jest.Mocked<typeof contactAuditService>;
 
 describe('JoinRequestService', () => {
   beforeEach(() => {
@@ -323,6 +332,17 @@ describe('JoinRequestService', () => {
       mockPermissionService.canManageGroup.mockResolvedValue({
         hasPermission: true,
         reason: null,
+      });
+
+      // Mock contact sharing permissions
+      mockContactAuditService.canShareContact
+        .mockResolvedValueOnce({ data: true, error: null }) // email allowed
+        .mockResolvedValueOnce({ data: true, error: null }); // phone allowed
+
+      // Mock contact access logging
+      mockContactAuditService.logContactAccess.mockResolvedValue({
+        data: { id: 'log1' } as any,
+        error: null,
       });
 
       const result = await joinRequestService.getContactInfo(requestId, leaderId);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { AdminAccessibilityLabels } from '@/utils/accessibility';
 
 interface NotificationBadgeProps {
   count: number;
@@ -8,6 +9,8 @@ interface NotificationBadgeProps {
   textColor?: string;
   style?: any;
   maxCount?: number;
+  type?: string;
+  accessibilityLabel?: string;
 }
 
 export function NotificationBadge({
@@ -17,10 +20,15 @@ export function NotificationBadge({
   textColor = '#fff',
   style,
   maxCount = 99,
+  type = 'notifications',
+  accessibilityLabel,
 }: NotificationBadgeProps) {
   if (count <= 0) return null;
 
   const displayCount = count > maxCount ? `${maxCount}+` : count.toString();
+  
+  const defaultAccessibilityLabel = accessibilityLabel || 
+    AdminAccessibilityLabels.notificationBadge(count, type);
 
   const sizeStyles = {
     small: {
@@ -57,12 +65,19 @@ export function NotificationBadge({
         { backgroundColor: color },
         style,
       ]}
+      accessibilityRole="text"
+      accessibilityLabel={defaultAccessibilityLabel}
+      accessibilityLiveRegion="polite"
+      accessible={true}
+      importantForAccessibility="yes"
     >
       <Text
         style={[
           styles.badgeText,
           { color: textColor, fontSize: textSizes[size] },
         ]}
+        accessibilityElementsHidden={true}
+        importantForAccessibility="no-hide-descendants"
       >
         {displayCount}
       </Text>

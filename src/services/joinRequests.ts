@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
+import { contactAuditService } from './contactAudit';
 import type {
   GroupJoinRequest,
   GroupJoinRequestWithUser,
@@ -373,7 +374,7 @@ export class JoinRequestService {
   async getContactInfo(
     requestId: string,
     leaderId: string
-  ): Promise<GroupServiceResponse<{ name: string; email: string; phone?: string }>> {
+  ): Promise<GroupServiceResponse<{ name: string; email?: string; phone?: string }>> {
     try {
       // Get the join request with user details
       const { data: joinRequest, error: requestError } = await supabase
@@ -418,12 +419,51 @@ export class JoinRequestService {
         };
       }
 
+      // Check privacy settings for contact sharing
+      const emailAllowed = await contactAuditService.canShareContact(
+        joinRequest.user.id,
+        'email',
+        leaderId,
+        joinRequest.group_id
+      );
+
+      const phoneAllowed = await contactAuditService.canShareContact(
+        joinRequest.user.id,
+        'phone',
+        leaderId,
+        joinRequest.group_id
+      );
+
+      // Determine which contact fields to include
+      const contactFields: string[] = [];
+      const contactInfo: { name: string; email?: string; phone?: string } = {
+        name: joinRequest.user.name,
+      };
+
+      if (emailAllowed.data && joinRequest.user.email) {
+        contactInfo.email = joinRequest.user.email;
+        contactFields.push('email');
+      }
+
+      if (phoneAllowed.data && joinRequest.user.phone) {
+        contactInfo.phone = joinRequest.user.phone;
+        contactFields.push('phone');
+      }
+
+      // Log the contact access
+      if (contactFields.length > 0) {
+        await contactAuditService.logContactAccess({
+          user_id: joinRequest.user.id,
+          accessor_id: leaderId,
+          group_id: joinRequest.group_id,
+          join_request_id: requestId,
+          access_type: 'view',
+          contact_fields: contactFields,
+        });
+      }
+
       return {
-        data: {
-          name: joinRequest.user.name,
-          email: joinRequest.user.email,
-          phone: joinRequest.user.phone,
-        },
+        data: contactInfo,
         error: null,
       };
     } catch (error) {
@@ -433,6 +473,95 @@ export class JoinRequestService {
           error instanceof Error
             ? error
             : new Error('Failed to get contact information'),
+      };
+    }
+  }
+
+  /**
+   * Initiate contact action (call, email, message) and log it
+   */
+  async initiateContactAction(
+    requestId: string,
+    leaderId: string,
+    actionType: 'call' | 'email' | 'message',
+    contactValue: string
+  ): Promise<GroupServiceResponse<boolean>> {
+    try {
+      // Get the join request details
+      const { data: joinRequest, error: requestError } = await supabase
+        .from('group_join_requests')
+        .select(
+          `
+          *,
+          user:users(id, name),
+          group:groups(id)
+        `
+        )
+        .eq('id', requestId)
+        .eq('status', 'approved')
+        .eq('contact_consent', true)
+        .single();
+
+      if (requestError || !joinRequest) {
+        return {
+          data: null,
+          error: new Error('Join request not found or contact not consented'),
+        };
+      }
+
+      // Check if requester is a leader of this group
+      const permissionCheck = await permissionService.canManageGroup(
+        joinRequest.group_id,
+        leaderId
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error('Access denied to contact user'),
+        };
+      }
+
+      if (!joinRequest.user) {
+        return {
+          data: null,
+          error: new Error('User information not available'),
+        };
+      }
+
+      // Check privacy settings for the specific contact type
+      const contactType = actionType === 'call' ? 'phone' : 'email';
+      const canContact = await contactAuditService.canShareContact(
+        joinRequest.user.id,
+        contactType,
+        leaderId,
+        joinRequest.group_id
+      );
+
+      if (!canContact.data) {
+        return {
+          data: null,
+          error: new Error(`Contact via ${actionType} not allowed by user privacy settings`),
+        };
+      }
+
+      // Log the contact action
+      await contactAuditService.logContactAccess({
+        user_id: joinRequest.user.id,
+        accessor_id: leaderId,
+        group_id: joinRequest.group_id,
+        join_request_id: requestId,
+        access_type: actionType,
+        contact_fields: [contactType],
+      });
+
+      return { data: true, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to initiate contact action'),
       };
     }
   }

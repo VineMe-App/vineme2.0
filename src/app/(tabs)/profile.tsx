@@ -20,7 +20,7 @@ import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { AdminOnly, PermissionGate, ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { EditProfileModal } from '@/components/profile/EditProfileModal';
+import { EditProfileModal, PrivacySettingsModal } from '@/components/profile';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
 import { AdminDashboardSummary } from '@/components/admin/AdminDashboardSummary';
@@ -29,6 +29,7 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const deleteAccountMutation = useDeleteAccount();
 
   const {
@@ -335,6 +336,12 @@ export default function ProfileScreen() {
 
         <View style={styles.actionsSection}>
           <Button
+            title="Privacy Settings"
+            onPress={() => setShowPrivacyModal(true)}
+            variant="secondary"
+            style={styles.privacyButton}
+          />
+          <Button
             title="Sign Out"
             onPress={handleSignOut}
             variant="danger"
@@ -362,6 +369,14 @@ export default function ProfileScreen() {
         onClose={() => setShowFriendsModal(false)}
         userId={user?.id}
       />
+
+      {user?.id && (
+        <PrivacySettingsModal
+          visible={showPrivacyModal}
+          onClose={() => setShowPrivacyModal(false)}
+          userId={user.id}
+        />
+      )}
     </View>
   );
 }
@@ -514,6 +529,9 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
+  },
+  privacyButton: {
+    marginBottom: 16,
   },
   signOutButton: {
     marginTop: 16,

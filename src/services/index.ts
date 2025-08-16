@@ -11,6 +11,7 @@ export { groupAdminService, userAdminService } from './admin';
 export { groupCreationService } from './groupCreation';
 export { joinRequestService } from './joinRequests';
 export { locationService } from './location';
+export { contactAuditService } from './contactAudit';
 export type { AuthResponse, SignUpData, SignInData } from './auth';
 export type { UpdateUserProfileData, UserServiceResponse } from './users';
 export type {
@@ -39,3 +40,8 @@ export type {
   CreateJoinRequestData,
 } from './joinRequests';
 export type { Coordinates, Address, LocationPermissionStatus } from './location';
+export type {
+  ContactAuditServiceResponse,
+  LogContactAccessData,
+  UpdatePrivacySettingsData,
+} from './contactAudit';

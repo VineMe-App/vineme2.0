@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { 
+  AccessibilityHelpers, 
+  AdminAccessibilityLabels, 
+  ScreenReaderUtils 
+} from '@/utils/accessibility';
 import { useQuery } from '@tanstack/react-query';
 import { userAdminService, type UserWithGroupStatus } from '@/services/admin';
 import { Avatar } from '@/components/ui/Avatar';
@@ -61,20 +66,48 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
         style={styles.card}
         onPress={onPress}
         activeOpacity={0.7}
+        {...AccessibilityHelpers.createNavigationProps(
+          AdminAccessibilityLabels.userConnectionStatus(user.name, user.is_connected, user.group_count),
+          'Double tap to view user details'
+        )}
       >
         <View style={styles.header}>
-          <Avatar size={50} imageUrl={user.avatar_url} name={user.name} />
+          <Avatar 
+            size={50} 
+            imageUrl={user.avatar_url} 
+            name={user.name}
+            accessibilityLabel={`Profile picture for ${user.name}`}
+          />
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={styles.userEmail}>{user.email}</Text>
-            <View style={styles.statusContainer}>
+            <Text 
+              style={styles.userName}
+              accessibilityRole="header"
+              accessibilityLevel={3}
+            >
+              {user.name}
+            </Text>
+            <Text 
+              style={styles.userEmail}
+              accessibilityLabel={`Email: ${user.email}`}
+            >
+              {user.email}
+            </Text>
+            <View 
+              style={styles.statusContainer}
+              accessibilityRole="group"
+              accessibilityLabel={AdminAccessibilityLabels.userConnectionStatus(user.name, user.is_connected, user.group_count)}
+            >
               <Badge
                 variant={user.is_connected ? 'success' : 'warning'}
                 size="small"
+                accessibilityLabel={`Connection status: ${getConnectionStatusText()}`}
               >
                 {getConnectionStatusText()}
               </Badge>
-              <Text style={styles.groupCount}>
+              <Text 
+                style={styles.groupCount}
+                accessibilityLabel={`Member of ${user.group_count} ${user.group_count === 1 ? 'group' : 'groups'}`}
+              >
                 {user.group_count} group{user.group_count !== 1 ? 's' : ''}
               </Text>
             </View>
@@ -113,13 +146,19 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           )}
         </View>
 
-        <View style={styles.actions}>
+        <View 
+          style={styles.actions}
+          accessibilityRole="group"
+          accessibilityLabel="User management actions"
+        >
           <Button
             title="View History"
             onPress={handleViewHistory}
             variant="secondary"
             size="small"
             style={styles.actionButton}
+            accessibilityLabel={`View group history for ${user.name}`}
+            accessibilityHint="Double tap to see this user's group membership history"
           />
           <Button
             title="Contact"
@@ -127,6 +166,8 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
             variant="primary"
             size="small"
             style={styles.actionButton}
+            accessibilityLabel={`Contact ${user.name}`}
+            accessibilityHint="Double tap to contact this user"
           />
         </View>
       </TouchableOpacity>

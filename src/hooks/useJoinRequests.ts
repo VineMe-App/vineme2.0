@@ -249,3 +249,42 @@ export const useGetContactInfo = (
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
+
+/**
+ * Hook to initiate contact action (call, email, message)
+ */
+export const useInitiateContactAction = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      requestId,
+      leaderId,
+      actionType,
+      contactValue,
+    }: {
+      requestId: string;
+      leaderId: string;
+      actionType: 'call' | 'email' | 'message';
+      contactValue: string;
+    }) => {
+      const { data, error } = await joinRequestService.initiateContactAction(
+        requestId,
+        leaderId,
+        actionType,
+        contactValue
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate contact audit logs
+      queryClient.invalidateQueries({
+        queryKey: ['contactAudit'],
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to initiate contact action:', error);
+    },
+  });
+};

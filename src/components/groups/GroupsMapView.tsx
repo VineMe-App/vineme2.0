@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,22 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
+import { 
+  AccessibilityHelpers, 
+  AdminAccessibilityLabels, 
+  ScreenReaderUtils 
+} from '@/utils/accessibility';
 import MapView, { Marker, Callout, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { locationService, Coordinates } from '../../services/location';
+import { 
+  MapClusterer, 
+  MapViewportOptimizer, 
+  MapPerformanceMonitor,
+  type Cluster,
+  type ClusterPoint,
+} from '../../utils/mapClustering';
 import { Button } from '../ui';
 import type { GroupWithDetails } from '../../types/database';
 
@@ -24,6 +37,12 @@ interface GroupMarker {
   address?: string;
 }
 
+interface ClusteredMapViewProps extends GroupsMapViewProps {
+  enableClustering?: boolean;
+  clusterRadius?: number;
+  minClusterSize?: number;
+}
+
 const { width, height } = Dimensions.get('window');
 const ASPECT_RATIO = width / height;
 const LATITUDE_DELTA = 0.0922;
@@ -37,21 +56,50 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: LONGITUDE_DELTA,
 };
 
-export const GroupsMapView: React.FC<GroupsMapViewProps> = ({
+export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   groups,
   onGroupPress,
   isLoading = false,
+  enableClustering = true,
+  clusterRadius = 40,
+  minClusterSize = 2,
 }) => {
   const [markers, setMarkers] = useState<GroupMarker[]>([]);
   const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+  const [currentRegion, setCurrentRegion] = useState<Region>(DEFAULT_REGION);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+  const [clusters, setClusters] = useState<(Cluster | ClusterPoint)[]>([]);
   const mapRef = useRef<MapView>(null);
+  
+  // Create clusterer instance
+  const clusterer = useMemo(() => 
+    new MapClusterer({ 
+      radius: clusterRadius,
+      minZoom: 0,
+      maxZoom: 16,
+    }), 
+    [clusterRadius]
+  );
 
   // Initialize map region and process group locations
   useEffect(() => {
     initializeMap();
   }, [groups]);
+
+  // Update clusters when region changes (with debouncing)
+  useEffect(() => {
+    if (!enableClustering || markers.length === 0) {
+      setClusters(markers);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      updateClusters();
+    }, 300); // Debounce cluster updates
+
+    return () => clearTimeout(timeoutId);
+  }, [currentRegion, markers, enableClustering, clusterer]);
 
   const initializeMap = async () => {
     setIsLoadingLocation(true);
@@ -111,6 +159,11 @@ export const GroupsMapView: React.FC<GroupsMapViewProps> = ({
 
     setMarkers(groupMarkers);
 
+    // Load markers into clusterer
+    if (enableClustering) {
+      clusterer.load(groups);
+    }
+
     // Fit map to show all markers if we have any
     if (groupMarkers.length > 0 && mapRef.current) {
       setTimeout(() => {
@@ -122,6 +175,23 @@ export const GroupsMapView: React.FC<GroupsMapViewProps> = ({
           }
         );
       }, 1000);
+    }
+  };
+
+  const updateClusters = () => {
+    if (!enableClustering) return;
+
+    const endClustering = MapPerformanceMonitor.startClustering();
+    
+    try {
+      const bounds = MapViewportOptimizer.getOptimalBounds(currentRegion);
+      const zoom = MapViewportOptimizer.getZoomLevel(currentRegion.latitudeDelta);
+      const newClusters = clusterer.getClusters(bounds, zoom);
+      
+      setClusters(newClusters);
+      MapPerformanceMonitor.recordPointCount(newClusters.length);
+    } finally {
+      endClustering();
     }
   };
 
@@ -140,44 +210,145 @@ export const GroupsMapView: React.FC<GroupsMapViewProps> = ({
     }
   };
 
-  const renderMarker = (marker: GroupMarker) => {
-    const { group, coordinates } = marker;
+  const renderMarker = (item: ClusterPoint | Cluster, index: number) => {
+    const isCluster = 'count' in item && item.count > 1;
+    
+    if (isCluster) {
+      return renderClusterMarker(item as Cluster, index);
+    } else {
+      return renderGroupMarker(item as ClusterPoint, index);
+    }
+  };
+
+  const renderGroupMarker = (point: ClusterPoint, index: number) => {
+    const { data: group, latitude, longitude } = point;
     
     return (
       <Marker
-        key={group.id}
-        coordinate={coordinates}
+        key={`group-${group.id}-${index}`}
+        coordinate={{ latitude, longitude }}
         title={group.title}
         description={group.description}
+        accessibilityLabel={AdminAccessibilityLabels.mapMarker(group.title, group.member_count || 0)}
+        accessibilityHint="Double tap to view group details"
+        accessibilityRole="button"
       >
         <View style={styles.markerContainer}>
-          <View style={styles.marker}>
+          <View 
+            style={styles.marker}
+            accessibilityElementsHidden={true}
+            importantForAccessibility="no-hide-descendants"
+          >
             <Text style={styles.markerText}>📖</Text>
           </View>
         </View>
-        <Callout onPress={() => onGroupPress(group)}>
+        <Callout 
+          onPress={() => {
+            onGroupPress(group);
+            ScreenReaderUtils.announceForAccessibility(`Opening details for ${group.title}`);
+          }}
+          accessibilityLabel={`Group details for ${group.title}`}
+          accessibilityHint="Double tap to view full group details"
+        >
           <View style={styles.calloutContainer}>
-            <Text style={styles.calloutTitle} numberOfLines={2}>
+            <Text 
+              style={styles.calloutTitle} 
+              numberOfLines={2}
+              accessibilityRole="header"
+              accessibilityLevel={3}
+            >
               {group.title}
             </Text>
-            <Text style={styles.calloutDescription} numberOfLines={3}>
+            <Text 
+              style={styles.calloutDescription} 
+              numberOfLines={3}
+              accessibilityLabel={`Description: ${group.description}`}
+            >
               {group.description}
             </Text>
-            <View style={styles.calloutDetails}>
+            <View 
+              style={styles.calloutDetails}
+              accessibilityRole="text"
+              accessibilityLabel={`Meeting: ${group.meeting_day} at ${group.meeting_time}${
+                group.location ? `, Location: ${typeof group.location === 'string' ? group.location : group.location.address}` : ''
+              }`}
+            >
               <Text style={styles.calloutDetailText}>
                 📅 {group.meeting_day} at {group.meeting_time}
               </Text>
-              {marker.address && (
+              {group.location && (
                 <Text style={styles.calloutDetailText} numberOfLines={2}>
-                  📍 {marker.address}
+                  📍 {typeof group.location === 'string' ? group.location : group.location.address}
                 </Text>
               )}
             </View>
-            <Text style={styles.calloutAction}>Tap to view details</Text>
+            <Text 
+              style={styles.calloutAction}
+              accessibilityLabel="Tap to view full details"
+            >
+              Tap to view details
+            </Text>
           </View>
         </Callout>
       </Marker>
     );
+  };
+
+  const renderClusterMarker = (cluster: Cluster, index: number) => {
+    return (
+      <Marker
+        key={`cluster-${cluster.id}-${index}`}
+        coordinate={cluster.coordinates}
+        accessibilityLabel={AdminAccessibilityLabels.clusterMarker(cluster.count)}
+        accessibilityHint="Double tap to zoom in and see individual groups"
+        accessibilityRole="button"
+        onPress={() => {
+          // Zoom into cluster
+          if (mapRef.current) {
+            mapRef.current.animateToRegion({
+              ...cluster.coordinates,
+              latitudeDelta: currentRegion.latitudeDelta * 0.5,
+              longitudeDelta: currentRegion.longitudeDelta * 0.5,
+            });
+            ScreenReaderUtils.announceForAccessibility(`Zooming in to show ${cluster.count} groups`);
+          }
+        }}
+      >
+        <View style={styles.clusterContainer}>
+          <View 
+            style={[styles.clusterMarker, { 
+              backgroundColor: cluster.count > 10 ? '#d32f2f' : '#007AFF' 
+            }]}
+            accessibilityElementsHidden={true}
+          >
+            <Text style={styles.clusterText}>{cluster.count}</Text>
+          </View>
+        </View>
+        <Callout
+          accessibilityLabel={`Cluster of ${cluster.count} groups`}
+          accessibilityHint="Double tap marker to zoom in"
+        >
+          <View style={styles.clusterCallout}>
+            <Text 
+              style={styles.clusterCalloutTitle}
+              accessibilityRole="header"
+            >
+              {cluster.count} Groups
+            </Text>
+            <Text style={styles.clusterCalloutText}>
+              Tap marker to zoom in
+            </Text>
+          </View>
+        </Callout>
+      </Marker>
+    );
+  };
+
+  const handleRegionChangeComplete = (newRegion: Region) => {
+    // Only update if there's a significant change
+    if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+      setCurrentRegion(newRegion);
+    }
   };
 
   if (isLoading || isLoadingLocation) {
@@ -201,9 +372,38 @@ export const GroupsMapView: React.FC<GroupsMapViewProps> = ({
         showsCompass={true}
         showsScale={true}
         loadingEnabled={true}
+        onRegionChangeComplete={handleRegionChangeComplete}
+        moveOnMarkerPress={false}
+        showsPointsOfInterest={false}
+        showsBuildings={false}
+        showsTraffic={false}
+        accessibilityLabel={`Map showing ${markers.length} groups`}
+        accessibilityHint="Interactive map with group locations. Use list view for better accessibility."
       >
-        {markers.map(renderMarker)}
+        {(enableClustering ? clusters : markers).map(renderMarker)}
       </MapView>
+
+      {/* Accessibility alternative - List of locations */}
+      <View style={styles.accessibilityAlternative}>
+        <TouchableOpacity
+          style={styles.accessibilityButton}
+          onPress={() => {
+            Alert.alert(
+              'Map Locations',
+              `This map shows ${markers.length} groups:\n\n${markers.map(marker => 
+                `• ${marker.group.title} - ${marker.address || 'Location available'}`
+              ).join('\n')}`,
+              [{ text: 'OK' }]
+            );
+          }}
+          {...AccessibilityHelpers.createButtonProps(
+            'View map locations as text',
+            'Double tap to hear all group locations'
+          )}
+        >
+          <Text style={styles.accessibilityButtonText}>📍 List Locations</Text>
+        </TouchableOpacity>
+      </View>
 
       {locationPermissionDenied && (
         <View style={styles.permissionBanner}>
@@ -226,6 +426,15 @@ export const GroupsMapView: React.FC<GroupsMapViewProps> = ({
           </Text>
           <Text style={styles.noMarkersSubtext}>
             Groups need addresses to appear on the map
+          </Text>
+        </View>
+      )}
+
+      {/* Performance info in development */}
+      {__DEV__ && (
+        <View style={styles.performanceInfo}>
+          <Text style={styles.performanceText}>
+            Points: {markers.length} | Visible: {clusters.length}
           </Text>
         </View>
       )}
@@ -360,5 +569,83 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  clusterContainer: {
+    alignItems: 'center',
+  },
+  clusterMarker: {
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  clusterText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  clusterCallout: {
+    width: 150,
+    padding: 8,
+    alignItems: 'center',
+  },
+  clusterCalloutTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  clusterCalloutText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+  performanceInfo: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 8,
+    borderRadius: 4,
+  },
+  performanceText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  accessibilityAlternative: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+  },
+  accessibilityButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  accessibilityButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

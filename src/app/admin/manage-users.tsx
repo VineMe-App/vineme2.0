@@ -8,6 +8,11 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { 
+  AccessibilityHelpers, 
+  AdminAccessibilityLabels, 
+  ScreenReaderUtils 
+} from '@/utils/accessibility';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { adminServiceWrapper } from '@/services/adminServiceWrapper';
@@ -220,13 +225,26 @@ export default function ManageUsersScreen() {
       )}
 
       {/* Filter Buttons */}
-      <View style={styles.filterContainer}>
+      <View 
+        style={styles.filterContainer}
+        accessibilityRole="tablist"
+        accessibilityLabel="User filter options"
+      >
         <TouchableOpacity
           style={[
             styles.filterButton,
             filter === 'all' && styles.filterButtonActive,
           ]}
-          onPress={() => setFilter('all')}
+          onPress={() => {
+            setFilter('all');
+            ScreenReaderUtils.announceForAccessibility('Showing all users');
+          }}
+          {...AccessibilityHelpers.createButtonProps(
+            AdminAccessibilityLabels.filterState('All users', filter === 'all', users?.length),
+            'Double tap to show all users'
+          )}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: filter === 'all' }}
         >
           <Text
             style={[
@@ -242,7 +260,16 @@ export default function ManageUsersScreen() {
             styles.filterButton,
             filter === 'connected' && styles.filterButtonActive,
           ]}
-          onPress={() => setFilter('connected')}
+          onPress={() => {
+            setFilter('connected');
+            ScreenReaderUtils.announceForAccessibility('Showing connected users only');
+          }}
+          {...AccessibilityHelpers.createButtonProps(
+            AdminAccessibilityLabels.filterState('Connected users', filter === 'connected', users?.filter((u) => u.is_connected).length),
+            'Double tap to show only users in groups'
+          )}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: filter === 'connected' }}
         >
           <Text
             style={[
@@ -258,7 +285,16 @@ export default function ManageUsersScreen() {
             styles.filterButton,
             filter === 'unconnected' && styles.filterButtonActive,
           ]}
-          onPress={() => setFilter('unconnected')}
+          onPress={() => {
+            setFilter('unconnected');
+            ScreenReaderUtils.announceForAccessibility('Showing unconnected users only');
+          }}
+          {...AccessibilityHelpers.createButtonProps(
+            AdminAccessibilityLabels.filterState('Unconnected users', filter === 'unconnected', users?.filter((u) => !u.is_connected).length),
+            'Double tap to show only users not in any groups'
+          )}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: filter === 'unconnected' }}
         >
           <Text
             style={[

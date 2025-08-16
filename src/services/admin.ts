@@ -1,5 +1,12 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
+import { 
+  createPaginationParams, 
+  createPaginatedResponse,
+  type PaginationParams,
+  type PaginatedResponse,
+  ADMIN_PAGINATION_DEFAULTS,
+} from '../utils/adminPagination';
 import type {
   Group,
   GroupWithDetails,
@@ -89,7 +96,22 @@ export class GroupAdminService {
   async getChurchGroups(
     churchId: string,
     includeAll: boolean = false
-  ): Promise<AdminServiceResponse<GroupWithAdminDetails[]>> {
+  ): Promise<AdminServiceResponse<GroupWithAdminDetails[]>>;
+  
+  /**
+   * Get paginated groups for a church with admin details
+   */
+  async getChurchGroups(
+    churchId: string,
+    includeAll: boolean = false,
+    pagination?: PaginationParams
+  ): Promise<AdminServiceResponse<PaginatedResponse<GroupWithAdminDetails>>>;
+
+  async getChurchGroups(
+    churchId: string,
+    includeAll: boolean = false,
+    pagination?: PaginationParams
+  ): Promise<AdminServiceResponse<GroupWithAdminDetails[] | PaginatedResponse<GroupWithAdminDetails>>> {
     try {
       // Check permission to manage church groups
       const permissionCheck = await permissionService.hasPermission(
@@ -132,7 +154,8 @@ export class GroupAdminService {
             joined_at,
             user:users(id, name, avatar_url, email)
           )
-        `
+        `,
+          { count: pagination ? 'exact' : undefined }
         )
         .eq('church_id', churchId)
         .order('created_at', { ascending: false });
@@ -141,7 +164,12 @@ export class GroupAdminService {
         query = query.in('status', ['pending', 'approved']);
       }
 
-      const { data, error } = await query;
+      // Apply pagination if provided
+      if (pagination) {
+        query = query.range(pagination.offset, pagination.offset + pagination.limit - 1);
+      }
+
+      const { data, error, count } = await query;
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -155,6 +183,16 @@ export class GroupAdminService {
             group.memberships?.filter((m: any) => m.status === 'active')
               .length || 0,
         })) || [];
+
+      // Return paginated response if pagination was requested
+      if (pagination && count !== null) {
+        const paginatedResponse = createPaginatedResponse(
+          groupsWithDetails,
+          count,
+          pagination
+        );
+        return { data: paginatedResponse, error: null };
+      }
 
       return { data: groupsWithDetails, error: null };
     } catch (error) {
@@ -635,7 +673,22 @@ export class UserAdminService {
    */
   async getChurchUsers(
     churchId: string
-  ): Promise<AdminServiceResponse<UserWithGroupStatus[]>> {
+  ): Promise<AdminServiceResponse<UserWithGroupStatus[]>>;
+  
+  /**
+   * Get paginated users from a church with group status
+   */
+  async getChurchUsers(
+    churchId: string,
+    pagination?: PaginationParams,
+    filter?: 'all' | 'connected' | 'unconnected'
+  ): Promise<AdminServiceResponse<PaginatedResponse<UserWithGroupStatus>>>;
+
+  async getChurchUsers(
+    churchId: string,
+    pagination?: PaginationParams,
+    filter?: 'all' | 'connected' | 'unconnected'
+  ): Promise<AdminServiceResponse<UserWithGroupStatus[] | PaginatedResponse<UserWithGroupStatus>>> {
     try {
       // Check permission to manage church users
       const permissionCheck = await permissionService.hasPermission(
@@ -662,7 +715,7 @@ export class UserAdminService {
         };
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('users')
         .select(
           `
@@ -677,17 +730,25 @@ export class UserAdminService {
             joined_at,
             group:groups(id, title, status)
           )
-        `
+        `,
+          { count: pagination ? 'exact' : undefined }
         )
         .eq('church_id', churchId)
         .order('name');
+
+      // Apply pagination if provided
+      if (pagination) {
+        query = query.range(pagination.offset, pagination.offset + pagination.limit - 1);
+      }
+
+      const { data, error, count } = await query;
 
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
 
       // Transform to include group status
-      const usersWithStatus: UserWithGroupStatus[] =
+      let usersWithStatus: UserWithGroupStatus[] =
         data?.map((user) => {
           const activeGroups =
             user.group_memberships?.filter(
@@ -702,6 +763,23 @@ export class UserAdminService {
             last_activity: user.updated_at,
           };
         }) || [];
+
+      // Apply filter if specified
+      if (filter && filter !== 'all') {
+        usersWithStatus = usersWithStatus.filter(user => 
+          filter === 'connected' ? user.is_connected : !user.is_connected
+        );
+      }
+
+      // Return paginated response if pagination was requested
+      if (pagination && count !== null) {
+        const paginatedResponse = createPaginatedResponse(
+          usersWithStatus,
+          count,
+          pagination
+        );
+        return { data: paginatedResponse, error: null };
+      }
 
       return { data: usersWithStatus, error: null };
     } catch (error) {

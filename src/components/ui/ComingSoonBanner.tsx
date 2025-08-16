@@ -7,6 +7,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AccessibilityHelpers } from '@/utils/accessibility';
 
 interface ComingSoonBannerProps {
   title?: string;
@@ -36,17 +37,52 @@ export function ComingSoonBanner({
       style={styles.container}
       onPress={handlePress}
       activeOpacity={0.8}
+      {...AccessibilityHelpers.createButtonProps(
+        `${title}: ${message}`,
+        'Double tap for more information about this upcoming feature'
+      )}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: false }}
     >
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Ionicons name="construct" size={24} color="#f59e0b" />
+        <View 
+          style={styles.iconContainer}
+          accessibilityElementsHidden={true}
+          importantForAccessibility="no-hide-descendants"
+        >
+          <Ionicons 
+            name="construct" 
+            size={24} 
+            color="#f59e0b"
+            accessibilityLabel="Under construction icon"
+          />
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          <Text 
+            style={styles.title}
+            accessibilityRole="header"
+            accessibilityLevel={3}
+          >
+            {title}
+          </Text>
+          <Text 
+            style={styles.message}
+            accessibilityLabel={`Feature description: ${message}`}
+          >
+            {message}
+          </Text>
         </View>
-        <View style={styles.arrowContainer}>
-          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+        <View 
+          style={styles.arrowContainer}
+          accessibilityElementsHidden={true}
+          importantForAccessibility="no-hide-descendants"
+        >
+          <Ionicons 
+            name="chevron-forward" 
+            size={20} 
+            color="#9ca3af"
+            accessibilityLabel="More information available"
+          />
         </View>
       </View>
       <View style={styles.overlay} />

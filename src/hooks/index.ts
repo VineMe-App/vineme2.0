@@ -76,3 +76,11 @@ export {
   useGetContactInfo,
   joinRequestKeys,
 } from './useJoinRequests';
+export {
+  useUserContactLogs,
+  useGroupContactLogs,
+  usePrivacySettings,
+  useUpdatePrivacySettings,
+  useCanShareContact,
+  contactAuditKeys,
+} from './useContactAudit';
