@@ -381,6 +381,24 @@ export class GroupService {
     userId: string
   ): Promise<GroupServiceResponse<GroupMembershipWithUser[]>> {
     try {
+      // First get the user's friends
+      const { data: friendships, error: friendsError } = await supabase
+        .from('friendships')
+        .select('friend_id')
+        .eq('user_id', userId)
+        .eq('status', 'accepted');
+
+      if (friendsError) {
+        return { data: null, error: new Error(friendsError.message) };
+      }
+
+      const friendIds = (friendships || []).map(f => f.friend_id);
+      
+      if (friendIds.length === 0) {
+        return { data: [], error: null };
+      }
+
+      // Then get group memberships for those friends
       const { data, error } = await supabase
         .from('group_memberships')
         .select(
@@ -391,13 +409,13 @@ export class GroupService {
         )
         .eq('group_id', groupId)
         .eq('status', 'active')
+        .in('user_id', friendIds)
         .order('joined_at');
 
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
 
-      // Filter to only those where membership.user is a friend of userId
       const memberships = (data || []).filter((m: any) => Boolean(m.user?.id));
       return { data: memberships as any, error: null };
     } catch (error) {
