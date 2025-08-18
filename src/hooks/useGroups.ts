@@ -13,6 +13,9 @@ export const groupKeys = {
   userGroups: (userId: string) =>
     [...groupKeys.all, 'userGroups', userId] as const,
   members: (groupId: string) => [...groupKeys.all, 'members', groupId] as const,
+  leaders: (groupId: string) => [...groupKeys.all, 'leaders', groupId] as const,
+  friendsInGroup: (groupId: string, userId: string) =>
+    [...groupKeys.all, 'friendsInGroup', groupId, userId] as const,
   membership: (groupId: string, userId: string) =>
     [...groupKeys.all, 'membership', groupId, userId] as const,
   search: (query: string, churchId?: string) =>
@@ -101,6 +104,43 @@ export const useGroupMembers = (groupId: string | undefined) => {
     },
     enabled: !!groupId,
     staleTime: 3 * 60 * 1000, // 3 minutes
+  });
+};
+
+/**
+ * Hook to get group leaders/admins (public)
+ */
+export const useGroupLeaders = (groupId: string | undefined) => {
+  return useQuery({
+    queryKey: groupKeys.leaders(groupId || ''),
+    queryFn: async () => {
+      if (!groupId) throw new Error('Group ID is required');
+      const { data, error } = await groupService.getGroupLeaders(groupId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!groupId,
+    staleTime: 3 * 60 * 1000,
+  });
+};
+
+/**
+ * Hook to get current user's friends who are in the group
+ */
+export const useFriendsInGroup = (
+  groupId: string | undefined,
+  userId: string | undefined
+) => {
+  return useQuery({
+    queryKey: groupKeys.friendsInGroup(groupId || '', userId || ''),
+    queryFn: async () => {
+      if (!groupId || !userId) throw new Error('Group ID and User ID are required');
+      const { data, error } = await groupService.getFriendsInGroup(groupId, userId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!groupId && !!userId,
+    staleTime: 2 * 60 * 1000,
   });
 };
 

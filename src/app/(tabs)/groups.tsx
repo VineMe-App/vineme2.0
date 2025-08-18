@@ -147,12 +147,10 @@ export default function GroupsScreen() {
       keyExtractor={(item) => item.id}
       ListEmptyComponent={renderEmptyState}
       refreshControl={
-        Platform.OS === 'ios' ? (
-          <RefreshControl
-            refreshing={isLoadingFn('refresh')}
-            onRefresh={handleRefresh}
-          />
-        ) : undefined
+        <RefreshControl
+          refreshing={isLoadingFn('refresh')}
+          onRefresh={handleRefresh}
+        />
       }
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.listContent}

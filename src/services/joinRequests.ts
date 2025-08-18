@@ -86,7 +86,7 @@ export class JoinRequestService {
   ): Promise<GroupServiceResponse<GroupJoinRequestWithUser[]>> {
     try {
       // Check if user is a leader of this group
-      const permissionCheck = await permissionService.canManageGroup(groupId, userId);
+      const permissionCheck = await permissionService.canManageGroupMembership(groupId, userId);
       if (!permissionCheck.hasPermission) {
         return {
           data: null,
@@ -192,7 +192,7 @@ export class JoinRequestService {
       }
 
       // Check if approver is a leader of this group
-      const permissionCheck = await permissionService.canManageGroup(
+      const permissionCheck = await permissionService.canManageGroupMembership(
         membershipRecord.group_id,
         approverId
       );
@@ -269,7 +269,7 @@ export class JoinRequestService {
       }
 
       // Check if decliner is a leader of this group
-      const permissionCheck = await permissionService.canManageGroup(
+      const permissionCheck = await permissionService.canManageGroupMembership(
         membershipRecord.group_id,
         declinerId
       );
@@ -384,7 +384,7 @@ export class JoinRequestService {
       }
 
       // Check if requester is a leader of this group
-      const permissionCheck = await permissionService.canManageGroup(
+      const permissionCheck = await permissionService.canManageGroupMembership(
         joinRequest.group_id,
         leaderId
       );
@@ -495,7 +495,7 @@ export class JoinRequestService {
       }
 
       // Check if requester is a leader of this group
-      const permissionCheck = await permissionService.canManageGroup(
+      const permissionCheck = await permissionService.canManageGroupMembership(
         joinRequest.group_id,
         leaderId
       );

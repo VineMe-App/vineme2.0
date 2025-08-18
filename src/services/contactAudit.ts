@@ -35,7 +35,7 @@ export class ContactAuditService {
   ): Promise<ContactAuditServiceResponse<ContactAuditLog>> {
     try {
       // Verify the accessor has permission to access the contact in this group context
-      const permissionCheck = await permissionService.canManageGroup(
+      const permissionCheck = await permissionService.canManageGroupMembership(
         accessData.group_id,
         accessData.accessor_id
       );
@@ -138,7 +138,7 @@ export class ContactAuditService {
   ): Promise<ContactAuditServiceResponse<ContactAuditLogWithDetails[]>> {
     try {
       // Verify the requester is a leader of this group
-      const permissionCheck = await permissionService.canManageGroup(
+      const permissionCheck = await permissionService.canManageGroupMembership(
         groupId,
         requesterId
       );
@@ -322,7 +322,7 @@ export class ContactAuditService {
       }
 
       // Verify the requester is a leader of the group
-      const permissionCheck = await permissionService.canManageGroup(
+      const permissionCheck = await permissionService.canManageGroupMembership(
         groupId,
         requesterId
       );

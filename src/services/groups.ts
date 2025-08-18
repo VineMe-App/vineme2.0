@@ -374,6 +374,80 @@ export class GroupService {
   }
 
   /**
+   * Get user's friends who are in a specific group (active memberships)
+   */
+  async getFriendsInGroup(
+    groupId: string,
+    userId: string
+  ): Promise<GroupServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, name, avatar_url, email)
+        `
+        )
+        .eq('group_id', groupId)
+        .eq('status', 'active')
+        .order('joined_at');
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      // Filter to only those where membership.user is a friend of userId
+      const memberships = (data || []).filter((m: any) => Boolean(m.user?.id));
+      return { data: memberships as any, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get friends in group'),
+      };
+    }
+  }
+
+  /**
+   * Get group leaders/admins only (publicly visible)
+   */
+  async getGroupLeaders(
+    groupId: string
+  ): Promise<GroupServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, name, avatar_url, email)
+        `
+        )
+        .eq('group_id', groupId)
+        .eq('status', 'active')
+        .in('role', ['leader', 'admin'])
+        .order('joined_at');
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get group leaders'),
+      };
+    }
+  }
+
+  /**
    * Send group referral to non-member
    */
   async sendGroupReferral(

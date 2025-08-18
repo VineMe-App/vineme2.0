@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  Platform,
 } from 'react-native';
 import { useAuthStore } from '../../stores/auth';
 import { router } from 'expo-router';
@@ -63,23 +62,20 @@ export default function HomeScreen() {
   const acceptedFriends = friends || [];
   const pendingRequests = pendingFriendRequests || [];
 
+  const isLoading =
+    groupsLoading || friendsLoading || requestsLoading;
+
   // Handle refresh
-  const [refreshing, setRefreshing] = React.useState(false);
-  const onRefresh = React.useCallback(async () => {
-    setRefreshing(true);
+  const handleRefresh = React.useCallback(async () => {
     await Promise.all([
       // refetchEvents(), // Events disabled
       refetchGroups(),
       refetchFriends(),
       refetchRequests(),
     ]);
-    setRefreshing(false);
   }, [refetchGroups, refetchFriends, refetchRequests]);
 
-  const isLoading =
-    groupsLoading || friendsLoading || requestsLoading;
-
-  if (isLoading && !refreshing) {
+  if (isLoading && !userGroupMemberships) {
     return (
       <View style={styles.container}>
         <LoadingSpinner message="Loading your dashboard..." />
@@ -91,9 +87,7 @@ export default function HomeScreen() {
     <ScrollView
       style={styles.container}
       refreshControl={
-        Platform.OS === 'ios' ? (
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        ) : undefined
+        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
       }
     >
       {/* Header with user info */}

@@ -13,7 +13,6 @@ import { useAuthStore } from '@/stores/auth';
 import {
   useUserProfile,
   useUserGroupMemberships,
-  useUserFriendships,
   useDeleteAccount,
 } from '@/hooks/useUsers';
 import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
@@ -46,20 +45,20 @@ export default function ProfileScreen() {
     refetch: refetchGroups,
   } = useUserGroupMemberships(user?.id);
 
-  const { isLoading: friendsLoading, refetch: refetchFriends } =
-    useUserFriendships(user?.id);
-
   // Use the new friendship hooks for better data management
   const friendsQuery = useFriends(user?.id);
   const receivedRequestsQuery = useReceivedFriendRequests(user?.id);
 
-  const isLoading = profileLoading || groupsLoading || friendsLoading;
+  const isLoading =
+    profileLoading ||
+    groupsLoading ||
+    friendsQuery.isLoading ||
+    receivedRequestsQuery.isLoading;
 
   const handleRefresh = async () => {
     await Promise.all([
       refetchProfile(),
       refetchGroups(),
-      refetchFriends(),
       friendsQuery.refetch(),
       receivedRequestsQuery.refetch(),
     ]);
@@ -133,11 +132,7 @@ export default function ProfileScreen() {
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          Platform.OS === 'ios' ? (
-            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
-          ) : undefined
-        }
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />}
       >
         {userProfile && (
           <>

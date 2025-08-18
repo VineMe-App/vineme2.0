@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, ScrollView, RefreshControl } from 'react-native';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +24,10 @@ export default function GroupDetailScreen() {
   const { data: membershipData, refetch: refetchMembership } =
     useGroupMembership(id, userProfile?.id);
 
+  const handleRefresh = async () => {
+    await Promise.all([refetchGroup(), refetchMembership()]);
+  };
+
   const handleMembershipChange = () => {
     // Refetch both group data and membership status
     refetchGroup();
@@ -36,7 +40,7 @@ export default function GroupDetailScreen() {
     }
   };
 
-  if (groupLoading) {
+  if (groupLoading && !group) {
     return (
       <View style={styles.loadingContainer}>
         <LoadingSpinner size="large" />
@@ -55,7 +59,12 @@ export default function GroupDetailScreen() {
   const membershipStatus = membershipData?.membership?.role || null;
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={groupLoading} onRefresh={handleRefresh} />
+      }
+    >
       <GroupDetail
         group={group}
         membershipStatus={membershipStatus}
@@ -63,7 +72,7 @@ export default function GroupDetailScreen() {
         onShare={handleShare}
         openFriendsOnMount={!!params.friends}
       />
-    </View>
+    </ScrollView>
   );
 }
 

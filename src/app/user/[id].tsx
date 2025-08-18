@@ -9,6 +9,8 @@ import {
   useFriendshipStatus,
   useSendFriendRequest,
   useRemoveFriend,
+  useReceivedFriendRequests,
+  useAcceptFriendRequest,
 } from '@/hooks/useFriendships';
 
 export default function OtherUserProfileScreen() {
@@ -21,7 +23,9 @@ export default function OtherUserProfileScreen() {
   const { data: memberships } = useUserGroupMemberships(targetUserId);
 
   const friendshipStatusQuery = useFriendshipStatus(targetUserId || '');
+  const receivedRequestsQuery = useReceivedFriendRequests();
   const sendFriendRequest = useSendFriendRequest();
+  const acceptFriendRequest = useAcceptFriendRequest();
   const removeFriend = useRemoveFriend();
 
   const isSelf = user?.id && targetUserId === user.id;
@@ -61,7 +65,13 @@ export default function OtherUserProfileScreen() {
     if (isSelf) return null;
 
     const status = friendshipStatusQuery.data;
-    const loading = friendshipStatusQuery.isLoading || sendFriendRequest.isPending || removeFriend.isPending;
+    const received = receivedRequestsQuery.data || [];
+    const loading =
+      friendshipStatusQuery.isLoading ||
+      receivedRequestsQuery.isLoading ||
+      sendFriendRequest.isPending ||
+      acceptFriendRequest.isPending ||
+      removeFriend.isPending;
 
     if (loading) {
       return <Button title="Loading..." variant="secondary" disabled />;
@@ -75,8 +85,26 @@ export default function OtherUserProfileScreen() {
             <Button title="Remove Friend" variant="danger" onPress={handleRemoveFriend} />
           </View>
         );
-      case 'pending':
+      case 'pending': {
+        // If there's a pending request where the target user is the sender to me, show Accept
+        const incoming = received.find(
+          (req: any) => req.user?.id === targetUserId
+        );
+        if (incoming) {
+          return (
+            <Button
+              title="Accept Friend Request"
+              onPress={() =>
+                acceptFriendRequest.mutate(incoming.id, {
+                  onSuccess: () => friendshipStatusQuery.refetch(),
+                  onError: (e) => Alert.alert('Error', e.message),
+                })
+              }
+            />
+          );
+        }
         return <Button title="Request Pending" variant="secondary" disabled />;
+      }
       case 'blocked':
         return <Button title="Blocked" variant="secondary" disabled />;
       case 'rejected':

@@ -11,9 +11,11 @@ import {
   useJoinGroup,
   useLeaveGroup,
   useGroupMembers,
+  useGroupLeaders,
+  useFriendsInGroup,
 } from '../../hooks/useGroups';
 import { useUserJoinRequests } from '../../hooks/useJoinRequests';
-import type { GroupMembershipWithUser } from '../../types/database';
+// import type { GroupMembershipWithUser } from '../../types/database';
 import { useAuthStore } from '../../stores/auth';
 import { useFriends } from '../../hooks/useFriendships';
 import { Modal } from '../ui/Modal';
@@ -43,9 +45,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
-  const { data: members, isLoading: membersLoading } = useGroupMembers(
-    group.id
-  );
+  const [canSeeMembers, setCanSeeMembers] = useState(false);
   const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
   const friendsQuery = useFriends(userProfile?.id);
 
@@ -111,24 +111,45 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       });
   };
 
-  const leaders =
-    members?.filter(
-      (member) => member.role === 'leader' || member.role === 'admin'
-    ) || [];
-  const regularMembers =
-    members?.filter((member) => member.role === 'member') || [];
-  const displayMembers = showAllMembers
-    ? regularMembers
-    : regularMembers.slice(0, 6);
+  // Visibility flags
+  const isChurchAdminForService = Boolean(
+    userProfile?.roles?.includes('church_admin') &&
+    userProfile?.service_id &&
+    group?.service_id &&
+    userProfile.service_id === group.service_id
+  );
+
+  // Compute ability to see members and conditionally fetch them
+  React.useEffect(() => {
+    setCanSeeMembers(Boolean(membershipStatus || isChurchAdminForService));
+  }, [membershipStatus, isChurchAdminForService]);
+
+  // Always fetch leaders; fetch members only if allowed
+  const { data: leadersData } = useGroupLeaders(group.id);
+  const { data: members, isLoading: membersLoading } = useGroupMembers(
+    canSeeMembers ? group.id : undefined
+  );
+  const { data: friendsInGroupMemberships } = useFriendsInGroup(
+    group.id,
+    userProfile?.id
+  );
+
+  const leaders = leadersData || [];
+  const regularMembers = (members || []).filter((member) => member.role === 'member');
+  const displayMembers = showAllMembers ? regularMembers : regularMembers.slice(0, 6);
 
   const isLoading = joinGroupMutation.isPending || leaveGroupMutation.isPending;
 
   // Check if current user is a leader of this group
-  const userMembership = members?.find(m => m.user_id === userProfile?.id);
+  const userMembership = members?.find((m) => m.user_id === userProfile?.id);
   const isGroupLeader = userMembership?.role === 'leader';
+  // removed duplicate isChurchAdminForService
 
   // Friends in group
   const friendsInGroup = useMemo(() => {
+    // Prefer direct query of friends-in-group if available; fallback to intersection
+    const fromMemberships = (friendsInGroupMemberships || []).map((m: any) => m.user).filter(Boolean);
+    if (fromMemberships.length > 0) return fromMemberships;
     const friendIds = new Set(
       (friendsQuery.data || [])
         .map((f) => f.friend?.id)
@@ -138,7 +159,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       .filter((m) => m.status === 'active' && m.user?.id && friendIds.has(m.user.id))
       .map((m) => m.user!)
       .filter((u) => u.id !== userProfile?.id);
-  }, [friendsQuery.data, members, userProfile?.id]);
+  }, [friendsInGroupMemberships, friendsQuery.data, members, userProfile?.id]);
 
   // Check if user has a pending join request for this group
   const pendingRequest = userJoinRequests?.find(
@@ -266,8 +287,8 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           </View>
         )}
 
-        {/* Members Section - visible to non-leaders (including non-members) */}
-        {!isGroupLeader && regularMembers.length > 0 && (
+        {/* Members Section - visible to members/leaders/admins or service-level church admins */}
+        {(membershipStatus || isChurchAdminForService) && regularMembers.length > 0 && (
           <View style={styles.membersSection}>
             <View style={styles.membersSectionHeader}>
               <Text style={styles.sectionTitle}>
@@ -377,36 +398,38 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           />
         )}
 
-        {/* Friends in Group Modal */}
-        <Modal
-          isVisible={showFriendsModal}
-          onClose={() => setShowFriendsModal(false)}
-          title="Friends in this Group"
-          scrollable
-          size="large"
-          style={{ minHeight: 300 }}
-        >
-          {friendsInGroup.map((friend) => (
-            <TouchableOpacity
-              key={friend.id}
-              style={styles.friendItem}
-              onPress={() => {
-                setShowFriendsModal(false);
-                router.push(`/user/${friend.id}`);
-              }}
-            >
-              <Avatar size={40} imageUrl={friend.avatar_url} name={friend.name} />
-              <View style={styles.friendInfo}>
-                <Text style={styles.friendName}>{friend.name}</Text>
-                {!!friend.email && <Text style={styles.friendEmail}>{friend.email}</Text>}
-              </View>
-              <Ionicons name="chevron-forward-outline" size={18} color="#9ca3af" />
-            </TouchableOpacity>
-          ))}
-          {friendsInGroup.length === 0 && (
-            <Text style={{ color: '#6b7280' }}>No friends found in this group.</Text>
-          )}
-        </Modal>
+        {/* Friends in Group Modal - visible whenever there are friends (regardless of membership) */}
+        {friendsInGroup.length > 0 && (
+          <Modal
+            isVisible={showFriendsModal}
+            onClose={() => setShowFriendsModal(false)}
+            title="Friends in this Group"
+            scrollable
+            size="large"
+            style={{ minHeight: 300 }}
+          >
+            {friendsInGroup.map((friend) => (
+              <TouchableOpacity
+                key={friend.id}
+                style={styles.friendItem}
+                onPress={() => {
+                  setShowFriendsModal(false);
+                  router.push(`/user/${friend.id}`);
+                }}
+              >
+                <Avatar size={40} imageUrl={friend.avatar_url} name={friend.name} />
+                <View style={styles.friendInfo}>
+                  <Text style={styles.friendName}>{friend.name}</Text>
+                  {!!friend.email && <Text style={styles.friendEmail}>{friend.email}</Text>}
+                </View>
+                <Ionicons name="chevron-forward-outline" size={18} color="#9ca3af" />
+              </TouchableOpacity>
+            ))}
+            {friendsInGroup.length === 0 && (
+              <Text style={{ color: '#6b7280' }}>No friends found in this group.</Text>
+            )}
+          </Modal>
+        )}
       </View>
     </ScrollView>
   );
