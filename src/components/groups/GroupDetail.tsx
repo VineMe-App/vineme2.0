@@ -347,9 +347,12 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
             </View>
           ) : pendingRequest ? (
             <View style={styles.pendingRequestContainer}>
-              <Text style={styles.pendingRequestText}>
-                ⏳ Your join request is pending approval
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="time-outline" size={16} color="#92400e" />
+                <Text style={styles.pendingRequestText}>
+                  Your join request is pending approval
+                </Text>
+              </View>
               <Text style={styles.pendingRequestSubtext}>
                 Group leaders will review your request and get back to you soon.
               </Text>

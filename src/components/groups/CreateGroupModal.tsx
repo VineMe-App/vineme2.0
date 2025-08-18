@@ -394,12 +394,12 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               editable={!isSubmitting}
             />
             {isGeocodingLocation && (
-              <Text style={styles.geocodingText}>📍 Finding location...</Text>
+              <Text style={styles.geocodingText}>Finding location...</Text>
             )}
             {locationCoordinates && (
               <View style={styles.locationConfirmation}>
                 <Text style={styles.locationConfirmationText}>
-                  ✅ Location found and will be shown on the map
+                  Location found and will be shown on the map
                 </Text>
               </View>
             )}
@@ -445,7 +445,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             <Text style={styles.reviewValue}>{values.location || 'Not set'}</Text>
             {locationCoordinates && (
               <Text style={styles.reviewLocationNote}>
-                📍 Location will be shown on the map
+                Location will be shown on the map
               </Text>
             )}
           </View>
@@ -453,7 +453,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
         <View style={styles.reviewNote}>
           <Text style={styles.reviewNoteText}>
-            📋 Your group request will be reviewed by a church admin before becoming active. 
+            Your group request will be reviewed by a church admin before becoming active. 
             You'll receive a notification once it's been approved.
           </Text>
         </View>

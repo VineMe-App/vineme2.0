@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import type { GroupWithDetails } from '../../types/database';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,8 @@ interface GroupCardProps {
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
   friendsCount?: number;
   onPressFriends?: () => void;
+  style?: ViewStyle;
+  distanceKm?: number;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -19,6 +21,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   membershipStatus,
   friendsCount,
   onPressFriends,
+  style,
+  distanceKm,
 }) => {
   if (!group) return null;
   const formatMeetingTime = (day: string, time: string) => {
@@ -34,7 +38,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.content}>
         {group.image_url && (
           <OptimizedImage
@@ -50,7 +54,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
         <View style={styles.info}>
           <View style={styles.header}>
-            <Text style={styles.title} numberOfLines={2}>
+            <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
               {group.title}
             </Text>
             {membershipStatus && (
@@ -70,11 +74,19 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             )}
           </View>
 
-          <Text style={styles.description} numberOfLines={2}>
+          <Text style={styles.description} numberOfLines={2} ellipsizeMode="tail">
             {group.description}
           </Text>
 
           <View style={styles.details}>
+            {typeof distanceKm === 'number' && (
+              <View style={styles.detailRow}>
+                <Ionicons name="navigate-outline" size={16} color="#6b7280" />
+                <Text style={styles.detailText} numberOfLines={1}>
+                  {distanceKm.toFixed(1)} km away
+                </Text>
+              </View>
+            )}
             {group.meeting_day && group.meeting_time && (
               <View style={styles.detailRow}>
                 <Ionicons name="calendar-outline" size={16} color="#6b7280" />
@@ -113,7 +125,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </View>
 
           {group.service?.name && (
-            <Text style={styles.service}>Service: {group.service.name}</Text>
+            <Text style={styles.service} numberOfLines={1} ellipsizeMode="tail">Service: {group.service.name}</Text>
           )}
         </View>
       </View>
@@ -135,6 +147,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+    overflow: 'hidden',
   },
   content: {
     padding: 16,

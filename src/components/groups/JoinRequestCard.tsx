@@ -208,7 +208,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                 style={styles.contactItem}
                 disabled={initiateContactMutation.isPending}
               >
-                <Text style={styles.contactLabel}>📧 Email:</Text>
+                <Text style={styles.contactLabel}>Email:</Text>
                 <Text style={styles.contactValue}>{contactInfo.email}</Text>
               </TouchableOpacity>
             )}
@@ -219,7 +219,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                 style={styles.contactItem}
                 disabled={initiateContactMutation.isPending}
               >
-                <Text style={styles.contactLabel}>📱 Phone:</Text>
+                <Text style={styles.contactLabel}>Phone:</Text>
                 <Text style={styles.contactValue}>{contactInfo.phone}</Text>
               </TouchableOpacity>
             )}

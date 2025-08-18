@@ -10,6 +10,7 @@ import {
   TextStyle,
 } from 'react-native';
 import { Theme } from '../../utils/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export interface SelectOption {
   label: string;
@@ -117,7 +118,7 @@ export const Select: React.FC<SelectProps> = ({
         >
           {displayText}
         </Text>
-        <Text style={styles.arrow}>▼</Text>
+        <Ionicons name="chevron-down-outline" size={16} color={Theme.colors.textSecondary} />
       </TouchableOpacity>
 
       {error && <Text style={styles.errorText}>{error}</Text>}

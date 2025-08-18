@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
@@ -225,7 +226,7 @@ export default function EventDetailScreen() {
             )}
           </View>
           <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
-            <Text style={styles.shareIcon}>📤</Text>
+            <Ionicons name="share-outline" size={20} color="#374151" />
           </TouchableOpacity>
         </View>
 
@@ -235,7 +236,7 @@ export default function EventDetailScreen() {
           <Text style={styles.sectionTitle}>Event Details</Text>
 
           <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>📅 Date & Time</Text>
+            <Text style={styles.detailLabel}>Date & Time</Text>
             <Text style={styles.detailValue}>
               {formatEventDate(event.start_date)}
             </Text>
@@ -247,7 +248,7 @@ export default function EventDetailScreen() {
           </View>
 
           <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>📍 Location</Text>
+            <Text style={styles.detailLabel}>Location</Text>
             <Text style={styles.detailValue}>
               {getLocationText(event.location)}
             </Text>
@@ -255,7 +256,7 @@ export default function EventDetailScreen() {
 
           {event.host && (
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>👤 Host</Text>
+              <Text style={styles.detailLabel}>Host</Text>
               <Text style={styles.detailValue}>{event.host.name}</Text>
               {event.host.email && (
                 <Text style={styles.detailSubValue}>{event.host.email}</Text>
@@ -265,21 +266,21 @@ export default function EventDetailScreen() {
 
           {event.church && (
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>⛪ Church</Text>
+              <Text style={styles.detailLabel}>Church</Text>
               <Text style={styles.detailValue}>{event.church.name}</Text>
             </View>
           )}
 
           {event.price && (
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>💰 Price</Text>
+              <Text style={styles.detailLabel}>Price</Text>
               <Text style={styles.priceValue}>${event.price}</Text>
             </View>
           )}
 
           {event.recurrence_pattern && (
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>🔄 Recurrence</Text>
+              <Text style={styles.detailLabel}>Recurrence</Text>
               <Text style={styles.detailValue}>
                 {getRecurrenceText(event.recurrence_pattern)}
               </Text>
@@ -288,7 +289,7 @@ export default function EventDetailScreen() {
 
           {event.requires_ticket && event.ticket_count !== undefined && (
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>🎫 Registration</Text>
+              <Text style={styles.detailLabel}>Registration</Text>
               <Text style={styles.detailValue}>
                 {event.ticket_count} people registered
               </Text>
@@ -302,9 +303,10 @@ export default function EventDetailScreen() {
               style={styles.whatsappButton}
               onPress={handleWhatsAppPress}
             >
-              <Text style={styles.whatsappButtonText}>
-                💬 Join WhatsApp Group
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="logo-whatsapp" size={16} color="#fff" />
+                <Text style={styles.whatsappButtonText}>Join WhatsApp Group</Text>
+              </View>
             </TouchableOpacity>
           )}
 

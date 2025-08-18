@@ -16,11 +16,13 @@ export default function TabLayout() {
           borderTopColor: '#E5E5EA',
           paddingBottom: Platform.OS === 'ios' ? 20 : 5,
           height: Platform.OS === 'ios' ? 85 : 60,
-          position: 'absolute',
-          ...(Platform.OS === 'ios' && {
-            backdropFilter: 'blur(20px)',
-          }),
+          justifyContent: 'space-around',
         },
+        tabBarBackground: () => (
+          Platform.OS === 'ios' ? (
+            <BlurView intensity={20} tint="light" style={{ flex: 1 }} />
+          ) : null
+        ),
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
@@ -68,7 +70,9 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           ),
-          tabBarBadge: '🚧',
+          tabBarBadge: 'Beta',
+          // Hide from the tab bar to avoid spacing gaps
+          href: null,
         }}
       />
       <Tabs.Screen

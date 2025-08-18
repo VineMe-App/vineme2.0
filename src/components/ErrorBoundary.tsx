@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { globalErrorHandler } from '../utils/globalErrorHandler';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   children: ReactNode;
@@ -87,7 +88,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>⚠️</Text>
+            <Ionicons name="warning-outline" size={48} color="#f59e0b" />
           </View>
 
           <Text style={styles.title}>Something went wrong</Text>
@@ -157,9 +158,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginBottom: 16,
   },
-  icon: {
-    fontSize: 48,
-  },
+  icon: {},
   title: {
     fontSize: 24,
     fontWeight: 'bold',

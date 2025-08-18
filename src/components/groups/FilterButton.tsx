@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
 import { getActiveFiltersCount } from '../../utils/groupFilters';
 
@@ -20,7 +21,7 @@ export const FilterButton: React.FC<FilterButtonProps> = ({ onPress }) => {
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text style={styles.icon}>🔍</Text>
+      <Ionicons name="funnel-outline" size={16} color={activeFiltersCount > 0 ? '#fff' : '#666'} style={{ marginRight: 4 }} />
       <Text
         style={[
           styles.text,

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Button } from './Button';
 import { Card } from './Card';
+import { Ionicons } from '@expo/vector-icons';
 
 export interface ConfirmationDialogProps {
   visible: boolean;
@@ -66,11 +67,11 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     
     switch (confirmVariant) {
       case 'danger':
-        return <Text style={styles.dangerIcon}>⚠️</Text>;
+        return <Ionicons name="warning-outline" size={32} color="#dc2626" />;
       case 'warning':
-        return <Text style={styles.warningIcon}>⚡</Text>;
+        return <Ionicons name="alert-circle-outline" size={32} color="#f59e0b" />;
       default:
-        return <Text style={styles.defaultIcon}>❓</Text>;
+        return <Ionicons name="help-circle-outline" size={32} color="#6b7280" />;
     }
   };
 
@@ -119,9 +120,10 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
           {isDestructive && (
             <View style={styles.warningContainer}>
-              <Text style={styles.warningText}>
-                ⚠️ This action cannot be undone
-              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="warning-outline" size={16} color="#856404" />
+                <Text style={styles.warningText}>This action cannot be undone</Text>
+              </View>
             </View>
           )}
 
@@ -176,7 +178,7 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Text style={{ fontSize: 24 }}>✅</Text>}
+        icon={<Ionicons name="checkmark-circle-outline" size={24} color="#16a34a" />}
       />
     );
   }
@@ -206,7 +208,7 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Text style={{ fontSize: 24 }}>❌</Text>}
+        icon={<Ionicons name="close-circle-outline" size={24} color="#dc2626" />}
       />
     );
   }
@@ -238,7 +240,7 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Text style={{ fontSize: 24 }}>🔒</Text>}
+        icon={<Ionicons name="lock-closed-outline" size={24} color="#1f2937" />}
         showCheckbox={true}
         checkboxLabel="I understand this will affect all group members"
         checkboxRequired={true}
@@ -272,7 +274,7 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Text style={{ fontSize: 24 }}>👤</Text>}
+        icon={<Ionicons name="person-remove-outline" size={24} color="#dc2626" />}
       />
     );
   }
@@ -314,7 +316,13 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Text style={{ fontSize: 24 }}>{isPromotion ? '⬆️' : '⬇️'}</Text>}
+        icon={
+          <Ionicons
+            name={isPromotion ? 'arrow-up-circle-outline' : 'arrow-down-circle-outline'}
+            size={24}
+            color={isPromotion ? '#2563eb' : '#f59e0b'}
+          />
+        }
       />
     );
   }
@@ -344,7 +352,7 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Text style={{ fontSize: 24 }}>🗑️</Text>}
+        icon={<Ionicons name="trash-outline" size={24} color="#dc2626" />}
         showCheckbox={true}
         checkboxLabel="I understand this will permanently delete all my data"
         checkboxRequired={true}

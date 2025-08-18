@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Button } from './Button';
 import { ErrorMessage } from './ErrorMessage';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -117,6 +118,9 @@ export class AdminErrorBoundary extends React.Component<
       return (
         <View style={styles.container}>
           <View style={styles.errorContainer}>
+            <View style={{ alignItems: 'center', marginBottom: 6 }}>
+              <Ionicons name="warning-outline" size={32} color="#f59e0b" />
+            </View>
             <Text style={styles.errorTitle}>Something went wrong</Text>
             
             {this.isPermissionError(this.state.error!) ? (

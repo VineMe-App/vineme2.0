@@ -81,7 +81,7 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
           <Text style={styles.groupTitle}>{group.title}</Text>
           <Text style={styles.groupDescription}>{group.description}</Text>
           <Text style={styles.meetingInfo}>
-            📅 {group.meeting_day}s at {group.meeting_time}
+            {group.meeting_day}s at {group.meeting_time}
           </Text>
         </View>
 

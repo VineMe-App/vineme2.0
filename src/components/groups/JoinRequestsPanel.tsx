@@ -72,8 +72,8 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
       {pendingRequests.length === 0 ? (
         <EmptyState
           title="No pending requests"
-          description="There are currently no pending join requests for this group."
-          icon="👥"
+          message="There are currently no pending join requests for this group."
+          icon={null}
         />
       ) : (
         <ScrollView

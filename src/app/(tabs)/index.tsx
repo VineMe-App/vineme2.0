@@ -23,6 +23,8 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Card } from '../../components/ui/Card';
 import { Avatar } from '../../components/ui/Avatar';
 import { FriendRequestNotifications } from '../../components/friends/FriendRequestNotifications';
+import { Ionicons } from '@expo/vector-icons';
+import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 
 export default function HomeScreen() {
   const { user, userProfile } = useAuthStore();
@@ -110,56 +112,61 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Friend request notifications */}
-        {pendingRequests.length > 0 && (
-          <FriendRequestNotifications
-            requests={pendingRequests}
-            onPress={() => router.push('/(tabs)/profile')}
-          />
-        )}
-      </View>
-
-      {/* Dashboard stats */}
-      <View style={styles.statsSection}>
-        <Card style={styles.statCard}>
-          <Text style={styles.statNumber}>
-            {userGroupMemberships?.length || 0}
-          </Text>
-          <Text style={styles.statLabel}>Groups</Text>
-        </Card>
-        <Card style={styles.statCard}>
-          <Text style={styles.statNumber}>🚧</Text>
-          <Text style={styles.statLabel}>Events Soon</Text>
-        </Card>
-        <Card style={styles.statCard}>
-          <Text style={styles.statNumber}>{acceptedFriends.length}</Text>
-          <Text style={styles.statLabel}>Friends</Text>
-        </Card>
-      </View>
-
-      {/* Events Coming Soon Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Events Coming Soon!</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/events')}>
-            <Text style={styles.seeAllText}>Learn More</Text>
-          </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {pendingRequests.length > 0 && (
+            <FriendRequestNotifications
+              requests={pendingRequests}
+              onPress={() => router.push('/(tabs)/profile')}
+            />
+          )}
         </View>
 
-        <EmptyState
-          title="Events Feature in Development"
-          message="We're working on bringing you an amazing events experience. Check the Events tab for more details!"
-          icon={<Text style={styles.emptyIcon}>🚧</Text>}
-          action={
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push('/(tabs)/events')}
-            >
-              <Text style={styles.actionButtonText}>See What's Coming</Text>
-            </TouchableOpacity>
+        {/* Church + Service + (optional) Manage Church CTA in one cohesive card */}
+        <ChurchAdminOnly
+          fallback={
+            <View style={styles.orgCard}>
+              <View style={styles.orgLeft}>
+                {userProfile?.church?.name && (
+                  <View style={styles.orgRow}>
+                    <Ionicons name="home-outline" size={16} color="#374151" />
+                    <Text style={styles.orgText} numberOfLines={1}>{userProfile.church.name}</Text>
+                  </View>
+                )}
+                {userProfile?.service?.name && (
+                  <View style={styles.orgRow}>
+                    <Ionicons name="calendar-outline" size={16} color="#374151" />
+                    <Text style={styles.orgText} numberOfLines={1}>{userProfile.service.name}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
           }
-        />
+        >
+          <TouchableOpacity style={[styles.orgCard, styles.orgCardClickable]} onPress={() => router.push('/admin')}>
+            <View style={styles.orgLeft}>
+              {userProfile?.church?.name && (
+                <View style={styles.orgRow}>
+                  <Ionicons name="home-outline" size={16} color="#374151" />
+                  <Text style={styles.orgText} numberOfLines={1}>{userProfile.church.name}</Text>
+                </View>
+              )}
+              {userProfile?.service?.name && (
+                <View style={styles.orgRow}>
+                  <Ionicons name="calendar-outline" size={16} color="#374151" />
+                  <Text style={styles.orgText} numberOfLines={1}>{userProfile.service.name}</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.orgRight}>
+              <Ionicons name="settings-outline" size={16} color="#111827" />
+              <Text style={styles.orgCta}>Manage Church</Text>
+              <Ionicons name="chevron-forward-outline" size={16} color="#6b7280" />
+            </View>
+          </TouchableOpacity>
+        </ChurchAdminOnly>
       </View>
+
+      {/* Simplified My Groups Section with horizontal scroll */}
 
       {/* My Groups Section */}
       <View style={styles.section}>
@@ -171,22 +178,27 @@ export default function HomeScreen() {
         </View>
 
         {userGroupMemberships && userGroupMemberships.length > 0 ? (
-          <View style={styles.horizontalList}>
-            {userGroupMemberships.slice(0, 3).map((membership) => (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalScroll}
+          >
+            {userGroupMemberships.map((membership) => (
               <View key={membership.group_id} style={styles.horizontalCard}>
                 <GroupCard
                   group={membership.group}
                   membershipStatus={membership.role}
                   onPress={() => router.push(`/group/${membership.group.id}`)}
+                  style={{ width: 260, height: 374, marginHorizontal: 0 }}
                 />
               </View>
             ))}
-          </View>
+          </ScrollView>
         ) : (
           <EmptyState
             title="No groups yet"
             message="Join a Bible study group to connect with your community"
-            icon={<Text style={styles.emptyIcon}>👥</Text>}
+            icon={null}
             action={
               <TouchableOpacity
                 style={styles.actionButton}
@@ -199,47 +211,18 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActionsGrid}>
-          <TouchableOpacity
-            style={styles.quickActionCard}
-            onPress={() => router.push('/(tabs)/groups')}
-          >
-            <Text style={styles.quickActionIcon}>👥</Text>
-            <Text style={styles.quickActionText}>Browse Groups</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.quickActionCard, styles.comingSoonCard]}
-            onPress={() => router.push('/(tabs)/events')}
-          >
-            <Text style={styles.quickActionIcon}>🚧</Text>
-            <Text style={styles.quickActionText}>Events Soon</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionCard}
-            onPress={() => router.push('/(tabs)/profile')}
-          >
-            <Text style={styles.quickActionIcon}>👤</Text>
-            <Text style={styles.quickActionText}>Edit Profile</Text>
-          </TouchableOpacity>
-
-          {pendingRequests.length > 0 && (
-            <TouchableOpacity
-              style={[styles.quickActionCard, styles.notificationCard]}
-              onPress={() => router.push('/(tabs)/profile')}
-            >
-              <Text style={styles.quickActionIcon}>🔔</Text>
-              <Text style={styles.quickActionText}>
-                Friend Requests ({pendingRequests.length})
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      {/* Small disclaimer about upcoming events (near bottom) */}
+      <TouchableOpacity onPress={() => router.push('/(tabs)/events')} activeOpacity={0.8}>
+        <Card style={styles.eventsBanner}>
+          <View style={styles.eventsBannerRow}>
+            <Ionicons name="information-circle-outline" size={18} color="#6b7280" />
+            <Text style={styles.eventsBannerText}>
+              Events are coming soon. Tap to learn more.
+            </Text>
+            <Ionicons name="chevron-forward-outline" size={18} color="#6b7280" />
+          </View>
+        </Card>
+      </TouchableOpacity>
 
       {/* Bottom spacing */}
       <View style={styles.bottomSpacing} />
@@ -264,6 +247,53 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  headerMetaRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  orgCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  orgCardClickable: {
+    backgroundColor: '#f9fafb',
+  },
+  orgLeft: {
+    flex: 1,
+  },
+  orgRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  orgText: {
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '500',
+    flexShrink: 1,
+  },
+  orgRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 12,
+  },
+  orgCta: {
+    color: '#111827',
+    fontSize: 14,
+    fontWeight: '600',
   },
   userInfo: {
     marginLeft: 16,
@@ -312,26 +342,59 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 16,
   },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  manageButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#111827',
+    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  manageButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1a1a1a',
+  },
+  eventsBanner: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  eventsBannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eventsBannerText: {
+    color: '#374151',
+    fontSize: 14,
+    flex: 1,
   },
   seeAllText: {
     fontSize: 16,
     color: '#007AFF',
     fontWeight: '500',
   },
-  horizontalList: {
-    paddingLeft: 4,
+  horizontalScroll: {
+    paddingLeft: 16,
+    paddingRight: 12,
   },
   horizontalCard: {
-    marginBottom: 8,
+    marginRight: 12,
   },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
+  emptyIcon: {},
   actionButton: {
     backgroundColor: '#007AFF',
     borderRadius: 8,
@@ -343,48 +406,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  quickActionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    minWidth: '45%',
-    flex: 1,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  notificationCard: {
-    backgroundColor: '#fff3cd',
-    borderColor: '#ffeaa7',
-    borderWidth: 1,
-  },
-  comingSoonCard: {
-    backgroundColor: '#fff3cd',
-    borderColor: '#ffeaa7',
-    borderWidth: 1,
-  },
-  quickActionIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  quickActionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1a1a1a',
-    textAlign: 'center',
   },
   bottomSpacing: {
     height: 20,

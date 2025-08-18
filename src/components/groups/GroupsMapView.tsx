@@ -7,6 +7,7 @@ import {
   ScreenReaderUtils 
 } from '@/utils/accessibility';
 import MapView, { Marker, Callout, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Ionicons } from '@expo/vector-icons';
 import { locationService, Coordinates } from '../../services/location';
 import { 
   MapClusterer, 
@@ -315,7 +316,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             accessibilityElementsHidden={true}
             importantForAccessibility="no-hide-descendants"
           >
-            <Text style={styles.markerText}>📖</Text>
+            <Ionicons name="book-outline" size={12} color="#fff" />
           </View>
         </View>
         <Callout 
@@ -350,11 +351,11 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
               }`}
             >
               <Text style={styles.calloutDetailText}>
-                📅 {group.meeting_day} at {group.meeting_time}
+                {group.meeting_day} at {group.meeting_time}
               </Text>
               {group.location && (
                 <Text style={styles.calloutDetailText} numberOfLines={2}>
-                  📍 {typeof group.location === 'string' ? group.location : group.location.address}
+                  {typeof group.location === 'string' ? group.location : group.location.address}
                 </Text>
               )}
             </View>
@@ -477,7 +478,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             'Double tap to hear all group locations'
           )}
         >
-          <Text style={styles.accessibilityButtonText}>📍 List Locations</Text>
+          <Text style={styles.accessibilityButtonText}>List Locations</Text>
         </TouchableOpacity>
       </View>
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface AvatarProps {
   size?: number;
@@ -46,7 +47,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         <View
           style={[styles.editIcon, { bottom: size * 0.05, right: size * 0.05 }]}
         >
-          <Text style={styles.editIconText}>✏️</Text>
+        <Ionicons name="pencil-outline" size={14} color="#fff" />
         </View>
       )}
     </View>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export type ViewMode = 'list' | 'map';
 
@@ -23,14 +24,21 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
         onPress={() => onViewChange('list')}
         activeOpacity={0.7}
       >
-        <Text
-          style={[
-            styles.toggleText,
-            currentView === 'list' && styles.activeText,
-          ]}
-        >
-          📋 List
-        </Text>
+        <View style={styles.row}>
+          <Ionicons
+            name="list-outline"
+            size={16}
+            color={currentView === 'list' ? '#fff' : '#666'}
+          />
+          <Text
+            style={[
+              styles.toggleText,
+              currentView === 'list' && styles.activeText,
+            ]}
+          >
+            List
+          </Text>
+        </View>
       </TouchableOpacity>
       
       <TouchableOpacity
@@ -42,14 +50,21 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
         onPress={() => onViewChange('map')}
         activeOpacity={0.7}
       >
-        <Text
-          style={[
-            styles.toggleText,
-            currentView === 'map' && styles.activeText,
-          ]}
-        >
-          🗺️ Map
-        </Text>
+        <View style={styles.row}>
+          <Ionicons
+            name="map-outline"
+            size={16}
+            color={currentView === 'map' ? '#fff' : '#666'}
+          />
+          <Text
+            style={[
+              styles.toggleText,
+              currentView === 'map' && styles.activeText,
+            ]}
+          >
+            Map
+          </Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -95,6 +110,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#666',
   },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   activeText: {
     color: '#fff',
   },

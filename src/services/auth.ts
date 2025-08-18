@@ -142,7 +142,11 @@ export class AuthService {
 
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(`
+          *,
+          church:churches(*),
+          service:services(*)
+        `)
         .eq('id', user.id)
         .single();
 

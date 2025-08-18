@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Badge } from './Badge';
 import { ColorContrastUtils, AdminAccessibilityLabels } from '@/utils/accessibility';
 
@@ -27,45 +28,45 @@ export function AccessibleStatusIndicator({
       case 'pending':
         return {
           variant: 'warning' as const,
-          icon: '⏳',
+          iconName: 'time-outline' as const,
           text: 'Pending',
           colors: colors.pending,
           description: 'awaiting approval',
-        };
+        } as const;
       case 'approved':
       case 'active':
         return {
           variant: 'success' as const,
-          icon: '✅',
+          iconName: 'checkmark-circle-outline' as const,
           text: status === 'approved' ? 'Approved' : 'Active',
           colors: colors.approved,
           description: 'approved and active',
-        };
+        } as const;
       case 'denied':
         return {
           variant: 'error' as const,
-          icon: '❌',
+          iconName: 'close-circle-outline' as const,
           text: 'Denied',
           colors: colors.denied,
           description: 'request was denied',
-        };
+        } as const;
       case 'closed':
       case 'inactive':
         return {
           variant: 'default' as const,
-          icon: '⏸️',
+          iconName: 'pause-circle-outline' as const,
           text: status === 'closed' ? 'Closed' : 'Inactive',
           colors: colors.closed,
           description: 'no longer active',
-        };
+        } as const;
       default:
         return {
           variant: 'default' as const,
-          icon: '❓',
+          iconName: 'help-circle-outline' as const,
           text: status,
           colors: colors.closed,
           description: 'unknown status',
-        };
+        } as const;
     }
   };
 
@@ -95,12 +96,13 @@ export function AccessibleStatusIndicator({
       >
         <View style={styles.badgeContent}>
           {showIcon && (
-            <Text 
-              style={[styles.icon, { color: config.colors.text }]}
+            <Ionicons
+              name={config.iconName}
+              size={14}
+              color={config.colors.text}
               accessibilityElementsHidden={true}
-            >
-              {config.icon}
-            </Text>
+              style={{ marginRight: 4 }}
+            />
           )}
           <Text 
             style={[styles.text, { color: config.colors.text }]}

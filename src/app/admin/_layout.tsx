@@ -26,6 +26,7 @@ export default function AdminLayout() {
             headerShown: false,
           }}
         >
+          <Stack.Screen name="index" />
           <Stack.Screen name="manage-groups" />
           <Stack.Screen name="manage-users" />
         </Stack>

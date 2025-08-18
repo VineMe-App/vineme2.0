@@ -17,6 +17,7 @@ import {
 } from '../../hooks/useFriendships';
 import { useAuth } from '../../hooks/useAuth';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import type { DatabaseUser } from '../../types/database';
 
 interface FriendSearchProps {
@@ -77,7 +78,7 @@ export function FriendSearch({ onClose }: FriendSearchProps) {
         <Text style={styles.title}>Find Friends</Text>
         {onClose && (
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Ionicons name="close" size={18} color="#6b7280" />
           </TouchableOpacity>
         )}
       </View>

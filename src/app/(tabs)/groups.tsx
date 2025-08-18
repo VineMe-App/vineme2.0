@@ -17,6 +17,7 @@ import { applyGroupFilters, getActiveFiltersDescription, getActiveFiltersCount }
 import type { GroupWithDetails } from '../../types/database';
 import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
+import { locationService } from '../../services/location';
 
 export default function GroupsScreen() {
   const router = useRouter();
@@ -24,6 +25,8 @@ export default function GroupsScreen() {
   const { filters } = useGroupFiltersStore();
   const friendsQuery = useFriends(userProfile?.id);
   const [showSearch, setShowSearch] = useState(false);
+  const [sortByDistance, setSortByDistance] = useState(false);
+  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   // Create flow now navigates to dedicated page
@@ -54,6 +57,29 @@ export default function GroupsScreen() {
     return base;
   }, [allGroups, filters, friendsQuery.data]);
 
+  // Distance-sorted groups with computed distance
+  const groupsWithDistance = useMemo(() => {
+    if (!filteredGroups) return [] as (typeof filteredGroups) & any[];
+    return filteredGroups.map((g) => {
+      let distanceKm: number | undefined;
+      if (sortByDistance && userCoords) {
+        const parsed = locationService.parseGroupLocation(g.location);
+        if (parsed.coordinates) {
+          distanceKm = locationService.calculateDistance(userCoords, parsed.coordinates);
+        }
+      }
+      return { ...g, __distanceKm: distanceKm } as any;
+    }).sort((a: any, b: any) => {
+      if (!sortByDistance || !userCoords) return 0;
+      const da = a.__distanceKm;
+      const db = b.__distanceKm;
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da - db;
+    });
+  }, [filteredGroups, sortByDistance, userCoords]);
+
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {
       try {
@@ -83,11 +109,12 @@ export default function GroupsScreen() {
     refetch(); // In case we come back and want to refresh
   };
 
-  const renderGroupItem = ({ item: group }: { item: GroupWithDetails }) => {
+  const renderGroupItem = ({ item: group }: { item: GroupWithDetails & { __distanceKm?: number } }) => {
     return (
       <GroupItemWithMembership
         group={group}
         onPress={() => handleGroupPress(group)}
+        distanceKm={group.__distanceKm}
       />
     );
   };
@@ -115,7 +142,7 @@ export default function GroupsScreen() {
 
   const renderListView = () => (
     <FlatList
-      data={filteredGroups}
+      data={groupsWithDistance as any}
       renderItem={renderGroupItem}
       keyExtractor={(item) => item.id}
       ListEmptyComponent={renderEmptyState}
@@ -193,6 +220,20 @@ export default function GroupsScreen() {
               <View style={styles.badge}><Text style={styles.badgeText}>{getActiveFiltersCount(filters)}</Text></View>
             )}
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconButton, sortByDistance && { backgroundColor: '#e5e7eb', borderWidth: 1, borderColor: '#d1d5db' }]}
+            onPress={async () => {
+              const next = !sortByDistance;
+              setSortByDistance(next);
+              if (next && !userCoords) {
+                const coords = await locationService.getCurrentLocation();
+                if (coords) setUserCoords(coords);
+              }
+            }}
+            accessibilityLabel="Sort by distance"
+          >
+            <Ionicons name="navigate-outline" size={20} color="#374151" />
+          </TouchableOpacity>
           {userProfile?.church_id && (
             <TouchableOpacity style={styles.iconButton} onPress={handleCreateGroup} accessibilityLabel="Create group">
               <Ionicons name="add-outline" size={22} color="#374151" />
@@ -220,9 +261,10 @@ export default function GroupsScreen() {
 
 // Component to handle membership status for each group
 const GroupItemWithMembership: React.FC<{
-  group: GroupWithDetails;
+  group: GroupWithDetails & { __distanceKm?: number };
   onPress: () => void;
-}> = ({ group, onPress }) => {
+  distanceKm?: number;
+}> = ({ group, onPress, distanceKm }) => {
   const { userProfile } = useAuthStore();
   const { data: membershipData } = useGroupMembership(
     group.id,
@@ -247,6 +289,7 @@ const GroupItemWithMembership: React.FC<{
       group={group}
       onPress={onPress}
       membershipStatus={membershipStatus}
+      distanceKm={typeof distanceKm === 'number' ? distanceKm : (group as any).__distanceKm}
       friendsCount={friendsCount}
       onPressFriends={() => {
         // Navigate to group detail and open friends modal

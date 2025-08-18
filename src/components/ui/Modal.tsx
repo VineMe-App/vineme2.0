@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { KeyboardAvoidingView, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Theme } from '../../utils/theme';
 
 interface ModalProps extends Omit<RNModalProps, 'children'> {
@@ -62,7 +63,7 @@ export const Modal: React.FC<ModalProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Close modal"
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Ionicons name="close" size={20} color={Theme.colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>

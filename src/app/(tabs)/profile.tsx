@@ -20,11 +20,11 @@ import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
-import { AdminOnly, PermissionGate, ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
+import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { EditProfileModal, PrivacySettingsModal } from '@/components/profile';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
-import { AdminDashboardSummary } from '@/components/admin/AdminDashboardSummary';
+// Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
@@ -298,48 +298,13 @@ export default function ProfileScreen() {
 
         {/* Admin Features */}
         <ChurchAdminOnly>
-          {/* Admin Dashboard Summary */}
-          <AdminDashboardSummary onRefresh={handleRefresh} />
-          
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Admin Tools</Text>
-            <View style={styles.adminActions}>
-              {/* Events management temporarily disabled - coming soon */}
-              {/* <PermissionGate permission="manage_church_events">
-                <Button
-                  title="Manage Events"
-                  onPress={() => {
-                    Alert.alert(
-                      'Admin Feature',
-                      'Event management coming soon!'
-                    );
-                  }}
-                  variant="secondary"
-                  size="small"
-                  style={styles.adminButton}
-                />
-              </PermissionGate> */}
-
-              <PermissionGate permission="manage_church_groups">
-                <Button
-                  title="Manage Groups"
-                  onPress={() => router.push('/admin/manage-groups')}
-                  variant="secondary"
-                  size="small"
-                  style={styles.adminButton}
-                />
-              </PermissionGate>
-
-              <PermissionGate permission="manage_church_users">
-                <Button
-                  title="Manage Users"
-                  onPress={() => router.push('/admin/manage-users')}
-                  variant="secondary"
-                  size="small"
-                  style={styles.adminButton}
-                />
-              </PermissionGate>
-            </View>
+            <Text style={styles.sectionTitle}>Admin</Text>
+            <Button
+              title="Open Admin Dashboard"
+              onPress={() => router.push('/admin')}
+              variant="primary"
+            />
           </View>
         </ChurchAdminOnly>
 

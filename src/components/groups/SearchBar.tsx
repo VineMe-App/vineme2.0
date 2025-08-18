@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Text,
-} from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
 
 interface SearchBarProps {
@@ -35,7 +30,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.inputContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Ionicons name="search-outline" size={16} color="#666" style={styles.leadingIcon} />
         <TextInput
           style={styles.input}
           placeholder={placeholder}
@@ -51,7 +46,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             onPress={handleClear}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.clearIcon}>✕</Text>
+            <Ionicons name="close" size={16} color="#999" />
           </TouchableOpacity>
         )}
       </View>
@@ -74,11 +69,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-    color: '#666',
-  },
+  leadingIcon: { marginRight: 8 },
   input: {
     flex: 1,
     fontSize: 16,
@@ -87,9 +78,5 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     padding: 4,
-  },
-  clearIcon: {
-    fontSize: 14,
-    color: '#999',
   },
 });

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
 import { Button, Checkbox } from '../ui';
+import { Ionicons } from '@expo/vector-icons';
 
 interface FilterPanelProps {
   isVisible: boolean;
@@ -87,7 +88,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         <View style={styles.header}>
           <Text style={styles.title}>Filter Groups</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>✕</Text>
+            <Ionicons name="close" size={20} color="#666" />
           </TouchableOpacity>
         </View>
 
@@ -108,7 +109,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 style={styles.searchButton}
                 onPress={handleSearchSubmit}
               >
-                <Text style={styles.searchButtonText}>🔍</Text>
+                <Ionicons name="search-outline" size={16} color="#666" />
               </TouchableOpacity>
             </View>
           </View>
