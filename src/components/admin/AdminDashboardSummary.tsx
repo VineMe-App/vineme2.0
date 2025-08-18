@@ -13,18 +13,23 @@ interface AdminDashboardSummaryProps {
   onRefresh?: () => void;
 }
 
-export function AdminDashboardSummary({ onRefresh }: AdminDashboardSummaryProps) {
+export function AdminDashboardSummary({
+  onRefresh,
+}: AdminDashboardSummaryProps) {
   const { user, userProfile } = useAuthStore();
-  
+
   // Get notification counts
-  const { notificationCounts, isLoading: isLoadingNotifications } = useAdminNotifications(user?.id);
-  
+  const { notificationCounts, isLoading: isLoadingNotifications } =
+    useAdminNotifications(user?.id);
+
   // Get church summary
   const { data: churchSummary, isLoading: isLoadingSummary } = useQuery({
     queryKey: ['admin', 'church-summary', userProfile?.church_id],
     queryFn: async () => {
       if (!userProfile?.church_id) throw new Error('No church ID found');
-      const result = await userAdminService.getChurchSummary(userProfile.church_id);
+      const result = await userAdminService.getChurchSummary(
+        userProfile.church_id
+      );
       if (result.error) throw result.error;
       return result.data;
     },
@@ -48,21 +53,27 @@ export function AdminDashboardSummary({ onRefresh }: AdminDashboardSummaryProps)
   return (
     <Card style={styles.container}>
       <Text style={styles.title}>Admin Dashboard</Text>
-      
+
       {/* Key Metrics */}
       <View style={styles.metricsContainer}>
         <View style={styles.metricCard}>
-          <Text style={styles.metricNumber}>{churchSummary?.total_users || 0}</Text>
+          <Text style={styles.metricNumber}>
+            {churchSummary?.total_users || 0}
+          </Text>
           <Text style={styles.metricLabel}>Total Users</Text>
         </View>
-        
+
         <View style={styles.metricCard}>
-          <Text style={styles.metricNumber}>{churchSummary?.active_groups || 0}</Text>
+          <Text style={styles.metricNumber}>
+            {churchSummary?.active_groups || 0}
+          </Text>
           <Text style={styles.metricLabel}>Active Groups</Text>
         </View>
-        
+
         <View style={styles.metricCard}>
-          <Text style={styles.metricNumber}>{churchSummary?.unconnected_users || 0}</Text>
+          <Text style={styles.metricNumber}>
+            {churchSummary?.unconnected_users || 0}
+          </Text>
           <Text style={styles.metricLabel}>Unconnected</Text>
         </View>
       </View>
@@ -70,7 +81,7 @@ export function AdminDashboardSummary({ onRefresh }: AdminDashboardSummaryProps)
       {/* Action Items */}
       <View style={styles.actionsContainer}>
         <Text style={styles.actionsTitle}>Pending Actions</Text>
-        
+
         <TouchableOpacity
           style={styles.actionItem}
           onPress={() => router.push('/admin/manage-groups')}
@@ -83,8 +94,8 @@ export function AdminDashboardSummary({ onRefresh }: AdminDashboardSummaryProps)
               </Text>
             </View>
             {notificationCounts.group_requests > 0 && (
-              <NotificationBadge 
-                count={notificationCounts.group_requests} 
+              <NotificationBadge
+                count={notificationCounts.group_requests}
                 size="medium"
               />
             )}
@@ -99,12 +110,13 @@ export function AdminDashboardSummary({ onRefresh }: AdminDashboardSummaryProps)
             <View style={styles.actionInfo}>
               <Text style={styles.actionTitle}>User Management</Text>
               <Text style={styles.actionDescription}>
-                {churchSummary?.unconnected_users || 0} users need group connections
+                {churchSummary?.unconnected_users || 0} users need group
+                connections
               </Text>
             </View>
             {(churchSummary?.unconnected_users || 0) > 0 && (
-              <NotificationBadge 
-                count={churchSummary?.unconnected_users || 0} 
+              <NotificationBadge
+                count={churchSummary?.unconnected_users || 0}
                 size="medium"
                 color="#f59e0b"
               />
@@ -127,8 +139,8 @@ export function AdminDashboardSummary({ onRefresh }: AdminDashboardSummaryProps)
               </Text>
             </View>
             {notificationCounts.join_requests > 0 && (
-              <NotificationBadge 
-                count={notificationCounts.join_requests} 
+              <NotificationBadge
+                count={notificationCounts.join_requests}
                 size="medium"
                 color="#8b5cf6"
               />

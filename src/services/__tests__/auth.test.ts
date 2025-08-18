@@ -171,20 +171,20 @@ describe('AuthService', () => {
         user_metadata: {},
       };
 
-      mockSupabase.auth.getUser.mockResolvedValue({
-        data: { user: mockUser },
+      mockSupabase.auth.getSession.mockResolvedValue({
+        data: { session: { user: mockUser } },
         error: null,
       });
 
       const result = await authService.getCurrentUser();
 
       expect(result).toEqual(mockUser);
-      expect(mockSupabase.auth.getUser).toHaveBeenCalled();
+      expect(mockSupabase.auth.getSession).toHaveBeenCalled();
     });
 
     it('should return null when not authenticated', async () => {
-      mockSupabase.auth.getUser.mockResolvedValue({
-        data: { user: null },
+      mockSupabase.auth.getSession.mockResolvedValue({
+        data: { session: null },
         error: null,
       });
 
@@ -196,8 +196,8 @@ describe('AuthService', () => {
     it('should return null when there is an error', async () => {
       const mockError = { message: 'Token expired' };
 
-      mockSupabase.auth.getUser.mockResolvedValue({
-        data: { user: null },
+      mockSupabase.auth.getSession.mockResolvedValue({
+        data: { session: null },
         error: mockError,
       });
 
@@ -229,8 +229,8 @@ describe('AuthService', () => {
         created_at: '2023-01-01T00:00:00Z',
       };
 
-      mockSupabase.auth.getUser.mockResolvedValue({
-        data: { user: mockUser },
+      mockSupabase.auth.getSession.mockResolvedValue({
+        data: { session: { user: mockUser } },
         error: null,
       });
 
@@ -249,14 +249,14 @@ describe('AuthService', () => {
 
       expect(result).toEqual(mockProfile);
       expect(mockSupabase.from).toHaveBeenCalledWith('users');
-      expect(mockFrom.select).toHaveBeenCalledWith('*');
+      expect(mockFrom.select).toHaveBeenCalled();
       expect(mockFrom.eq).toHaveBeenCalledWith('id', 'user-123');
       expect(mockFrom.single).toHaveBeenCalled();
     });
 
     it('should return null when user is not authenticated', async () => {
-      mockSupabase.auth.getUser.mockResolvedValue({
-        data: { user: null },
+      mockSupabase.auth.getSession.mockResolvedValue({
+        data: { session: null },
         error: null,
       });
 
@@ -279,13 +279,13 @@ describe('AuthService', () => {
         user_metadata: {},
       };
 
-      mockSupabase.auth.getUser.mockResolvedValue({
-        data: { user: mockUser },
+      mockSupabase.auth.getSession.mockResolvedValue({
+        data: { session: { user: mockUser } },
         error: null,
       });
 
       const mockFrom = {
-        insert: jest.fn().mockResolvedValue({
+        upsert: jest.fn().mockResolvedValue({
           data: null,
           error: null,
         }),
@@ -300,20 +300,25 @@ describe('AuthService', () => {
 
       expect(result.error).toBeNull();
       expect(mockSupabase.from).toHaveBeenCalledWith('users');
-      expect(mockFrom.insert).toHaveBeenCalledWith({
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        church_id: 'church-123',
-        service_id: undefined,
-        roles: ['user'],
-        created_at: expect.any(String),
-      });
+      expect(mockFrom.upsert).toHaveBeenCalledWith(
+        {
+          id: 'user-123',
+          email: 'test@example.com',
+          name: 'Test User',
+          church_id: 'church-123',
+          roles: ['user'],
+          updated_at: expect.any(String),
+        },
+        {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        }
+      );
     });
 
     it('should return error when user is not authenticated', async () => {
-      mockSupabase.auth.getUser.mockResolvedValue({
-        data: { user: null },
+      mockSupabase.auth.getSession.mockResolvedValue({
+        data: { session: null },
         error: null,
       });
 
@@ -322,6 +327,217 @@ describe('AuthService', () => {
       });
 
       expect(result.error).toEqual(new Error('No authenticated user'));
+    });
+  });
+
+  describe('createReferredUser', () => {
+    it('should create referred user successfully', async () => {
+      const mockUser = {
+        id: 'referred-user-123',
+        email: 'referred@example.com',
+        aud: 'authenticated',
+        role: 'authenticated',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+        app_metadata: {},
+        user_metadata: {
+          name: 'John Doe',
+          phone: '+1234567890',
+          referred: true,
+          referrer_id: 'referrer-123',
+        },
+      };
+
+      // Mock admin.createUser
+      mockSupabase.auth.admin = {
+        createUser: jest.fn().mockResolvedValue({
+          data: { user: mockUser },
+          error: null,
+        }),
+        deleteUser: jest.fn(),
+      } as any;
+
+      // Mock users table insert
+      const mockFrom = {
+        insert: jest.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        }),
+      };
+
+      mockSupabase.from.mockReturnValue(mockFrom as any);
+
+      // Mock email verification
+      mockSupabase.auth.resend = jest.fn().mockResolvedValue({
+        error: null,
+      });
+
+      const referredUserData = {
+        email: 'referred@example.com',
+        phone: '+1234567890',
+        firstName: 'John',
+        lastName: 'Doe',
+        referrerId: 'referrer-123',
+      };
+
+      const result = await authService.createReferredUser(referredUserData);
+
+      expect(result.user).toEqual(mockUser);
+      expect(result.userId).toBe('referred-user-123');
+      expect(result.error).toBeNull();
+
+      // Verify admin.createUser was called correctly
+      expect(mockSupabase.auth.admin.createUser).toHaveBeenCalledWith({
+        email: 'referred@example.com',
+        password: expect.any(String),
+        email_confirm: false,
+        user_metadata: {
+          name: 'John Doe',
+          phone: '+1234567890',
+          referred: true,
+          referrer_id: 'referrer-123',
+        },
+      });
+
+      // Verify user profile was created
+      expect(mockSupabase.from).toHaveBeenCalledWith('users');
+      expect(mockFrom.insert).toHaveBeenCalledWith({
+        id: 'referred-user-123',
+        email: 'referred@example.com',
+        name: 'John Doe',
+        phone: '+1234567890',
+        newcomer: true,
+        roles: ['user'],
+        created_at: expect.any(String),
+        updated_at: expect.any(String),
+      });
+
+      // Verify email verification was triggered
+      expect(mockSupabase.auth.resend).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'referred@example.com',
+      });
+    });
+
+    it('should handle validation errors', async () => {
+      const invalidData = {
+        email: 'invalid-email',
+        phone: '+1234567890',
+        referrerId: 'referrer-123',
+      };
+
+      const result = await authService.createReferredUser(invalidData);
+
+      expect(result.user).toBeNull();
+      expect(result.error).toBeDefined();
+      expect(result.error?.message).toBe('Invalid email format');
+    });
+
+    it('should handle auth user creation failure', async () => {
+      const mockError = { message: 'Email already exists' };
+
+      mockSupabase.auth.admin = {
+        createUser: jest.fn().mockResolvedValue({
+          data: { user: null },
+          error: mockError,
+        }),
+      } as any;
+
+      const referredUserData = {
+        email: 'referred@example.com',
+        phone: '+1234567890',
+        referrerId: 'referrer-123',
+      };
+
+      const result = await authService.createReferredUser(referredUserData);
+
+      expect(result.user).toBeNull();
+      expect(result.error).toBeDefined();
+      expect(result.error?.message).toBe('Email already exists');
+    });
+
+    it('should cleanup auth user if profile creation fails', async () => {
+      const mockUser = {
+        id: 'referred-user-123',
+        email: 'referred@example.com',
+        aud: 'authenticated',
+        role: 'authenticated',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+        app_metadata: {},
+        user_metadata: {},
+      };
+
+      // Mock successful auth user creation
+      mockSupabase.auth.admin = {
+        createUser: jest.fn().mockResolvedValue({
+          data: { user: mockUser },
+          error: null,
+        }),
+        deleteUser: jest.fn().mockResolvedValue({ error: null }),
+      } as any;
+
+      // Mock failed profile creation
+      const mockFrom = {
+        insert: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Profile creation failed' },
+        }),
+      };
+
+      mockSupabase.from.mockReturnValue(mockFrom as any);
+
+      const referredUserData = {
+        email: 'referred@example.com',
+        phone: '+1234567890',
+        referrerId: 'referrer-123',
+      };
+
+      const result = await authService.createReferredUser(referredUserData);
+
+      expect(result.user).toBeNull();
+      expect(result.error).toBeDefined();
+      expect(result.error?.message).toBe(
+        'Failed to create user profile: Profile creation failed'
+      );
+
+      // Verify cleanup was attempted
+      expect(mockSupabase.auth.admin.deleteUser).toHaveBeenCalledWith(
+        'referred-user-123'
+      );
+    });
+
+    it('should validate required fields', async () => {
+      const testCases = [
+        {
+          data: { phone: '+1234567890', referrerId: 'ref-123' },
+          expectedError: 'Email is required',
+        },
+        {
+          data: { email: 'test@example.com', referrerId: 'ref-123' },
+          expectedError: 'Phone number is required',
+        },
+        {
+          data: { email: 'test@example.com', phone: '+1234567890' },
+          expectedError: 'Referrer ID is required',
+        },
+        {
+          data: {
+            email: 'test@example.com',
+            phone: '123',
+            referrerId: 'ref-123',
+          },
+          expectedError: 'Invalid phone number format',
+        },
+      ];
+
+      for (const testCase of testCases) {
+        const result = await authService.createReferredUser(
+          testCase.data as any
+        );
+        expect(result.user).toBeNull();
+        expect(result.error?.message).toBe(testCase.expectedError);
+      }
     });
   });
 });

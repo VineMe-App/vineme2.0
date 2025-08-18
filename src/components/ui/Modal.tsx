@@ -63,7 +63,11 @@ export const Modal: React.FC<ModalProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Close modal"
               >
-                <Ionicons name="close" size={20} color={Theme.colors.textSecondary} />
+                <Ionicons
+                  name="close"
+                  size={20}
+                  color={Theme.colors.textSecondary}
+                />
               </TouchableOpacity>
             )}
           </View>

@@ -13,7 +13,9 @@ import { groupCreationService } from '../../services/groupCreation';
 // Mock the group creation service
 jest.mock('../../services/groupCreation');
 
-const mockGroupCreationService = groupCreationService as jest.Mocked<typeof groupCreationService>;
+const mockGroupCreationService = groupCreationService as jest.Mocked<
+  typeof groupCreationService
+>;
 
 // Create a wrapper with QueryClient
 const createWrapper = () => {
@@ -24,7 +26,7 @@ const createWrapper = () => {
     },
   });
 
-  return ({ children }: { children: React.ReactNode }) => 
+  return ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 };
 
@@ -293,10 +295,18 @@ describe('useGroupLeaderActions', () => {
       expect(result.current).toHaveProperty('removeMemberMutation');
 
       // Verify all mutations are functions
-      expect(typeof result.current.updateGroupDetailsMutation.mutate).toBe('function');
-      expect(typeof result.current.promoteToLeaderMutation.mutate).toBe('function');
-      expect(typeof result.current.demoteFromLeaderMutation.mutate).toBe('function');
-      expect(typeof result.current.removeMemberMutation.mutate).toBe('function');
+      expect(typeof result.current.updateGroupDetailsMutation.mutate).toBe(
+        'function'
+      );
+      expect(typeof result.current.promoteToLeaderMutation.mutate).toBe(
+        'function'
+      );
+      expect(typeof result.current.demoteFromLeaderMutation.mutate).toBe(
+        'function'
+      );
+      expect(typeof result.current.removeMemberMutation.mutate).toBe(
+        'function'
+      );
     });
   });
 });

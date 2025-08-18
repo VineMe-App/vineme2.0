@@ -7,9 +7,15 @@ import { globalErrorHandler } from '../../utils/globalErrorHandler';
 jest.mock('../admin');
 jest.mock('../../utils/globalErrorHandler');
 
-const mockGroupAdminService = groupAdminService as jest.Mocked<typeof groupAdminService>;
-const mockUserAdminService = userAdminService as jest.Mocked<typeof userAdminService>;
-const mockGlobalErrorHandler = globalErrorHandler as jest.Mocked<typeof globalErrorHandler>;
+const mockGroupAdminService = groupAdminService as jest.Mocked<
+  typeof groupAdminService
+>;
+const mockUserAdminService = userAdminService as jest.Mocked<
+  typeof userAdminService
+>;
+const mockGlobalErrorHandler = globalErrorHandler as jest.Mocked<
+  typeof globalErrorHandler
+>;
 
 describe('AdminServiceWrapper', () => {
   let wrapper: AdminServiceWrapper;
@@ -31,7 +37,10 @@ describe('AdminServiceWrapper', () => {
 
       expect(result.data).toEqual(mockGroups);
       expect(result.error).toBeNull();
-      expect(mockGroupAdminService.getChurchGroups).toHaveBeenCalledWith('church-1', false);
+      expect(mockGroupAdminService.getChurchGroups).toHaveBeenCalledWith(
+        'church-1',
+        false
+      );
     });
 
     it('should handle service errors', async () => {
@@ -82,7 +91,10 @@ describe('AdminServiceWrapper', () => {
         context: { screen: 'manage-groups' },
       });
 
-      expect(mockGroupAdminService.getChurchGroups).toHaveBeenCalledWith('church-1', true);
+      expect(mockGroupAdminService.getChurchGroups).toHaveBeenCalledWith(
+        'church-1',
+        true
+      );
     });
   });
 
@@ -94,7 +106,11 @@ describe('AdminServiceWrapper', () => {
         error: null,
       });
 
-      const result = await wrapper.approveGroup('group-1', 'admin-1', 'Looks good');
+      const result = await wrapper.approveGroup(
+        'group-1',
+        'admin-1',
+        'Looks good'
+      );
 
       expect(result.data).toEqual(mockResult);
       expect(result.error).toBeNull();
@@ -122,7 +138,7 @@ describe('AdminServiceWrapper', () => {
   describe('batchApproveGroups', () => {
     it('should handle batch approval with mixed results', async () => {
       const groupIds = ['group-1', 'group-2', 'group-3'];
-      
+
       mockGroupAdminService.approveGroup
         .mockResolvedValueOnce({ data: { id: 'group-1' }, error: null })
         .mockResolvedValueOnce({ data: null, error: new Error('Failed') })
@@ -138,7 +154,7 @@ describe('AdminServiceWrapper', () => {
     it('should handle all failures in batch operation', async () => {
       const groupIds = ['group-1', 'group-2'];
       const mockError = new PermissionError('Access denied');
-      
+
       mockGroupAdminService.approveGroup.mockResolvedValue({
         data: null,
         error: mockError,
@@ -148,7 +164,9 @@ describe('AdminServiceWrapper', () => {
 
       expect(result.successful).toEqual([]);
       expect(result.failed).toHaveLength(2);
-      expect(result.failed.every(f => f.error.type === 'permission')).toBe(true);
+      expect(result.failed.every((f) => f.error.type === 'permission')).toBe(
+        true
+      );
     });
   });
 
@@ -194,7 +212,13 @@ describe('AdminServiceWrapper', () => {
         error: null,
       });
       mockUserAdminService.getChurchSummary.mockResolvedValue({
-        data: { total_users: 0, connected_users: 0, unconnected_users: 0, active_groups: 0, pending_requests: 0 },
+        data: {
+          total_users: 0,
+          connected_users: 0,
+          unconnected_users: 0,
+          active_groups: 0,
+          pending_requests: 0,
+        },
         error: null,
       });
 

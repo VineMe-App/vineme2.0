@@ -12,6 +12,7 @@ export { groupCreationService } from './groupCreation';
 export { joinRequestService } from './joinRequests';
 export { locationService } from './location';
 export { contactAuditService } from './contactAudit';
+export { referralService, ReferralDatabaseUtils, REFERRAL_SCHEMA_SQL, COMPLETE_REFERRAL_SCHEMA } from './referrals';
 export type { AuthResponse, SignUpData, SignInData } from './auth';
 export type { UpdateUserProfileData, UserServiceResponse } from './users';
 export type {
@@ -39,9 +40,18 @@ export type {
   GroupServiceResponse as JoinRequestServiceResponse,
   CreateJoinRequestData,
 } from './joinRequests';
-export type { Coordinates, Address, LocationPermissionStatus } from './location';
+export type {
+  Coordinates,
+  Address,
+  LocationPermissionStatus,
+} from './location';
 export type {
   ContactAuditServiceResponse,
   LogContactAccessData,
   UpdatePrivacySettingsData,
 } from './contactAudit';
+export type {
+  CreateReferralData,
+  ReferralResponse,
+  ReferralServiceResponse,
+} from './referrals';

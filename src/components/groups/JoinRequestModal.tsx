@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -49,7 +43,7 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
         'Your join request has been sent to the group leaders. They will review it and get back to you soon.',
         [{ text: 'OK', onPress: onClose }]
       );
-      
+
       // Reset form
       setMessage('');
       setContactConsent(false);
@@ -88,7 +82,8 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Optional Message</Text>
           <Text style={styles.sectionDescription}>
-            Tell the group leaders a bit about yourself or why you'd like to join this group.
+            Tell the group leaders a bit about yourself or why you'd like to
+            join this group.
           </Text>
           <Input
             value={message}
@@ -103,9 +98,10 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contact Information</Text>
           <Text style={styles.sectionDescription}>
-            Group leaders may want to contact you to welcome you or provide additional details about the group.
+            Group leaders may want to contact you to welcome you or provide
+            additional details about the group.
           </Text>
-          
+
           <View style={styles.consentContainer}>
             <Checkbox
               checked={contactConsent}
@@ -113,9 +109,10 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
               label="I consent to sharing my contact information (name and email) with the group leaders"
             />
           </View>
-          
+
           <Text style={styles.privacyNote}>
-            Your contact information will only be shared with the leaders of this group and will not be used for any other purposes.
+            Your contact information will only be shared with the leaders of
+            this group and will not be used for any other purposes.
           </Text>
         </View>
 

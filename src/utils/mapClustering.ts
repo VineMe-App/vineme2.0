@@ -53,7 +53,7 @@ export class MapClusterer {
    */
   load(groups: GroupWithDetails[]): void {
     this.points = groups
-      .map(group => this.groupToClusterPoint(group))
+      .map((group) => this.groupToClusterPoint(group))
       .filter((point): point is ClusterPoint => point !== null);
   }
 
@@ -70,11 +70,12 @@ export class MapClusterer {
     const maxLat = bbox[3];
 
     // Filter points within bounds
-    const pointsInBounds = this.points.filter(point => 
-      point.longitude >= minLng &&
-      point.longitude <= maxLng &&
-      point.latitude >= minLat &&
-      point.latitude <= maxLat
+    const pointsInBounds = this.points.filter(
+      (point) =>
+        point.longitude >= minLng &&
+        point.longitude <= maxLng &&
+        point.latitude >= minLat &&
+        point.latitude <= maxLat
     );
 
     // If zoom is high enough, return individual points
@@ -91,7 +92,7 @@ export class MapClusterer {
    */
   private groupToClusterPoint(group: GroupWithDetails): ClusterPoint | null {
     const coordinates = this.extractCoordinates(group.location);
-    
+
     if (!coordinates) return null;
 
     return {
@@ -116,7 +117,7 @@ export class MapClusterer {
           longitude: location.coordinates.lng || location.coordinates.longitude,
         };
       }
-      
+
       if (location.lat && location.lng) {
         return {
           latitude: location.lat,
@@ -138,7 +139,10 @@ export class MapClusterer {
   /**
    * Cluster points using simple distance-based clustering
    */
-  private clusterPoints(points: ClusterPoint[], zoom: number): (Cluster | ClusterPoint)[] {
+  private clusterPoints(
+    points: ClusterPoint[],
+    zoom: number
+  ): (Cluster | ClusterPoint)[] {
     const clusters: (Cluster | ClusterPoint)[] = [];
     const processed = new Set<string>();
     const clusterRadius = this.getClusterRadius(zoom);
@@ -147,9 +151,9 @@ export class MapClusterer {
       if (processed.has(point.id)) continue;
 
       // Find nearby points
-      const nearbyPoints = points.filter(p => 
-        !processed.has(p.id) && 
-        this.getDistance(point, p) <= clusterRadius
+      const nearbyPoints = points.filter(
+        (p) =>
+          !processed.has(p.id) && this.getDistance(point, p) <= clusterRadius
       );
 
       if (nearbyPoints.length === 1) {
@@ -166,7 +170,7 @@ export class MapClusterer {
         };
 
         clusters.push(cluster);
-        nearbyPoints.forEach(p => processed.add(p.id));
+        nearbyPoints.forEach((p) => processed.add(p.id));
       }
     }
 
@@ -188,15 +192,15 @@ export class MapClusterer {
    */
   private getDistance(point1: Coordinates, point2: Coordinates): number {
     const R = 6371e3; // Earth's radius in meters
-    const φ1 = point1.latitude * Math.PI / 180;
-    const φ2 = point2.latitude * Math.PI / 180;
-    const Δφ = (point2.latitude - point1.latitude) * Math.PI / 180;
-    const Δλ = (point2.longitude - point1.longitude) * Math.PI / 180;
+    const φ1 = (point1.latitude * Math.PI) / 180;
+    const φ2 = (point2.latitude * Math.PI) / 180;
+    const Δφ = ((point2.latitude - point1.latitude) * Math.PI) / 180;
+    const Δλ = ((point2.longitude - point1.longitude) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
   }
@@ -250,22 +254,20 @@ export class MapViewportOptimizer {
   /**
    * Calculate optimal bounds with padding
    */
-  static getOptimalBounds(
-    viewport: {
-      latitude: number;
-      longitude: number;
-      latitudeDelta: number;
-      longitudeDelta: number;
-    }
-  ): [number, number, number, number] {
+  static getOptimalBounds(viewport: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  }): [number, number, number, number] {
     const latPadding = viewport.latitudeDelta * this.VIEWPORT_PADDING;
     const lngPadding = viewport.longitudeDelta * this.VIEWPORT_PADDING;
 
     return [
       viewport.longitude - viewport.longitudeDelta / 2 - lngPadding, // west
-      viewport.latitude - viewport.latitudeDelta / 2 - latPadding,   // south
+      viewport.latitude - viewport.latitudeDelta / 2 - latPadding, // south
       viewport.longitude + viewport.longitudeDelta / 2 + lngPadding, // east
-      viewport.latitude + viewport.latitudeDelta / 2 + latPadding,   // north
+      viewport.latitude + viewport.latitudeDelta / 2 + latPadding, // north
     ];
   }
 
@@ -281,8 +283,12 @@ export class MapViewportOptimizer {
 
     const latChange = Math.abs(oldViewport.latitude - newViewport.latitude);
     const lngChange = Math.abs(oldViewport.longitude - newViewport.longitude);
-    const latDeltaChange = Math.abs(oldViewport.latitudeDelta - newViewport.latitudeDelta);
-    const lngDeltaChange = Math.abs(oldViewport.longitudeDelta - newViewport.longitudeDelta);
+    const latDeltaChange = Math.abs(
+      oldViewport.latitudeDelta - newViewport.latitudeDelta
+    );
+    const lngDeltaChange = Math.abs(
+      oldViewport.longitudeDelta - newViewport.longitudeDelta
+    );
 
     return (
       latChange > oldViewport.latitudeDelta * threshold ||
@@ -316,11 +322,11 @@ export class MapPerformanceMonitor {
 
   static startClustering(): () => void {
     const startTime = performance.now();
-    
+
     return () => {
       const endTime = performance.now();
       this.metrics.clusteringTime.push(endTime - startTime);
-      
+
       // Keep only last 100 measurements
       if (this.metrics.clusteringTime.length > 100) {
         this.metrics.clusteringTime.shift();
@@ -330,11 +336,11 @@ export class MapPerformanceMonitor {
 
   static startRendering(): () => void {
     const startTime = performance.now();
-    
+
     return () => {
       const endTime = performance.now();
       this.metrics.renderTime.push(endTime - startTime);
-      
+
       // Keep only last 100 measurements
       if (this.metrics.renderTime.length > 100) {
         this.metrics.renderTime.shift();
@@ -344,7 +350,7 @@ export class MapPerformanceMonitor {
 
   static recordPointCount(count: number): void {
     this.metrics.pointCount.push(count);
-    
+
     // Keep only last 100 measurements
     if (this.metrics.pointCount.length > 100) {
       this.metrics.pointCount.shift();
@@ -353,17 +359,23 @@ export class MapPerformanceMonitor {
 
   static getAverageClusteringTime(): number {
     const times = this.metrics.clusteringTime;
-    return times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
+    return times.length > 0
+      ? times.reduce((a, b) => a + b, 0) / times.length
+      : 0;
   }
 
   static getAverageRenderTime(): number {
     const times = this.metrics.renderTime;
-    return times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
+    return times.length > 0
+      ? times.reduce((a, b) => a + b, 0) / times.length
+      : 0;
   }
 
   static getAveragePointCount(): number {
     const counts = this.metrics.pointCount;
-    return counts.length > 0 ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
+    return counts.length > 0
+      ? counts.reduce((a, b) => a + b, 0) / counts.length
+      : 0;
   }
 
   static getPerformanceReport(): {

@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, Alert, ScrollView, RefreshControl } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';

@@ -24,9 +24,9 @@ export {
   GroupLeaderOnly,
   ChurchAdminOnly,
 } from './RoleBasedRender';
-export { 
-  AdminErrorBoundary, 
-  AdminActionError, 
+export {
+  AdminErrorBoundary,
+  AdminActionError,
   AdminLoadingOverlay,
   AdminRetryableError,
 } from './AdminErrorBoundary';

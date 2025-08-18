@@ -24,8 +24,12 @@ jest.mock('../contactAudit', () => ({
 }));
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
-const mockContactAuditService = contactAuditService as jest.Mocked<typeof contactAuditService>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
+const mockContactAuditService = contactAuditService as jest.Mocked<
+  typeof contactAuditService
+>;
 
 describe('JoinRequestService', () => {
   beforeEach(() => {
@@ -65,7 +69,9 @@ describe('JoinRequestService', () => {
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
-                single: jest.fn().mockResolvedValue({ data: null, error: null }),
+                single: jest
+                  .fn()
+                  .mockResolvedValue({ data: null, error: null }),
               }),
             }),
           }),
@@ -76,7 +82,9 @@ describe('JoinRequestService', () => {
       const mockChain3 = {
         insert: jest.fn().mockReturnValue({
           select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockJoinRequest, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockJoinRequest, error: null }),
           }),
         }),
       };
@@ -118,7 +126,9 @@ describe('JoinRequestService', () => {
       const result = await joinRequestService.createJoinRequest(requestData);
 
       expect(result.data).toBeNull();
-      expect(result.error?.message).toBe('User is already a member of this group');
+      expect(result.error?.message).toBe(
+        'User is already a member of this group'
+      );
     });
 
     it('should return error if user already has pending request', async () => {
@@ -158,7 +168,9 @@ describe('JoinRequestService', () => {
       const result = await joinRequestService.createJoinRequest(requestData);
 
       expect(result.data).toBeNull();
-      expect(result.error?.message).toBe('User already has a pending join request for this group');
+      expect(result.error?.message).toBe(
+        'User already has a pending join request for this group'
+      );
     });
   });
 
@@ -187,7 +199,9 @@ describe('JoinRequestService', () => {
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({ data: mockJoinRequest, error: null }),
+              single: jest
+                .fn()
+                .mockResolvedValue({ data: mockJoinRequest, error: null }),
             }),
           }),
         }),
@@ -203,7 +217,9 @@ describe('JoinRequestService', () => {
       mockSupabase.from.mockReturnValueOnce({
         insert: jest.fn().mockReturnValue({
           select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockMembership, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockMembership, error: null }),
           }),
         }),
       } as any);
@@ -215,11 +231,17 @@ describe('JoinRequestService', () => {
         }),
       } as any);
 
-      const result = await joinRequestService.approveJoinRequest(requestId, approverId);
+      const result = await joinRequestService.approveJoinRequest(
+        requestId,
+        approverId
+      );
 
       expect(result.data).toEqual(mockMembership);
       expect(result.error).toBeNull();
-      expect(mockPermissionService.canManageGroup).toHaveBeenCalledWith('group-1', approverId);
+      expect(mockPermissionService.canManageGroup).toHaveBeenCalledWith(
+        'group-1',
+        approverId
+      );
     });
 
     it('should return error if user lacks permission', async () => {
@@ -237,7 +259,9 @@ describe('JoinRequestService', () => {
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({ data: mockJoinRequest, error: null }),
+              single: jest
+                .fn()
+                .mockResolvedValue({ data: mockJoinRequest, error: null }),
             }),
           }),
         }),
@@ -249,7 +273,10 @@ describe('JoinRequestService', () => {
         reason: 'User is not a group leader',
       });
 
-      const result = await joinRequestService.approveJoinRequest(requestId, approverId);
+      const result = await joinRequestService.approveJoinRequest(
+        requestId,
+        approverId
+      );
 
       expect(result.data).toBeNull();
       expect(result.error?.message).toBe('User is not a group leader');
@@ -272,7 +299,9 @@ describe('JoinRequestService', () => {
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({ data: mockJoinRequest, error: null }),
+              single: jest
+                .fn()
+                .mockResolvedValue({ data: mockJoinRequest, error: null }),
             }),
           }),
         }),
@@ -291,7 +320,10 @@ describe('JoinRequestService', () => {
         }),
       } as any);
 
-      const result = await joinRequestService.declineJoinRequest(requestId, declinerId);
+      const result = await joinRequestService.declineJoinRequest(
+        requestId,
+        declinerId
+      );
 
       expect(result.data).toBe(true);
       expect(result.error).toBeNull();
@@ -321,7 +353,9 @@ describe('JoinRequestService', () => {
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
-                single: jest.fn().mockResolvedValue({ data: mockJoinRequest, error: null }),
+                single: jest
+                  .fn()
+                  .mockResolvedValue({ data: mockJoinRequest, error: null }),
               }),
             }),
           }),
@@ -345,7 +379,10 @@ describe('JoinRequestService', () => {
         error: null,
       });
 
-      const result = await joinRequestService.getContactInfo(requestId, leaderId);
+      const result = await joinRequestService.getContactInfo(
+        requestId,
+        leaderId
+      );
 
       expect(result.data).toEqual({
         name: 'John Doe',
@@ -365,17 +402,24 @@ describe('JoinRequestService', () => {
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
-                single: jest.fn().mockResolvedValue({ data: null, error: null }),
+                single: jest
+                  .fn()
+                  .mockResolvedValue({ data: null, error: null }),
               }),
             }),
           }),
         }),
       } as any);
 
-      const result = await joinRequestService.getContactInfo(requestId, leaderId);
+      const result = await joinRequestService.getContactInfo(
+        requestId,
+        leaderId
+      );
 
       expect(result.data).toBeNull();
-      expect(result.error?.message).toBe('Join request not found or contact not consented');
+      expect(result.error?.message).toBe(
+        'Join request not found or contact not consented'
+      );
     });
   });
 });

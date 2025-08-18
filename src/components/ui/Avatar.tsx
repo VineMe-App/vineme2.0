@@ -47,7 +47,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         <View
           style={[styles.editIcon, { bottom: size * 0.05, right: size * 0.05 }]}
         >
-        <Ionicons name="pencil-outline" size={14} color="#fff" />
+          <Ionicons name="pencil-outline" size={14} color="#fff" />
         </View>
       )}
     </View>

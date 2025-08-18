@@ -1,5 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import MapView, { Marker, Region } from 'react-native-maps';
 import { Input, Button } from '../ui';
 import { locationService, type Coordinates } from '../../services/location';
@@ -10,10 +22,16 @@ interface LocationPickerProps {
     address?: string;
     coordinates?: Coordinates | null;
   };
-  onChange: (value: { address?: string; coordinates?: Coordinates | null }) => void;
+  onChange: (value: {
+    address?: string;
+    coordinates?: Coordinates | null;
+  }) => void;
 }
 
-export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange }) => {
+export const LocationPicker: React.FC<LocationPickerProps> = ({
+  value,
+  onChange,
+}) => {
   const [search, setSearch] = useState<string>(value?.address || '');
   const [region, setRegion] = useState<Region>({
     latitude: value?.coordinates?.latitude || 37.7749,
@@ -21,7 +39,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange 
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
-  const [selectedCoords, setSelectedCoords] = useState<Coordinates | null>(value?.coordinates || null);
+  const [selectedCoords, setSelectedCoords] = useState<Coordinates | null>(
+    value?.coordinates || null
+  );
   const [isGeocoding, setIsGeocoding] = useState(false);
   const mapRef = useRef<MapView>(null);
 
@@ -29,12 +49,20 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange 
     // keep external value in sync (e.g., reset)
     if (value?.coordinates) {
       setSelectedCoords(value.coordinates);
-      setRegion((r) => ({ ...r, latitude: value.coordinates!.latitude, longitude: value.coordinates!.longitude }));
+      setRegion((r) => ({
+        ...r,
+        latitude: value.coordinates!.latitude,
+        longitude: value.coordinates!.longitude,
+      }));
     }
     if (typeof value?.address === 'string') {
       setSearch(value.address);
     }
-  }, [value?.coordinates?.latitude, value?.coordinates?.longitude, value?.address]);
+  }, [
+    value?.coordinates?.latitude,
+    value?.coordinates?.longitude,
+    value?.address,
+  ]);
 
   const geocode = useMemo(
     () =>
@@ -45,8 +73,19 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange 
           const coords = await locationService.geocodeAddress(query.trim());
           if (coords) {
             setSelectedCoords(coords);
-            setRegion((prev) => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
-            mapRef.current?.animateToRegion({ ...region, latitude: coords.latitude, longitude: coords.longitude }, 600);
+            setRegion((prev) => ({
+              ...prev,
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+            }));
+            mapRef.current?.animateToRegion(
+              {
+                ...region,
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+              },
+              600
+            );
             onChange({ address: query.trim(), coordinates: coords });
           }
         } finally {
@@ -65,8 +104,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange 
     const coords = await locationService.getCurrentLocation();
     if (coords) {
       setSelectedCoords(coords);
-      setRegion((prev) => ({ ...prev, latitude: coords.latitude, longitude: coords.longitude }));
-      mapRef.current?.animateToRegion({ ...region, latitude: coords.latitude, longitude: coords.longitude }, 600);
+      setRegion((prev) => ({
+        ...prev,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      }));
+      mapRef.current?.animateToRegion(
+        { ...region, latitude: coords.latitude, longitude: coords.longitude },
+        600
+      );
       // Optionally reverse geocode for address
       const addr = await locationService.reverseGeocode(coords);
       onChange({ address: addr?.formattedAddress, coordinates: coords });
@@ -77,11 +123,17 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange 
   const handleRegionChangeComplete = useCallback(
     async (newRegion: Region) => {
       setRegion(newRegion);
-      const coords = { latitude: newRegion.latitude, longitude: newRegion.longitude };
+      const coords = {
+        latitude: newRegion.latitude,
+        longitude: newRegion.longitude,
+      };
       setSelectedCoords(coords);
       // Reverse geocode to give user feedback
       const addr = await locationService.reverseGeocode(coords);
-      onChange({ address: addr?.formattedAddress || search, coordinates: coords });
+      onChange({
+        address: addr?.formattedAddress || search,
+        coordinates: coords,
+      });
     },
     [onChange, search]
   );
@@ -112,13 +164,12 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange 
           showsUserLocation
           showsMyLocationButton={Platform.OS === 'android'}
         >
-          {selectedCoords && (
-            <Marker coordinate={selectedCoords} />
-          )}
+          {selectedCoords && <Marker coordinate={selectedCoords} />}
         </MapView>
       </View>
       <Text style={styles.hint}>
-        You can search for a location or pinch/drag the map to set the exact spot.
+        You can search for a location or pinch/drag the map to set the exact
+        spot.
       </Text>
     </View>
   );
@@ -146,4 +197,3 @@ const styles = StyleSheet.create({
     color: '#666',
   },
 });
-

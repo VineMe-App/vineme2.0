@@ -106,7 +106,7 @@ export class AdminNavigation {
     onUnauthorized?: () => void
   ) {
     const hasAdminRole = userRoles?.includes('church_admin') || false;
-    
+
     if (!hasAdminRole) {
       if (onUnauthorized) {
         onUnauthorized();
@@ -133,12 +133,14 @@ export class AdminNavigation {
   /**
    * Get breadcrumb navigation for current route
    */
-  static getBreadcrumbs(currentRoute: string): Array<{ label: string; route?: string }> {
+  static getBreadcrumbs(
+    currentRoute: string
+  ): Array<{ label: string; route?: string }> {
     const breadcrumbs: Array<{ label: string; route?: string }> = [];
 
     if (currentRoute.startsWith('/admin/')) {
       breadcrumbs.push({ label: 'Profile', route: '/(tabs)/profile' });
-      
+
       if (currentRoute === '/admin/manage-groups') {
         breadcrumbs.push({ label: 'Manage Groups' });
       } else if (currentRoute === '/admin/manage-users') {
@@ -146,7 +148,7 @@ export class AdminNavigation {
       }
     } else if (currentRoute.startsWith('/group/')) {
       breadcrumbs.push({ label: 'Groups', route: '/(tabs)/groups' });
-      
+
       if (currentRoute === '/group/create') {
         breadcrumbs.push({ label: 'Create Group' });
       } else if (currentRoute.match(/\/group\/[^/]+$/)) {
@@ -172,7 +174,7 @@ export class AdminWorkflows {
   ) {
     try {
       await onApprove();
-      
+
       Alert.alert(
         'Group Approved! ✅',
         `${groupName} has been approved and is now active.`,
@@ -234,7 +236,7 @@ export class AdminWorkflows {
   ) {
     try {
       await onJoin();
-      
+
       if (requiresApproval) {
         Alert.alert(
           'Join Request Sent! 📨',

@@ -76,6 +76,26 @@ describe('Onboarding Logic', () => {
       expect(validateMeetingNight('wednesday')).toBeNull();
       expect(validateMeetingNight('sunday')).toBeNull();
     });
+
+    it('should validate group status selection', () => {
+      const validateGroupStatus = (status: string): string | null => {
+        if (!status) {
+          return 'Please select your group status';
+        }
+        const validStatuses = ['existing', 'looking'];
+        if (!validStatuses.includes(status)) {
+          return 'Invalid group status selected';
+        }
+        return null;
+      };
+
+      expect(validateGroupStatus('')).toBe('Please select your group status');
+      expect(validateGroupStatus('invalid')).toBe(
+        'Invalid group status selected'
+      );
+      expect(validateGroupStatus('existing')).toBeNull();
+      expect(validateGroupStatus('looking')).toBeNull();
+    });
   });
 
   describe('Data Storage', () => {
@@ -92,6 +112,7 @@ describe('Onboarding Logic', () => {
         church_id: 'church-123',
         interests: ['Bible Study', 'Prayer'],
         preferred_meeting_night: 'wednesday',
+        group_status: 'looking',
       };
 
       mockAsyncStorage.setItem.mockResolvedValue();
@@ -124,6 +145,7 @@ describe('Onboarding Logic', () => {
         church_id: 'church-123',
         interests: ['Bible Study'],
         preferred_meeting_night: 'wednesday',
+        group_status: 'existing',
       };
 
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(testData));
@@ -197,6 +219,7 @@ describe('Onboarding Logic', () => {
         church_id: 'church-123',
         interests: ['Bible Study', 'Invalid Interest', 'Prayer'],
         preferred_meeting_night: 'wednesday',
+        group_status: 'looking',
       };
 
       const result = processOnboardingData(inputData);
@@ -222,6 +245,7 @@ describe('Onboarding Logic', () => {
         church_id: undefined,
         interests: ['Bible Study'],
         preferred_meeting_night: 'wednesday',
+        group_status: 'existing',
       };
 
       const result = processOnboardingData(inputData);
@@ -239,10 +263,23 @@ describe('Onboarding Logic', () => {
         return ((currentStep + 1) / totalSteps) * 100;
       };
 
-      expect(calculateProgress(0, 4)).toBe(25);
-      expect(calculateProgress(1, 4)).toBe(50);
-      expect(calculateProgress(2, 4)).toBe(75);
-      expect(calculateProgress(3, 4)).toBe(100);
+      expect(calculateProgress(0, 5)).toBe(20);
+      expect(calculateProgress(1, 5)).toBe(40);
+      expect(calculateProgress(2, 5)).toBe(60);
+      expect(calculateProgress(3, 5)).toBe(80);
+      expect(calculateProgress(4, 5)).toBe(100);
+    });
+
+    it('should determine newcomer status correctly', () => {
+      const determineNewcomerStatus = (
+        groupStatus?: 'existing' | 'looking'
+      ): boolean => {
+        return groupStatus === 'looking';
+      };
+
+      expect(determineNewcomerStatus('looking')).toBe(true);
+      expect(determineNewcomerStatus('existing')).toBe(false);
+      expect(determineNewcomerStatus(undefined)).toBe(false);
     });
 
     it('should determine if step is complete', () => {
@@ -257,6 +294,11 @@ describe('Onboarding Logic', () => {
             return true; // Church selection is optional
           case 'interests':
             return data.interests.length > 0;
+          case 'group-status':
+            return (
+              data.group_status === 'existing' ||
+              data.group_status === 'looking'
+            );
           case 'meeting-night':
             return data.preferred_meeting_night !== '';
           default:
@@ -269,6 +311,7 @@ describe('Onboarding Logic', () => {
         church_id: 'church-123',
         interests: ['Bible Study'],
         preferred_meeting_night: 'wednesday',
+        group_status: 'looking',
       };
 
       const incompleteData: OnboardingData = {
@@ -276,15 +319,18 @@ describe('Onboarding Logic', () => {
         church_id: undefined,
         interests: [],
         preferred_meeting_night: '',
+        group_status: undefined,
       };
 
       expect(isStepComplete('name', completeData)).toBe(true);
       expect(isStepComplete('church', completeData)).toBe(true);
+      expect(isStepComplete('group-status', completeData)).toBe(true);
       expect(isStepComplete('interests', completeData)).toBe(true);
       expect(isStepComplete('meeting-night', completeData)).toBe(true);
 
       expect(isStepComplete('name', incompleteData)).toBe(false);
       expect(isStepComplete('church', incompleteData)).toBe(true); // Optional
+      expect(isStepComplete('group-status', incompleteData)).toBe(false);
       expect(isStepComplete('interests', incompleteData)).toBe(false);
       expect(isStepComplete('meeting-night', incompleteData)).toBe(false);
     });

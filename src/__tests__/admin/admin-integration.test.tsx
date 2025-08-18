@@ -4,10 +4,18 @@
  */
 
 import React from 'react';
-import { render, fireEvent, waitFor, screen } from '@testing-library/react-native';
+import {
+  render,
+  fireEvent,
+  waitFor,
+  screen,
+} from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AdminIntegration, useAdminIntegration } from '../../components/admin/AdminIntegration';
+import {
+  AdminIntegration,
+  useAdminIntegration,
+} from '../../components/admin/AdminIntegration';
 import { AdminNavigation, AdminWorkflows } from '../../utils/adminNavigation';
 import { CrossPlatformTesting } from '../../utils/crossPlatformTesting';
 import { AdminConfirmations } from '../../components/ui/ConfirmationDialog';
@@ -26,7 +34,9 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<
+  typeof useAuthStore
+>;
 
 describe('Admin Integration Tests', () => {
   let queryClient: QueryClient;
@@ -89,7 +99,9 @@ describe('Admin Integration Tests', () => {
     });
 
     it('should generate correct breadcrumbs', () => {
-      const breadcrumbs = AdminNavigation.getBreadcrumbs('/admin/manage-groups');
+      const breadcrumbs = AdminNavigation.getBreadcrumbs(
+        '/admin/manage-groups'
+      );
       expect(breadcrumbs).toEqual([
         { label: 'Profile', route: '/(tabs)/profile' },
         { label: 'Manage Groups' },
@@ -102,7 +114,11 @@ describe('Admin Integration Tests', () => {
       const mockAlert = jest.spyOn(Alert, 'alert');
       const mockOnApprove = jest.fn().mockResolvedValue(undefined);
 
-      await AdminWorkflows.approveGroupWorkflow('group-1', 'Test Group', mockOnApprove);
+      await AdminWorkflows.approveGroupWorkflow(
+        'group-1',
+        'Test Group',
+        mockOnApprove
+      );
 
       expect(mockOnApprove).toHaveBeenCalled();
       expect(mockAlert).toHaveBeenCalledWith(
@@ -132,12 +148,18 @@ describe('Admin Integration Tests', () => {
       const mockOnCancel = jest.fn();
 
       const ConfirmationComponent = () =>
-        AdminConfirmations.approveGroup('Test Group', mockOnConfirm, mockOnCancel);
+        AdminConfirmations.approveGroup(
+          'Test Group',
+          mockOnConfirm,
+          mockOnCancel
+        );
 
       render(<ConfirmationComponent />);
 
       expect(screen.getByText('Approve Group')).toBeTruthy();
-      expect(screen.getByText(/Are you sure you want to approve "Test Group"/)).toBeTruthy();
+      expect(
+        screen.getByText(/Are you sure you want to approve "Test Group"/)
+      ).toBeTruthy();
     });
 
     it('should render group decline confirmation with destructive warning', () => {
@@ -145,7 +167,11 @@ describe('Admin Integration Tests', () => {
       const mockOnCancel = jest.fn();
 
       const ConfirmationComponent = () =>
-        AdminConfirmations.declineGroup('Test Group', mockOnConfirm, mockOnCancel);
+        AdminConfirmations.declineGroup(
+          'Test Group',
+          mockOnConfirm,
+          mockOnCancel
+        );
 
       render(<ConfirmationComponent />);
 
@@ -158,23 +184,32 @@ describe('Admin Integration Tests', () => {
       const mockOnCancel = jest.fn();
 
       const ConfirmationComponent = () =>
-        AdminConfirmations.closeGroup('Test Group', 5, mockOnConfirm, mockOnCancel);
+        AdminConfirmations.closeGroup(
+          'Test Group',
+          5,
+          mockOnConfirm,
+          mockOnCancel
+        );
 
       render(<ConfirmationComponent />);
 
       expect(screen.getByText('Close Group')).toBeTruthy();
       expect(screen.getByText(/This will affect 5 group members/)).toBeTruthy();
-      expect(screen.getByText('I understand this will affect all group members')).toBeTruthy();
+      expect(
+        screen.getByText('I understand this will affect all group members')
+      ).toBeTruthy();
     });
   });
 
   describe('useAdminIntegration Hook', () => {
     const TestComponent = () => {
       const { isChurchAdmin, navigation, workflows } = useAdminIntegration();
-      
+
       return (
         <>
-          <text testID="admin-status">{isChurchAdmin ? 'Admin' : 'Not Admin'}</text>
+          <text testID="admin-status">
+            {isChurchAdmin ? 'Admin' : 'Not Admin'}
+          </text>
           <button
             testID="navigate-groups"
             onPress={() => navigation.toManageGroups()}
@@ -193,7 +228,7 @@ describe('Admin Integration Tests', () => {
       );
 
       expect(screen.getByTestId('admin-status')).toHaveTextContent('Admin');
-      
+
       fireEvent.press(screen.getByTestId('navigate-groups'));
       const { router } = require('expo-router');
       expect(router.push).toHaveBeenCalledWith('/admin/manage-groups');
@@ -203,7 +238,7 @@ describe('Admin Integration Tests', () => {
   describe('Cross-Platform Testing', () => {
     it('should detect platform information correctly', () => {
       const platformInfo = CrossPlatformTesting.getPlatformInfo();
-      
+
       expect(platformInfo).toHaveProperty('os');
       expect(platformInfo).toHaveProperty('version');
       expect(platformInfo).toHaveProperty('screenSize');
@@ -213,7 +248,7 @@ describe('Admin Integration Tests', () => {
 
     it('should run navigation tests', async () => {
       const results = await CrossPlatformTesting.testAdminNavigation();
-      
+
       expect(results).toHaveProperty('success');
       expect(results).toHaveProperty('errors');
       expect(results).toHaveProperty('platformSpecificIssues');
@@ -222,7 +257,7 @@ describe('Admin Integration Tests', () => {
 
     it('should run confirmation dialog tests', async () => {
       const results = await CrossPlatformTesting.testConfirmationDialogs();
-      
+
       expect(results).toHaveProperty('success');
       expect(results).toHaveProperty('errors');
       expect(results).toHaveProperty('recommendations');
@@ -230,7 +265,7 @@ describe('Admin Integration Tests', () => {
 
     it('should run comprehensive tests', async () => {
       const results = await CrossPlatformTesting.runComprehensiveTests();
-      
+
       expect(results).toHaveProperty('platformInfo');
       expect(results).toHaveProperty('navigation');
       expect(results).toHaveProperty('dialogs');
@@ -242,7 +277,7 @@ describe('Admin Integration Tests', () => {
     it('should generate test report', async () => {
       const results = await CrossPlatformTesting.runComprehensiveTests();
       const report = CrossPlatformTesting.generateTestReport(results);
-      
+
       expect(report).toContain('Cross-Platform Admin Features Test Report');
       expect(report).toContain('Platform:');
       expect(report).toContain('Navigation Tests');
@@ -324,7 +359,11 @@ describe('Admin Integration Tests', () => {
       const mockOnCancel = jest.fn();
 
       const ConfirmationComponent = () =>
-        AdminConfirmations.approveGroup('Test Group', mockOnConfirm, mockOnCancel);
+        AdminConfirmations.approveGroup(
+          'Test Group',
+          mockOnConfirm,
+          mockOnCancel
+        );
 
       render(<ConfirmationComponent />);
 
@@ -335,11 +374,13 @@ describe('Admin Integration Tests', () => {
 
     it('should run accessibility tests', async () => {
       const results = await CrossPlatformTesting.testAccessibility();
-      
+
       expect(results).toHaveProperty('success');
       expect(results).toHaveProperty('errors');
       expect(results).toHaveProperty('improvements');
-      expect(results.improvements).toContain('Verify color contrast ratios meet WCAG guidelines');
+      expect(results.improvements).toContain(
+        'Verify color contrast ratios meet WCAG guidelines'
+      );
     });
   });
 });

@@ -64,7 +64,9 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    expect(screen.getByText('Create New Group - Basic Information')).toBeTruthy();
+    expect(
+      screen.getByText('Create New Group - Basic Information')
+    ).toBeTruthy();
     expect(screen.getByText('Group Title')).toBeTruthy();
     expect(screen.getByText('Description')).toBeTruthy();
     // Step indicator should show step 1
@@ -80,7 +82,9 @@ describe('CreateGroupModal', () => {
       />
     );
 
-    expect(screen.queryByText('Create New Group - Basic Information')).toBeNull();
+    expect(
+      screen.queryByText('Create New Group - Basic Information')
+    ).toBeNull();
   });
 
   it('validates required fields on first step', async () => {
@@ -125,7 +129,9 @@ describe('CreateGroupModal', () => {
     fireEvent.press(screen.getByText('Next'));
 
     await waitFor(() => {
-      expect(screen.getByText('Create New Group - Meeting Schedule')).toBeTruthy();
+      expect(
+        screen.getByText('Create New Group - Meeting Schedule')
+      ).toBeTruthy();
       expect(screen.getByText('Meeting Day')).toBeTruthy();
     });
   });

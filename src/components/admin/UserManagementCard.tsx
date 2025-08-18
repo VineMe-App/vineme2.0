@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { 
-  AccessibilityHelpers, 
-  AdminAccessibilityLabels, 
-  ScreenReaderUtils 
+import {
+  AccessibilityHelpers,
+  AdminAccessibilityLabels,
+  ScreenReaderUtils,
 } from '@/utils/accessibility';
 import { useQuery } from '@tanstack/react-query';
 import { userAdminService, type UserWithGroupStatus } from '@/services/admin';
@@ -67,35 +67,43 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
         onPress={onPress}
         activeOpacity={0.7}
         {...AccessibilityHelpers.createNavigationProps(
-          AdminAccessibilityLabels.userConnectionStatus(user.name, user.is_connected, user.group_count),
+          AdminAccessibilityLabels.userConnectionStatus(
+            user.name,
+            user.is_connected,
+            user.group_count
+          ),
           'Double tap to view user details'
         )}
       >
         <View style={styles.header}>
-          <Avatar 
-            size={50} 
-            imageUrl={user.avatar_url} 
+          <Avatar
+            size={50}
+            imageUrl={user.avatar_url}
             name={user.name}
             accessibilityLabel={`Profile picture for ${user.name}`}
           />
           <View style={styles.userInfo}>
-            <Text 
+            <Text
               style={styles.userName}
               accessibilityRole="header"
               accessibilityLevel={3}
             >
               {user.name}
             </Text>
-            <Text 
+            <Text
               style={styles.userEmail}
               accessibilityLabel={`Email: ${user.email}`}
             >
               {user.email}
             </Text>
-            <View 
+            <View
               style={styles.statusContainer}
               accessibilityRole="group"
-              accessibilityLabel={AdminAccessibilityLabels.userConnectionStatus(user.name, user.is_connected, user.group_count)}
+              accessibilityLabel={AdminAccessibilityLabels.userConnectionStatus(
+                user.name,
+                user.is_connected,
+                user.group_count
+              )}
             >
               <Badge
                 variant={user.is_connected ? 'success' : 'warning'}
@@ -104,7 +112,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
               >
                 {getConnectionStatusText()}
               </Badge>
-              <Text 
+              <Text
                 style={styles.groupCount}
                 accessibilityLabel={`Member of ${user.group_count} ${user.group_count === 1 ? 'group' : 'groups'}`}
               >
@@ -146,7 +154,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           )}
         </View>
 
-        <View 
+        <View
           style={styles.actions}
           accessibilityRole="group"
           accessibilityLabel="User management actions"

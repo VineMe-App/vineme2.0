@@ -5,7 +5,10 @@ import { GroupLeaderPanel } from '../GroupLeaderPanel';
 import { useAuthStore } from '../../../stores/auth';
 import { useGroupMembers } from '../../../hooks/useGroups';
 import { useGroupLeaderActions } from '../../../hooks/useGroupLeaderActions';
-import type { GroupWithDetails, GroupMembershipWithUser } from '../../../types/database';
+import type {
+  GroupWithDetails,
+  GroupMembershipWithUser,
+} from '../../../types/database';
 
 // Mock dependencies
 jest.mock('../../../stores/auth');
@@ -24,9 +27,15 @@ jest.mock('../MemberManagementModal', () => ({
   MemberManagementModal: 'MemberManagementModal',
 }));
 
-const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
-const mockUseGroupMembers = useGroupMembers as jest.MockedFunction<typeof useGroupMembers>;
-const mockUseGroupLeaderActions = useGroupLeaderActions as jest.MockedFunction<typeof useGroupLeaderActions>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<
+  typeof useAuthStore
+>;
+const mockUseGroupMembers = useGroupMembers as jest.MockedFunction<
+  typeof useGroupMembers
+>;
+const mockUseGroupLeaderActions = useGroupLeaderActions as jest.MockedFunction<
+  typeof useGroupLeaderActions
+>;
 
 const mockGroup: GroupWithDetails = {
   id: 'group-1',
@@ -108,7 +117,7 @@ const mockActions = {
 describe('GroupLeaderPanel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockUseAuthStore.mockReturnValue({
       userProfile: {
         id: 'user-1',
@@ -184,7 +193,7 @@ describe('GroupLeaderPanel', () => {
     );
 
     fireEvent.press(getByText('Edit Details'));
-    
+
     // The modal should be rendered (we can't easily test modal visibility in this setup)
     expect(getByText('Edit Details')).toBeTruthy();
   });
@@ -195,7 +204,7 @@ describe('GroupLeaderPanel', () => {
     );
 
     fireEvent.press(getByText('Jane Member'));
-    
+
     // The modal should be rendered
     expect(getByText('Jane Member')).toBeTruthy();
   });
@@ -294,7 +303,7 @@ describe('GroupLeaderPanel', () => {
 
   it('handles errors gracefully', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    
+
     mockActions.promoteToLeaderMutation.mutateAsync.mockRejectedValue(
       new Error('Network error')
     );

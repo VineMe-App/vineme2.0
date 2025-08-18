@@ -23,10 +23,18 @@ jest.mock('@/services/groupCreation');
 jest.mock('@/services/joinRequests');
 
 const mockAdminService = adminService as jest.Mocked<typeof adminService>;
-const mockAdminServiceWrapper = adminServiceWrapper as jest.Mocked<typeof adminServiceWrapper>;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
-const mockGroupCreationService = groupCreationService as jest.Mocked<typeof groupCreationService>;
-const mockJoinRequestService = joinRequestService as jest.Mocked<typeof joinRequestService>;
+const mockAdminServiceWrapper = adminServiceWrapper as jest.Mocked<
+  typeof adminServiceWrapper
+>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
+const mockGroupCreationService = groupCreationService as jest.Mocked<
+  typeof groupCreationService
+>;
+const mockJoinRequestService = joinRequestService as jest.Mocked<
+  typeof joinRequestService
+>;
 
 // Mock expo-router
 const mockPush = jest.fn();
@@ -93,14 +101,18 @@ describe('Admin Permission Enforcement Tests', () => {
         hasPermission: true,
       });
 
-      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue(
+        {
+          hasPermission: true,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: [],
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -108,10 +120,12 @@ describe('Admin Permission Enforcement Tests', () => {
         expect(screen.getByText('Manage Groups')).toBeTruthy();
       });
 
-      expect(mockPermissionService.permissionService.hasPermission).toHaveBeenCalledWith(
-        'manage_church_groups'
-      );
-      expect(mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups).toHaveBeenCalled();
+      expect(
+        mockPermissionService.permissionService.hasPermission
+      ).toHaveBeenCalledWith('manage_church_groups');
+      expect(
+        mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups
+      ).toHaveBeenCalled();
     });
 
     it('should deny regular user access to group management', async () => {
@@ -132,7 +146,9 @@ describe('Admin Permission Enforcement Tests', () => {
         expect(mockReplace).toHaveBeenCalledWith('/');
       });
 
-      expect(mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups).not.toHaveBeenCalled();
+      expect(
+        mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups
+      ).not.toHaveBeenCalled();
     });
 
     it('should enforce church-scoped data access', async () => {
@@ -146,20 +162,26 @@ describe('Admin Permission Enforcement Tests', () => {
         hasPermission: true,
       });
 
-      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue({
-        hasPermission: false,
-        reason: 'User does not belong to this church',
-      });
+      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue(
+        {
+          hasPermission: false,
+          reason: 'User does not belong to this church',
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: null,
-        error: new Error('User does not belong to this church'),
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: null,
+          error: new Error('User does not belong to this church'),
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('User does not belong to this church')).toBeTruthy();
+        expect(
+          screen.getByText('User does not belong to this church')
+        ).toBeTruthy();
       });
     });
 
@@ -183,22 +205,27 @@ describe('Admin Permission Enforcement Tests', () => {
         hasPermission: true,
       });
 
-      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue(
+        {
+          hasPermission: true,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: mockGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: mockGroups,
+          error: null,
+        }
+      );
 
       // Mock permission check for approval action
       mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockImplementation(
         async (groupId, adminId) => {
           // Simulate permission check within the service
-          const permissionCheck = await mockPermissionService.permissionService.hasPermission(
-            'manage_church_groups'
-          );
+          const permissionCheck =
+            await mockPermissionService.permissionService.hasPermission(
+              'manage_church_groups'
+            );
           if (!permissionCheck.hasPermission) {
             return {
               data: null,
@@ -222,9 +249,9 @@ describe('Admin Permission Enforcement Tests', () => {
       fireEvent.press(approveButton);
 
       await waitFor(() => {
-        expect(mockPermissionService.permissionService.hasPermission).toHaveBeenCalledWith(
-          'manage_church_groups'
-        );
+        expect(
+          mockPermissionService.permissionService.hasPermission
+        ).toHaveBeenCalledWith('manage_church_groups');
       });
     });
 
@@ -236,14 +263,18 @@ describe('Admin Permission Enforcement Tests', () => {
       });
 
       // Initially allow access
-      mockPermissionService.permissionService.hasPermission.mockResolvedValueOnce({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.hasPermission.mockResolvedValueOnce(
+        {
+          hasPermission: true,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: [],
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -257,10 +288,12 @@ describe('Admin Permission Enforcement Tests', () => {
         reason: 'Permission revoked',
       });
 
-      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue({
-        data: null,
-        error: new Error('Permission revoked'),
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue(
+        {
+          data: null,
+          error: new Error('Permission revoked'),
+        }
+      );
 
       // Try to perform an action
       const refreshButton = screen.getByTestId('refresh-groups');
@@ -309,14 +342,18 @@ describe('Admin Permission Enforcement Tests', () => {
         hasPermission: true,
       });
 
-      mockPermissionService.permissionService.canManageGroupMembership.mockResolvedValue({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.canManageGroupMembership.mockResolvedValue(
+        {
+          hasPermission: true,
+        }
+      );
 
-      mockJoinRequestService.joinRequestService.getGroupJoinRequests.mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      mockJoinRequestService.joinRequestService.getGroupJoinRequests.mockResolvedValue(
+        {
+          data: [],
+          error: null,
+        }
+      );
 
       renderWithProviders(<GroupLeaderPanel groupId="group-1" />);
 
@@ -326,10 +363,9 @@ describe('Admin Permission Enforcement Tests', () => {
         expect(screen.getByText('Join Requests')).toBeTruthy();
       });
 
-      expect(mockPermissionService.permissionService.canManageGroup).toHaveBeenCalledWith(
-        'group-1',
-        'leader-1'
-      );
+      expect(
+        mockPermissionService.permissionService.canManageGroup
+      ).toHaveBeenCalledWith('group-1', 'leader-1');
     });
 
     it('should deny regular member access to group management', async () => {
@@ -350,7 +386,9 @@ describe('Admin Permission Enforcement Tests', () => {
         expect(screen.getByText('Access denied')).toBeTruthy();
       });
 
-      expect(mockJoinRequestService.joinRequestService.getGroupJoinRequests).not.toHaveBeenCalled();
+      expect(
+        mockJoinRequestService.joinRequestService.getGroupJoinRequests
+      ).not.toHaveBeenCalled();
     });
 
     it('should validate permissions for group modification actions', async () => {
@@ -364,22 +402,27 @@ describe('Admin Permission Enforcement Tests', () => {
         hasPermission: true,
       });
 
-      mockPermissionService.permissionService.canManageGroupMembership.mockResolvedValue({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.canManageGroupMembership.mockResolvedValue(
+        {
+          hasPermission: true,
+        }
+      );
 
-      mockJoinRequestService.joinRequestService.getGroupJoinRequests.mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      mockJoinRequestService.joinRequestService.getGroupJoinRequests.mockResolvedValue(
+        {
+          data: [],
+          error: null,
+        }
+      );
 
       // Mock permission check for update action
       mockGroupCreationService.groupCreationService.updateGroupDetails.mockImplementation(
         async (groupId, updates, userId) => {
-          const permissionCheck = await mockPermissionService.permissionService.canManageGroupMembership(
-            groupId,
-            userId
-          );
+          const permissionCheck =
+            await mockPermissionService.permissionService.canManageGroupMembership(
+              groupId,
+              userId
+            );
           if (!permissionCheck.hasPermission) {
             return {
               data: null,
@@ -403,10 +446,9 @@ describe('Admin Permission Enforcement Tests', () => {
       fireEvent.press(editButton);
 
       // Should trigger permission check
-      expect(mockPermissionService.permissionService.canManageGroupMembership).toHaveBeenCalledWith(
-        'group-1',
-        'leader-1'
-      );
+      expect(
+        mockPermissionService.permissionService.canManageGroupMembership
+      ).toHaveBeenCalledWith('group-1', 'leader-1');
     });
 
     it('should enforce group-scoped permissions', async () => {
@@ -437,10 +479,14 @@ describe('Admin Permission Enforcement Tests', () => {
       });
 
       // Test access to denied group
-      const { rerender } = renderWithProviders(<GroupLeaderPanel groupId="group-2" />);
+      const { rerender } = renderWithProviders(
+        <GroupLeaderPanel groupId="group-2" />
+      );
 
       await waitFor(() => {
-        expect(screen.getByText('User is not a leader of this group')).toBeTruthy();
+        expect(
+          screen.getByText('User is not a leader of this group')
+        ).toBeTruthy();
       });
     });
   });
@@ -464,7 +510,10 @@ describe('Admin Permission Enforcement Tests', () => {
       // Should have both admin and leader permissions
       mockPermissionService.permissionService.hasPermission.mockImplementation(
         async (permission) => {
-          if (permission === 'manage_church_groups' || permission === 'manage_church_users') {
+          if (
+            permission === 'manage_church_groups' ||
+            permission === 'manage_church_users'
+          ) {
             return { hasPermission: true };
           }
           return { hasPermission: false };
@@ -475,10 +524,12 @@ describe('Admin Permission Enforcement Tests', () => {
         hasPermission: true,
       });
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: [],
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -486,9 +537,9 @@ describe('Admin Permission Enforcement Tests', () => {
         expect(screen.getByText('Manage Groups')).toBeTruthy();
       });
 
-      expect(mockPermissionService.permissionService.hasPermission).toHaveBeenCalledWith(
-        'manage_church_groups'
-      );
+      expect(
+        mockPermissionService.permissionService.hasPermission
+      ).toHaveBeenCalledWith('manage_church_groups');
     });
 
     it('should handle role hierarchy correctly', async () => {
@@ -511,14 +562,18 @@ describe('Admin Permission Enforcement Tests', () => {
         hasPermission: true,
       });
 
-      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue(
+        {
+          hasPermission: true,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: [],
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -527,7 +582,9 @@ describe('Admin Permission Enforcement Tests', () => {
       });
 
       // Should be able to access all admin functions
-      expect(mockPermissionService.permissionService.hasPermission).toHaveBeenCalled();
+      expect(
+        mockPermissionService.permissionService.hasPermission
+      ).toHaveBeenCalled();
     });
   });
 
@@ -551,14 +608,18 @@ describe('Admin Permission Enforcement Tests', () => {
         hasPermission: true,
       });
 
-      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue(
+        {
+          hasPermission: true,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: [],
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -573,7 +634,9 @@ describe('Admin Permission Enforcement Tests', () => {
 
       // Permission service should implement caching to avoid redundant calls
       // This test verifies the pattern, actual caching implementation may vary
-      expect(mockPermissionService.permissionService.hasPermission).toHaveBeenCalled();
+      expect(
+        mockPermissionService.permissionService.hasPermission
+      ).toHaveBeenCalled();
     });
 
     it('should handle permission check failures gracefully', async () => {
@@ -603,7 +666,9 @@ describe('Admin Permission Enforcement Tests', () => {
       });
 
       // Should not attempt to load data when permissions fail
-      expect(mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups).not.toHaveBeenCalled();
+      expect(
+        mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -636,7 +701,9 @@ describe('Admin Permission Enforcement Tests', () => {
       });
 
       // Should not make any admin service calls
-      expect(mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups).not.toHaveBeenCalled();
+      expect(
+        mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups
+      ).not.toHaveBeenCalled();
     });
 
     it('should validate user session integrity', async () => {
@@ -684,14 +751,18 @@ describe('Admin Permission Enforcement Tests', () => {
       });
 
       // Initially allow access
-      mockPermissionService.permissionService.hasPermission.mockResolvedValueOnce({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.hasPermission.mockResolvedValueOnce(
+        {
+          hasPermission: true,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: [],
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -705,10 +776,12 @@ describe('Admin Permission Enforcement Tests', () => {
         reason: 'Role removed',
       });
 
-      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue({
-        data: null,
-        error: new Error('Role removed'),
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue(
+        {
+          data: null,
+          error: new Error('Role removed'),
+        }
+      );
 
       // Any subsequent action should fail
       const refreshButton = screen.getByTestId('refresh-groups');

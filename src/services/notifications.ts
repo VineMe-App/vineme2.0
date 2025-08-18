@@ -27,7 +27,10 @@ const ensureAndroidNotificationChannel = async () => {
       lightColor: '#FF231F7C',
     });
   } catch (e) {
-    console.warn('[Notifications] Failed to set Android notification channel', e);
+    console.warn(
+      '[Notifications] Failed to set Android notification channel',
+      e
+    );
   }
 };
 
@@ -94,7 +97,11 @@ export const getPushToken = async (): Promise<string | null> => {
     // Optional env-based override so you can enable only when configured
     const envPushEnabled = process.env.EXPO_PUBLIC_ENABLE_PUSH === 'true';
 
-    if (Platform.OS === 'android' && !googleServicesConfigured && !envPushEnabled) {
+    if (
+      Platform.OS === 'android' &&
+      !googleServicesConfigured &&
+      !envPushEnabled
+    ) {
       console.warn(
         '[Notifications] Android push not configured (no google-services.json). Skipping token fetch.'
       );
@@ -421,7 +428,10 @@ export const getUnreadNotifications = async (userId: string) => {
 /**
  * Get all notifications for a user
  */
-export const getUserNotifications = async (userId: string, limit: number = 50) => {
+export const getUserNotifications = async (
+  userId: string,
+  limit: number = 50
+) => {
   try {
     const { data, error } = await supabase
       .from('notifications')
@@ -503,15 +513,18 @@ export const getAdminNotificationCounts = async (userId: string) => {
       return { group_requests: 0, join_requests: 0, total: 0 };
     }
 
-    const counts = data?.reduce((acc, notification) => {
-      if (notification.type === 'group_request') {
-        acc.group_requests++;
-      } else if (notification.type === 'join_request') {
-        acc.join_requests++;
-      }
-      acc.total++;
-      return acc;
-    }, { group_requests: 0, join_requests: 0, total: 0 }) || { group_requests: 0, join_requests: 0, total: 0 };
+    const counts = data?.reduce(
+      (acc, notification) => {
+        if (notification.type === 'group_request') {
+          acc.group_requests++;
+        } else if (notification.type === 'join_request') {
+          acc.join_requests++;
+        }
+        acc.total++;
+        return acc;
+      },
+      { group_requests: 0, join_requests: 0, total: 0 }
+    ) || { group_requests: 0, join_requests: 0, total: 0 };
 
     return counts;
   } catch (error) {
@@ -548,17 +561,17 @@ export const sendGroupRequestNotification = async (
     }
 
     // Create notification record in database for each admin
-    const notifications = admins.map(admin => ({
+    const notifications = admins.map((admin) => ({
       user_id: admin.id,
       type: 'group_request' as const,
       title: 'New Group Request',
       body: `${creatorName} has requested to create "${groupTitle}"`,
-      data: { 
-        churchId, 
-        groupTitle, 
+      data: {
+        churchId,
+        groupTitle,
         creatorName,
         groupId: groupId || churchId,
-        action_url: '/admin/manage-groups'
+        action_url: '/admin/manage-groups',
       },
       read: false,
       created_at: new Date().toISOString(),
@@ -625,17 +638,17 @@ export const sendJoinRequestNotification = async (
     }
 
     // Create notification record in database for each leader
-    const notifications = leaders.map(leader => ({
+    const notifications = leaders.map((leader) => ({
       user_id: leader.user_id,
       type: 'join_request' as const,
       title: 'New Join Request',
       body: `${requesterName} wants to join "${groupTitle}"`,
-      data: { 
-        groupId, 
-        groupTitle, 
+      data: {
+        groupId,
+        groupTitle,
         requesterName,
         requesterId,
-        action_url: `/group/${groupId}`
+        action_url: `/group/${groupId}`,
       },
       read: false,
       created_at: new Date().toISOString(),
@@ -662,7 +675,11 @@ export const sendJoinRequestNotification = async (
     // Schedule local notification for immediate display
     await scheduleLocalNotification(notification);
 
-    console.log('Join request notifications sent to', leaders.length, 'leaders');
+    console.log(
+      'Join request notifications sent to',
+      leaders.length,
+      'leaders'
+    );
   } catch (error) {
     console.error('Error sending join request notification:', error);
   }

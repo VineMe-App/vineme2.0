@@ -16,7 +16,9 @@ jest.mock('../permissions', () => ({
 }));
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
 
 describe('ContactAuditService', () => {
   beforeEach(() => {
@@ -83,7 +85,9 @@ describe('ContactAuditService', () => {
 
       const result = await contactAuditService.logContactAccess(mockAccessData);
 
-      expect(result.error).toEqual(new Error('Access denied to contact information'));
+      expect(result.error).toEqual(
+        new Error('Access denied to contact information')
+      );
       expect(result.data).toBeNull();
     });
   });
@@ -116,7 +120,10 @@ describe('ContactAuditService', () => {
         select: mockSelect,
       } as any);
 
-      const result = await contactAuditService.getUserContactLogs('user1', 'user1');
+      const result = await contactAuditService.getUserContactLogs(
+        'user1',
+        'user1'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toEqual(mockLogs);
@@ -140,7 +147,10 @@ describe('ContactAuditService', () => {
         select: mockSelect,
       } as any);
 
-      const result = await contactAuditService.getUserContactLogs('user1', 'user2');
+      const result = await contactAuditService.getUserContactLogs(
+        'user1',
+        'user2'
+      );
 
       expect(result.error).toEqual(new Error('Access denied to contact logs'));
       expect(result.data).toBeNull();
@@ -242,13 +252,18 @@ describe('ContactAuditService', () => {
         }),
       });
 
-      mockSupabase.from.mockReturnValueOnce({
-        select: mockSelectExisting,
-      } as any).mockReturnValueOnce({
-        update: mockUpdate,
-      } as any);
+      mockSupabase.from
+        .mockReturnValueOnce({
+          select: mockSelectExisting,
+        } as any)
+        .mockReturnValueOnce({
+          update: mockUpdate,
+        } as any);
 
-      const result = await contactAuditService.updatePrivacySettings('user1', mockUpdates);
+      const result = await contactAuditService.updatePrivacySettings(
+        'user1',
+        mockUpdates
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toEqual(mockUpdatedSettings);
@@ -288,13 +303,18 @@ describe('ContactAuditService', () => {
         }),
       });
 
-      mockSupabase.from.mockReturnValueOnce({
-        select: mockSelectExisting,
-      } as any).mockReturnValueOnce({
-        insert: mockInsert,
-      } as any);
+      mockSupabase.from
+        .mockReturnValueOnce({
+          select: mockSelectExisting,
+        } as any)
+        .mockReturnValueOnce({
+          insert: mockInsert,
+        } as any);
 
-      const result = await contactAuditService.updatePrivacySettings('user1', mockUpdates);
+      const result = await contactAuditService.updatePrivacySettings(
+        'user1',
+        mockUpdates
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toEqual(mockNewSettings);

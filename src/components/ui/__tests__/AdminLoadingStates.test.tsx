@@ -32,9 +32,7 @@ jest.mock('../Button', () => ({
 
 describe('AdminLoadingCard', () => {
   it('should render with title and loading spinner', () => {
-    const { getByText } = render(
-      <AdminLoadingCard title="Loading Data" />
-    );
+    const { getByText } = render(<AdminLoadingCard title="Loading Data" />);
 
     expect(getByText('Loading Data')).toBeTruthy();
     expect(getByText('Loading Spinner')).toBeTruthy();
@@ -101,11 +99,7 @@ describe('AdminLoadingCard', () => {
 describe('AdminBatchLoading', () => {
   it('should render batch statistics correctly', () => {
     const { getByText } = render(
-      <AdminBatchLoading
-        total={10}
-        completed={7}
-        failed={2}
-      />
+      <AdminBatchLoading total={10} completed={7} failed={2} />
     );
 
     expect(getByText('Processing Operations')).toBeTruthy();
@@ -146,11 +140,7 @@ describe('AdminBatchLoading', () => {
 
   it('should calculate progress correctly', () => {
     const { getByText } = render(
-      <AdminBatchLoading
-        total={8}
-        completed={6}
-        failed={1}
-      />
+      <AdminBatchLoading total={8} completed={6} failed={1} />
     );
 
     // Progress should be 6/8 = 75%
@@ -159,11 +149,7 @@ describe('AdminBatchLoading', () => {
 
   it('should handle zero total correctly', () => {
     const { getByText } = render(
-      <AdminBatchLoading
-        total={0}
-        completed={0}
-        failed={0}
-      />
+      <AdminBatchLoading total={0} completed={0} failed={0} />
     );
 
     expect(getByText('0 of 0 (0%)')).toBeTruthy();
@@ -175,7 +161,9 @@ describe('AdminSkeletonLoader', () => {
     const { container } = render(<AdminSkeletonLoader />);
 
     // Should have avatar, 3 lines, and actions by default
-    const skeletonLines = container.querySelectorAll('[style*="backgroundColor: #e5e7eb"]');
+    const skeletonLines = container.querySelectorAll(
+      '[style*="backgroundColor: #e5e7eb"]'
+    );
     expect(skeletonLines.length).toBeGreaterThan(0);
   });
 
@@ -218,11 +206,7 @@ describe('AdminLoadingList', () => {
 
   it('should pass props to skeleton items', () => {
     const { container } = render(
-      <AdminLoadingList
-        count={2}
-        showAvatar={false}
-        showActions={false}
-      />
+      <AdminLoadingList count={2} showAvatar={false} showActions={false} />
     );
 
     expect(container.firstChild).toBeTruthy();

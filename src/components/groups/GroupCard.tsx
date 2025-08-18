@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ViewStyle,
+} from 'react-native';
 import type { GroupWithDetails } from '../../types/database';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,14 +37,20 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   const formatLocation = (location: any) => {
     const parsed = locationService.parseGroupLocation(location);
-    if (parsed.address && parsed.address.trim().length > 0) return parsed.address;
-    if (typeof location === 'string' && location.trim().length > 0) return location;
+    if (parsed.address && parsed.address.trim().length > 0)
+      return parsed.address;
+    if (typeof location === 'string' && location.trim().length > 0)
+      return location;
     if (location?.room) return `Room ${location.room}`;
     return 'Location TBD';
   };
 
   return (
-    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, style]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.content}>
         {group.image_url && (
           <OptimizedImage
@@ -74,7 +86,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             )}
           </View>
 
-          <Text style={styles.description} numberOfLines={2} ellipsizeMode="tail">
+          <Text
+            style={styles.description}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
             {group.description}
           </Text>
 
@@ -105,7 +121,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               <View style={styles.detailRow}>
                 <Ionicons name="people-outline" size={16} color="#6b7280" />
                 <Text style={styles.detailText} numberOfLines={1}>
-                  {group.member_count} member{group.member_count !== 1 ? 's' : ''}
+                  {group.member_count} member
+                  {group.member_count !== 1 ? 's' : ''}
                 </Text>
               </View>
             )}
@@ -116,16 +133,26 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel={`View ${friendsCount} friends in this group`}
               >
-                <Ionicons name="person-circle-outline" size={16} color="#2563eb" />
-                <Text style={[styles.detailText, styles.friendsText]} numberOfLines={1}>
-                  {friendsCount} friend{friendsCount !== 1 ? 's' : ''} in this group
+                <Ionicons
+                  name="person-circle-outline"
+                  size={16}
+                  color="#2563eb"
+                />
+                <Text
+                  style={[styles.detailText, styles.friendsText]}
+                  numberOfLines={1}
+                >
+                  {friendsCount} friend{friendsCount !== 1 ? 's' : ''} in this
+                  group
                 </Text>
               </TouchableOpacity>
             )}
           </View>
 
           {group.service?.name && (
-            <Text style={styles.service} numberOfLines={1} ellipsizeMode="tail">Service: {group.service.name}</Text>
+            <Text style={styles.service} numberOfLines={1} ellipsizeMode="tail">
+              Service: {group.service.name}
+            </Text>
           )}
         </View>
       </View>

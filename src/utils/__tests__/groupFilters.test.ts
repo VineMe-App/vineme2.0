@@ -1,4 +1,8 @@
-import { applyGroupFilters, getActiveFiltersCount, getActiveFiltersDescription } from '../groupFilters';
+import {
+  applyGroupFilters,
+  getActiveFiltersCount,
+  getActiveFiltersDescription,
+} from '../groupFilters';
 import type { GroupWithDetails } from '../../types/database';
 import type { GroupFilters } from '../../stores/groupFilters';
 
@@ -41,7 +45,7 @@ const mockGroups: GroupWithDetails[] = [
   },
   {
     id: '4',
-    title: 'Women\'s Ministry',
+    title: "Women's Ministry",
     description: 'Ladies Bible study and support group',
     meeting_day: 'Tuesday',
     meeting_time: '9:00 AM',
@@ -87,8 +91,8 @@ describe('groupFilters', () => {
 
       const result = applyGroupFilters(mockGroups, filters);
       expect(result).toHaveLength(2);
-      expect(result.map(g => g.title)).toContain('Sunday Bible Study');
-      expect(result.map(g => g.title)).toContain('Wednesday Prayer Group');
+      expect(result.map((g) => g.title)).toContain('Sunday Bible Study');
+      expect(result.map((g) => g.title)).toContain('Wednesday Prayer Group');
     });
 
     it('filters by category', () => {
@@ -279,7 +283,9 @@ describe('groupFilters', () => {
         searchQuery: 'test',
       };
 
-      expect(getActiveFiltersDescription(filters)).toBe('"test", Sundays, Bible Study');
+      expect(getActiveFiltersDescription(filters)).toBe(
+        '"test", Sundays, Bible Study'
+      );
     });
   });
 });

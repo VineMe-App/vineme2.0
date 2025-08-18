@@ -27,24 +27,20 @@ export const AdminLoadingCard: React.FC<AdminLoadingCardProps> = ({
         <LoadingSpinner size="medium" />
         <Text style={styles.loadingTitle}>{title}</Text>
       </View>
-      
-      {message && (
-        <Text style={styles.loadingMessage}>{message}</Text>
-      )}
+
+      {message && <Text style={styles.loadingMessage}>{message}</Text>}
 
       {showProgress && typeof progress === 'number' && (
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View 
+            <View
               style={[
-                styles.progressFill, 
-                { width: `${Math.max(0, Math.min(100, progress * 100))}%` }
-              ]} 
+                styles.progressFill,
+                { width: `${Math.max(0, Math.min(100, progress * 100))}%` },
+              ]}
             />
           </View>
-          <Text style={styles.progressText}>
-            {Math.round(progress * 100)}%
-          </Text>
+          <Text style={styles.progressText}>{Math.round(progress * 100)}%</Text>
         </View>
       )}
 
@@ -106,11 +102,11 @@ export const AdminBatchLoading: React.FC<AdminBatchLoadingProps> = ({
 
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
-          <View 
+          <View
             style={[
-              styles.progressFill, 
-              { width: `${Math.max(0, Math.min(100, progress * 100))}%` }
-            ]} 
+              styles.progressFill,
+              { width: `${Math.max(0, Math.min(100, progress * 100))}%` },
+            ]}
           />
         </View>
         <Text style={styles.progressText}>
@@ -119,9 +115,7 @@ export const AdminBatchLoading: React.FC<AdminBatchLoadingProps> = ({
       </View>
 
       {currentOperation && (
-        <Text style={styles.currentOperation}>
-          Current: {currentOperation}
-        </Text>
+        <Text style={styles.currentOperation}>Current: {currentOperation}</Text>
       )}
 
       {onCancel && (
@@ -158,17 +152,17 @@ export const AdminSkeletonLoader: React.FC<AdminSkeletonLoaderProps> = ({
         <View style={styles.skeletonContent}>
           <View style={[styles.skeletonLine, styles.skeletonTitle]} />
           {Array.from({ length: lines - 1 }).map((_, index) => (
-            <View 
-              key={index} 
+            <View
+              key={index}
               style={[
-                styles.skeletonLine, 
-                index === lines - 2 ? styles.skeletonLastLine : null
-              ]} 
+                styles.skeletonLine,
+                index === lines - 2 ? styles.skeletonLastLine : null,
+              ]}
             />
           ))}
         </View>
       </View>
-      
+
       {showActions && (
         <View style={styles.skeletonActions}>
           <View style={styles.skeletonButton} />
@@ -231,7 +225,7 @@ export const AdminRetryLoading: React.FC<AdminRetryLoadingProps> = ({
       <Text style={styles.retryInfo}>
         Retry attempt {retryCount} of {maxRetries}
       </Text>
-      
+
       <View style={styles.retryActions}>
         <Button
           title="Retry Now"

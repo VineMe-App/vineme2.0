@@ -2,7 +2,7 @@
 
 /**
  * Comprehensive Admin Features Test Runner
- * 
+ *
  * This script runs all admin-related tests in a structured manner,
  * providing detailed reporting and coverage analysis.
  */
@@ -100,7 +100,7 @@ class AdminTestRunner {
 
   async runTestCategory(categoryName, testFiles) {
     this.logSubHeader(`Running ${categoryName}`);
-    
+
     const categoryResults = {
       total: 0,
       passed: 0,
@@ -118,9 +118,9 @@ class AdminTestRunner {
 
       try {
         this.log(`\n🧪 Running: ${testFile}`, 'cyan');
-        
+
         const command = this.buildJestCommand(testFile);
-        const output = execSync(command, { 
+        const output = execSync(command, {
           encoding: 'utf8',
           stdio: 'pipe',
           timeout: testConfig.timeout,
@@ -134,18 +134,20 @@ class AdminTestRunner {
         categoryResults.failed += results.failed;
 
         if (results.failed > 0) {
-          this.log(`❌ ${testFile}: ${results.failed} failed, ${results.passed} passed`, 'red');
+          this.log(
+            `❌ ${testFile}: ${results.failed} failed, ${results.passed} passed`,
+            'red'
+          );
           this.failedTests.push({ file: testFile, ...results });
         } else {
           this.log(`✅ ${testFile}: ${results.passed} passed`, 'green');
         }
-
       } catch (error) {
         this.log(`❌ Error running ${testFile}:`, 'red');
         this.log(error.message, 'red');
         categoryResults.failed++;
-        this.failedTests.push({ 
-          file: testFile, 
+        this.failedTests.push({
+          file: testFile,
           error: error.message,
           total: 1,
           passed: 0,
@@ -161,16 +163,20 @@ class AdminTestRunner {
     this.results.skipped += categoryResults.skipped;
 
     // Category summary
-    const passRate = categoryResults.total > 0 
-      ? ((categoryResults.passed / categoryResults.total) * 100).toFixed(1)
-      : '0.0';
-    
+    const passRate =
+      categoryResults.total > 0
+        ? ((categoryResults.passed / categoryResults.total) * 100).toFixed(1)
+        : '0.0';
+
     this.log(`\n📊 ${categoryName} Summary:`, 'bright');
     this.log(`   Total: ${categoryResults.total}`, 'blue');
     this.log(`   Passed: ${categoryResults.passed}`, 'green');
     this.log(`   Failed: ${categoryResults.failed}`, 'red');
     this.log(`   Skipped: ${categoryResults.skipped}`, 'yellow');
-    this.log(`   Pass Rate: ${passRate}%`, categoryResults.failed === 0 ? 'green' : 'red');
+    this.log(
+      `   Pass Rate: ${passRate}%`,
+      categoryResults.failed === 0 ? 'green' : 'red'
+    );
   }
 
   buildJestCommand(testFile) {
@@ -204,8 +210,10 @@ class AdminTestRunner {
     try {
       // Extract JSON from Jest output
       const lines = output.split('\n');
-      const jsonLine = lines.find(line => line.trim().startsWith('{') && line.includes('"testResults"'));
-      
+      const jsonLine = lines.find(
+        (line) => line.trim().startsWith('{') && line.includes('"testResults"')
+      );
+
       if (jsonLine) {
         const results = JSON.parse(jsonLine);
         return {
@@ -220,11 +228,12 @@ class AdminTestRunner {
       const passedMatch = output.match(/(\d+) passed/);
       const failedMatch = output.match(/(\d+) failed/);
       const skippedMatch = output.match(/(\d+) skipped/);
-      
+
       return {
-        total: (passedMatch ? parseInt(passedMatch[1]) : 0) + 
-               (failedMatch ? parseInt(failedMatch[1]) : 0) + 
-               (skippedMatch ? parseInt(skippedMatch[1]) : 0),
+        total:
+          (passedMatch ? parseInt(passedMatch[1]) : 0) +
+          (failedMatch ? parseInt(failedMatch[1]) : 0) +
+          (skippedMatch ? parseInt(skippedMatch[1]) : 0),
         passed: passedMatch ? parseInt(passedMatch[1]) : 0,
         failed: failedMatch ? parseInt(failedMatch[1]) : 0,
         skipped: skippedMatch ? parseInt(skippedMatch[1]) : 0,
@@ -236,7 +245,7 @@ class AdminTestRunner {
 
   async runAllTests() {
     this.logHeader('🚀 Starting Comprehensive Admin Features Testing');
-    
+
     // Check if Jest is available
     try {
       execSync('npx jest --version', { stdio: 'pipe' });
@@ -257,10 +266,14 @@ class AdminTestRunner {
   generateFinalReport() {
     this.logHeader('📋 Final Test Report');
 
-    const duration = ((this.results.endTime - this.results.startTime) / 1000).toFixed(2);
-    const passRate = this.results.total > 0 
-      ? ((this.results.passed / this.results.total) * 100).toFixed(1)
-      : '0.0';
+    const duration = (
+      (this.results.endTime - this.results.startTime) /
+      1000
+    ).toFixed(2);
+    const passRate =
+      this.results.total > 0
+        ? ((this.results.passed / this.results.total) * 100).toFixed(1)
+        : '0.0';
 
     // Overall summary
     this.log('📊 Overall Results:', 'bright');
@@ -268,24 +281,32 @@ class AdminTestRunner {
     this.log(`   Passed: ${this.results.passed}`, 'green');
     this.log(`   Failed: ${this.results.failed}`, 'red');
     this.log(`   Skipped: ${this.results.skipped}`, 'yellow');
-    this.log(`   Pass Rate: ${passRate}%`, this.results.failed === 0 ? 'green' : 'red');
+    this.log(
+      `   Pass Rate: ${passRate}%`,
+      this.results.failed === 0 ? 'green' : 'red'
+    );
     this.log(`   Duration: ${duration}s`, 'blue');
 
     // Category breakdown
     this.log('\n📈 Category Breakdown:', 'bright');
-    for (const [categoryName, categoryResults] of Object.entries(this.results.categories)) {
-      const categoryPassRate = categoryResults.total > 0 
-        ? ((categoryResults.passed / categoryResults.total) * 100).toFixed(1)
-        : '0.0';
-      
+    for (const [categoryName, categoryResults] of Object.entries(
+      this.results.categories
+    )) {
+      const categoryPassRate =
+        categoryResults.total > 0
+          ? ((categoryResults.passed / categoryResults.total) * 100).toFixed(1)
+          : '0.0';
+
       this.log(`   ${categoryName}:`, 'cyan');
-      this.log(`     Tests: ${categoryResults.total} | Passed: ${categoryResults.passed} | Failed: ${categoryResults.failed} | Pass Rate: ${categoryPassRate}%`);
+      this.log(
+        `     Tests: ${categoryResults.total} | Passed: ${categoryResults.passed} | Failed: ${categoryResults.failed} | Pass Rate: ${categoryPassRate}%`
+      );
     }
 
     // Failed tests details
     if (this.failedTests.length > 0) {
       this.log('\n❌ Failed Tests:', 'red');
-      this.failedTests.forEach(test => {
+      this.failedTests.forEach((test) => {
         this.log(`   ${test.file}`, 'red');
         if (test.error) {
           this.log(`     Error: ${test.error}`, 'red');
@@ -301,12 +322,18 @@ class AdminTestRunner {
 
     // Exit with appropriate code
     const exitCode = this.results.failed > 0 ? 1 : 0;
-    this.log(`\n🏁 Testing completed with exit code: ${exitCode}`, exitCode === 0 ? 'green' : 'red');
-    
+    this.log(
+      `\n🏁 Testing completed with exit code: ${exitCode}`,
+      exitCode === 0 ? 'green' : 'red'
+    );
+
     if (exitCode === 0) {
       this.log('🎉 All admin feature tests passed!', 'green');
     } else {
-      this.log('⚠️  Some tests failed. Please review the failures above.', 'red');
+      this.log(
+        '⚠️  Some tests failed. Please review the failures above.',
+        'red'
+      );
     }
 
     process.exit(exitCode);
@@ -314,11 +341,15 @@ class AdminTestRunner {
 
   generateCoverageSummary() {
     // Check if coverage report exists
-    const coverageFile = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
+    const coverageFile = path.join(
+      process.cwd(),
+      'coverage',
+      'coverage-summary.json'
+    );
     if (fs.existsSync(coverageFile)) {
       try {
         const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
-        
+
         this.log('\n📊 Coverage Summary:', 'bright');
         this.log(`   Lines: ${coverage.total.lines.pct}%`, 'blue');
         this.log(`   Functions: ${coverage.total.functions.pct}%`, 'blue');
@@ -334,29 +365,47 @@ class AdminTestRunner {
     this.log('\n💡 Recommendations:', 'bright');
 
     if (this.results.failed > 0) {
-      this.log('   • Fix failing tests before deploying admin features', 'yellow');
-      this.log('   • Review error messages and stack traces for failed tests', 'yellow');
+      this.log(
+        '   • Fix failing tests before deploying admin features',
+        'yellow'
+      );
+      this.log(
+        '   • Review error messages and stack traces for failed tests',
+        'yellow'
+      );
     }
 
     if (this.results.skipped > 0) {
-      this.log('   • Implement skipped test files to improve coverage', 'yellow');
+      this.log(
+        '   • Implement skipped test files to improve coverage',
+        'yellow'
+      );
     }
 
     const passRate = (this.results.passed / this.results.total) * 100;
     if (passRate < 90) {
-      this.log('   • Aim for >90% test pass rate for production readiness', 'yellow');
+      this.log(
+        '   • Aim for >90% test pass rate for production readiness',
+        'yellow'
+      );
     }
 
-    this.log('   • Run performance tests regularly with production-like data volumes', 'blue');
+    this.log(
+      '   • Run performance tests regularly with production-like data volumes',
+      'blue'
+    );
     this.log('   • Update tests when adding new admin features', 'blue');
-    this.log('   • Consider adding more edge case tests for security-critical features', 'blue');
+    this.log(
+      '   • Consider adding more edge case tests for security-critical features',
+      'blue'
+    );
   }
 }
 
 // Main execution
 if (require.main === module) {
   const runner = new AdminTestRunner();
-  runner.runAllTests().catch(error => {
+  runner.runAllTests().catch((error) => {
     console.error('❌ Test runner failed:', error);
     process.exit(1);
   });

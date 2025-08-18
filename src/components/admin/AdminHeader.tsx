@@ -222,9 +222,7 @@ export const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
         <AdminBreadcrumb items={breadcrumbs} />
       )}
 
-      <View style={styles.pageContent}>
-        {children}
-      </View>
+      <View style={styles.pageContent}>{children}</View>
     </View>
   );
 };

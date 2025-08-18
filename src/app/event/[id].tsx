@@ -1,5 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Linking,
+  Alert,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -303,9 +312,13 @@ export default function EventDetailScreen() {
               style={styles.whatsappButton}
               onPress={handleWhatsAppPress}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+              >
                 <Ionicons name="logo-whatsapp" size={16} color="#fff" />
-                <Text style={styles.whatsappButtonText}>Join WhatsApp Group</Text>
+                <Text style={styles.whatsappButtonText}>
+                  Join WhatsApp Group
+                </Text>
               </View>
             </TouchableOpacity>
           )}

@@ -2,7 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from './Badge';
-import { ColorContrastUtils, AdminAccessibilityLabels } from '@/utils/accessibility';
+import {
+  ColorContrastUtils,
+  AdminAccessibilityLabels,
+} from '@/utils/accessibility';
 
 interface AccessibleStatusIndicatorProps {
   status: 'pending' | 'approved' | 'denied' | 'closed' | 'active' | 'inactive';
@@ -23,7 +26,7 @@ export function AccessibleStatusIndicator({
 }: AccessibleStatusIndicatorProps) {
   const getStatusConfig = () => {
     const colors = ColorContrastUtils.getAccessibleStatusColors();
-    
+
     switch (status) {
       case 'pending':
         return {
@@ -71,8 +74,11 @@ export function AccessibleStatusIndicator({
   };
 
   const config = getStatusConfig();
-  
-  const accessibilityLabel = AdminAccessibilityLabels.groupStatus(status, itemName);
+
+  const accessibilityLabel = AdminAccessibilityLabels.groupStatus(
+    status,
+    itemName
+  );
   const accessibilityHint = `${itemType} ${config.description}`;
 
   return (
@@ -88,7 +94,7 @@ export function AccessibleStatusIndicator({
             backgroundColor: config.colors.background,
             borderColor: config.colors.border,
             borderWidth: 1,
-          }
+          },
         ]}
         textStyle={{
           color: config.colors.text,
@@ -104,7 +110,7 @@ export function AccessibleStatusIndicator({
               style={{ marginRight: 4 }}
             />
           )}
-          <Text 
+          <Text
             style={[styles.text, { color: config.colors.text }]}
             accessibilityElementsHidden={true}
           >

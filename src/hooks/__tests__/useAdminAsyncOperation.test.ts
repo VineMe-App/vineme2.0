@@ -1,6 +1,13 @@
 import { renderHook, act } from '@testing-library/react-native';
-import { useAdminAsyncOperation, useAdminBatchOperation } from '../useAdminAsyncOperation';
-import { AppError, NetworkError, PermissionError } from '../../utils/errorHandling';
+import {
+  useAdminAsyncOperation,
+  useAdminBatchOperation,
+} from '../useAdminAsyncOperation';
+import {
+  AppError,
+  NetworkError,
+  PermissionError,
+} from '../../utils/errorHandling';
 
 // Mock dependencies
 jest.mock('../stores/auth', () => ({
@@ -100,9 +107,7 @@ describe('useAdminAsyncOperation', () => {
 
     // Set initial data
     await act(async () => {
-      await result.current.execute(
-        () => Promise.resolve('initial-data')
-      );
+      await result.current.execute(() => Promise.resolve('initial-data'));
     });
 
     expect(result.current.data).toBe('initial-data');
@@ -229,8 +234,8 @@ describe('useAdminBatchOperation', () => {
     const { result } = renderHook(() => useAdminBatchOperation());
 
     const operations = [
-      () => new Promise(resolve => setTimeout(() => resolve('result1'), 100)),
-      () => new Promise(resolve => setTimeout(() => resolve('result2'), 200)),
+      () => new Promise((resolve) => setTimeout(() => resolve('result1'), 100)),
+      () => new Promise((resolve) => setTimeout(() => resolve('result2'), 200)),
     ];
 
     act(() => {
@@ -243,7 +248,7 @@ describe('useAdminBatchOperation', () => {
 
     // Wait for operations to complete
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     });
 
     expect(result.current.completed).toBe(2);

@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import { Modal, Form, FormField, Input, Select, Button, Card } from '../ui';
 import { useFormContext } from '../ui/Form';
 import { groupCreationService } from '../../services/groupCreation';
@@ -57,7 +65,8 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedTime, setSelectedTime] = useState(new Date());
   const [isGeocodingLocation, setIsGeocodingLocation] = useState(false);
-  const [locationCoordinates, setLocationCoordinates] = useState<Coordinates | null>(null);
+  const [locationCoordinates, setLocationCoordinates] =
+    useState<Coordinates | null>(null);
 
   const formConfig = {
     title: {
@@ -157,13 +166,17 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
     try {
       // Ensure Supabase session is present so RLS sees auth.uid()
-      const { data: session } = await import('../../services/supabase').then(m => m.supabase.auth.getSession());
+      const { data: session } = await import('../../services/supabase').then(
+        (m) => m.supabase.auth.getSession()
+      );
       const uid = session?.session?.user?.id;
       if (!uid || uid !== userProfile.id) {
         throw new Error('You are not authenticated. Please sign in again.');
       }
       if (!userProfile.service_id) {
-        throw new Error('Your profile is missing a service. Please select a service in your profile.');
+        throw new Error(
+          'Your profile is missing a service. Please select a service in your profile.'
+        );
       }
 
       const groupData: CreateGroupData = {
@@ -319,9 +332,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
   const renderScheduleStep = () => (
     <View>
-      <Text style={styles.stepDescription}>
-        When will your group meet?
-      </Text>
+      <Text style={styles.stepDescription}>When will your group meet?</Text>
 
       <FormField name="meeting_day">
         {({ value, error, onChange }) => (
@@ -342,11 +353,19 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           <View>
             <Text style={styles.inputLabel}>Meeting Time *</Text>
             <TouchableOpacity
-              style={[styles.timePickerButton, error && styles.timePickerButtonError]}
+              style={[
+                styles.timePickerButton,
+                error && styles.timePickerButtonError,
+              ]}
               onPress={() => setShowTimePicker(true)}
               disabled={isSubmitting}
             >
-              <Text style={[styles.timePickerText, !value && styles.timePickerPlaceholder]}>
+              <Text
+                style={[
+                  styles.timePickerText,
+                  !value && styles.timePickerPlaceholder,
+                ]}
+              >
                 {value || 'Select meeting time'}
               </Text>
             </TouchableOpacity>
@@ -373,9 +392,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
   const renderLocationStep = () => (
     <View>
-      <Text style={styles.stepDescription}>
-        Where will your group meet?
-      </Text>
+      <Text style={styles.stepDescription}>Where will your group meet?</Text>
 
       <FormField name="location">
         {({ value, error, onChange, onBlur }) => (
@@ -409,7 +426,9 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     </View>
   );
 
-  const ReviewStep: React.FC<{ locationCoordinates: Coordinates | null }> = ({ locationCoordinates }) => {
+  const ReviewStep: React.FC<{ locationCoordinates: Coordinates | null }> = ({
+    locationCoordinates,
+  }) => {
     const { values } = useFormContext();
     return (
       <View>
@@ -425,24 +444,31 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
           <View style={styles.reviewItem}>
             <Text style={styles.reviewLabel}>Description:</Text>
-            <Text style={styles.reviewValue}>{values.description || 'Not set'}</Text>
+            <Text style={styles.reviewValue}>
+              {values.description || 'Not set'}
+            </Text>
           </View>
 
           <View style={styles.reviewItem}>
             <Text style={styles.reviewLabel}>Meeting Day:</Text>
             <Text style={styles.reviewValue}>
-              {MEETING_DAYS.find(d => d.value === values.meeting_day)?.label || 'Not set'}
+              {MEETING_DAYS.find((d) => d.value === values.meeting_day)
+                ?.label || 'Not set'}
             </Text>
           </View>
 
           <View style={styles.reviewItem}>
             <Text style={styles.reviewLabel}>Meeting Time:</Text>
-            <Text style={styles.reviewValue}>{values.meeting_time || 'Not set'}</Text>
+            <Text style={styles.reviewValue}>
+              {values.meeting_time || 'Not set'}
+            </Text>
           </View>
 
           <View style={styles.reviewItem}>
             <Text style={styles.reviewLabel}>Location:</Text>
-            <Text style={styles.reviewValue}>{values.location || 'Not set'}</Text>
+            <Text style={styles.reviewValue}>
+              {values.location || 'Not set'}
+            </Text>
             {locationCoordinates && (
               <Text style={styles.reviewLocationNote}>
                 Location will be shown on the map
@@ -453,8 +479,9 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
         <View style={styles.reviewNote}>
           <Text style={styles.reviewNoteText}>
-            Your group request will be reviewed by a church admin before becoming active. 
-            You'll receive a notification once it's been approved.
+            Your group request will be reviewed by a church admin before
+            becoming active. You'll receive a notification once it's been
+            approved.
           </Text>
         </View>
       </View>
@@ -492,10 +519,8 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       <Form config={formConfig} onSubmit={handleSubmit}>
         <View>
           {renderStepIndicator()}
-          
-          <View>
-            {renderCurrentStep()}
-          </View>
+
+          <View>{renderCurrentStep()}</View>
 
           <View style={styles.buttonContainer}>
             {!isFirstStep && (
@@ -507,7 +532,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                 style={styles.navigationButton}
               />
             )}
-            
+
             {isFirstStep && (
               <Button
                 title="Cancel"
@@ -692,7 +717,7 @@ const StepNavigationButton: React.FC<{
   const handleNext = () => {
     // Validate current step fields before proceeding
     let isValid = true;
-    
+
     switch (currentStep) {
       case 'basic':
         const titleError = validateField('title', values.title);

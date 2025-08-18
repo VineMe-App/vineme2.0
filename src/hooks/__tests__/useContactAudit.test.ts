@@ -11,7 +11,9 @@ jest.mock('../../services/contactAudit', () => ({
   },
 }));
 
-const mockContactAuditService = contactAuditService as jest.Mocked<typeof contactAuditService>;
+const mockContactAuditService = contactAuditService as jest.Mocked<
+  typeof contactAuditService
+>;
 
 describe('useContactAudit hooks', () => {
   beforeEach(() => {
@@ -44,10 +46,16 @@ describe('useContactAudit hooks', () => {
         error: null,
       });
 
-      const result = await mockContactAuditService.getUserContactLogs('user1', 'user1');
+      const result = await mockContactAuditService.getUserContactLogs(
+        'user1',
+        'user1'
+      );
 
       expect(result.data).toEqual(mockLogs);
-      expect(mockContactAuditService.getUserContactLogs).toHaveBeenCalledWith('user1', 'user1');
+      expect(mockContactAuditService.getUserContactLogs).toHaveBeenCalledWith(
+        'user1',
+        'user1'
+      );
     });
 
     it('should call getPrivacySettings with correct parameters', async () => {
@@ -68,7 +76,9 @@ describe('useContactAudit hooks', () => {
       const result = await mockContactAuditService.getPrivacySettings('user1');
 
       expect(result.data).toEqual(mockSettings);
-      expect(mockContactAuditService.getPrivacySettings).toHaveBeenCalledWith('user1');
+      expect(mockContactAuditService.getPrivacySettings).toHaveBeenCalledWith(
+        'user1'
+      );
     });
 
     it('should call updatePrivacySettings with correct parameters', async () => {
@@ -92,10 +102,15 @@ describe('useContactAudit hooks', () => {
         error: null,
       });
 
-      const result = await mockContactAuditService.updatePrivacySettings('user1', updates);
+      const result = await mockContactAuditService.updatePrivacySettings(
+        'user1',
+        updates
+      );
 
       expect(result.data).toEqual(mockUpdatedSettings);
-      expect(mockContactAuditService.updatePrivacySettings).toHaveBeenCalledWith('user1', updates);
+      expect(
+        mockContactAuditService.updatePrivacySettings
+      ).toHaveBeenCalledWith('user1', updates);
     });
 
     it('should call canShareContact with correct parameters', async () => {

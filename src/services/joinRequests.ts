@@ -45,7 +45,9 @@ export class JoinRequestService {
         if (existingMembership.status === 'pending') {
           return {
             data: null,
-            error: new Error('User already has a pending request for this group'),
+            error: new Error(
+              'User already has a pending request for this group'
+            ),
           };
         }
       }
@@ -72,7 +74,9 @@ export class JoinRequestService {
       return {
         data: null,
         error:
-          error instanceof Error ? error : new Error('Failed to create join request'),
+          error instanceof Error
+            ? error
+            : new Error('Failed to create join request'),
       };
     }
   }
@@ -86,7 +90,10 @@ export class JoinRequestService {
   ): Promise<GroupServiceResponse<GroupJoinRequestWithUser[]>> {
     try {
       // Check if user is a leader of this group
-      const permissionCheck = await permissionService.canManageGroupMembership(groupId, userId);
+      const permissionCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        userId
+      );
       if (!permissionCheck.hasPermission) {
         return {
           data: null,
@@ -229,7 +236,7 @@ export class JoinRequestService {
           .from('group_memberships')
           .delete()
           .eq('id', membership.id);
-        
+
         return { data: null, error: new Error(updateError.message) };
       }
 
@@ -324,7 +331,9 @@ export class JoinRequestService {
       if (requestError || !membershipRecord) {
         return {
           data: null,
-          error: new Error('Pending membership not found or cannot be cancelled'),
+          error: new Error(
+            'Pending membership not found or cannot be cancelled'
+          ),
         };
       }
 
@@ -356,7 +365,9 @@ export class JoinRequestService {
   async getContactInfo(
     requestId: string,
     leaderId: string
-  ): Promise<GroupServiceResponse<{ name: string; email?: string; phone?: string }>> {
+  ): Promise<
+    GroupServiceResponse<{ name: string; email?: string; phone?: string }>
+  > {
     try {
       // Get the join request with user details
       const { data: joinRequest, error: requestError } = await supabase
@@ -392,7 +403,8 @@ export class JoinRequestService {
         return {
           data: null,
           error: new Error(
-            permissionCheck.reason || 'Access denied to view contact information'
+            permissionCheck.reason ||
+              'Access denied to view contact information'
           ),
         };
       }
@@ -525,7 +537,9 @@ export class JoinRequestService {
       if (!canContact.data) {
         return {
           data: null,
-          error: new Error(`Contact via ${actionType} not allowed by user privacy settings`),
+          error: new Error(
+            `Contact via ${actionType} not allowed by user privacy settings`
+          ),
         };
       }
 

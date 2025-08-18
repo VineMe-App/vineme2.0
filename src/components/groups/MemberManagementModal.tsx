@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '../ui/Modal';
 import { Avatar } from '../ui/Avatar';
@@ -122,7 +117,11 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
         {/* Info Section */}
         <View style={styles.infoSection}>
           <View style={styles.infoItem}>
-            <Ionicons name="information-circle-outline" size={16} color="#666" />
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color="#666"
+            />
             <Text style={styles.infoText}>
               {isLeader
                 ? 'Leaders can edit group details and manage members.'

@@ -34,7 +34,7 @@ export function createPaginationParams(
   options: PaginationOptions = {}
 ): PaginationParams {
   const { maxLimit = 100 } = options;
-  
+
   // Ensure valid values
   const validPage = Math.max(1, Math.floor(page));
   const validLimit = Math.min(Math.max(1, Math.floor(limit)), maxLimit);
@@ -56,7 +56,7 @@ export function createPaginatedResponse<T>(
   params: PaginationParams
 ): PaginatedResponse<T> {
   const totalPages = Math.ceil(total / params.limit);
-  
+
   return {
     data,
     pagination: {
@@ -99,8 +99,10 @@ export function mergePaginatedData<T>(
   keyExtractor: (item: T) => string | number
 ): T[] {
   const existingKeys = new Set(existingData.map(keyExtractor));
-  const uniqueNewData = newData.filter(item => !existingKeys.has(keyExtractor(item)));
-  
+  const uniqueNewData = newData.filter(
+    (item) => !existingKeys.has(keyExtractor(item))
+  );
+
   return [...existingData, ...uniqueNewData];
 }
 
@@ -128,11 +130,11 @@ export function usePaginationState(initialLimit: number = 20) {
   );
 
   const nextPage = React.useCallback(() => {
-    setPage(prev => prev + 1);
+    setPage((prev) => prev + 1);
   }, []);
 
   const previousPage = React.useCallback(() => {
-    setPage(prev => Math.max(1, prev - 1));
+    setPage((prev) => Math.max(1, prev - 1));
   }, []);
 
   const goToPage = React.useCallback((newPage: number) => {

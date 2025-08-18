@@ -32,7 +32,8 @@ const ADMIN_ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to Admin Features! 🎉',
-    description: 'As a church admin, you have special permissions to manage your church community.',
+    description:
+      'As a church admin, you have special permissions to manage your church community.',
     icon: '👋',
     features: [
       'Approve or decline new group requests',
@@ -58,11 +59,12 @@ const ADMIN_ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'users',
     title: 'User Oversight',
-    description: 'Monitor church member engagement and help connect unconnected members.',
+    description:
+      'Monitor church member engagement and help connect unconnected members.',
     icon: '👥',
     features: [
       'View all church members and their group participation',
-      'Identify members who aren\'t connected to any groups',
+      "Identify members who aren't connected to any groups",
       'Track user engagement and activity levels',
       'Support community building initiatives',
     ],
@@ -72,7 +74,8 @@ const ADMIN_ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'notifications',
     title: 'Stay Informed',
-    description: 'Get real-time notifications about admin tasks that need your attention.',
+    description:
+      'Get real-time notifications about admin tasks that need your attention.',
     icon: '🔔',
     features: [
       'Instant notifications for new group requests',
@@ -114,18 +117,18 @@ export const AdminOnboarding: React.FC<AdminOnboardingProps> = ({
   const isFirstStep = currentStep === 0;
 
   const handleNext = () => {
-    setCompletedSteps(prev => new Set([...prev, currentStep]));
-    
+    setCompletedSteps((prev) => new Set([...prev, currentStep]));
+
     if (isLastStep) {
       onComplete();
     } else {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
   const handlePrevious = () => {
     if (!isFirstStep) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
     }
   };
 
@@ -304,7 +307,7 @@ export const AdminHelp: React.FC<AdminHelpProps> = ({
               title: 'Understanding User Status',
               content: [
                 'Connected users are active in one or more groups',
-                'Unconnected users haven\'t joined any groups yet',
+                "Unconnected users haven't joined any groups yet",
                 'Use filters to focus on specific user segments',
                 'Track user engagement over time',
               ],
@@ -322,7 +325,7 @@ export const AdminHelp: React.FC<AdminHelpProps> = ({
               title: 'Privacy and Respect',
               content: [
                 'Respect user privacy and personal boundaries',
-                'Don\'t pressure users to join groups',
+                "Don't pressure users to join groups",
                 'Use user data responsibly and ethically',
                 'Focus on building genuine community connections',
               ],
@@ -376,7 +379,10 @@ export const AdminHelp: React.FC<AdminHelpProps> = ({
       size="medium"
       scrollable
     >
-      <ScrollView style={styles.helpContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.helpContent}
+        showsVerticalScrollIndicator={false}
+      >
         {helpContent.sections.map((section, index) => (
           <Card key={index} style={styles.helpSection}>
             <Text style={styles.helpSectionTitle}>{section.title}</Text>
@@ -391,7 +397,8 @@ export const AdminHelp: React.FC<AdminHelpProps> = ({
 
         <View style={styles.helpFooter}>
           <Text style={styles.helpFooterText}>
-            Need more help? Contact your church administrator or technical support.
+            Need more help? Contact your church administrator or technical
+            support.
           </Text>
         </View>
       </ScrollView>

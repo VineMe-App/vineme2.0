@@ -31,11 +31,11 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   onRequestProcessed,
 }) => {
   const [showContactInfo, setShowContactInfo] = useState(false);
-  
+
   const approveRequestMutation = useApproveJoinRequest();
   const declineRequestMutation = useDeclineJoinRequest();
   const initiateContactMutation = useInitiateContactAction();
-  
+
   const { data: contactInfo } = useGetContactInfo(
     showContactInfo && request.contact_consent ? request.id : undefined,
     leaderId
@@ -65,17 +65,19 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                 approverId: leaderId,
                 groupId: request.group_id,
               });
-              
+
               Alert.alert(
                 'Request Approved',
                 `${request.user?.name || 'The user'} has been added to the group!`
               );
-              
+
               onRequestProcessed?.();
             } catch (error) {
               Alert.alert(
                 'Error',
-                error instanceof Error ? error.message : 'Failed to approve request'
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to approve request'
               );
             }
           },
@@ -100,13 +102,18 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                 declinerId: leaderId,
                 groupId: request.group_id,
               });
-              
-              Alert.alert('Request Declined', 'The join request has been declined.');
+
+              Alert.alert(
+                'Request Declined',
+                'The join request has been declined.'
+              );
               onRequestProcessed?.();
             } catch (error) {
               Alert.alert(
                 'Error',
-                error instanceof Error ? error.message : 'Failed to decline request'
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to decline request'
               );
             }
           },
@@ -127,7 +134,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
 
       // Then open the contact app
       const url = type === 'email' ? `mailto:${value}` : `tel:${value}`;
-      
+
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);
@@ -137,12 +144,15 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
     } catch (error) {
       Alert.alert(
         'Error',
-        error instanceof Error ? error.message : `Failed to ${type === 'email' ? 'email' : 'call'} user`
+        error instanceof Error
+          ? error.message
+          : `Failed to ${type === 'email' ? 'email' : 'call'} user`
       );
     }
   };
 
-  const isProcessing = approveRequestMutation.isPending || declineRequestMutation.isPending;
+  const isProcessing =
+    approveRequestMutation.isPending || declineRequestMutation.isPending;
 
   return (
     <Card style={styles.container}>
@@ -162,12 +172,8 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
             </Text>
           </View>
         </View>
-        
-        <Badge
-          text="Pending"
-          variant="warning"
-          style={styles.statusBadge}
-        />
+
+        <Badge text="Pending" variant="warning" style={styles.statusBadge} />
       </View>
 
       {request.message && (
@@ -185,7 +191,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
             variant={request.contact_consent ? 'success' : 'secondary'}
           />
         </View>
-        
+
         {request.contact_consent && (
           <TouchableOpacity
             onPress={() => setShowContactInfo(!showContactInfo)}
@@ -212,7 +218,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                 <Text style={styles.contactValue}>{contactInfo.email}</Text>
               </TouchableOpacity>
             )}
-            
+
             {contactInfo.phone && (
               <TouchableOpacity
                 onPress={() => handleContactPress('phone', contactInfo.phone)}
@@ -224,8 +230,8 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
               </TouchableOpacity>
             )}
           </View>
-          
-          {(!contactInfo.email && !contactInfo.phone) && (
+
+          {!contactInfo.email && !contactInfo.phone && (
             <Text style={styles.noContactText}>
               Contact information not available due to user privacy settings.
             </Text>

@@ -179,7 +179,10 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
     setIsLoading(true);
 
     try {
-      const result = await permissionService.hasPermission(permission, resourceId);
+      const result = await permissionService.hasPermission(
+        permission,
+        resourceId
+      );
       setHasAccess(result.hasPermission);
     } catch (error) {
       console.error('Error checking permission:', error);

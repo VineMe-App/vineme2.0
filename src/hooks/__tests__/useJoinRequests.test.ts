@@ -12,7 +12,9 @@ import { joinRequestService } from '../../services/joinRequests';
 
 // Mock the service
 jest.mock('../../services/joinRequests');
-const mockJoinRequestService = joinRequestService as jest.Mocked<typeof joinRequestService>;
+const mockJoinRequestService = joinRequestService as jest.Mocked<
+  typeof joinRequestService
+>;
 
 // Test wrapper with QueryClient
 const createWrapper = () => {
@@ -23,9 +25,8 @@ const createWrapper = () => {
     },
   });
 
-  return ({ children }: { children: React.ReactNode }) => (
-    React.createElement(QueryClientProvider, { client: queryClient }, children)
-  );
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: queryClient }, children);
 };
 
 describe('useJoinRequests hooks', () => {
@@ -67,7 +68,9 @@ describe('useJoinRequests hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockJoinRequestService.createJoinRequest).toHaveBeenCalledWith(requestData);
+      expect(mockJoinRequestService.createJoinRequest).toHaveBeenCalledWith(
+        requestData
+      );
       expect(result.current.data).toEqual(mockJoinRequest);
     });
 
@@ -246,7 +249,9 @@ describe('useJoinRequests hooks', () => {
       );
 
       expect(result.current.fetchStatus).toBe('idle');
-      expect(mockJoinRequestService.getGroupJoinRequests).not.toHaveBeenCalled();
+      expect(
+        mockJoinRequestService.getGroupJoinRequests
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -283,7 +288,9 @@ describe('useJoinRequests hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockJoinRequestService.getUserJoinRequests).toHaveBeenCalledWith('user-1');
+      expect(mockJoinRequestService.getUserJoinRequests).toHaveBeenCalledWith(
+        'user-1'
+      );
       expect(result.current.data).toEqual(mockRequests);
     });
 

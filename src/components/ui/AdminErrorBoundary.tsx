@@ -81,8 +81,8 @@ export class AdminErrorBoundary extends React.Component<
       'group leader',
       'role required',
     ];
-    
-    return permissionKeywords.some(keyword =>
+
+    return permissionKeywords.some((keyword) =>
       error.message.toLowerCase().includes(keyword)
     );
   }
@@ -95,8 +95,8 @@ export class AdminErrorBoundary extends React.Component<
       'timeout',
       'offline',
     ];
-    
-    return networkKeywords.some(keyword =>
+
+    return networkKeywords.some((keyword) =>
       error.message.toLowerCase().includes(keyword)
     );
   }
@@ -122,14 +122,16 @@ export class AdminErrorBoundary extends React.Component<
               <Ionicons name="warning-outline" size={32} color="#f59e0b" />
             </View>
             <Text style={styles.errorTitle}>Something went wrong</Text>
-            
+
             {this.isPermissionError(this.state.error!) ? (
               <Text style={styles.errorMessage}>
-                You don't have permission to access this feature. Please contact your church administrator.
+                You don't have permission to access this feature. Please contact
+                your church administrator.
               </Text>
             ) : this.isNetworkError(this.state.error!) ? (
               <Text style={styles.errorMessage}>
-                Unable to connect to the server. Please check your internet connection.
+                Unable to connect to the server. Please check your internet
+                connection.
               </Text>
             ) : (
               <Text style={styles.errorMessage}>
@@ -147,9 +149,7 @@ export class AdminErrorBoundary extends React.Component<
             {__DEV__ && this.state.error && (
               <View style={styles.debugContainer}>
                 <Text style={styles.debugTitle}>Debug Information:</Text>
-                <Text style={styles.debugText}>
-                  {this.state.error.message}
-                </Text>
+                <Text style={styles.debugText}>{this.state.error.message}</Text>
                 {this.state.errorInfo && (
                   <Text style={styles.debugText}>
                     {this.state.errorInfo.componentStack}
@@ -237,8 +237,8 @@ export const AdminRetryableError: React.FC<AdminRetryableErrorProps> = ({
       'group leader',
       'role required',
     ];
-    
-    return permissionKeywords.some(keyword =>
+
+    return permissionKeywords.some((keyword) =>
       error.message.toLowerCase().includes(keyword)
     );
   };
@@ -251,8 +251,8 @@ export const AdminRetryableError: React.FC<AdminRetryableErrorProps> = ({
       'timeout',
       'offline',
     ];
-    
-    return networkKeywords.some(keyword =>
+
+    return networkKeywords.some((keyword) =>
       error.message.toLowerCase().includes(keyword)
     );
   };
@@ -260,7 +260,7 @@ export const AdminRetryableError: React.FC<AdminRetryableErrorProps> = ({
   const canRetry = (): boolean => {
     // Don't allow retry for permission errors
     if (isPermissionError(error)) return false;
-    
+
     // Allow retry for network errors and other retryable errors
     return retryCount < maxRetries;
   };
@@ -269,7 +269,7 @@ export const AdminRetryableError: React.FC<AdminRetryableErrorProps> = ({
     if (isPermissionError(error)) {
       return 'You do not have permission to perform this action. Please contact your church administrator.';
     }
-    
+
     if (isNetworkError(error)) {
       return 'Unable to connect to the server. Please check your internet connection and try again.';
     }
@@ -288,10 +288,8 @@ export const AdminRetryableError: React.FC<AdminRetryableErrorProps> = ({
         <Text style={styles.errorIcon}>⚠️</Text>
         <Text style={styles.errorTitle}>Operation Failed</Text>
       </View>
-      
-      <Text style={styles.errorDescription}>
-        {getErrorMessage(error)}
-      </Text>
+
+      <Text style={styles.errorDescription}>{getErrorMessage(error)}</Text>
 
       {retryCount > 0 && (
         <Text style={styles.retryInfo}>
@@ -343,8 +341,8 @@ export const AdminActionError: React.FC<AdminActionErrorProps> = ({
       'group leader',
       'role required',
     ];
-    
-    return permissionKeywords.some(keyword =>
+
+    return permissionKeywords.some((keyword) =>
       error.message.toLowerCase().includes(keyword)
     );
   };
@@ -353,9 +351,11 @@ export const AdminActionError: React.FC<AdminActionErrorProps> = ({
     if (isPermissionError(error)) {
       return 'You do not have permission to perform this action. Please contact your church administrator.';
     }
-    
-    if (error.message.toLowerCase().includes('network') || 
-        error.message.toLowerCase().includes('fetch')) {
+
+    if (
+      error.message.toLowerCase().includes('network') ||
+      error.message.toLowerCase().includes('fetch')
+    ) {
       return 'Unable to connect to the server. Please check your internet connection and try again.';
     }
 

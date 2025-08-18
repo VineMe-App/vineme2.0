@@ -118,7 +118,11 @@ export const Select: React.FC<SelectProps> = ({
         >
           {displayText}
         </Text>
-        <Ionicons name="chevron-down-outline" size={16} color={Theme.colors.textSecondary} />
+        <Ionicons
+          name="chevron-down-outline"
+          size={16}
+          color={Theme.colors.textSecondary}
+        />
       </TouchableOpacity>
 
       {error && <Text style={styles.errorText}>{error}</Text>}

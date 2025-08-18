@@ -80,7 +80,10 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
         description: group.description || '',
         meeting_day: group.meeting_day || '',
         meeting_time: group.meeting_time || '',
-        location: typeof group.location === 'string' ? group.location : group.location?.address || '',
+        location:
+          typeof group.location === 'string'
+            ? group.location
+            : group.location?.address || '',
         whatsapp_link: group.whatsapp_link || '',
       });
       setErrors({});
@@ -111,7 +114,10 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
     }
 
     // Validate WhatsApp link format if provided
-    if (formData.whatsapp_link && !isValidWhatsAppLink(formData.whatsapp_link)) {
+    if (
+      formData.whatsapp_link &&
+      !isValidWhatsAppLink(formData.whatsapp_link)
+    ) {
       newErrors.whatsapp_link = 'Please enter a valid WhatsApp group link';
     }
 
@@ -146,7 +152,9 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
     } catch (error) {
       Alert.alert(
         'Error',
-        error instanceof Error ? error.message : 'Failed to update group details'
+        error instanceof Error
+          ? error.message
+          : 'Failed to update group details'
       );
     }
   };
@@ -159,7 +167,10 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
         description: group.description || '',
         meeting_day: group.meeting_day || '',
         meeting_time: group.meeting_time || '',
-        location: typeof group.location === 'string' ? group.location : group.location?.address || '',
+        location:
+          typeof group.location === 'string'
+            ? group.location
+            : group.location?.address || '',
         whatsapp_link: group.whatsapp_link || '',
       });
     }
@@ -183,7 +194,9 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
           <Input
             label="Description"
             value={formData.description}
-            onChangeText={(text) => setFormData({ ...formData, description: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, description: text })
+            }
             placeholder="Describe your group"
             multiline
             numberOfLines={4}
@@ -194,7 +207,9 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
           <Select
             label="Meeting Day"
             value={formData.meeting_day}
-            onValueChange={(value) => setFormData({ ...formData, meeting_day: value })}
+            onValueChange={(value) =>
+              setFormData({ ...formData, meeting_day: value })
+            }
             options={MEETING_DAYS}
             placeholder="Select meeting day"
             error={errors.meeting_day}
@@ -204,7 +219,9 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
           <Select
             label="Meeting Time"
             value={formData.meeting_time}
-            onValueChange={(value) => setFormData({ ...formData, meeting_time: value })}
+            onValueChange={(value) =>
+              setFormData({ ...formData, meeting_time: value })
+            }
             options={MEETING_TIMES}
             placeholder="Select meeting time"
             error={errors.meeting_time}
@@ -214,7 +231,9 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
           <Input
             label="Meeting Location"
             value={formData.location}
-            onChangeText={(text) => setFormData({ ...formData, location: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, location: text })
+            }
             placeholder="Enter meeting location"
             error={errors.location}
             required
@@ -223,7 +242,9 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
           <Input
             label="WhatsApp Group Link (Optional)"
             value={formData.whatsapp_link}
-            onChangeText={(text) => setFormData({ ...formData, whatsapp_link: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, whatsapp_link: text })
+            }
             placeholder="https://chat.whatsapp.com/..."
             error={errors.whatsapp_link}
             autoCapitalize="none"
@@ -231,7 +252,11 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
           />
 
           <View style={styles.helpText}>
-            <Ionicons name="information-circle-outline" size={16} color="#666" />
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color="#666"
+            />
             <Text style={styles.helpTextContent}>
               Changes will be visible to all group members immediately.
             </Text>

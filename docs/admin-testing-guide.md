@@ -18,6 +18,7 @@ The admin features testing suite covers all aspects of administrative functional
 ### Test Categories
 
 #### 1. Unit Tests - Admin Services
+
 **Location**: `src/services/__tests__/`
 
 Tests individual service methods in isolation:
@@ -30,6 +31,7 @@ Tests individual service methods in isolation:
 - **contactAudit.test.ts**: Contact sharing and audit tests
 
 **Key Test Areas**:
+
 - Permission validation
 - Data transformation
 - Error handling
@@ -37,6 +39,7 @@ Tests individual service methods in isolation:
 - Business logic validation
 
 #### 2. Unit Tests - Admin Hooks
+
 **Location**: `src/hooks/__tests__/`
 
 Tests React hooks for admin functionality:
@@ -47,6 +50,7 @@ Tests React hooks for admin functionality:
 - **useContactAudit.test.ts**: Contact audit hooks
 
 **Key Test Areas**:
+
 - Hook state management
 - Error handling
 - Loading states
@@ -54,6 +58,7 @@ Tests React hooks for admin functionality:
 - Retry mechanisms
 
 #### 3. Unit Tests - Admin Components
+
 **Location**: `src/components/*/tests__/`
 
 Tests React Native components:
@@ -66,6 +71,7 @@ Tests React Native components:
 - **AdminLoadingStates.test.tsx**: Loading state components
 
 **Key Test Areas**:
+
 - Component rendering
 - User interactions
 - Props handling
@@ -73,6 +79,7 @@ Tests React Native components:
 - Accessibility
 
 #### 4. Integration Tests - Admin Workflows
+
 **Location**: `src/__tests__/integration/`
 
 Tests complete admin workflows:
@@ -81,6 +88,7 @@ Tests complete admin workflows:
 - **admin-permissions.test.tsx**: Permission enforcement integration
 
 **Key Test Areas**:
+
 - Multi-step workflows
 - Service integration
 - State management
@@ -88,6 +96,7 @@ Tests complete admin workflows:
 - User experience flows
 
 #### 5. End-to-End Tests - Admin Journeys
+
 **Location**: `src/__tests__/e2e/`
 
 Tests complete user journeys:
@@ -95,6 +104,7 @@ Tests complete user journeys:
 - **admin-journeys.test.tsx**: Complete admin user journeys
 
 **Key Test Areas**:
+
 - Authentication flows
 - Navigation
 - Cross-screen interactions
@@ -102,6 +112,7 @@ Tests complete user journeys:
 - Error recovery
 
 #### 6. Performance Tests
+
 **Location**: `src/__tests__/performance/`
 
 Tests performance with large datasets:
@@ -109,6 +120,7 @@ Tests performance with large datasets:
 - **admin-performance.test.ts**: Performance benchmarks
 
 **Key Test Areas**:
+
 - Large dataset handling
 - Memory usage
 - Query optimization
@@ -139,6 +151,7 @@ node src/__tests__/admin-test-runner.js
 ```
 
 This provides:
+
 - Categorized test execution
 - Detailed reporting
 - Coverage analysis
@@ -271,6 +284,7 @@ jest.mock('@/services/supabase', () => ({
 ### Critical Path Coverage
 
 Ensure 100% coverage for:
+
 - Permission validation logic
 - Data security checks
 - Error handling paths
@@ -281,6 +295,7 @@ Ensure 100% coverage for:
 ### Common Issues
 
 1. **Mock Setup Issues**
+
    ```typescript
    // Ensure mocks are cleared between tests
    beforeEach(() => {
@@ -289,6 +304,7 @@ Ensure 100% coverage for:
    ```
 
 2. **Async Test Issues**
+
    ```typescript
    // Always await async operations
    await waitFor(() => {
@@ -307,11 +323,13 @@ Ensure 100% coverage for:
 ### Debug Tools
 
 1. **Test Output**
+
    ```bash
    npm test -- --verbose --no-coverage
    ```
 
 2. **Debug Mode**
+
    ```bash
    npm test -- --runInBand --detectOpenHandles
    ```
@@ -357,6 +375,7 @@ jobs:
 ### Writing Tests
 
 1. **Descriptive Test Names**
+
    ```typescript
    it('should allow church admin to approve pending group with valid permissions', async () => {
      // Test implementation
@@ -364,12 +383,13 @@ jobs:
    ```
 
 2. **Arrange-Act-Assert Pattern**
+
    ```typescript
    it('should handle permission denial', async () => {
      // Arrange
      mockPermissionService.hasPermission.mockResolvedValue({
        hasPermission: false,
-       reason: 'Access denied'
+       reason: 'Access denied',
      });
 
      // Act

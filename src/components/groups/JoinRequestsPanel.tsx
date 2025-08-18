@@ -54,9 +54,8 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
     );
   }
 
-  const pendingRequests = joinRequests?.filter(
-    (request) => request.status === 'pending'
-  ) || [];
+  const pendingRequests =
+    joinRequests?.filter((request) => request.status === 'pending') || [];
 
   return (
     <View style={styles.container}>

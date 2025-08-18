@@ -24,7 +24,8 @@ export class CrossPlatformTesting {
   static getPlatformInfo(): PlatformInfo {
     const { width, height } = Dimensions.get('window');
     const pixelRatio = PixelRatio.get();
-    const screenSize = width < 768 ? 'small' : width < 1024 ? 'medium' : 'large';
+    const screenSize =
+      width < 768 ? 'small' : width < 1024 ? 'medium' : 'large';
     const isTablet = screenSize !== 'small';
 
     let pixelDensity: PlatformInfo['pixelDensity'] = 'medium';
@@ -71,16 +72,22 @@ export class CrossPlatformTesting {
 
       // Test platform-specific UI elements
       if (platformInfo.hasNotch && Platform.OS === 'ios') {
-        platformSpecificIssues.push('Consider safe area insets for notched devices');
+        platformSpecificIssues.push(
+          'Consider safe area insets for notched devices'
+        );
       }
 
       if (platformInfo.screenSize === 'small') {
-        platformSpecificIssues.push('Verify admin interface usability on small screens');
+        platformSpecificIssues.push(
+          'Verify admin interface usability on small screens'
+        );
       }
 
       // Test accessibility features
       if (Platform.OS === 'android' && parseInt(platformInfo.version) < 24) {
-        platformSpecificIssues.push('Limited accessibility support on older Android versions');
+        platformSpecificIssues.push(
+          'Limited accessibility support on older Android versions'
+        );
       }
 
       return {
@@ -114,15 +121,21 @@ export class CrossPlatformTesting {
 
       // Platform-specific recommendations
       if (Platform.OS === 'web') {
-        recommendations.push('Consider using custom modal dialogs instead of native alerts on web');
+        recommendations.push(
+          'Consider using custom modal dialogs instead of native alerts on web'
+        );
       }
 
       if (platformInfo.screenSize === 'small') {
-        recommendations.push('Ensure confirmation dialogs are readable on small screens');
+        recommendations.push(
+          'Ensure confirmation dialogs are readable on small screens'
+        );
       }
 
       if (Platform.OS === 'android') {
-        recommendations.push('Test back button behavior with confirmation dialogs');
+        recommendations.push(
+          'Test back button behavior with confirmation dialogs'
+        );
       }
 
       return {
@@ -161,11 +174,15 @@ export class CrossPlatformTesting {
 
       // Performance considerations
       if (platformInfo.pixelDensity === 'ultra') {
-        performanceIssues.push('High pixel density may impact rendering performance');
+        performanceIssues.push(
+          'High pixel density may impact rendering performance'
+        );
       }
 
       if (platformInfo.screenSize === 'large' && Platform.OS === 'android') {
-        performanceIssues.push('Large screen Android devices may need optimized layouts');
+        performanceIssues.push(
+          'Large screen Android devices may need optimized layouts'
+        );
       }
 
       return {
@@ -200,7 +217,9 @@ export class CrossPlatformTesting {
         // Android TalkBack tests would go here
         improvements.push('Test with TalkBack enabled');
       } else if (Platform.OS === 'web') {
-        improvements.push('Test with screen readers like NVDA, JAWS, or VoiceOver');
+        improvements.push(
+          'Test with screen readers like NVDA, JAWS, or VoiceOver'
+        );
       }
 
       // Color contrast tests
@@ -227,14 +246,20 @@ export class CrossPlatformTesting {
    */
   static async runComprehensiveTests(): Promise<{
     platformInfo: PlatformInfo;
-    navigation: Awaited<ReturnType<typeof CrossPlatformTesting.testAdminNavigation>>;
-    dialogs: Awaited<ReturnType<typeof CrossPlatformTesting.testConfirmationDialogs>>;
+    navigation: Awaited<
+      ReturnType<typeof CrossPlatformTesting.testAdminNavigation>
+    >;
+    dialogs: Awaited<
+      ReturnType<typeof CrossPlatformTesting.testConfirmationDialogs>
+    >;
     data: Awaited<ReturnType<typeof CrossPlatformTesting.testDataHandling>>;
-    accessibility: Awaited<ReturnType<typeof CrossPlatformTesting.testAccessibility>>;
+    accessibility: Awaited<
+      ReturnType<typeof CrossPlatformTesting.testAccessibility>
+    >;
     overallSuccess: boolean;
   }> {
     const platformInfo = this.getPlatformInfo();
-    
+
     const [navigation, dialogs, data, accessibility] = await Promise.all([
       this.testAdminNavigation(),
       this.testConfirmationDialogs(),
@@ -242,7 +267,11 @@ export class CrossPlatformTesting {
       this.testAccessibility(),
     ]);
 
-    const overallSuccess = navigation.success && dialogs.success && data.success && accessibility.success;
+    const overallSuccess =
+      navigation.success &&
+      dialogs.success &&
+      data.success &&
+      accessibility.success;
 
     return {
       platformInfo,
@@ -257,8 +286,19 @@ export class CrossPlatformTesting {
   /**
    * Generate test report
    */
-  static generateTestReport(results: Awaited<ReturnType<typeof CrossPlatformTesting.runComprehensiveTests>>): string {
-    const { platformInfo, navigation, dialogs, data, accessibility, overallSuccess } = results;
+  static generateTestReport(
+    results: Awaited<
+      ReturnType<typeof CrossPlatformTesting.runComprehensiveTests>
+    >
+  ): string {
+    const {
+      platformInfo,
+      navigation,
+      dialogs,
+      data,
+      accessibility,
+      overallSuccess,
+    } = results;
 
     let report = `# Cross-Platform Admin Features Test Report\n\n`;
     report += `**Platform:** ${platformInfo.os} ${platformInfo.version}\n`;
@@ -270,10 +310,10 @@ export class CrossPlatformTesting {
     report += `## Navigation Tests\n`;
     report += `**Status:** ${navigation.success ? '✅ PASS' : '❌ FAIL'}\n`;
     if (navigation.errors.length > 0) {
-      report += `**Errors:**\n${navigation.errors.map(e => `- ${e}`).join('\n')}\n`;
+      report += `**Errors:**\n${navigation.errors.map((e) => `- ${e}`).join('\n')}\n`;
     }
     if (navigation.platformSpecificIssues.length > 0) {
-      report += `**Platform Issues:**\n${navigation.platformSpecificIssues.map(i => `- ${i}`).join('\n')}\n`;
+      report += `**Platform Issues:**\n${navigation.platformSpecificIssues.map((i) => `- ${i}`).join('\n')}\n`;
     }
     report += '\n';
 
@@ -281,10 +321,10 @@ export class CrossPlatformTesting {
     report += `## Confirmation Dialog Tests\n`;
     report += `**Status:** ${dialogs.success ? '✅ PASS' : '❌ FAIL'}\n`;
     if (dialogs.errors.length > 0) {
-      report += `**Errors:**\n${dialogs.errors.map(e => `- ${e}`).join('\n')}\n`;
+      report += `**Errors:**\n${dialogs.errors.map((e) => `- ${e}`).join('\n')}\n`;
     }
     if (dialogs.recommendations.length > 0) {
-      report += `**Recommendations:**\n${dialogs.recommendations.map(r => `- ${r}`).join('\n')}\n`;
+      report += `**Recommendations:**\n${dialogs.recommendations.map((r) => `- ${r}`).join('\n')}\n`;
     }
     report += '\n';
 
@@ -292,10 +332,10 @@ export class CrossPlatformTesting {
     report += `## Data Handling Tests\n`;
     report += `**Status:** ${data.success ? '✅ PASS' : '❌ FAIL'}\n`;
     if (data.errors.length > 0) {
-      report += `**Errors:**\n${data.errors.map(e => `- ${e}`).join('\n')}\n`;
+      report += `**Errors:**\n${data.errors.map((e) => `- ${e}`).join('\n')}\n`;
     }
     if (data.performanceIssues.length > 0) {
-      report += `**Performance Issues:**\n${data.performanceIssues.map(p => `- ${p}`).join('\n')}\n`;
+      report += `**Performance Issues:**\n${data.performanceIssues.map((p) => `- ${p}`).join('\n')}\n`;
     }
     report += '\n';
 
@@ -303,10 +343,10 @@ export class CrossPlatformTesting {
     report += `## Accessibility Tests\n`;
     report += `**Status:** ${accessibility.success ? '✅ PASS' : '❌ FAIL'}\n`;
     if (accessibility.errors.length > 0) {
-      report += `**Errors:**\n${accessibility.errors.map(e => `- ${e}`).join('\n')}\n`;
+      report += `**Errors:**\n${accessibility.errors.map((e) => `- ${e}`).join('\n')}\n`;
     }
     if (accessibility.improvements.length > 0) {
-      report += `**Improvements:**\n${accessibility.improvements.map(i => `- ${i}`).join('\n')}\n`;
+      report += `**Improvements:**\n${accessibility.improvements.map((i) => `- ${i}`).join('\n')}\n`;
     }
 
     return report;
@@ -315,7 +355,11 @@ export class CrossPlatformTesting {
   /**
    * Log test results to console with formatting
    */
-  static logTestResults(results: Awaited<ReturnType<typeof CrossPlatformTesting.runComprehensiveTests>>) {
+  static logTestResults(
+    results: Awaited<
+      ReturnType<typeof CrossPlatformTesting.runComprehensiveTests>
+    >
+  ) {
     const report = this.generateTestReport(results);
     console.log(report);
 
@@ -355,7 +399,7 @@ export class PlatformStyles {
    */
   static getSafeAreaPadding() {
     const platformInfo = CrossPlatformTesting.getPlatformInfo();
-    
+
     if (Platform.OS === 'ios' && platformInfo.hasNotch) {
       return {
         paddingTop: 44,

@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
-import { 
-  createPaginationParams, 
+import {
+  createPaginationParams,
   createPaginatedResponse,
   type PaginationParams,
   type PaginatedResponse,
@@ -97,7 +97,7 @@ export class GroupAdminService {
     churchId: string,
     includeAll: boolean = false
   ): Promise<AdminServiceResponse<GroupWithAdminDetails[]>>;
-  
+
   /**
    * Get paginated groups for a church with admin details
    */
@@ -111,7 +111,11 @@ export class GroupAdminService {
     churchId: string,
     includeAll: boolean = false,
     pagination?: PaginationParams
-  ): Promise<AdminServiceResponse<GroupWithAdminDetails[] | PaginatedResponse<GroupWithAdminDetails>>> {
+  ): Promise<
+    AdminServiceResponse<
+      GroupWithAdminDetails[] | PaginatedResponse<GroupWithAdminDetails>
+    >
+  > {
     try {
       // Check permission to manage church groups
       const permissionCheck = await permissionService.hasPermission(
@@ -166,7 +170,10 @@ export class GroupAdminService {
 
       // Apply pagination if provided
       if (pagination) {
-        query = query.range(pagination.offset, pagination.offset + pagination.limit - 1);
+        query = query.range(
+          pagination.offset,
+          pagination.offset + pagination.limit - 1
+        );
       }
 
       const { data, error, count } = await query;
@@ -674,7 +681,7 @@ export class UserAdminService {
   async getChurchUsers(
     churchId: string
   ): Promise<AdminServiceResponse<UserWithGroupStatus[]>>;
-  
+
   /**
    * Get paginated users from a church with group status
    */
@@ -688,7 +695,11 @@ export class UserAdminService {
     churchId: string,
     pagination?: PaginationParams,
     filter?: 'all' | 'connected' | 'unconnected'
-  ): Promise<AdminServiceResponse<UserWithGroupStatus[] | PaginatedResponse<UserWithGroupStatus>>> {
+  ): Promise<
+    AdminServiceResponse<
+      UserWithGroupStatus[] | PaginatedResponse<UserWithGroupStatus>
+    >
+  > {
     try {
       // Check permission to manage church users
       const permissionCheck = await permissionService.hasPermission(
@@ -738,7 +749,10 @@ export class UserAdminService {
 
       // Apply pagination if provided
       if (pagination) {
-        query = query.range(pagination.offset, pagination.offset + pagination.limit - 1);
+        query = query.range(
+          pagination.offset,
+          pagination.offset + pagination.limit - 1
+        );
       }
 
       const { data, error, count } = await query;
@@ -766,7 +780,7 @@ export class UserAdminService {
 
       // Apply filter if specified
       if (filter && filter !== 'all') {
-        usersWithStatus = usersWithStatus.filter(user => 
+        usersWithStatus = usersWithStatus.filter((user) =>
           filter === 'connected' ? user.is_connected : !user.is_connected
         );
       }

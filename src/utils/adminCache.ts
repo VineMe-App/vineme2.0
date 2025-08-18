@@ -74,41 +74,49 @@ export const ADMIN_CACHE_CONFIGS = {
  */
 export const ADMIN_QUERY_KEYS = {
   // Church-level queries
-  churchGroups: (churchId: string, includeAll?: boolean) => 
+  churchGroups: (churchId: string, includeAll?: boolean) =>
     ['admin', 'church-groups', churchId, { includeAll }] as const,
-  
-  churchUsers: (churchId: string, filter?: string) => 
+
+  churchUsers: (churchId: string, filter?: string) =>
     ['admin', 'church-users', churchId, { filter }] as const,
-  
-  churchSummary: (churchId: string) => 
+
+  churchSummary: (churchId: string) =>
     ['admin', 'church-summary', churchId] as const,
 
   // Group-level queries
-  groupDetails: (groupId: string) => 
+  groupDetails: (groupId: string) =>
     ['admin', 'group-details', groupId] as const,
-  
-  groupMembers: (groupId: string) => 
+
+  groupMembers: (groupId: string) =>
     ['admin', 'group-members', groupId] as const,
-  
-  groupRequests: (groupId: string) => 
+
+  groupRequests: (groupId: string) =>
     ['admin', 'group-requests', groupId] as const,
 
   // User-level queries
-  userDetails: (userId: string) => 
-    ['admin', 'user-details', userId] as const,
-  
-  userGroups: (userId: string) => 
-    ['admin', 'user-groups', userId] as const,
+  userDetails: (userId: string) => ['admin', 'user-details', userId] as const,
+
+  userGroups: (userId: string) => ['admin', 'user-groups', userId] as const,
 
   // Map queries
-  mapGroups: (churchId: string, bounds?: any) => 
+  mapGroups: (churchId: string, bounds?: any) =>
     ['admin', 'map-groups', churchId, bounds] as const,
 
   // Paginated queries
-  paginatedGroups: (churchId: string, page: number, limit: number, filters?: any) =>
+  paginatedGroups: (
+    churchId: string,
+    page: number,
+    limit: number,
+    filters?: any
+  ) =>
     ['admin', 'paginated-groups', churchId, { page, limit, filters }] as const,
 
-  paginatedUsers: (churchId: string, page: number, limit: number, filters?: any) =>
+  paginatedUsers: (
+    churchId: string,
+    page: number,
+    limit: number,
+    filters?: any
+  ) =>
     ['admin', 'paginated-users', churchId, { page, limit, filters }] as const,
 } as const;
 
@@ -123,17 +131,17 @@ export class AdminCacheManager {
    */
   async invalidateChurchData(churchId: string): Promise<void> {
     await Promise.all([
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'church-groups', churchId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'church-groups', churchId],
       }),
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'church-users', churchId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'church-users', churchId],
       }),
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'church-summary', churchId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'church-summary', churchId],
       }),
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'map-groups', churchId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'map-groups', churchId],
       }),
     ]);
   }
@@ -143,14 +151,14 @@ export class AdminCacheManager {
    */
   async invalidateGroupData(groupId: string): Promise<void> {
     await Promise.all([
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'group-details', groupId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'group-details', groupId],
       }),
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'group-members', groupId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'group-members', groupId],
       }),
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'group-requests', groupId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'group-requests', groupId],
       }),
     ]);
   }
@@ -160,11 +168,11 @@ export class AdminCacheManager {
    */
   async invalidateUserData(userId: string): Promise<void> {
     await Promise.all([
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'user-details', userId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'user-details', userId],
       }),
-      this.queryClient.invalidateQueries({ 
-        queryKey: ['admin', 'user-groups', userId] 
+      this.queryClient.invalidateQueries({
+        queryKey: ['admin', 'user-groups', userId],
       }),
     ]);
   }
@@ -173,18 +181,22 @@ export class AdminCacheManager {
    * Optimistically update group status
    */
   optimisticallyUpdateGroupStatus(
-    churchId: string, 
-    groupId: string, 
+    churchId: string,
+    groupId: string,
     newStatus: string
   ): void {
     const queryKey = ADMIN_QUERY_KEYS.churchGroups(churchId, true);
-    
+
     this.queryClient.setQueryData(queryKey, (oldData: any) => {
       if (!oldData) return oldData;
-      
-      return oldData.map((group: any) => 
-        group.id === groupId 
-          ? { ...group, status: newStatus, updated_at: new Date().toISOString() }
+
+      return oldData.map((group: any) =>
+        group.id === groupId
+          ? {
+              ...group,
+              status: newStatus,
+              updated_at: new Date().toISOString(),
+            }
           : group
       );
     });
@@ -194,18 +206,21 @@ export class AdminCacheManager {
    * Optimistically update group member count
    */
   optimisticallyUpdateMemberCount(
-    churchId: string, 
-    groupId: string, 
+    churchId: string,
+    groupId: string,
     delta: number
   ): void {
     const queryKey = ADMIN_QUERY_KEYS.churchGroups(churchId, true);
-    
+
     this.queryClient.setQueryData(queryKey, (oldData: any) => {
       if (!oldData) return oldData;
-      
-      return oldData.map((group: any) => 
-        group.id === groupId 
-          ? { ...group, member_count: Math.max(0, (group.member_count || 0) + delta) }
+
+      return oldData.map((group: any) =>
+        group.id === groupId
+          ? {
+              ...group,
+              member_count: Math.max(0, (group.member_count || 0) + delta),
+            }
           : group
       );
     });
@@ -223,18 +238,21 @@ export class AdminCacheManager {
   /**
    * Background sync for admin data
    */
-  startBackgroundSync(churchId: string, interval: number = 5 * 60 * 1000): () => void {
+  startBackgroundSync(
+    churchId: string,
+    interval: number = 5 * 60 * 1000
+  ): () => void {
     const syncInterval = setInterval(async () => {
       try {
         // Silently refetch critical admin data
         await Promise.all([
-          this.queryClient.refetchQueries({ 
+          this.queryClient.refetchQueries({
             queryKey: ADMIN_QUERY_KEYS.churchSummary(churchId),
-            type: 'active'
+            type: 'active',
           }),
-          this.queryClient.refetchQueries({ 
+          this.queryClient.refetchQueries({
             queryKey: ['admin', 'group-requests'],
-            type: 'active'
+            type: 'active',
           }),
         ]);
       } catch (error) {
@@ -250,8 +268,8 @@ export class AdminCacheManager {
    * Clear all admin cache
    */
   async clearAdminCache(): Promise<void> {
-    await this.queryClient.invalidateQueries({ 
-      queryKey: ['admin'] 
+    await this.queryClient.invalidateQueries({
+      queryKey: ['admin'],
     });
   }
 
@@ -265,10 +283,10 @@ export class AdminCacheManager {
   } {
     const cache = this.queryClient.getQueryCache();
     const allQueries = cache.getAll();
-    const adminQueries = allQueries.filter(query => 
-      Array.isArray(query.queryKey) && query.queryKey[0] === 'admin'
+    const adminQueries = allQueries.filter(
+      (query) => Array.isArray(query.queryKey) && query.queryKey[0] === 'admin'
     );
-    const staleQueries = adminQueries.filter(query => query.isStale());
+    const staleQueries = adminQueries.filter((query) => query.isStale());
 
     return {
       totalQueries: allQueries.length,
@@ -281,7 +299,9 @@ export class AdminCacheManager {
 /**
  * Create admin cache manager instance
  */
-export function createAdminCacheManager(queryClient: QueryClient): AdminCacheManager {
+export function createAdminCacheManager(
+  queryClient: QueryClient
+): AdminCacheManager {
   return new AdminCacheManager(queryClient);
 }
 
@@ -289,7 +309,10 @@ export function createAdminCacheManager(queryClient: QueryClient): AdminCacheMan
  * Memory-based cache for frequently accessed data
  */
 class MemoryCache<T> {
-  private cache = new Map<string, { data: T; timestamp: number; ttl: number }>();
+  private cache = new Map<
+    string,
+    { data: T; timestamp: number; ttl: number }
+  >();
 
   set(key: string, data: T, ttl: number = 5 * 60 * 1000): void {
     this.cache.set(key, {
@@ -301,14 +324,14 @@ class MemoryCache<T> {
 
   get(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) return null;
-    
+
     if (Date.now() - entry.timestamp > entry.ttl) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data;
   }
 

@@ -11,10 +11,7 @@ describe('ViewToggle', () => {
 
   it('should render with list view selected by default', () => {
     const { getByText } = render(
-      <ViewToggle
-        currentView="list"
-        onViewChange={mockOnViewChange}
-      />
+      <ViewToggle currentView="list" onViewChange={mockOnViewChange} />
     );
 
     expect(getByText('📋 List')).toBeTruthy();
@@ -23,16 +20,13 @@ describe('ViewToggle', () => {
 
   it('should highlight the current view', () => {
     const { getByText } = render(
-      <ViewToggle
-        currentView="map"
-        onViewChange={mockOnViewChange}
-      />
+      <ViewToggle currentView="map" onViewChange={mockOnViewChange} />
     );
 
     const listButton = getByText('📋 List').parent;
     const mapButton = getByText('🗺️ Map').parent;
 
-    // The map button should have active styling (we can't easily test styles, 
+    // The map button should have active styling (we can't easily test styles,
     // but we can verify the component renders correctly)
     expect(listButton).toBeTruthy();
     expect(mapButton).toBeTruthy();
@@ -40,10 +34,7 @@ describe('ViewToggle', () => {
 
   it('should call onViewChange when list button is pressed', () => {
     const { getByText } = render(
-      <ViewToggle
-        currentView="map"
-        onViewChange={mockOnViewChange}
-      />
+      <ViewToggle currentView="map" onViewChange={mockOnViewChange} />
     );
 
     fireEvent.press(getByText('📋 List'));
@@ -53,10 +44,7 @@ describe('ViewToggle', () => {
 
   it('should call onViewChange when map button is pressed', () => {
     const { getByText } = render(
-      <ViewToggle
-        currentView="list"
-        onViewChange={mockOnViewChange}
-      />
+      <ViewToggle currentView="list" onViewChange={mockOnViewChange} />
     );
 
     fireEvent.press(getByText('🗺️ Map'));
@@ -66,10 +54,7 @@ describe('ViewToggle', () => {
 
   it('should not call onViewChange when current view button is pressed', () => {
     const { getByText } = render(
-      <ViewToggle
-        currentView="list"
-        onViewChange={mockOnViewChange}
-      />
+      <ViewToggle currentView="list" onViewChange={mockOnViewChange} />
     );
 
     fireEvent.press(getByText('📋 List'));
@@ -79,13 +64,10 @@ describe('ViewToggle', () => {
 
   it('should handle view mode type correctly', () => {
     const viewModes: ViewMode[] = ['list', 'map'];
-    
-    viewModes.forEach(mode => {
+
+    viewModes.forEach((mode) => {
       const { getByText } = render(
-        <ViewToggle
-          currentView={mode}
-          onViewChange={mockOnViewChange}
-        />
+        <ViewToggle currentView={mode} onViewChange={mockOnViewChange} />
       );
 
       expect(getByText('📋 List')).toBeTruthy();

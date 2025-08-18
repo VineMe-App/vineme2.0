@@ -1,5 +1,12 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
@@ -15,11 +22,18 @@ import {
 
 export default function OtherUserProfileScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
-  const targetUserId = useMemo(() => (Array.isArray(params.id) ? params.id[0] : params.id), [params.id]);
+  const targetUserId = useMemo(
+    () => (Array.isArray(params.id) ? params.id[0] : params.id),
+    [params.id]
+  );
   const { user } = useAuth();
 
-  const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } =
-    useUserProfile(targetUserId);
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    error: profileError,
+    refetch: refetchProfile,
+  } = useUserProfile(targetUserId);
   const { data: memberships } = useUserGroupMemberships(targetUserId);
 
   const friendshipStatusQuery = useFriendshipStatus(targetUserId || '');
@@ -47,18 +61,22 @@ export default function OtherUserProfileScreen() {
 
   const handleRemoveFriend = () => {
     if (!targetUserId) return;
-    Alert.alert('Remove Friend', 'Are you sure you want to remove this friend?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () =>
-          removeFriend.mutate(targetUserId, {
-            onSuccess: () => Alert.alert('Removed', 'Friend removed'),
-            onError: (e) => Alert.alert('Error', e.message),
-          }),
-      },
-    ]);
+    Alert.alert(
+      'Remove Friend',
+      'Are you sure you want to remove this friend?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () =>
+            removeFriend.mutate(targetUserId, {
+              onSuccess: () => Alert.alert('Removed', 'Friend removed'),
+              onError: (e) => Alert.alert('Error', e.message),
+            }),
+        },
+      ]
+    );
   };
 
   const ActionButton = () => {
@@ -82,7 +100,11 @@ export default function OtherUserProfileScreen() {
         return (
           <View style={styles.actionsRow}>
             <Button title="Friends" variant="secondary" disabled />
-            <Button title="Remove Friend" variant="danger" onPress={handleRemoveFriend} />
+            <Button
+              title="Remove Friend"
+              variant="danger"
+              onPress={handleRemoveFriend}
+            />
           </View>
         );
       case 'pending': {
@@ -116,8 +138,8 @@ export default function OtherUserProfileScreen() {
 
   if (!targetUserId) {
     return (
-      <View style={styles.container}> 
-        <View style={styles.centered}> 
+      <View style={styles.container}>
+        <View style={styles.centered}>
           <Text style={styles.errorText}>No user specified.</Text>
         </View>
       </View>
@@ -141,9 +163,15 @@ export default function OtherUserProfileScreen() {
         {profile && (
           <>
             <View style={styles.headerSection}>
-              <Avatar size={100} imageUrl={profile.avatar_url} name={profile.name} />
+              <Avatar
+                size={100}
+                imageUrl={profile.avatar_url}
+                name={profile.name}
+              />
               <Text style={styles.name}>{profile.name}</Text>
-              {profile.email ? <Text style={styles.email}>{profile.email}</Text> : null}
+              {profile.email ? (
+                <Text style={styles.email}>{profile.email}</Text>
+              ) : null}
               <ActionButton />
             </View>
 
@@ -162,7 +190,10 @@ export default function OtherUserProfileScreen() {
               {profile.service?.name ? (
                 <InfoRow label="Service" value={profile.service.name} />
               ) : null}
-              <InfoRow label="Member Since" value={new Date(profile.created_at).toLocaleDateString()} />
+              <InfoRow
+                label="Member Since"
+                value={new Date(profile.created_at).toLocaleDateString()}
+              />
             </View>
 
             {memberships && memberships.length > 0 && (
@@ -172,10 +203,14 @@ export default function OtherUserProfileScreen() {
                   <TouchableOpacity
                     key={m.id}
                     style={styles.groupItem}
-                    onPress={() => m.group?.id && router.push(`/group/${m.group.id}`)}
+                    onPress={() =>
+                      m.group?.id && router.push(`/group/${m.group.id}`)
+                    }
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.groupTitle}>{m.group?.title || 'Unknown Group'}</Text>
+                      <Text style={styles.groupTitle}>
+                        {m.group?.title || 'Unknown Group'}
+                      </Text>
                       <Text style={styles.groupRole}>{m.role}</Text>
                     </View>
                     <Text style={styles.groupDate}>
@@ -189,7 +224,9 @@ export default function OtherUserProfileScreen() {
         )}
 
         {!profile && profileLoading && (
-          <View style={styles.centered}><Text>Loading profile...</Text></View>
+          <View style={styles.centered}>
+            <Text>Loading profile...</Text>
+          </View>
         )}
       </ScrollView>
     </View>
@@ -298,4 +335,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-

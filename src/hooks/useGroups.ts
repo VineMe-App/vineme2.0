@@ -134,8 +134,12 @@ export const useFriendsInGroup = (
   return useQuery({
     queryKey: groupKeys.friendsInGroup(groupId || '', userId || ''),
     queryFn: async () => {
-      if (!groupId || !userId) throw new Error('Group ID and User ID are required');
-      const { data, error } = await groupService.getFriendsInGroup(groupId, userId);
+      if (!groupId || !userId)
+        throw new Error('Group ID and User ID are required');
+      const { data, error } = await groupService.getFriendsInGroup(
+        groupId,
+        userId
+      );
       if (error) throw error;
       return data;
     },

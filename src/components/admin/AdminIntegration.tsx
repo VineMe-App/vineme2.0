@@ -7,7 +7,10 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { useAuthStore } from '../../stores/auth';
 import { AdminOnboarding, AdminHelp } from './AdminOnboarding';
-import { ConfirmationDialog, AdminConfirmations } from '../ui/ConfirmationDialog';
+import {
+  ConfirmationDialog,
+  AdminConfirmations,
+} from '../ui/ConfirmationDialog';
 import { AdminNavigation, AdminWorkflows } from '../../utils/adminNavigation';
 import { useAdminNotifications } from '../../hooks/useNotifications';
 import { secureStorage } from '../../utils/secureStorage';
@@ -32,10 +35,12 @@ interface AdminState {
 
 const ADMIN_ONBOARDING_KEY = 'admin_onboarding_completed';
 
-export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) => {
+export const AdminIntegration: React.FC<AdminIntegrationProps> = ({
+  children,
+}) => {
   const { user, userProfile } = useAuthStore();
   const { refreshNotifications } = useAdminNotifications(user?.id);
-  
+
   const [adminState, setAdminState] = useState<AdminState>({
     showOnboarding: false,
     showHelp: false,
@@ -60,7 +65,7 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
       try {
         const completed = await secureStorage.getItem(ADMIN_ONBOARDING_KEY);
         if (!completed) {
-          setAdminState(prev => ({ ...prev, showOnboarding: true }));
+          setAdminState((prev) => ({ ...prev, showOnboarding: true }));
         }
       } catch (error) {
         console.warn('Failed to check admin onboarding status:', error);
@@ -74,31 +79,31 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
   const handleOnboardingComplete = async () => {
     try {
       await secureStorage.setItem(ADMIN_ONBOARDING_KEY, 'true');
-      setAdminState(prev => ({ ...prev, showOnboarding: false }));
-      
+      setAdminState((prev) => ({ ...prev, showOnboarding: false }));
+
       Alert.alert(
         'Welcome to Admin Features! 🎉',
-        'You\'re all set to manage your church community. Check the notification badges for pending actions.',
+        "You're all set to manage your church community. Check the notification badges for pending actions.",
         [{ text: 'Get Started' }]
       );
     } catch (error) {
       console.warn('Failed to save onboarding completion:', error);
-      setAdminState(prev => ({ ...prev, showOnboarding: false }));
+      setAdminState((prev) => ({ ...prev, showOnboarding: false }));
     }
   };
 
   const handleOnboardingSkip = async () => {
     try {
       await secureStorage.setItem(ADMIN_ONBOARDING_KEY, 'true');
-      setAdminState(prev => ({ ...prev, showOnboarding: false }));
+      setAdminState((prev) => ({ ...prev, showOnboarding: false }));
     } catch (error) {
       console.warn('Failed to save onboarding skip:', error);
-      setAdminState(prev => ({ ...prev, showOnboarding: false }));
+      setAdminState((prev) => ({ ...prev, showOnboarding: false }));
     }
   };
 
   const showHelp = (context: 'groups' | 'users' | 'general' = 'general') => {
-    setAdminState(prev => ({
+    setAdminState((prev) => ({
       ...prev,
       showHelp: true,
       helpContext: context,
@@ -106,7 +111,7 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
   };
 
   const hideHelp = () => {
-    setAdminState(prev => ({ ...prev, showHelp: false }));
+    setAdminState((prev) => ({ ...prev, showHelp: false }));
   };
 
   // Confirmation dialog handlers
@@ -116,7 +121,7 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
     onConfirm: () => Promise<void>,
     onCancel?: () => void
   ) => {
-    setAdminState(prev => ({
+    setAdminState((prev) => ({
       ...prev,
       confirmationDialog: {
         visible: true,
@@ -130,7 +135,7 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
   };
 
   const hideConfirmation = () => {
-    setAdminState(prev => ({
+    setAdminState((prev) => ({
       ...prev,
       confirmationDialog: {
         visible: false,
@@ -147,7 +152,7 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
     const { onConfirm } = adminState.confirmationDialog;
     if (!onConfirm) return;
 
-    setAdminState(prev => ({
+    setAdminState((prev) => ({
       ...prev,
       confirmationDialog: {
         ...prev.confirmationDialog,
@@ -167,7 +172,7 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
         [{ text: 'OK' }]
       );
     } finally {
-      setAdminState(prev => ({
+      setAdminState((prev) => ({
         ...prev,
         confirmationDialog: {
           ...prev.confirmationDialog,
@@ -179,7 +184,7 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
 
   const renderConfirmationDialog = () => {
     const { visible, type, data, isLoading } = adminState.confirmationDialog;
-    
+
     if (!visible || !type || !data) return null;
 
     switch (type) {
@@ -245,14 +250,14 @@ export const AdminIntegration: React.FC<AdminIntegrationProps> = ({ children }) 
     // Navigation helpers
     navigation: AdminNavigation,
     workflows: AdminWorkflows,
-    
+
     // UI helpers
     showHelp,
     showConfirmation,
-    
+
     // State
     isChurchAdmin,
-    
+
     // Actions
     refreshNotifications,
   };
@@ -297,7 +302,7 @@ export const useAdminIntegration = () => {
     isChurchAdmin,
     navigation: AdminNavigation,
     workflows: AdminWorkflows,
-    
+
     // Helper to show confirmation dialogs
     confirmAction: (
       type: 'approve' | 'decline' | 'close' | 'remove' | 'role' | 'delete',

@@ -45,7 +45,9 @@ export function FriendRequestCard({
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.userInfo}
-        onPress={() => displayUser?.id && router.push(`/user/${displayUser.id}`)}
+        onPress={() =>
+          displayUser?.id && router.push(`/user/${displayUser.id}`)
+        }
         accessibilityRole="button"
         accessibilityLabel={`View ${displayUser.name}'s profile`}
       >

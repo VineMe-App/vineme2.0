@@ -8,6 +8,7 @@ import { STORAGE_KEYS } from '@/utils/constants';
 
 import NameStep from './NameStep';
 import ChurchStep from './ChurchStep';
+import GroupStatusStep from './GroupStatusStep';
 import InterestsStep from './InterestsStep';
 import MeetingNightStep from './MeetingNightStep';
 
@@ -21,6 +22,11 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'church',
     title: 'Select Church',
     component: ChurchStep,
+  },
+  {
+    id: 'group-status',
+    title: 'Group Status',
+    component: GroupStatusStep,
   },
   {
     id: 'interests',
@@ -42,6 +48,7 @@ export default function OnboardingFlow() {
     service_id: undefined,
     interests: [],
     preferred_meeting_night: '',
+    group_status: undefined,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,16 +123,21 @@ export default function OnboardingFlow() {
     setError(null);
 
     try {
-      if (__DEV__) console.log('[Onboarding] Creating user profile...', { hasUser: !!user });
+      if (__DEV__)
+        console.log('[Onboarding] Creating user profile...', {
+          hasUser: !!user,
+        });
       // Create user profile in database
       const success = await createUserProfile({
         name: data.name,
         church_id: data.church_id,
         service_id: data.service_id,
+        newcomer: data.group_status === 'looking',
       });
 
       if (!success) {
-        if (__DEV__) console.log('[Onboarding] createUserProfile returned false');
+        if (__DEV__)
+          console.log('[Onboarding] createUserProfile returned false');
         setError('Failed to create user profile. Please try again.');
         setIsLoading(false);
         return;

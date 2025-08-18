@@ -58,9 +58,7 @@ class DevLogger {
   private toMessage(args: any[]): string {
     try {
       return args
-        .map((a) =>
-          typeof a === 'string' ? a : JSON.stringify(a, null, 2)
-        )
+        .map((a) => (typeof a === 'string' ? a : JSON.stringify(a, null, 2)))
         .join(' ');
     } catch {
       return args.map(String).join(' ');
@@ -69,4 +67,3 @@ class DevLogger {
 }
 
 export const devLogger = new DevLogger();
-

@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { EventWithDetails } from '../../types/database';
 import { formatDateTime, isToday } from '../../utils/helpers';
@@ -143,8 +149,18 @@ export const EventCard: React.FC<EventCardProps> = ({
               )}
               {showTicketStatus && hasTicket && (
                 <View style={styles.ticketBadge}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Ionicons name="checkmark-circle-outline" size={14} color="#2e7d32" />
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={14}
+                      color="#2e7d32"
+                    />
                     <Text style={styles.ticketText}>Registered</Text>
                   </View>
                 </View>
@@ -159,7 +175,9 @@ export const EventCard: React.FC<EventCardProps> = ({
           <View style={styles.details}>
             <View style={styles.metaRow}>
               <Ionicons name="calendar-outline" size={14} color="#6b7280" />
-              <Text style={styles.eventMeta}>{formatEventDate(event.start_date)}</Text>
+              <Text style={styles.eventMeta}>
+                {formatEventDate(event.start_date)}
+              </Text>
             </View>
 
             {formatEventDuration() && (
@@ -171,13 +189,17 @@ export const EventCard: React.FC<EventCardProps> = ({
 
             <View style={styles.metaRow}>
               <Ionicons name="location-outline" size={14} color="#6b7280" />
-              <Text style={styles.eventMeta}>{getLocationText(event.location)}</Text>
+              <Text style={styles.eventMeta}>
+                {getLocationText(event.location)}
+              </Text>
             </View>
 
             {event.host && (
               <View style={styles.metaRow}>
                 <Ionicons name="person-outline" size={14} color="#6b7280" />
-                <Text style={styles.eventMeta}>Hosted by {event.host.name}</Text>
+                <Text style={styles.eventMeta}>
+                  Hosted by {event.host.name}
+                </Text>
               </View>
             )}
 
@@ -191,14 +213,19 @@ export const EventCard: React.FC<EventCardProps> = ({
             {event.recurrence_pattern && (
               <View style={styles.metaRow}>
                 <Ionicons name="sync-outline" size={14} color="#6b7280" />
-                <Text style={styles.eventMeta}>{getRecurrenceText(event.recurrence_pattern)}</Text>
+                <Text style={styles.eventMeta}>
+                  {getRecurrenceText(event.recurrence_pattern)}
+                </Text>
               </View>
             )}
           </View>
 
           <View style={styles.footer}>
             {event.whatsapp_link && (
-              <TouchableOpacity style={styles.whatsappButton} onPress={handleWhatsAppPress}>
+              <TouchableOpacity
+                style={styles.whatsappButton}
+                onPress={handleWhatsAppPress}
+              >
                 <View style={styles.metaRow}>
                   <Ionicons name="logo-whatsapp" size={16} color="#fff" />
                   <Text style={styles.whatsappText}>Join WhatsApp</Text>
@@ -209,7 +236,9 @@ export const EventCard: React.FC<EventCardProps> = ({
             {event.requires_ticket && event.ticket_count !== undefined && (
               <View style={styles.metaRow}>
                 <Ionicons name="ticket-outline" size={14} color="#6b7280" />
-                <Text style={styles.ticketCount}>{event.ticket_count} registered</Text>
+                <Text style={styles.ticketCount}>
+                  {event.ticket_count} registered
+                </Text>
               </View>
             )}
           </View>

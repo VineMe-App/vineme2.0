@@ -71,7 +71,9 @@ describe('LocationService', () => {
       const result = await locationService.geocodeAddress('San Francisco, CA');
 
       expect(result).toEqual(mockCoordinates);
-      expect(mockLocation.geocodeAsync).toHaveBeenCalledWith('San Francisco, CA');
+      expect(mockLocation.geocodeAsync).toHaveBeenCalledWith(
+        'San Francisco, CA'
+      );
     });
 
     it('should return null for empty address', async () => {
@@ -100,7 +102,10 @@ describe('LocationService', () => {
 
   describe('reverseGeocode', () => {
     it('should return address for valid coordinates', async () => {
-      const coordinates: Coordinates = { latitude: 37.7749, longitude: -122.4194 };
+      const coordinates: Coordinates = {
+        latitude: 37.7749,
+        longitude: -122.4194,
+      };
       const mockAddress = {
         street: '123 Main St',
         city: 'San Francisco',
@@ -144,9 +149,15 @@ describe('LocationService', () => {
     });
 
     it('should return 0 for same coordinates', () => {
-      const coordinates: Coordinates = { latitude: 37.7749, longitude: -122.4194 };
+      const coordinates: Coordinates = {
+        latitude: 37.7749,
+        longitude: -122.4194,
+      };
 
-      const distance = locationService.calculateDistance(coordinates, coordinates);
+      const distance = locationService.calculateDistance(
+        coordinates,
+        coordinates
+      );
 
       expect(distance).toBe(0);
     });
@@ -154,7 +165,9 @@ describe('LocationService', () => {
 
   describe('parseGroupLocation', () => {
     it('should parse string location as address', () => {
-      const result = locationService.parseGroupLocation('123 Main St, San Francisco, CA');
+      const result = locationService.parseGroupLocation(
+        '123 Main St, San Francisco, CA'
+      );
 
       expect(result).toEqual({
         address: '123 Main St, San Francisco, CA',
@@ -198,15 +211,15 @@ describe('LocationService', () => {
   describe('getCurrentLocation', () => {
     it('should return current location when permission granted', async () => {
       const mockCoordinates = { latitude: 37.7749, longitude: -122.4194 };
-      
+
       // Reset the permission status cache
       (locationService as any).permissionStatus = null;
-      
+
       mockLocation.getForegroundPermissionsAsync.mockResolvedValue({
         status: 'granted' as any,
         canAskAgain: true,
       });
-      
+
       mockLocation.getCurrentPositionAsync.mockResolvedValue({
         coords: mockCoordinates,
       } as any);
@@ -218,20 +231,20 @@ describe('LocationService', () => {
 
     it('should request permission if not granted', async () => {
       const mockCoordinates = { latitude: 37.7749, longitude: -122.4194 };
-      
+
       // Reset the permission status cache
       (locationService as any).permissionStatus = null;
-      
+
       mockLocation.getForegroundPermissionsAsync.mockResolvedValue({
         status: 'denied' as any,
         canAskAgain: true,
       });
-      
+
       mockLocation.requestForegroundPermissionsAsync.mockResolvedValue({
         status: 'granted' as any,
         canAskAgain: true,
       });
-      
+
       mockLocation.getCurrentPositionAsync.mockResolvedValue({
         coords: mockCoordinates,
       } as any);
@@ -245,12 +258,12 @@ describe('LocationService', () => {
     it('should return null when permission denied', async () => {
       // Reset the permission status cache
       (locationService as any).permissionStatus = null;
-      
+
       mockLocation.getForegroundPermissionsAsync.mockResolvedValue({
         status: 'denied' as any,
         canAskAgain: true,
       });
-      
+
       mockLocation.requestForegroundPermissionsAsync.mockResolvedValue({
         status: 'denied' as any,
         canAskAgain: false,

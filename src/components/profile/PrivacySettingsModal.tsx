@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
@@ -40,10 +34,10 @@ export const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({
     error: settingsError,
   } = usePrivacySettings(userId);
 
-  const {
-    data: contactLogs,
-    isLoading: isLoadingLogs,
-  } = useUserContactLogs(userId, userId);
+  const { data: contactLogs, isLoading: isLoadingLogs } = useUserContactLogs(
+    userId,
+    userId
+  );
 
   const updatePrivacyMutation = useUpdatePrivacySettings();
 
@@ -62,7 +56,7 @@ export const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({
     value: boolean
   ) => {
     setHasChanges(true);
-    
+
     switch (setting) {
       case 'email':
         setAllowEmailSharing(value);
@@ -97,12 +91,14 @@ export const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({
         'Your privacy settings have been updated successfully.',
         [{ text: 'OK', onPress: onClose }]
       );
-      
+
       setHasChanges(false);
     } catch (error) {
       Alert.alert(
         'Error',
-        error instanceof Error ? error.message : 'Failed to update privacy settings'
+        error instanceof Error
+          ? error.message
+          : 'Failed to update privacy settings'
       );
     }
   };
@@ -161,20 +157,24 @@ export const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({
     >
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={styles.description}>
-          Control how your contact information is shared with group leaders when you join groups.
+          Control how your contact information is shared with group leaders when
+          you join groups.
         </Text>
 
         <Card style={styles.settingsCard}>
           <Text style={styles.sectionTitle}>Contact Sharing Preferences</Text>
-          
+
           <View style={styles.settingItem}>
             <Checkbox
               checked={allowContactByLeaders}
-              onPress={() => handleSettingChange('leaders', !allowContactByLeaders)}
+              onPress={() =>
+                handleSettingChange('leaders', !allowContactByLeaders)
+              }
               label="Allow group leaders to contact me"
             />
             <Text style={styles.settingDescription}>
-              When enabled, group leaders can access your contact information when you join their groups.
+              When enabled, group leaders can access your contact information
+              when you join their groups.
             </Text>
           </View>
 
@@ -183,7 +183,9 @@ export const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({
               <View style={styles.settingItem}>
                 <Checkbox
                   checked={allowEmailSharing}
-                  onPress={() => handleSettingChange('email', !allowEmailSharing)}
+                  onPress={() =>
+                    handleSettingChange('email', !allowEmailSharing)
+                  }
                   label="Share email address"
                 />
                 <Text style={styles.settingDescription}>
@@ -194,7 +196,9 @@ export const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({
               <View style={styles.settingItem}>
                 <Checkbox
                   checked={allowPhoneSharing}
-                  onPress={() => handleSettingChange('phone', !allowPhoneSharing)}
+                  onPress={() =>
+                    handleSettingChange('phone', !allowPhoneSharing)
+                  }
                   label="Share phone number"
                 />
                 <Text style={styles.settingDescription}>
@@ -211,7 +215,7 @@ export const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({
             <Text style={styles.logsDescription}>
               Here's when group leaders have accessed your contact information:
             </Text>
-            
+
             {isLoadingLogs ? (
               <LoadingSpinner size="small" />
             ) : (
@@ -227,17 +231,23 @@ export const PrivacySettingsModal: React.FC<PrivacySettingsModalProps> = ({
                       </Text>
                     </View>
                     <Text style={styles.logDetails}>
-                      {log.access_type === 'view' ? 'Viewed' : 
-                       log.access_type === 'call' ? 'Called' :
-                       log.access_type === 'email' ? 'Emailed' : 'Messaged'} your{' '}
-                      {log.contact_fields.join(' and ')} in {log.group?.title || 'Unknown Group'}
+                      {log.access_type === 'view'
+                        ? 'Viewed'
+                        : log.access_type === 'call'
+                          ? 'Called'
+                          : log.access_type === 'email'
+                            ? 'Emailed'
+                            : 'Messaged'}{' '}
+                      your {log.contact_fields.join(' and ')} in{' '}
+                      {log.group?.title || 'Unknown Group'}
                     </Text>
                   </View>
                 ))}
-                
+
                 {contactLogs.length > 5 && (
                   <Text style={styles.moreLogsText}>
-                    And {contactLogs.length - 5} more access{contactLogs.length - 5 === 1 ? '' : 'es'}...
+                    And {contactLogs.length - 5} more access
+                    {contactLogs.length - 5 === 1 ? '' : 'es'}...
                   </Text>
                 )}
               </View>

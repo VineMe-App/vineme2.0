@@ -9,10 +9,10 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { 
-  AccessibilityHelpers, 
-  AdminAccessibilityLabels, 
-  ScreenReaderUtils 
+import {
+  AccessibilityHelpers,
+  AdminAccessibilityLabels,
+  ScreenReaderUtils,
 } from '@/utils/accessibility';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
@@ -21,7 +21,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { UserManagementCard } from '@/components/admin/UserManagementCard';
 import { AdminErrorBoundary } from '@/components/ui/AdminErrorBoundary';
-import { 
+import {
   AdminLoadingCard,
   AdminSkeletonLoader,
   AdminLoadingList,
@@ -72,11 +72,11 @@ export default function ManageUsersScreen() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const { 
-    data: churchSummary, 
+  const {
+    data: churchSummary,
     isLoading: summaryLoading,
     error: summaryError,
-    refetch: refetchSummary 
+    refetch: refetchSummary,
   } = useQuery({
     queryKey: ['admin', 'church-summary', userProfile?.church_id],
     queryFn: async () => {
@@ -183,177 +183,207 @@ export default function ManageUsersScreen() {
             <Text style={styles.title}>Manage Users</Text>
           </View>
 
-      {/* Summary Stats */}
-      {summaryLoading ? (
-        <View style={styles.summaryContainer}>
-          <AdminSkeletonLoader lines={1} showAvatar={false} showActions={false} />
-        </View>
-      ) : summaryError ? (
-        <View style={styles.summaryContainer}>
-          <ErrorMessage
-            error="Failed to load summary statistics"
-            onRetry={refetchSummary}
-            showRetry={true}
-          />
-        </View>
-      ) : churchSummary && (
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryNumber}>
-              {churchSummary.total_users}
-            </Text>
-            <Text style={styles.summaryLabel}>Total Users</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryNumber}>
-              {churchSummary.connected_users}
-            </Text>
-            <Text style={styles.summaryLabel}>Connected</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryNumber}>
-              {churchSummary.unconnected_users}
-            </Text>
-            <Text style={styles.summaryLabel}>Unconnected</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.refreshSummaryButton}
-            onPress={handleRefresh}
-          >
-            <Text style={styles.refreshSummaryButtonText}>↻</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Filter Buttons */}
-      <View 
-        style={styles.filterContainer}
-        accessibilityRole="tablist"
-        accessibilityLabel="User filter options"
-      >
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === 'all' && styles.filterButtonActive,
-          ]}
-          onPress={() => {
-            setFilter('all');
-            ScreenReaderUtils.announceForAccessibility('Showing all users');
-          }}
-          {...AccessibilityHelpers.createButtonProps(
-            AdminAccessibilityLabels.filterState('All users', filter === 'all', users?.length),
-            'Double tap to show all users'
-          )}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: filter === 'all' }}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === 'all' && styles.filterButtonTextActive,
-            ]}
-          >
-            All Users ({users?.length || 0})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === 'connected' && styles.filterButtonActive,
-          ]}
-          onPress={() => {
-            setFilter('connected');
-            ScreenReaderUtils.announceForAccessibility('Showing connected users only');
-          }}
-          {...AccessibilityHelpers.createButtonProps(
-            AdminAccessibilityLabels.filterState('Connected users', filter === 'connected', users?.filter((u) => u.is_connected).length),
-            'Double tap to show only users in groups'
-          )}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: filter === 'connected' }}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === 'connected' && styles.filterButtonTextActive,
-            ]}
-          >
-            Connected ({users?.filter((u) => u.is_connected).length || 0})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === 'unconnected' && styles.filterButtonActive,
-          ]}
-          onPress={() => {
-            setFilter('unconnected');
-            ScreenReaderUtils.announceForAccessibility('Showing unconnected users only');
-          }}
-          {...AccessibilityHelpers.createButtonProps(
-            AdminAccessibilityLabels.filterState('Unconnected users', filter === 'unconnected', users?.filter((u) => !u.is_connected).length),
-            'Double tap to show only users not in any groups'
-          )}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: filter === 'unconnected' }}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === 'unconnected' && styles.filterButtonTextActive,
-            ]}
-          >
-            Unconnected ({users?.filter((u) => !u.is_connected).length || 0})
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {isLoading ? (
-        <View style={styles.content}>
-          <AdminLoadingCard
-            title="Loading Users"
-            message="Fetching church members and their group participation..."
-          />
-          <AdminLoadingList count={5} showAvatar={true} showActions={false} />
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            Platform.OS === 'ios' ? (
-              <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
-            ) : undefined
-          }
-        >
-          {filteredUsers.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {filter === 'all'
-                  ? 'No users found'
-                  : filter === 'connected'
-                    ? 'No connected users found'
-                    : 'No unconnected users found'}
-              </Text>
-              <Text style={styles.emptySubtext}>
-                {filter === 'unconnected'
-                  ? 'All users are connected to groups!'
-                  : 'Users will appear here as they join your church.'}
-              </Text>
+          {/* Summary Stats */}
+          {summaryLoading ? (
+            <View style={styles.summaryContainer}>
+              <AdminSkeletonLoader
+                lines={1}
+                showAvatar={false}
+                showActions={false}
+              />
+            </View>
+          ) : summaryError ? (
+            <View style={styles.summaryContainer}>
+              <ErrorMessage
+                error="Failed to load summary statistics"
+                onRetry={refetchSummary}
+                showRetry={true}
+              />
             </View>
           ) : (
-            <View style={styles.usersList}>
-              {filteredUsers.map((user) => (
-                <UserManagementCard
-                  key={user.id}
-                  user={user}
-                  onPress={() => handleUserPress(user.id)}
-                />
-              ))}
+            churchSummary && (
+              <View style={styles.summaryContainer}>
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryNumber}>
+                    {churchSummary.total_users}
+                  </Text>
+                  <Text style={styles.summaryLabel}>Total Users</Text>
+                </View>
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryNumber}>
+                    {churchSummary.connected_users}
+                  </Text>
+                  <Text style={styles.summaryLabel}>Connected</Text>
+                </View>
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryNumber}>
+                    {churchSummary.unconnected_users}
+                  </Text>
+                  <Text style={styles.summaryLabel}>Unconnected</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.refreshSummaryButton}
+                  onPress={handleRefresh}
+                >
+                  <Text style={styles.refreshSummaryButtonText}>↻</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          )}
+
+          {/* Filter Buttons */}
+          <View
+            style={styles.filterContainer}
+            accessibilityRole="tablist"
+            accessibilityLabel="User filter options"
+          >
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filter === 'all' && styles.filterButtonActive,
+              ]}
+              onPress={() => {
+                setFilter('all');
+                ScreenReaderUtils.announceForAccessibility('Showing all users');
+              }}
+              {...AccessibilityHelpers.createButtonProps(
+                AdminAccessibilityLabels.filterState(
+                  'All users',
+                  filter === 'all',
+                  users?.length
+                ),
+                'Double tap to show all users'
+              )}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: filter === 'all' }}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filter === 'all' && styles.filterButtonTextActive,
+                ]}
+              >
+                All Users ({users?.length || 0})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filter === 'connected' && styles.filterButtonActive,
+              ]}
+              onPress={() => {
+                setFilter('connected');
+                ScreenReaderUtils.announceForAccessibility(
+                  'Showing connected users only'
+                );
+              }}
+              {...AccessibilityHelpers.createButtonProps(
+                AdminAccessibilityLabels.filterState(
+                  'Connected users',
+                  filter === 'connected',
+                  users?.filter((u) => u.is_connected).length
+                ),
+                'Double tap to show only users in groups'
+              )}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: filter === 'connected' }}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filter === 'connected' && styles.filterButtonTextActive,
+                ]}
+              >
+                Connected ({users?.filter((u) => u.is_connected).length || 0})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filter === 'unconnected' && styles.filterButtonActive,
+              ]}
+              onPress={() => {
+                setFilter('unconnected');
+                ScreenReaderUtils.announceForAccessibility(
+                  'Showing unconnected users only'
+                );
+              }}
+              {...AccessibilityHelpers.createButtonProps(
+                AdminAccessibilityLabels.filterState(
+                  'Unconnected users',
+                  filter === 'unconnected',
+                  users?.filter((u) => !u.is_connected).length
+                ),
+                'Double tap to show only users not in any groups'
+              )}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: filter === 'unconnected' }}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filter === 'unconnected' && styles.filterButtonTextActive,
+                ]}
+              >
+                Unconnected ({users?.filter((u) => !u.is_connected).length || 0}
+                )
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {isLoading ? (
+            <View style={styles.content}>
+              <AdminLoadingCard
+                title="Loading Users"
+                message="Fetching church members and their group participation..."
+              />
+              <AdminLoadingList
+                count={5}
+                showAvatar={true}
+                showActions={false}
+              />
             </View>
-            )}
-          </ScrollView>
-        )}
+          ) : (
+            <ScrollView
+              style={styles.content}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                Platform.OS === 'ios' ? (
+                  <RefreshControl
+                    refreshing={isLoading}
+                    onRefresh={handleRefresh}
+                  />
+                ) : undefined
+              }
+            >
+              {filteredUsers.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    {filter === 'all'
+                      ? 'No users found'
+                      : filter === 'connected'
+                        ? 'No connected users found'
+                        : 'No unconnected users found'}
+                  </Text>
+                  <Text style={styles.emptySubtext}>
+                    {filter === 'unconnected'
+                      ? 'All users are connected to groups!'
+                      : 'Users will appear here as they join your church.'}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.usersList}>
+                  {filteredUsers.map((user) => (
+                    <UserManagementCard
+                      key={user.id}
+                      user={user}
+                      onPress={() => handleUserPress(user.id)}
+                    />
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+          )}
         </View>
       </AdminErrorBoundary>
     </ChurchAdminOnly>

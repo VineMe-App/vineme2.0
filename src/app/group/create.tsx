@@ -1,7 +1,23 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Form, FormField, Input, Select, Button, Card, useFormContext } from '../../components/ui';
+import {
+  Form,
+  FormField,
+  Input,
+  Select,
+  Button,
+  Card,
+  useFormContext,
+} from '../../components/ui';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuthStore } from '../../stores';
 import { useErrorHandler } from '../../hooks';
@@ -26,7 +42,10 @@ export default function CreateGroupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedTime, setSelectedTime] = useState(new Date());
-  const [locationValue, setLocationValue] = useState<{ address?: string; coordinates?: { latitude: number; longitude: number } | null }>({});
+  const [locationValue, setLocationValue] = useState<{
+    address?: string;
+    coordinates?: { latitude: number; longitude: number } | null;
+  }>({});
 
   const formConfig = {
     title: {
@@ -56,13 +75,23 @@ export default function CreateGroupPage() {
   };
 
   const handleSubmit = async (values: Record<string, any>) => {
-    if (!userProfile?.id || !userProfile?.church_id || !userProfile?.service_id) {
-      Alert.alert('Error', 'Please complete your profile before creating a group.');
+    if (
+      !userProfile?.id ||
+      !userProfile?.church_id ||
+      !userProfile?.service_id
+    ) {
+      Alert.alert(
+        'Error',
+        'Please complete your profile before creating a group.'
+      );
       return;
     }
 
     if (!locationValue.address && !locationValue.coordinates) {
-      Alert.alert('Location Required', 'Please choose a location on the map or search for one.');
+      Alert.alert(
+        'Location Required',
+        'Please choose a location on the map or search for one.'
+      );
       return;
     }
 
@@ -75,13 +104,18 @@ export default function CreateGroupPage() {
         meeting_time: String(values.meeting_time),
         location: {
           address: locationValue.address || 'Pinned Location',
-          ...(locationValue.coordinates && { coordinates: locationValue.coordinates }),
+          ...(locationValue.coordinates && {
+            coordinates: locationValue.coordinates,
+          }),
         },
         service_id: userProfile.service_id,
         church_id: userProfile.church_id,
       };
 
-      const result = await groupCreationService.createGroupRequest(groupData, userProfile.id);
+      const result = await groupCreationService.createGroupRequest(
+        groupData,
+        userProfile.id
+      );
       if (result.error) throw result.error;
 
       Alert.alert(
@@ -103,7 +137,10 @@ export default function CreateGroupPage() {
           'You do not have permission to create a group in this church. Please ensure you are signed in and your profile is connected to this church. If the issue persists, contact a church admin.'
         );
       }
-      handleError(err, { context: { action: 'create_group', userId: userProfile.id }, showAlert: true });
+      handleError(err, {
+        context: { action: 'create_group', userId: userProfile.id },
+        showAlert: true,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +149,9 @@ export default function CreateGroupPage() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.pageTitle}>Create New Group</Text>
-      <Text style={styles.pageSubtitle}>Share the key details and set your meeting location on the map.</Text>
+      <Text style={styles.pageSubtitle}>
+        Share the key details and set your meeting location on the map.
+      </Text>
 
       <Form config={formConfig} onSubmit={handleSubmit}>
         <Card style={styles.card}>
@@ -167,10 +206,18 @@ export default function CreateGroupPage() {
               <View>
                 <Text style={styles.inputLabel}>Meeting Time *</Text>
                 <TouchableOpacity
-                  style={[styles.timePickerButton, error && styles.timePickerButtonError]}
+                  style={[
+                    styles.timePickerButton,
+                    error && styles.timePickerButtonError,
+                  ]}
                   onPress={() => setShowTimePicker(true)}
                 >
-                  <Text style={[styles.timePickerText, !value && styles.timePickerPlaceholder]}>
+                  <Text
+                    style={[
+                      styles.timePickerText,
+                      !value && styles.timePickerPlaceholder,
+                    ]}
+                  >
                     {value || 'Select meeting time'}
                   </Text>
                 </TouchableOpacity>
@@ -198,18 +245,27 @@ export default function CreateGroupPage() {
         <Card style={styles.card}>
           <Text style={styles.sectionTitle}>Meeting Location</Text>
           <LocationPicker
-            value={{ address: locationValue.address, coordinates: locationValue.coordinates || undefined }}
+            value={{
+              address: locationValue.address,
+              coordinates: locationValue.coordinates || undefined,
+            }}
             onChange={setLocationValue}
           />
         </Card>
 
-        <SubmitButton isSubmitting={isSubmitting} onValidatedSubmit={handleSubmit} />
+        <SubmitButton
+          isSubmitting={isSubmitting}
+          onValidatedSubmit={handleSubmit}
+        />
       </Form>
     </ScrollView>
   );
 }
 
-const SubmitButton: React.FC<{ isSubmitting: boolean; onValidatedSubmit: (values: Record<string, any>) => void }> = ({ isSubmitting, onValidatedSubmit }) => {
+const SubmitButton: React.FC<{
+  isSubmitting: boolean;
+  onValidatedSubmit: (values: Record<string, any>) => void;
+}> = ({ isSubmitting, onValidatedSubmit }) => {
   const { validateForm, values } = useFormContext();
   const handlePress = () => {
     const ok = validateForm();

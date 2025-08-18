@@ -30,8 +30,8 @@ const GROUP_CATEGORIES = [
   { label: 'Bible Study', value: 'bible-study' },
   { label: 'Prayer Group', value: 'prayer' },
   { label: 'Youth Group', value: 'youth' },
-  { label: 'Women\'s Ministry', value: 'womens' },
-  { label: 'Men\'s Ministry', value: 'mens' },
+  { label: "Women's Ministry", value: 'womens' },
+  { label: "Men's Ministry", value: 'mens' },
   { label: 'Small Group', value: 'small-group' },
   { label: 'Fellowship', value: 'fellowship' },
   { label: 'Discipleship', value: 'discipleship' },
@@ -56,14 +56,14 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const handleMeetingDayToggle = (day: string) => {
     const newDays = filters.meetingDays.includes(day)
-      ? filters.meetingDays.filter(d => d !== day)
+      ? filters.meetingDays.filter((d) => d !== day)
       : [...filters.meetingDays, day];
     setMeetingDays(newDays);
   };
 
   const handleCategoryToggle = (category: string) => {
     const newCategories = filters.categories.includes(category)
-      ? filters.categories.filter(c => c !== category)
+      ? filters.categories.filter((c) => c !== category)
       : [...filters.categories, category];
     setCategories(newCategories);
   };
@@ -77,9 +77,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setLocalSearchQuery('');
   };
 
-  const hasActiveFilters = 
-    filters.meetingDays.length > 0 || 
-    filters.categories.length > 0 || 
+  const hasActiveFilters =
+    filters.meetingDays.length > 0 ||
+    filters.categories.length > 0 ||
     filters.searchQuery.length > 0;
 
   return (

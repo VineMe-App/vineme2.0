@@ -9,9 +9,12 @@ import type {
 // Query keys
 export const contactAuditKeys = {
   all: ['contactAudit'] as const,
-  userLogs: (userId: string) => [...contactAuditKeys.all, 'userLogs', userId] as const,
-  groupLogs: (groupId: string) => [...contactAuditKeys.all, 'groupLogs', groupId] as const,
-  privacySettings: (userId: string) => [...contactAuditKeys.all, 'privacy', userId] as const,
+  userLogs: (userId: string) =>
+    [...contactAuditKeys.all, 'userLogs', userId] as const,
+  groupLogs: (groupId: string) =>
+    [...contactAuditKeys.all, 'groupLogs', groupId] as const,
+  privacySettings: (userId: string) =>
+    [...contactAuditKeys.all, 'privacy', userId] as const,
 };
 
 /**
@@ -21,7 +24,10 @@ export const useUserContactLogs = (userId: string, requesterId: string) => {
   return useQuery({
     queryKey: contactAuditKeys.userLogs(userId),
     queryFn: async (): Promise<ContactAuditLogWithDetails[]> => {
-      const result = await contactAuditService.getUserContactLogs(userId, requesterId);
+      const result = await contactAuditService.getUserContactLogs(
+        userId,
+        requesterId
+      );
       if (result.error) {
         throw result.error;
       }
@@ -38,7 +44,10 @@ export const useGroupContactLogs = (groupId: string, requesterId: string) => {
   return useQuery({
     queryKey: contactAuditKeys.groupLogs(groupId),
     queryFn: async (): Promise<ContactAuditLogWithDetails[]> => {
-      const result = await contactAuditService.getGroupContactLogs(groupId, requesterId);
+      const result = await contactAuditService.getGroupContactLogs(
+        groupId,
+        requesterId
+      );
       if (result.error) {
         throw result.error;
       }
@@ -79,7 +88,10 @@ export const useUpdatePrivacySettings = () => {
       userId: string;
       updates: UpdatePrivacySettingsData;
     }) => {
-      const result = await contactAuditService.updatePrivacySettings(userId, updates);
+      const result = await contactAuditService.updatePrivacySettings(
+        userId,
+        updates
+      );
       if (result.error) {
         throw result.error;
       }
@@ -104,7 +116,14 @@ export const useCanShareContact = (
   groupId: string
 ) => {
   return useQuery({
-    queryKey: [...contactAuditKeys.all, 'canShare', userId, contactType, requesterId, groupId],
+    queryKey: [
+      ...contactAuditKeys.all,
+      'canShare',
+      userId,
+      contactType,
+      requesterId,
+      groupId,
+    ],
     queryFn: async (): Promise<boolean> => {
       const result = await contactAuditService.canShareContact(
         userId,

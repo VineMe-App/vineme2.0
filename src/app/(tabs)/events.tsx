@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ComingSoonBanner } from '../../components/ui/ComingSoonBanner';
 
@@ -20,7 +16,7 @@ export default function EventsScreen() {
         {/* Feature Preview */}
         <View style={styles.previewSection}>
           <Text style={styles.previewTitle}>What's Coming</Text>
-          
+
           <View style={styles.featureItem}>
             <Ionicons name="calendar" size={24} color="#007AFF" />
             <View style={styles.featureText}>
@@ -66,9 +62,9 @@ export default function EventsScreen() {
         <View style={styles.focusSection}>
           <Text style={styles.focusTitle}>In the Meantime</Text>
           <Text style={styles.focusMessage}>
-            We're focusing on making the Groups experience amazing! 
-            Check out the Groups tab to connect with Bible study groups 
-            and fellowship opportunities in your church community.
+            We're focusing on making the Groups experience amazing! Check out
+            the Groups tab to connect with Bible study groups and fellowship
+            opportunities in your church community.
           </Text>
         </View>
       </View>

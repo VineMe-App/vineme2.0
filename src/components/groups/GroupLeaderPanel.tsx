@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../ui/Avatar';
@@ -8,7 +15,10 @@ import { Modal } from '../ui/Modal';
 import { EditGroupModal } from './EditGroupModal';
 import { MemberManagementModal } from './MemberManagementModal';
 import { JoinRequestsPanel } from './JoinRequestsPanel';
-import type { GroupWithDetails, GroupMembershipWithUser } from '../../types/database';
+import type {
+  GroupWithDetails,
+  GroupMembershipWithUser,
+} from '../../types/database';
 import { useAuthStore } from '../../stores/auth';
 import { useGroupMembers } from '../../hooks/useGroups';
 import { useGroupLeaderActions } from '../../hooks/useGroupLeaderActions';
@@ -26,11 +36,17 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   const { userProfile } = useAuthStore();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<GroupMembershipWithUser | null>(null);
+  const [selectedMember, setSelectedMember] =
+    useState<GroupMembershipWithUser | null>(null);
   const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
 
-  const { data: members, isLoading: membersLoading } = useGroupMembers(group.id);
-  const { data: joinRequests } = useGroupJoinRequests(group.id, userProfile?.id);
+  const { data: members, isLoading: membersLoading } = useGroupMembers(
+    group.id
+  );
+  const { data: joinRequests } = useGroupJoinRequests(
+    group.id,
+    userProfile?.id
+  );
   const {
     promoteToLeaderMutation,
     demoteFromLeaderMutation,
@@ -38,16 +54,17 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   } = useGroupLeaderActions();
 
   // Check if current user is a leader of this group
-  const userMembership = members?.find(m => m.user_id === userProfile?.id);
+  const userMembership = members?.find((m) => m.user_id === userProfile?.id);
   const isGroupLeader = userMembership?.role === 'leader';
 
   if (!isGroupLeader) {
     return null; // Don't show panel if user is not a leader
   }
 
-  const leaders = members?.filter(m => m.role === 'leader') || [];
-  const regularMembers = members?.filter(m => m.role === 'member') || [];
-  const pendingRequestsCount = joinRequests?.filter(r => r.status === 'pending').length || 0;
+  const leaders = members?.filter((m) => m.role === 'leader') || [];
+  const regularMembers = members?.filter((m) => m.role === 'member') || [];
+  const pendingRequestsCount =
+    joinRequests?.filter((r) => r.status === 'pending').length || 0;
 
   const handleMemberPress = (member: GroupMembershipWithUser) => {
     setSelectedMember(member);
@@ -71,13 +88,18 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 userId: member.user_id,
                 promoterId: userProfile.id,
               });
-              Alert.alert('Success', `${member.user?.name} has been promoted to leader`);
+              Alert.alert(
+                'Success',
+                `${member.user?.name} has been promoted to leader`
+              );
               setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
                 'Error',
-                error instanceof Error ? error.message : 'Failed to promote member'
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to promote member'
               );
             }
           },
@@ -113,13 +135,18 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 userId: member.user_id,
                 demoterId: userProfile.id,
               });
-              Alert.alert('Success', `${member.user?.name} has been demoted to member`);
+              Alert.alert(
+                'Success',
+                `${member.user?.name} has been demoted to member`
+              );
               setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
                 'Error',
-                error instanceof Error ? error.message : 'Failed to demote leader'
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to demote leader'
               );
             }
           },
@@ -155,13 +182,18 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 userId: member.user_id,
                 removerId: userProfile.id,
               });
-              Alert.alert('Success', `${member.user?.name} has been removed from the group`);
+              Alert.alert(
+                'Success',
+                `${member.user?.name} has been removed from the group`
+              );
               setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
                 'Error',
-                error instanceof Error ? error.message : 'Failed to remove member'
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to remove member'
               );
             }
           },
@@ -170,7 +202,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
     );
   };
 
-  const isLoading = 
+  const isLoading =
     promoteToLeaderMutation.isPending ||
     demoteFromLeaderMutation.isPending ||
     removeMemberMutation.isPending;
@@ -197,7 +229,12 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           style={[styles.tab, activeTab === 'members' && styles.activeTab]}
           onPress={() => setActiveTab('members')}
         >
-          <Text style={[styles.tabText, activeTab === 'members' && styles.activeTabText]}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'members' && styles.activeTabText,
+            ]}
+          >
             Members
           </Text>
         </TouchableOpacity>
@@ -205,12 +242,19 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           style={[styles.tab, activeTab === 'requests' && styles.activeTab]}
           onPress={() => setActiveTab('requests')}
         >
-          <Text style={[styles.tabText, activeTab === 'requests' && styles.activeTabText]}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'requests' && styles.activeTabText,
+            ]}
+          >
             Join Requests
           </Text>
           {pendingRequestsCount > 0 && (
             <View style={styles.requestsBadge}>
-              <Text style={styles.requestsBadgeText}>{pendingRequestsCount}</Text>
+              <Text style={styles.requestsBadgeText}>
+                {pendingRequestsCount}
+              </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -222,7 +266,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Leaders ({leaders.length})</Text>
             {membersLoading ? (
-            <LoadingSpinner size="small" />
+              <LoadingSpinner size="small" />
             ) : (
               <View style={styles.membersList}>
                 {leaders.map((leader) => (
@@ -250,11 +294,16 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Members ({regularMembers.length})</Text>
+            <Text style={styles.sectionTitle}>
+              Members ({regularMembers.length})
+            </Text>
             {membersLoading ? (
-            <LoadingSpinner size="small" />
+              <LoadingSpinner size="small" />
             ) : (
-              <ScrollView style={styles.membersScrollView} showsVerticalScrollIndicator={false}>
+              <ScrollView
+                style={styles.membersScrollView}
+                showsVerticalScrollIndicator={false}
+              >
                 <View style={styles.membersList}>
                   {regularMembers.map((member) => (
                     <TouchableOpacity
@@ -272,7 +321,8 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                           {member.user?.name || 'Unknown'}
                         </Text>
                         <Text style={styles.memberJoinDate}>
-                          Joined {new Date(member.joined_at).toLocaleDateString()}
+                          Joined{' '}
+                          {new Date(member.joined_at).toLocaleDateString()}
                         </Text>
                       </View>
                       <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -313,9 +363,15 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           setShowMemberModal(false);
           setSelectedMember(null);
         }}
-        onPromoteToLeader={() => selectedMember && handlePromoteToLeader(selectedMember)}
-        onDemoteFromLeader={() => selectedMember && handleDemoteFromLeader(selectedMember)}
-        onRemoveMember={() => selectedMember && handleRemoveMember(selectedMember)}
+        onPromoteToLeader={() =>
+          selectedMember && handlePromoteToLeader(selectedMember)
+        }
+        onDemoteFromLeader={() =>
+          selectedMember && handleDemoteFromLeader(selectedMember)
+        }
+        onRemoveMember={() =>
+          selectedMember && handleRemoveMember(selectedMember)
+        }
         loading={isLoading}
       />
     </View>

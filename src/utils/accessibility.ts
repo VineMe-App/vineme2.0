@@ -78,7 +78,11 @@ export class AdminAccessibilityLabels {
   /**
    * Generate label for user connection status
    */
-  static userConnectionStatus(userName: string, isConnected: boolean, groupCount: number): string {
+  static userConnectionStatus(
+    userName: string,
+    isConnected: boolean,
+    groupCount: number
+  ): string {
     const connectionText = isConnected ? 'connected' : 'unconnected';
     const groupText = groupCount === 1 ? 'group' : 'groups';
     return `${userName} is ${connectionText}, member of ${groupCount} ${groupText}`;
@@ -87,7 +91,11 @@ export class AdminAccessibilityLabels {
   /**
    * Generate label for admin action buttons
    */
-  static adminAction(action: string, targetType: string, targetName: string): string {
+  static adminAction(
+    action: string,
+    targetType: string,
+    targetName: string
+  ): string {
     return `${action} ${targetType} ${targetName}`;
   }
 
@@ -118,7 +126,11 @@ export class AdminAccessibilityLabels {
   /**
    * Generate label for filter states
    */
-  static filterState(filterName: string, isActive: boolean, count?: number): string {
+  static filterState(
+    filterName: string,
+    isActive: boolean,
+    count?: number
+  ): string {
     const activeText = isActive ? 'active' : 'inactive';
     const countText = count !== undefined ? ` showing ${count} items` : '';
     return `${filterName} filter is ${activeText}${countText}`;
@@ -137,7 +149,7 @@ export class ColorContrastUtils {
     if (!rgb) return 0;
 
     const { r, g, b } = rgb;
-    const [rs, gs, bs] = [r, g, b].map(c => {
+    const [rs, gs, bs] = [r, g, b].map((c) => {
       c = c / 255;
       return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     });
@@ -175,13 +187,17 @@ export class ColorContrastUtils {
   /**
    * Convert hex color to RGB
    */
-  private static hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  private static hexToRgb(
+    hex: string
+  ): { r: number; g: number; b: number } | null {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null;
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : null;
   }
 
   /**
@@ -233,7 +249,9 @@ export class KeyboardNavigationUtils {
     hidden?: boolean;
     interactive?: boolean;
   }): boolean {
-    return !element.disabled && !element.hidden && element.interactive !== false;
+    return (
+      !element.disabled && !element.hidden && element.interactive !== false
+    );
   }
 }
 
@@ -263,11 +281,32 @@ export class AccessibilityTestUtils {
    */
   private static isValidRole(role: string): boolean {
     const validRoles = [
-      'button', 'link', 'search', 'image', 'keyboardkey', 'text',
-      'adjustable', 'imagebutton', 'header', 'summary', 'alert',
-      'checkbox', 'combobox', 'menu', 'menubar', 'menuitem',
-      'progressbar', 'radio', 'radiogroup', 'scrollbar', 'spinbutton',
-      'switch', 'tab', 'tablist', 'timer', 'toolbar'
+      'button',
+      'link',
+      'search',
+      'image',
+      'keyboardkey',
+      'text',
+      'adjustable',
+      'imagebutton',
+      'header',
+      'summary',
+      'alert',
+      'checkbox',
+      'combobox',
+      'menu',
+      'menubar',
+      'menuitem',
+      'progressbar',
+      'radio',
+      'radiogroup',
+      'scrollbar',
+      'spinbutton',
+      'switch',
+      'tab',
+      'tablist',
+      'timer',
+      'toolbar',
     ];
     return validRoles.includes(role);
   }

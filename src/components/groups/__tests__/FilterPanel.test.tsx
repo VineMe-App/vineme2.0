@@ -18,7 +18,7 @@ describe('FilterPanel', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockUseGroupFiltersStore.mockReturnValue({
       filters: {
         meetingDays: [],
@@ -67,9 +67,11 @@ describe('FilterPanel', () => {
       <FilterPanel isVisible={true} onClose={jest.fn()} />
     );
 
-    const searchInput = getByPlaceholderText('Search group titles and descriptions...');
+    const searchInput = getByPlaceholderText(
+      'Search group titles and descriptions...'
+    );
     fireEvent.changeText(searchInput, 'bible study');
-    
+
     const searchButton = getByText('🔍');
     fireEvent.press(searchButton);
 

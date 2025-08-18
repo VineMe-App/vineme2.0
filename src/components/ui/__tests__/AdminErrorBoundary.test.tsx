@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import { 
-  AdminErrorBoundary, 
-  AdminActionError, 
+import {
+  AdminErrorBoundary,
+  AdminActionError,
   AdminLoadingOverlay,
   AdminRetryableError,
 } from '../AdminErrorBoundary';
@@ -40,7 +40,13 @@ jest.mock('../ErrorMessage', () => ({
 }));
 
 // Component that throws an error
-const ThrowError = ({ shouldThrow, errorType }: { shouldThrow: boolean; errorType?: string }) => {
+const ThrowError = ({
+  shouldThrow,
+  errorType,
+}: {
+  shouldThrow: boolean;
+  errorType?: string;
+}) => {
   if (shouldThrow) {
     if (errorType === 'permission') {
       throw new PermissionError('Access denied');
@@ -129,7 +135,9 @@ describe('AdminErrorBoundary', () => {
   });
 
   it('should render custom fallback when provided', () => {
-    const CustomFallback = () => <div testID="custom-fallback">Custom Error</div>;
+    const CustomFallback = () => (
+      <div testID="custom-fallback">Custom Error</div>
+    );
 
     const { getByTestId } = render(
       <AdminErrorBoundary fallback={<CustomFallback />}>
@@ -143,9 +151,7 @@ describe('AdminErrorBoundary', () => {
 
 describe('AdminActionError', () => {
   it('should not render when no error is provided', () => {
-    const { queryByText } = render(
-      <AdminActionError error={null} />
-    );
+    const { queryByText } = render(<AdminActionError error={null} />);
 
     expect(queryByText('Operation Failed')).toBeFalsy();
   });
@@ -156,11 +162,7 @@ describe('AdminActionError', () => {
     const onDismiss = jest.fn();
 
     const { getByText } = render(
-      <AdminActionError
-        error={error}
-        onRetry={onRetry}
-        onDismiss={onDismiss}
-      />
+      <AdminActionError error={error} onRetry={onRetry} onDismiss={onDismiss} />
     );
 
     expect(getByText(/do not have permission/)).toBeTruthy();
@@ -173,11 +175,7 @@ describe('AdminActionError', () => {
     const onDismiss = jest.fn();
 
     const { getByText } = render(
-      <AdminActionError
-        error={error}
-        onRetry={onRetry}
-        onDismiss={onDismiss}
-      />
+      <AdminActionError error={error} onRetry={onRetry} onDismiss={onDismiss} />
     );
 
     fireEvent.press(getByText('Retry'));
@@ -190,17 +188,13 @@ describe('AdminActionError', () => {
 
 describe('AdminLoadingOverlay', () => {
   it('should not render when not visible', () => {
-    const { queryByText } = render(
-      <AdminLoadingOverlay visible={false} />
-    );
+    const { queryByText } = render(<AdminLoadingOverlay visible={false} />);
 
     expect(queryByText('Processing...')).toBeFalsy();
   });
 
   it('should render with default message when visible', () => {
-    const { getByText } = render(
-      <AdminLoadingOverlay visible={true} />
-    );
+    const { getByText } = render(<AdminLoadingOverlay visible={true} />);
 
     expect(getByText('Processing...')).toBeTruthy();
   });

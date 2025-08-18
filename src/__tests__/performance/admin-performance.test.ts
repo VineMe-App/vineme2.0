@@ -11,10 +11,14 @@ jest.mock('../../services/supabase', () => ({
 jest.mock('../../services/permissions');
 
 const mockSupabase = global.mockSupabaseClient;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
 
 // Performance test utilities
-const measureExecutionTime = async (fn: () => Promise<any>): Promise<number> => {
+const measureExecutionTime = async (
+  fn: () => Promise<any>
+): Promise<number> => {
   const start = performance.now();
   await fn();
   const end = performance.now();
@@ -29,12 +33,17 @@ const generateMockGroups = (count: number) => {
     status: i % 3 === 0 ? 'pending' : i % 3 === 1 ? 'approved' : 'denied',
     church_id: 'church-1',
     member_count: Math.floor(Math.random() * 20),
-    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-    memberships: Array.from({ length: Math.floor(Math.random() * 10) }, (_, j) => ({
-      id: `mem-${i}-${j}`,
-      status: 'active',
-      user_id: `user-${j}`,
-    })),
+    created_at: new Date(
+      Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
+    ).toISOString(),
+    memberships: Array.from(
+      { length: Math.floor(Math.random() * 10) },
+      (_, j) => ({
+        id: `mem-${i}-${j}`,
+        status: 'active',
+        user_id: `user-${j}`,
+      })
+    ),
     creator: {
       id: `user-${i}`,
       name: `Creator ${i}`,
@@ -51,12 +60,17 @@ const generateMockUsers = (count: number) => {
     church_id: 'church-1',
     group_count: Math.floor(Math.random() * 5),
     is_connected: Math.random() > 0.3,
-    last_activity: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-    group_memberships: Array.from({ length: Math.floor(Math.random() * 3) }, (_, j) => ({
-      id: `mem-${i}-${j}`,
-      status: 'active',
-      group: { status: 'approved' },
-    })),
+    last_activity: new Date(
+      Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
+    ).toISOString(),
+    group_memberships: Array.from(
+      { length: Math.floor(Math.random() * 3) },
+      (_, j) => ({
+        id: `mem-${i}-${j}`,
+        status: 'active',
+        group: { status: 'approved' },
+      })
+    ),
   }));
 };
 
@@ -216,7 +230,9 @@ describe('Admin Performance Tests', () => {
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockResolvedValue({
-                data: Array.from({ length: 50 }, (_, i) => ({ id: `group-${i}` })),
+                data: Array.from({ length: 50 }, (_, i) => ({
+                  id: `group-${i}`,
+                })),
                 error: null,
               }),
             }),
@@ -226,7 +242,9 @@ describe('Admin Performance Tests', () => {
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               in: jest.fn().mockResolvedValue({
-                data: Array.from({ length: 25 }, (_, i) => ({ id: `req-${i}` })),
+                data: Array.from({ length: 25 }, (_, i) => ({
+                  id: `req-${i}`,
+                })),
                 error: null,
               }),
             }),
@@ -243,8 +261,8 @@ describe('Admin Performance Tests', () => {
 
     it('should handle user filtering efficiently', async () => {
       const mixedUserDataset = [
-        ...generateMockUsers(2500).map(u => ({ ...u, is_connected: true })),
-        ...generateMockUsers(2500).map(u => ({ ...u, is_connected: false })),
+        ...generateMockUsers(2500).map((u) => ({ ...u, is_connected: true })),
+        ...generateMockUsers(2500).map((u) => ({ ...u, is_connected: false })),
       ];
 
       mockSupabase.from.mockReturnValue({
@@ -259,7 +277,11 @@ describe('Admin Performance Tests', () => {
       } as any);
 
       const executionTime = await measureExecutionTime(async () => {
-        await userAdminService.getChurchUsers('church-1', { offset: 0, limit: 100 }, 'connected');
+        await userAdminService.getChurchUsers(
+          'church-1',
+          { offset: 0, limit: 100 },
+          'connected'
+        );
       });
 
       // Filtering should be efficient
@@ -357,11 +379,11 @@ describe('Admin Performance Tests', () => {
     });
 
     it('should efficiently handle join operations', async () => {
-      const mockGroupsWithJoins = generateMockGroups(500).map(group => ({
+      const mockGroupsWithJoins = generateMockGroups(500).map((group) => ({
         ...group,
         service: { id: 'service-1', name: 'Evening Service' },
         church: { id: 'church-1', name: 'Test Church' },
-        memberships: group.memberships.map(m => ({
+        memberships: group.memberships.map((m) => ({
           ...m,
           user: { id: m.user_id, name: `User ${m.user_id}`, avatar_url: null },
         })),
@@ -443,7 +465,10 @@ describe('Admin Performance Tests', () => {
         } as any);
 
       // First call should fail
-      const firstResult = await groupAdminService.getChurchGroups('church-1', true);
+      const firstResult = await groupAdminService.getChurchGroups(
+        'church-1',
+        true
+      );
       expect(firstResult.error).toBeTruthy();
 
       // Second call should succeed quickly

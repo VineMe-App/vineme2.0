@@ -1,5 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Image, ImageProps, ImageStyle, View, ViewStyle, Text, StyleSheet, Dimensions } from 'react-native';
+import {
+  Image,
+  ImageProps,
+  ImageStyle,
+  View,
+  ViewStyle,
+  Text,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
 import { LoadingSpinner } from './LoadingSpinner';
 import { performanceMonitor } from '../../utils/performance';
 

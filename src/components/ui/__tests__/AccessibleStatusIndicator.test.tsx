@@ -116,10 +116,7 @@ describe('AccessibleStatusIndicator', () => {
 
   it('should use accessible colors', () => {
     const { getByLabelText } = render(
-      <AccessibleStatusIndicator
-        status="pending"
-        itemName="Test Group"
-      />
+      <AccessibleStatusIndicator status="pending" itemName="Test Group" />
     );
 
     const element = getByLabelText('Group Test Group is Pending');

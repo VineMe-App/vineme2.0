@@ -84,7 +84,12 @@ function RootLayoutNav() {
     const isOnboardingDone = !!userProfile || onboardingCompleted;
 
     if (__DEV__) {
-      console.log('[NavDebug] isInitialized:', isInitialized, 'onboardingCompleted:', onboardingCompleted);
+      console.log(
+        '[NavDebug] isInitialized:',
+        isInitialized,
+        'onboardingCompleted:',
+        onboardingCompleted
+      );
       console.log('[NavDebug] segments:', segments);
       console.log('[NavDebug] user:', !!user, 'profile:', !!userProfile);
     }

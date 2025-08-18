@@ -19,16 +19,20 @@ jest.mock('../../../services/location', () => ({
 jest.mock('react-native-maps', () => {
   const React = require('react');
   const { View } = require('react-native');
-  
+
   return {
     __esModule: true,
-    default: React.forwardRef((props: any, ref: any) => <View testID="map-view" {...props} />),
+    default: React.forwardRef((props: any, ref: any) => (
+      <View testID="map-view" {...props} />
+    )),
     Marker: (props: any) => <View testID="marker" {...props} />,
     Callout: (props: any) => <View testID="callout" {...props} />,
   };
 });
 
-const mockLocationService = locationService as jest.Mocked<typeof locationService>;
+const mockLocationService = locationService as jest.Mocked<
+  typeof locationService
+>;
 
 const mockGroups: GroupWithDetails[] = [
   {
@@ -74,22 +78,25 @@ describe('GroupsMapView', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default mock implementations
     mockLocationService.getCurrentLocation.mockResolvedValue({
       latitude: 37.7749,
       longitude: -122.4194,
     });
-    
+
     mockLocationService.getLocationPermissionStatus.mockResolvedValue({
       granted: true,
       canAskAgain: true,
     });
-    
+
     mockLocationService.parseGroupLocation.mockImplementation((location) => {
       if (location?.latitude && location?.longitude) {
         return {
-          coordinates: { latitude: location.latitude, longitude: location.longitude },
+          coordinates: {
+            latitude: location.latitude,
+            longitude: location.longitude,
+          },
           address: location.address,
         };
       }
@@ -98,7 +105,7 @@ describe('GroupsMapView', () => {
       }
       return {};
     });
-    
+
     mockLocationService.geocodeAddress.mockImplementation(async (address) => {
       if (address.includes('456 Oak Ave')) {
         return { latitude: 37.7849, longitude: -122.4094 };
@@ -173,7 +180,9 @@ describe('GroupsMapView', () => {
     );
 
     await waitFor(() => {
-      expect(getByText('Enable location to see your position on the map')).toBeTruthy();
+      expect(
+        getByText('Enable location to see your position on the map')
+      ).toBeTruthy();
     });
   });
 
@@ -192,7 +201,9 @@ describe('GroupsMapView', () => {
 
     // Verify location service methods were called
     expect(mockLocationService.parseGroupLocation).toHaveBeenCalledTimes(2);
-    expect(mockLocationService.geocodeAddress).toHaveBeenCalledWith('456 Oak Ave, San Francisco, CA');
+    expect(mockLocationService.geocodeAddress).toHaveBeenCalledWith(
+      '456 Oak Ave, San Francisco, CA'
+    );
   });
 
   it('should handle geocoding errors gracefully', async () => {

@@ -52,13 +52,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   plugins: [
-    'expo-router', 
-    'expo-secure-store', 
+    'expo-router',
+    'expo-secure-store',
     'expo-notifications',
     [
       'expo-location',
       {
-        locationAlwaysAndWhenInUsePermission: 'Allow VineMe to use your location to show nearby groups on the map.',
+        locationAlwaysAndWhenInUsePermission:
+          'Allow VineMe to use your location to show nearby groups on the map.',
       },
     ],
   ],

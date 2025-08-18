@@ -26,8 +26,9 @@ export function NotificationBadge({
   if (count <= 0) return null;
 
   const displayCount = count > maxCount ? `${maxCount}+` : count.toString();
-  
-  const defaultAccessibilityLabel = accessibilityLabel || 
+
+  const defaultAccessibilityLabel =
+    accessibilityLabel ||
     AdminAccessibilityLabels.notificationBadge(count, type);
 
   const sizeStyles = {

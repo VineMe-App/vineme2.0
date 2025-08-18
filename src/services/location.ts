@@ -45,8 +45,9 @@ class LocationService {
   async requestLocationPermission(): Promise<LocationPermissionStatus> {
     try {
       if (!Location) return { granted: false, canAskAgain: false };
-      const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
-      
+      const { status, canAskAgain } =
+        await Location.requestForegroundPermissionsAsync();
+
       this.permissionStatus = {
         granted: status === 'granted',
         canAskAgain,
@@ -69,8 +70,9 @@ class LocationService {
 
     try {
       if (!Location) return { granted: false, canAskAgain: false };
-      const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
-      
+      const { status, canAskAgain } =
+        await Location.getForegroundPermissionsAsync();
+
       this.permissionStatus = {
         granted: status === 'granted',
         canAskAgain,
@@ -130,7 +132,7 @@ class LocationService {
     try {
       if (!Location?.reverseGeocodeAsync) return null;
       const results = await Location.reverseGeocodeAsync(coordinates);
-      
+
       if (results && results.length > 0) {
         const result = results[0];
         return {
@@ -157,16 +159,17 @@ class LocationService {
     const R = 6371; // Earth's radius in kilometers
     const dLat = this.toRadians(to.latitude - from.latitude);
     const dLon = this.toRadians(to.longitude - from.longitude);
-    
-    const a = 
+
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRadians(from.latitude)) * 
-      Math.cos(this.toRadians(to.latitude)) * 
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    
+      Math.cos(this.toRadians(from.latitude)) *
+        Math.cos(this.toRadians(to.latitude)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
-    
+
     return Math.round(distance * 100) / 100; // Round to 2 decimal places
   }
 
@@ -177,7 +180,7 @@ class LocationService {
     try {
       if (!Location) return null;
       const permission = await this.getLocationPermissionStatus();
-      
+
       if (!permission.granted) {
         const requestResult = await this.requestLocationPermission();
         if (!requestResult.granted) {
@@ -202,7 +205,10 @@ class LocationService {
   /**
    * Parse location data from group location field
    */
-  parseGroupLocation(locationData: any): { coordinates?: Coordinates; address?: string } {
+  parseGroupLocation(locationData: any): {
+    coordinates?: Coordinates;
+    address?: string;
+  } {
     if (!locationData) {
       return {};
     }
@@ -217,8 +223,9 @@ class LocationService {
 
       // Normalize possible coordinate shapes
       const extractCoordinates = (obj: any): Coordinates | null => {
-        const hasLatLng = obj && (obj.lat !== undefined) && (obj.lng !== undefined);
-        const hasLatitudeLongitude = obj && (obj.latitude !== undefined) && (obj.longitude !== undefined);
+        const hasLatLng = obj && obj.lat !== undefined && obj.lng !== undefined;
+        const hasLatitudeLongitude =
+          obj && obj.latitude !== undefined && obj.longitude !== undefined;
 
         if (hasLatLng) {
           const lat = Number(obj.lat);
@@ -274,12 +281,12 @@ class LocationService {
    */
   private formatAddress(addressComponents: any): string {
     const parts = [];
-    
+
     if (addressComponents.street) parts.push(addressComponents.street);
     if (addressComponents.city) parts.push(addressComponents.city);
     if (addressComponents.region) parts.push(addressComponents.region);
     if (addressComponents.postalCode) parts.push(addressComponents.postalCode);
-    
+
     return parts.join(', ');
   }
 

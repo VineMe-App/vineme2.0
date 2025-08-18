@@ -1,15 +1,15 @@
-import { 
-  groupAdminService, 
-  userAdminService, 
+import {
+  groupAdminService,
+  userAdminService,
   type AdminServiceResponse,
   type GroupWithAdminDetails,
   type UserWithGroupStatus,
   type ChurchUserSummary,
   type GroupJoinRequest,
 } from './admin';
-import { 
-  AppError, 
-  handleSupabaseError, 
+import {
+  AppError,
+  handleSupabaseError,
   retryWithBackoff,
   NetworkError,
   PermissionError,
@@ -46,12 +46,12 @@ export class AdminServiceWrapper {
       const result = await retryWithBackoff(
         async () => {
           const response = await operation();
-          
+
           // If the service returned an error, throw it to trigger retry logic
           if (response.error) {
             throw response.error;
           }
-          
+
           return response;
         },
         opts.maxRetries,
@@ -61,8 +61,10 @@ export class AdminServiceWrapper {
       return result;
     } catch (error) {
       // Keep the original error if it's already an AppError, otherwise convert it
-      const appError = (error as any).type ? error as AppError : handleSupabaseError(error as Error);
-      
+      const appError = (error as any).type
+        ? (error as AppError)
+        : handleSupabaseError(error as Error);
+
       if (opts.logErrors) {
         globalErrorHandler.logError(appError, {
           operation: operationName,

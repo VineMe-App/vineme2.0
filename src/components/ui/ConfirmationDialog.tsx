@@ -64,14 +64,18 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
   const getIconForVariant = () => {
     if (icon) return icon;
-    
+
     switch (confirmVariant) {
       case 'danger':
         return <Ionicons name="warning-outline" size={32} color="#dc2626" />;
       case 'warning':
-        return <Ionicons name="alert-circle-outline" size={32} color="#f59e0b" />;
+        return (
+          <Ionicons name="alert-circle-outline" size={32} color="#f59e0b" />
+        );
       default:
-        return <Ionicons name="help-circle-outline" size={32} color="#6b7280" />;
+        return (
+          <Ionicons name="help-circle-outline" size={32} color="#6b7280" />
+        );
     }
   };
 
@@ -87,9 +91,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       <View style={styles.overlay}>
         <Card style={styles.dialog}>
           <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              {getIconForVariant()}
-            </View>
+            <View style={styles.iconContainer}>{getIconForVariant()}</View>
             <Text style={styles.title}>{title}</Text>
           </View>
 
@@ -111,7 +113,12 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
               onPress={() => onCheckboxChange?.(!checkboxChecked)}
               disabled={isLoading}
             >
-              <View style={[styles.checkbox, checkboxChecked && styles.checkboxChecked]}>
+              <View
+                style={[
+                  styles.checkbox,
+                  checkboxChecked && styles.checkboxChecked,
+                ]}
+              >
                 {checkboxChecked && <Text style={styles.checkmark}>✓</Text>}
               </View>
               <Text style={styles.checkboxLabel}>{checkboxLabel}</Text>
@@ -120,9 +127,18 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
           {isDestructive && (
             <View style={styles.warningContainer}>
-              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
                 <Ionicons name="warning-outline" size={16} color="#856404" />
-                <Text style={styles.warningText}>This action cannot be undone</Text>
+                <Text style={styles.warningText}>
+                  This action cannot be undone
+                </Text>
               </View>
             </View>
           )}
@@ -178,7 +194,9 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Ionicons name="checkmark-circle-outline" size={24} color="#16a34a" />}
+        icon={
+          <Ionicons name="checkmark-circle-outline" size={24} color="#16a34a" />
+        }
       />
     );
   }
@@ -208,7 +226,9 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Ionicons name="close-circle-outline" size={24} color="#dc2626" />}
+        icon={
+          <Ionicons name="close-circle-outline" size={24} color="#dc2626" />
+        }
       />
     );
   }
@@ -274,7 +294,9 @@ export class AdminConfirmations {
         onConfirm={onConfirm}
         onCancel={onCancel}
         isLoading={isLoading}
-        icon={<Ionicons name="person-remove-outline" size={24} color="#dc2626" />}
+        icon={
+          <Ionicons name="person-remove-outline" size={24} color="#dc2626" />
+        }
       />
     );
   }
@@ -292,7 +314,7 @@ export class AdminConfirmations {
     isLoading = false
   ) {
     const isPromotion = newRole === 'leader';
-    
+
     return (
       <ConfirmationDialog
         visible={true}
@@ -318,7 +340,11 @@ export class AdminConfirmations {
         isLoading={isLoading}
         icon={
           <Ionicons
-            name={isPromotion ? 'arrow-up-circle-outline' : 'arrow-down-circle-outline'}
+            name={
+              isPromotion
+                ? 'arrow-up-circle-outline'
+                : 'arrow-down-circle-outline'
+            }
             size={24}
             color={isPromotion ? '#2563eb' : '#f59e0b'}
           />

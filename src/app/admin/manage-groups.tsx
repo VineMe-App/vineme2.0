@@ -1,20 +1,33 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert, TouchableOpacity, FlatList, Platform } from 'react-native';
-import { 
-  AccessibilityHelpers, 
-  AdminAccessibilityLabels, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  Alert,
+  TouchableOpacity,
+  FlatList,
+  Platform,
+} from 'react-native';
+import {
+  AccessibilityHelpers,
+  AdminAccessibilityLabels,
   ScreenReaderUtils,
-  ColorContrastUtils 
+  ColorContrastUtils,
 } from '@/utils/accessibility';
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
-import {
-  type GroupWithAdminDetails,
-} from '@/services/admin';
+import { type GroupWithAdminDetails } from '@/services/admin';
 import { adminServiceWrapper } from '@/services/adminServiceWrapper';
-import { 
-  createPaginationParams, 
+import {
+  createPaginationParams,
   ADMIN_PAGINATION_DEFAULTS,
   mergePaginatedData,
 } from '@/utils/adminPagination';
@@ -27,14 +40,17 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { NotificationBadge } from '@/components/ui/NotificationBadge';
-import { ConfirmationDialog, AdminConfirmations } from '@/components/ui/ConfirmationDialog';
-import { 
-  AdminErrorBoundary, 
-  AdminActionError, 
+import {
+  ConfirmationDialog,
+  AdminConfirmations,
+} from '@/components/ui/ConfirmationDialog';
+import {
+  AdminErrorBoundary,
+  AdminActionError,
   AdminLoadingOverlay,
   AdminRetryableError,
 } from '@/components/ui/AdminErrorBoundary';
-import { 
+import {
   AdminLoadingCard,
   AdminSkeletonLoader,
   AdminLoadingList,
@@ -63,7 +79,9 @@ function GroupManagementCard({
   onViewMembers,
   isLoading = false,
 }: GroupManagementCardProps) {
-  const getStatusVariant = (status: string): 'success' | 'warning' | 'error' | 'secondary' => {
+  const getStatusVariant = (
+    status: string
+  ): 'success' | 'warning' | 'error' | 'secondary' => {
     switch (status) {
       case 'approved':
         return 'success';
@@ -107,7 +125,7 @@ function GroupManagementCard({
   };
 
   return (
-    <Card 
+    <Card
       style={styles.groupCard}
       {...AccessibilityHelpers.createNavigationProps(
         `Group ${group.title}`,
@@ -116,7 +134,7 @@ function GroupManagementCard({
     >
       <View style={styles.groupHeader}>
         <View style={styles.groupInfo}>
-          <Text 
+          <Text
             style={styles.groupTitle}
             accessibilityRole="header"
             accessibilityLevel={3}
@@ -127,7 +145,10 @@ function GroupManagementCard({
             variant={getStatusVariant(group.status)}
             size="small"
             style={styles.statusBadge}
-            {...AccessibilityHelpers.createStatusProps(group.status, group.title)}
+            {...AccessibilityHelpers.createStatusProps(
+              group.status,
+              group.title
+            )}
           >
             {getStatusText(group.status)}
           </Badge>
@@ -146,19 +167,21 @@ function GroupManagementCard({
         </TouchableOpacity>
       </View>
 
-      <Text 
-        style={styles.groupDescription} 
+      <Text
+        style={styles.groupDescription}
         numberOfLines={2}
         accessibilityLabel={`Description: ${group.description}`}
       >
         {group.description}
       </Text>
 
-      <View 
+      <View
         style={styles.groupDetails}
         accessibilityRole="text"
         accessibilityLabel={`Meeting details: ${group.meeting_day} at ${group.meeting_time}${
-          group.location ? `, Location: ${typeof group.location === 'string' ? group.location : group.location.address}` : ''
+          group.location
+            ? `, Location: ${typeof group.location === 'string' ? group.location : group.location.address}`
+            : ''
         }`}
       >
         <Text style={styles.detailText}>
@@ -187,7 +210,7 @@ function GroupManagementCard({
         </View>
       )}
 
-      <View 
+      <View
         style={styles.actionButtons}
         accessibilityRole="group"
         accessibilityLabel="Group management actions"
@@ -201,7 +224,11 @@ function GroupManagementCard({
               size="small"
               style={styles.actionButton}
               disabled={isLoading}
-              accessibilityLabel={AdminAccessibilityLabels.adminAction('Approve', 'group', group.title)}
+              accessibilityLabel={AdminAccessibilityLabels.adminAction(
+                'Approve',
+                'group',
+                group.title
+              )}
               accessibilityHint="Double tap to approve this group request"
             />
             <Button
@@ -211,7 +238,11 @@ function GroupManagementCard({
               size="small"
               style={styles.actionButton}
               disabled={isLoading}
-              accessibilityLabel={AdminAccessibilityLabels.adminAction('Decline', 'group', group.title)}
+              accessibilityLabel={AdminAccessibilityLabels.adminAction(
+                'Decline',
+                'group',
+                group.title
+              )}
               accessibilityHint="Double tap to decline this group request"
             />
           </>
@@ -224,7 +255,11 @@ function GroupManagementCard({
             size="small"
             style={styles.actionButton}
             disabled={isLoading}
-            accessibilityLabel={AdminAccessibilityLabels.adminAction('Close', 'group', group.title)}
+            accessibilityLabel={AdminAccessibilityLabels.adminAction(
+              'Close',
+              'group',
+              group.title
+            )}
             accessibilityHint="Double tap to close this active group"
           />
         )}
@@ -320,13 +355,17 @@ export default function ManageGroupsScreen() {
   });
 
   // Local filters for group status
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'closed'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'pending' | 'approved' | 'closed'
+  >('all');
 
   // Background sync for real-time updates
   const backgroundSync = useAdminBackgroundSync(userProfile?.church_id);
 
   // Get admin notifications for real-time updates
-  const { notificationCounts, refreshNotifications } = useAdminNotifications(user?.id);
+  const { notificationCounts, refreshNotifications } = useAdminNotifications(
+    user?.id
+  );
 
   // Note: auto-enable pagination moved below after finalGroups is defined
 
@@ -335,7 +374,7 @@ export default function ManageGroupsScreen() {
     if (user?.church_id && backgroundSync.isAvailable) {
       backgroundSync.start();
     }
-    
+
     return () => {
       if (backgroundSync.isAvailable) {
         backgroundSync.stop();
@@ -346,8 +385,8 @@ export default function ManageGroupsScreen() {
   // Enhanced async operations for admin actions
   const approveOperation = useAdminAsyncOperation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ADMIN_QUERY_KEYS.churchGroups(user?.church_id || '', true) 
+      queryClient.invalidateQueries({
+        queryKey: ADMIN_QUERY_KEYS.churchGroups(user?.church_id || '', true),
       });
       refreshNotifications();
       setActionError(null);
@@ -365,8 +404,8 @@ export default function ManageGroupsScreen() {
 
   const declineOperation = useAdminAsyncOperation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ADMIN_QUERY_KEYS.churchGroups(user?.church_id || '', true) 
+      queryClient.invalidateQueries({
+        queryKey: ADMIN_QUERY_KEYS.churchGroups(user?.church_id || '', true),
       });
       refreshNotifications();
       setActionError(null);
@@ -384,8 +423,8 @@ export default function ManageGroupsScreen() {
 
   const closeOperation = useAdminAsyncOperation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ADMIN_QUERY_KEYS.churchGroups(user?.church_id || '', true) 
+      queryClient.invalidateQueries({
+        queryKey: ADMIN_QUERY_KEYS.churchGroups(user?.church_id || '', true),
       });
       refreshNotifications();
       setActionError(null);
@@ -440,31 +479,37 @@ export default function ManageGroupsScreen() {
     isFetchingNextPage,
     refetch: refetchPaginated,
   } = useInfiniteQuery({
-    queryKey: [...ADMIN_QUERY_KEYS.churchGroups(userProfile?.church_id || '', true), 'paginated'],
+    queryKey: [
+      ...ADMIN_QUERY_KEYS.churchGroups(userProfile?.church_id || '', true),
+      'paginated',
+    ],
     queryFn: async ({ pageParam = 1 }) => {
       if (!userProfile?.church_id) throw new Error('No church ID found');
-      
+
       const pagination = createPaginationParams(
-        pageParam, 
+        pageParam,
         ADMIN_PAGINATION_DEFAULTS.GROUPS_PER_PAGE
       );
-      
+
       const result = await adminServiceWrapper.getChurchGroups(
         userProfile.church_id,
         true,
         pagination,
         { context: { screen: 'manage-groups', page: pageParam } }
       );
-      
+
       if (result.error) throw result.error;
       return result.data;
     },
     enabled: !!userProfile?.church_id && enablePagination,
     getNextPageParam: (lastPage) => {
-      if (!lastPage || typeof lastPage === 'object' && 'pagination' in lastPage) {
+      if (
+        !lastPage ||
+        (typeof lastPage === 'object' && 'pagination' in lastPage)
+      ) {
         const paginatedResponse = lastPage as any;
-        return paginatedResponse.pagination.hasNextPage 
-          ? paginatedResponse.pagination.page + 1 
+        return paginatedResponse.pagination.hasNextPage
+          ? paginatedResponse.pagination.page + 1
           : undefined;
       }
       return undefined;
@@ -473,12 +518,12 @@ export default function ManageGroupsScreen() {
   });
 
   // Determine which data to use
-  const finalGroups = enablePagination 
-    ? paginatedData?.pages.flatMap(page => 
+  const finalGroups = enablePagination
+    ? paginatedData?.pages.flatMap((page) =>
         typeof page === 'object' && 'data' in page ? page.data : page
       ) || []
     : groups || [];
-  
+
   const finalIsLoading = enablePagination ? isPaginatedLoading : isLoading;
   const finalError = enablePagination ? paginatedError : error;
   const finalRefetch = enablePagination ? refetchPaginated : refetch;
@@ -505,7 +550,7 @@ export default function ManageGroupsScreen() {
       return;
     }
 
-    const group = finalGroups?.find(g => g.id === groupId);
+    const group = finalGroups?.find((g) => g.id === groupId);
     if (!group) return;
 
     setConfirmationDialog({
@@ -519,7 +564,7 @@ export default function ManageGroupsScreen() {
   const executeApprove = async () => {
     if (!user?.id || !confirmationDialog.group) return;
 
-    setConfirmationDialog(prev => ({ ...prev, isLoading: true }));
+    setConfirmationDialog((prev) => ({ ...prev, isLoading: true }));
 
     try {
       await approveOperation.executeWithOptimisticUpdate(
@@ -528,25 +573,39 @@ export default function ManageGroupsScreen() {
             confirmationDialog.group!.id,
             user.id,
             undefined,
-            { context: { action: 'approve', groupId: confirmationDialog.group!.id } }
+            {
+              context: {
+                action: 'approve',
+                groupId: confirmationDialog.group!.id,
+              },
+            }
           );
           if (result.error) throw result.error;
-          
+
           // Announce success to screen reader
-          ScreenReaderUtils.announceForAccessibility(`Group ${confirmationDialog.group!.title} has been approved`);
-          
+          ScreenReaderUtils.announceForAccessibility(
+            `Group ${confirmationDialog.group!.title} has been approved`
+          );
+
           return result.data;
         },
         // Optimistic update: immediately show group as approved
-        finalGroups?.map(g => 
-          g.id === confirmationDialog.group!.id ? { ...g, status: 'approved' } : g
+        finalGroups?.map((g) =>
+          g.id === confirmationDialog.group!.id
+            ? { ...g, status: 'approved' }
+            : g
         ) || [],
         { action: 'approve', groupId: confirmationDialog.group!.id }
       );
 
-      setConfirmationDialog({ visible: false, type: null, group: null, isLoading: false });
+      setConfirmationDialog({
+        visible: false,
+        type: null,
+        group: null,
+        isLoading: false,
+      });
     } catch (error) {
-      setConfirmationDialog(prev => ({ ...prev, isLoading: false }));
+      setConfirmationDialog((prev) => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
@@ -557,7 +616,7 @@ export default function ManageGroupsScreen() {
       return;
     }
 
-    const group = finalGroups?.find(g => g.id === groupId);
+    const group = finalGroups?.find((g) => g.id === groupId);
     if (!group) return;
 
     setConfirmationDialog({
@@ -571,7 +630,7 @@ export default function ManageGroupsScreen() {
   const executeDecline = async () => {
     if (!user?.id || !confirmationDialog.group) return;
 
-    setConfirmationDialog(prev => ({ ...prev, isLoading: true }));
+    setConfirmationDialog((prev) => ({ ...prev, isLoading: true }));
 
     try {
       await declineOperation.executeWithOptimisticUpdate(
@@ -580,21 +639,31 @@ export default function ManageGroupsScreen() {
             confirmationDialog.group!.id,
             user.id,
             undefined,
-            { context: { action: 'decline', groupId: confirmationDialog.group!.id } }
+            {
+              context: {
+                action: 'decline',
+                groupId: confirmationDialog.group!.id,
+              },
+            }
           );
           if (result.error) throw result.error;
           return result.data;
         },
         // Optimistic update: immediately show group as denied
-        finalGroups?.map(g => 
+        finalGroups?.map((g) =>
           g.id === confirmationDialog.group!.id ? { ...g, status: 'denied' } : g
         ) || [],
         { action: 'decline', groupId: confirmationDialog.group!.id }
       );
 
-      setConfirmationDialog({ visible: false, type: null, group: null, isLoading: false });
+      setConfirmationDialog({
+        visible: false,
+        type: null,
+        group: null,
+        isLoading: false,
+      });
     } catch (error) {
-      setConfirmationDialog(prev => ({ ...prev, isLoading: false }));
+      setConfirmationDialog((prev) => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
@@ -605,7 +674,7 @@ export default function ManageGroupsScreen() {
       return;
     }
 
-    const group = finalGroups?.find(g => g.id === groupId);
+    const group = finalGroups?.find((g) => g.id === groupId);
     if (!group) return;
 
     setConfirmationDialog({
@@ -619,7 +688,7 @@ export default function ManageGroupsScreen() {
   const executeClose = async () => {
     if (!user?.id || !confirmationDialog.group) return;
 
-    setConfirmationDialog(prev => ({ ...prev, isLoading: true }));
+    setConfirmationDialog((prev) => ({ ...prev, isLoading: true }));
 
     try {
       await closeOperation.executeWithOptimisticUpdate(
@@ -628,26 +697,34 @@ export default function ManageGroupsScreen() {
             confirmationDialog.group!.id,
             user.id,
             undefined,
-            { context: { action: 'close', groupId: confirmationDialog.group!.id } }
+            {
+              context: {
+                action: 'close',
+                groupId: confirmationDialog.group!.id,
+              },
+            }
           );
           if (result.error) throw result.error;
           return result.data;
         },
         // Optimistic update: immediately show group as closed
-        finalGroups?.map(g => 
+        finalGroups?.map((g) =>
           g.id === confirmationDialog.group!.id ? { ...g, status: 'closed' } : g
         ) || [],
         { action: 'close', groupId: confirmationDialog.group!.id }
       );
 
-      setConfirmationDialog({ visible: false, type: null, group: null, isLoading: false });
+      setConfirmationDialog({
+        visible: false,
+        type: null,
+        group: null,
+        isLoading: false,
+      });
     } catch (error) {
-      setConfirmationDialog(prev => ({ ...prev, isLoading: false }));
+      setConfirmationDialog((prev) => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
-
-
 
   const handleViewMembers = (group: GroupWithAdminDetails) => {
     setSelectedGroup(group);
@@ -667,17 +744,26 @@ export default function ManageGroupsScreen() {
   }, [enablePagination, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Render group item for FlatList
-  const renderGroupItem = useCallback(({ item: group }: { item: GroupWithAdminDetails }) => (
-    <GroupManagementCard
-      key={group.id}
-      group={group}
-      onApprove={handleApprove}
-      onDecline={handleDecline}
-      onClose={handleClose}
-      onViewMembers={handleViewMembers}
-      isLoading={isActionLoading}
-    />
-  ), [handleApprove, handleDecline, handleClose, handleViewMembers, isActionLoading]);
+  const renderGroupItem = useCallback(
+    ({ item: group }: { item: GroupWithAdminDetails }) => (
+      <GroupManagementCard
+        key={group.id}
+        group={group}
+        onApprove={handleApprove}
+        onDecline={handleDecline}
+        onClose={handleClose}
+        onViewMembers={handleViewMembers}
+        isLoading={isActionLoading}
+      />
+    ),
+    [
+      handleApprove,
+      handleDecline,
+      handleClose,
+      handleViewMembers,
+      isActionLoading,
+    ]
+  );
 
   const renderConfirmationDialog = () => {
     if (!confirmationDialog.visible || !confirmationDialog.group) return null;
@@ -689,14 +775,26 @@ export default function ManageGroupsScreen() {
         return AdminConfirmations.approveGroup(
           group.title,
           executeApprove,
-          () => setConfirmationDialog({ visible: false, type: null, group: null, isLoading: false }),
+          () =>
+            setConfirmationDialog({
+              visible: false,
+              type: null,
+              group: null,
+              isLoading: false,
+            }),
           isLoading
         );
       case 'decline':
         return AdminConfirmations.declineGroup(
           group.title,
           executeDecline,
-          () => setConfirmationDialog({ visible: false, type: null, group: null, isLoading: false }),
+          () =>
+            setConfirmationDialog({
+              visible: false,
+              type: null,
+              group: null,
+              isLoading: false,
+            }),
           isLoading
         );
       case 'close':
@@ -704,7 +802,13 @@ export default function ManageGroupsScreen() {
           group.title,
           group.member_count || 0,
           executeClose,
-          () => setConfirmationDialog({ visible: false, type: null, group: null, isLoading: false }),
+          () =>
+            setConfirmationDialog({
+              visible: false,
+              type: null,
+              group: null,
+              isLoading: false,
+            }),
           isLoading
         );
       default:
@@ -758,7 +862,6 @@ export default function ManageGroupsScreen() {
           isRefreshing={finalIsLoading}
           breadcrumbs={AdminNavigation.getBreadcrumbs('/admin/manage-groups')}
         >
-
           {actionError && (
             <AdminRetryableError
               error={actionError}
@@ -789,10 +892,13 @@ export default function ManageGroupsScreen() {
           <AdminLoadingOverlay
             visible={isActionLoading}
             message={
-              approveOperation.loading ? 'Approving group...' :
-              declineOperation.loading ? 'Declining group...' :
-              closeOperation.loading ? 'Closing group...' :
-              'Processing...'
+              approveOperation.loading
+                ? 'Approving group...'
+                : declineOperation.loading
+                  ? 'Declining group...'
+                  : closeOperation.loading
+                    ? 'Closing group...'
+                    : 'Processing...'
             }
             onCancel={() => {
               approveOperation.cancel();
@@ -801,152 +907,169 @@ export default function ManageGroupsScreen() {
             }}
           />
 
-      {finalIsLoading ? (
-        <View style={styles.content}>
-          <AdminLoadingCard
-            title="Loading Groups"
-            message="Fetching church groups and their details..."
-          />
-          <AdminLoadingList count={3} showActions={true} />
-        </View>
-      ) : enablePagination ? (
-        <FlatList
-          style={styles.content}
-          data={visibleGroups}
-          renderItem={renderGroupItem}
-          keyExtractor={(item) => item.id}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.1}
-          refreshControl={
-            Platform.OS === 'ios'
-              ? (
-                  <RefreshControl
-                    refreshing={finalIsLoading}
-                    onRefresh={finalRefetch}
-                  />
-                )
-              : undefined
-          }
-          ListHeaderComponent={
-            visibleGroups.length > 0 ? (
-              <View style={styles.summary}>
-                <View style={styles.summaryStats}>
-                  <Text style={styles.summaryText}>
-                    {finalGroups.length}+ total groups
-                  </Text>
-                  <Text style={styles.summaryText}>
-                    {finalGroups.filter((g) => g.status === 'pending').length} pending
-                    approval
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.refreshButton}
-                  onPress={() => {
-                    finalRefetch();
-                    refreshNotifications();
-                    backgroundSync.syncNow();
-                  }}
-                >
-                  <Text style={styles.refreshButtonText}>Refresh</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null
-          }
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <View style={styles.loadingMore}>
-                <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-                  <LoadingSpinner size="small" />
-                </View>
-                <Text style={styles.loadingMoreText}>Loading more groups...</Text>
-              </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateTitle}>No Groups Found</Text>
-              <Text style={styles.emptyStateText}>
-                There are no groups in your church yet.
-              </Text>
+          {finalIsLoading ? (
+            <View style={styles.content}>
+              <AdminLoadingCard
+                title="Loading Groups"
+                message="Fetching church groups and their details..."
+              />
+              <AdminLoadingList count={3} showActions={true} />
             </View>
-          }
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        <ScrollView
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            Platform.OS === 'ios'
-              ? (
+          ) : enablePagination ? (
+            <FlatList
+              style={styles.content}
+              data={visibleGroups}
+              renderItem={renderGroupItem}
+              keyExtractor={(item) => item.id}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.1}
+              refreshControl={
+                Platform.OS === 'ios' ? (
                   <RefreshControl
                     refreshing={finalIsLoading}
                     onRefresh={finalRefetch}
                   />
-                )
-              : undefined
-          }
-        >
-          {finalGroups && finalGroups.length > 0 ? (
-            <>
-              <View style={styles.summary}>
-                <View style={styles.summaryStats}>
-                  <Text style={styles.summaryText}>
-                    {finalGroups.length} total groups
-                  </Text>
-                  <Text style={styles.summaryText}>
-                    {finalGroups.filter((g) => g.status === 'pending').length} pending
-                    approval
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.refreshButton}
-                  onPress={() => {
-                    finalRefetch();
-                    refreshNotifications();
-                    backgroundSync.syncNow();
-                  }}
-                >
-                  <Text style={styles.refreshButtonText}>Refresh</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                {(['all','pending','approved','closed'] as const).map((key) => (
-                  <TouchableOpacity
-                    key={key}
-                    style={[styles.filterChip, statusFilter === key && styles.filterChipActive]}
-                    onPress={() => setStatusFilter(key)}
-                  >
-                    <Text style={[styles.filterChipText, statusFilter === key && styles.filterChipTextActive]}>
-                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                ) : undefined
+              }
+              ListHeaderComponent={
+                visibleGroups.length > 0 ? (
+                  <View style={styles.summary}>
+                    <View style={styles.summaryStats}>
+                      <Text style={styles.summaryText}>
+                        {finalGroups.length}+ total groups
+                      </Text>
+                      <Text style={styles.summaryText}>
+                        {
+                          finalGroups.filter((g) => g.status === 'pending')
+                            .length
+                        }{' '}
+                        pending approval
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.refreshButton}
+                      onPress={() => {
+                        finalRefetch();
+                        refreshNotifications();
+                        backgroundSync.syncNow();
+                      }}
+                    >
+                      <Text style={styles.refreshButtonText}>Refresh</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null
+              }
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <View style={styles.loadingMore}>
+                    <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+                      <LoadingSpinner size="small" />
+                    </View>
+                    <Text style={styles.loadingMoreText}>
+                      Loading more groups...
                     </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {visibleGroups.map((group) => (
-                <GroupManagementCard
-                  key={group.id}
-                  group={group}
-                  onApprove={handleApprove}
-                  onDecline={handleDecline}
-                  onClose={handleClose}
-                  onViewMembers={handleViewMembers}
-                  isLoading={isActionLoading}
-                />
-              ))}
-            </>
+                  </View>
+                ) : null
+              }
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateTitle}>No Groups Found</Text>
+                  <Text style={styles.emptyStateText}>
+                    There are no groups in your church yet.
+                  </Text>
+                </View>
+              }
+              showsVerticalScrollIndicator={false}
+            />
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateTitle}>No Groups Found</Text>
-              <Text style={styles.emptyStateText}>
-                There are no groups in your church yet.
-              </Text>
-            </View>
+            <ScrollView
+              style={styles.content}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                Platform.OS === 'ios' ? (
+                  <RefreshControl
+                    refreshing={finalIsLoading}
+                    onRefresh={finalRefetch}
+                  />
+                ) : undefined
+              }
+            >
+              {finalGroups && finalGroups.length > 0 ? (
+                <>
+                  <View style={styles.summary}>
+                    <View style={styles.summaryStats}>
+                      <Text style={styles.summaryText}>
+                        {finalGroups.length} total groups
+                      </Text>
+                      <Text style={styles.summaryText}>
+                        {
+                          finalGroups.filter((g) => g.status === 'pending')
+                            .length
+                        }{' '}
+                        pending approval
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.refreshButton}
+                      onPress={() => {
+                        finalRefetch();
+                        refreshNotifications();
+                        backgroundSync.syncNow();
+                      }}
+                    >
+                      <Text style={styles.refreshButtonText}>Refresh</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View
+                    style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}
+                  >
+                    {(['all', 'pending', 'approved', 'closed'] as const).map(
+                      (key) => (
+                        <TouchableOpacity
+                          key={key}
+                          style={[
+                            styles.filterChip,
+                            statusFilter === key && styles.filterChipActive,
+                          ]}
+                          onPress={() => setStatusFilter(key)}
+                        >
+                          <Text
+                            style={[
+                              styles.filterChipText,
+                              statusFilter === key &&
+                                styles.filterChipTextActive,
+                            ]}
+                          >
+                            {key.charAt(0).toUpperCase() + key.slice(1)}
+                          </Text>
+                        </TouchableOpacity>
+                      )
+                    )}
+                  </View>
+
+                  {visibleGroups.map((group) => (
+                    <GroupManagementCard
+                      key={group.id}
+                      group={group}
+                      onApprove={handleApprove}
+                      onDecline={handleDecline}
+                      onClose={handleClose}
+                      onViewMembers={handleViewMembers}
+                      isLoading={isActionLoading}
+                    />
+                  ))}
+                </>
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateTitle}>No Groups Found</Text>
+                  <Text style={styles.emptyStateText}>
+                    There are no groups in your church yet.
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
           )}
-        </ScrollView>
-      )}
 
           <GroupMembersModal
             visible={showMembersModal}

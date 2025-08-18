@@ -29,17 +29,17 @@ export const useGroupFiltersStore = create<GroupFiltersState>()(
   persist(
     (set, get) => ({
       filters: defaultFilters,
-      
+
       setMeetingDays: (days: string[]) =>
         set((state) => ({
           filters: { ...state.filters, meetingDays: days },
         })),
-      
+
       setCategories: (categories: string[]) =>
         set((state) => ({
           filters: { ...state.filters, categories },
         })),
-      
+
       setSearchQuery: (query: string) =>
         set((state) => ({
           filters: { ...state.filters, searchQuery: query },
@@ -49,12 +49,12 @@ export const useGroupFiltersStore = create<GroupFiltersState>()(
         set((state) => ({
           filters: { ...state.filters, onlyWithFriends: only },
         })),
-      
+
       clearFilters: () =>
         set(() => ({
           filters: defaultFilters,
         })),
-      
+
       resetFilters: () =>
         set(() => ({
           filters: defaultFilters,

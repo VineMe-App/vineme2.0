@@ -48,11 +48,14 @@ export class AdminBackgroundSync {
     lastError: null,
   };
 
-  constructor(queryClient: QueryClient, options: Partial<BackgroundSyncOptions> = {}) {
+  constructor(
+    queryClient: QueryClient,
+    options: Partial<BackgroundSyncOptions> = {}
+  ) {
     this.queryClient = queryClient;
     this.cacheManager = createAdminCacheManager(queryClient);
     this.options = { ...DEFAULT_SYNC_OPTIONS, ...options };
-    
+
     this.setupAppStateListener();
   }
 
@@ -207,19 +210,23 @@ export class AdminBackgroundSync {
       this.status.lastError = null;
 
       console.log('Admin background sync completed successfully');
-
     } catch (error) {
       console.error('Admin background sync failed:', error);
-      
+
       this.status.failureCount++;
-      this.status.lastError = error instanceof Error ? error : new Error('Sync failed');
+      this.status.lastError =
+        error instanceof Error ? error : new Error('Sync failed');
 
       // Retry with exponential backoff if under retry limit
       if (this.status.failureCount <= (this.options.maxRetries || 3)) {
-        const retryDelay = (this.options.retryDelay || 30000) * Math.pow(2, this.status.failureCount - 1);
-        
-        console.log(`Retrying admin sync in ${retryDelay}ms (attempt ${this.status.failureCount})`);
-        
+        const retryDelay =
+          (this.options.retryDelay || 30000) *
+          Math.pow(2, this.status.failureCount - 1);
+
+        console.log(
+          `Retrying admin sync in ${retryDelay}ms (attempt ${this.status.failureCount})`
+        );
+
         this.retryTimeout = setTimeout(() => {
           this.performSync(churchId);
         }, retryDelay);
@@ -234,10 +241,9 @@ export class AdminBackgroundSync {
    */
   private async syncChurchSummary(churchId: string): Promise<void> {
     try {
-      const result = await adminServiceWrapper.getChurchSummary(
-        churchId,
-        { context: { source: 'background-sync', type: 'summary' } }
-      );
+      const result = await adminServiceWrapper.getChurchSummary(churchId, {
+        context: { source: 'background-sync', type: 'summary' },
+      });
 
       if (result.data) {
         // Update cache with fresh data
@@ -272,8 +278,8 @@ export class AdminBackgroundSync {
         );
 
         // Sync individual group requests for groups with pending status
-        const pendingGroups = Array.isArray(groupsResult.data) 
-          ? groupsResult.data.filter(group => group.status === 'pending')
+        const pendingGroups = Array.isArray(groupsResult.data)
+          ? groupsResult.data.filter((group) => group.status === 'pending')
           : [];
 
         for (const group of pendingGroups) {
@@ -290,7 +296,10 @@ export class AdminBackgroundSync {
               );
             }
           } catch (error) {
-            console.warn(`Failed to sync requests for group ${group.id}:`, error);
+            console.warn(
+              `Failed to sync requests for group ${group.id}:`,
+              error
+            );
           }
         }
       }
@@ -306,10 +315,9 @@ export class AdminBackgroundSync {
     try {
       // This could include recent user activity, new memberships, etc.
       // For now, we'll just refresh the users data
-      const usersResult = await adminServiceWrapper.getChurchUsers(
-        churchId,
-        { context: { source: 'background-sync', type: 'recent-activity' } }
-      );
+      const usersResult = await adminServiceWrapper.getChurchUsers(churchId, {
+        context: { source: 'background-sync', type: 'recent-activity' },
+      });
 
       if (usersResult.data) {
         this.queryClient.setQueryData(
@@ -328,7 +336,7 @@ export class AdminBackgroundSync {
   private getCurrentChurchId(): string | null {
     // Look for church ID in existing queries
     const queries = this.queryClient.getQueryCache().getAll();
-    
+
     for (const query of queries) {
       if (Array.isArray(query.queryKey) && query.queryKey[0] === 'admin') {
         const churchId = query.queryKey[2];
@@ -346,7 +354,7 @@ export class AdminBackgroundSync {
    */
   destroy(): void {
     this.stop();
-    
+
     if (this.appStateSubscription) {
       this.appStateSubscription.remove();
       this.appStateSubscription = null;
@@ -388,7 +396,9 @@ export function startAdminBackgroundSync(churchId: string): void {
   if (globalBackgroundSync) {
     globalBackgroundSync.start(churchId);
   } else {
-    console.warn('Background sync not initialized. Call initializeAdminBackgroundSync first.');
+    console.warn(
+      'Background sync not initialized. Call initializeAdminBackgroundSync first.'
+    );
   }
 }
 

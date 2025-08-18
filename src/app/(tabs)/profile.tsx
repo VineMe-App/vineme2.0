@@ -132,7 +132,9 @@ export default function ProfileScreen() {
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+        }
       >
         {userProfile && (
           <>
@@ -245,7 +247,10 @@ export default function ProfileScreen() {
                     <TouchableOpacity
                       key={friendship.id}
                       style={styles.friendItem}
-                      onPress={() => friendship.friend?.id && router.push(`/user/${friendship.friend.id}`)}
+                      onPress={() =>
+                        friendship.friend?.id &&
+                        router.push(`/user/${friendship.friend.id}`)
+                      }
                       accessibilityRole="button"
                       accessibilityLabel={`View ${friendship.friend?.name || 'user'} profile`}
                     >

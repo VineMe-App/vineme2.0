@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { joinRequestService } from '../services/joinRequests';
-import type { 
-  GroupJoinRequest, 
+import type {
+  GroupJoinRequest,
   GroupJoinRequestWithUser,
-  GroupMembership 
+  GroupMembership,
 } from '../types/database';
 import type { CreateJoinRequestData } from '../services/joinRequests';
 
@@ -52,7 +52,8 @@ export const useUserJoinRequests = (userId: string | undefined) => {
     queryKey: joinRequestKeys.byUser(userId || ''),
     queryFn: async () => {
       if (!userId) throw new Error('User ID is required');
-      const { data, error } = await joinRequestService.getUserJoinRequests(userId);
+      const { data, error } =
+        await joinRequestService.getUserJoinRequests(userId);
       if (error) throw error;
       return data;
     },
@@ -70,7 +71,8 @@ export const useCreateJoinRequest = () => {
 
   return useMutation({
     mutationFn: async (requestData: CreateJoinRequestData) => {
-      const { data, error } = await joinRequestService.createJoinRequest(requestData);
+      const { data, error } =
+        await joinRequestService.createJoinRequest(requestData);
       if (error) throw error;
       return data;
     },
@@ -82,7 +84,7 @@ export const useCreateJoinRequest = () => {
       queryClient.invalidateQueries({
         queryKey: joinRequestKeys.byGroup(variables.group_id),
       });
-      
+
       // Invalidate group data to update pending requests count
       queryClient.invalidateQueries({
         queryKey: ['groups', 'byId', variables.group_id],
@@ -122,12 +124,12 @@ export const useApproveJoinRequest = () => {
       queryClient.invalidateQueries({
         queryKey: joinRequestKeys.byGroup(variables.groupId),
       });
-      
+
       // Invalidate group data to update member count
       queryClient.invalidateQueries({
         queryKey: ['groups', 'byId', variables.groupId],
       });
-      
+
       // Invalidate group members
       queryClient.invalidateQueries({
         queryKey: ['groups', 'members', variables.groupId],
@@ -167,7 +169,7 @@ export const useDeclineJoinRequest = () => {
       queryClient.invalidateQueries({
         queryKey: joinRequestKeys.byGroup(variables.groupId),
       });
-      
+
       // Invalidate group data to update pending requests count
       queryClient.invalidateQueries({
         queryKey: ['groups', 'byId', variables.groupId],
@@ -207,12 +209,12 @@ export const useCancelJoinRequest = () => {
       queryClient.invalidateQueries({
         queryKey: joinRequestKeys.byUser(variables.userId),
       });
-      
+
       // Invalidate group join requests
       queryClient.invalidateQueries({
         queryKey: joinRequestKeys.byGroup(variables.groupId),
       });
-      
+
       // Invalidate group data
       queryClient.invalidateQueries({
         queryKey: ['groups', 'byId', variables.groupId],

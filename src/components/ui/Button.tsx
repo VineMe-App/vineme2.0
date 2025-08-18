@@ -67,7 +67,10 @@ export const Button: React.FC<ButtonProps> = ({
       accessibilityLabel={title}
     >
       {loading ? (
-          <ActivityIndicator color={getLoadingColor()} style={{ width: 16, height: 16 }} />
+        <ActivityIndicator
+          color={getLoadingColor()}
+          style={{ width: 16, height: 16 }}
+        />
       ) : (
         <Text
           style={[

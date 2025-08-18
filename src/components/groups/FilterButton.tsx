@@ -14,20 +14,17 @@ export const FilterButton: React.FC<FilterButtonProps> = ({ onPress }) => {
 
   return (
     <TouchableOpacity
-      style={[
-        styles.button,
-        activeFiltersCount > 0 && styles.buttonActive,
-      ]}
+      style={[styles.button, activeFiltersCount > 0 && styles.buttonActive]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Ionicons name="funnel-outline" size={16} color={activeFiltersCount > 0 ? '#fff' : '#666'} style={{ marginRight: 4 }} />
-      <Text
-        style={[
-          styles.text,
-          activeFiltersCount > 0 && styles.textActive,
-        ]}
-      >
+      <Ionicons
+        name="funnel-outline"
+        size={16}
+        color={activeFiltersCount > 0 ? '#fff' : '#666'}
+        style={{ marginRight: 4 }}
+      />
+      <Text style={[styles.text, activeFiltersCount > 0 && styles.textActive]}>
         Filter
       </Text>
       {activeFiltersCount > 0 && (

@@ -24,10 +24,18 @@ jest.mock('@/services/permissions');
 
 const mockAuthService = authService as jest.Mocked<typeof authService>;
 const mockAdminService = adminService as jest.Mocked<typeof adminService>;
-const mockAdminServiceWrapper = adminServiceWrapper as jest.Mocked<typeof adminServiceWrapper>;
-const mockGroupCreationService = groupCreationService as jest.Mocked<typeof groupCreationService>;
-const mockJoinRequestService = joinRequestService as jest.Mocked<typeof joinRequestService>;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
+const mockAdminServiceWrapper = adminServiceWrapper as jest.Mocked<
+  typeof adminServiceWrapper
+>;
+const mockGroupCreationService = groupCreationService as jest.Mocked<
+  typeof groupCreationService
+>;
+const mockJoinRequestService = joinRequestService as jest.Mocked<
+  typeof joinRequestService
+>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
 
 // Mock expo-router
 const mockReplace = jest.fn();
@@ -158,36 +166,46 @@ describe('Admin User Journeys E2E', () => {
         hasPermission: true,
       });
 
-      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue({
-        hasPermission: true,
-      });
+      mockPermissionService.permissionService.canAccessChurchData.mockResolvedValue(
+        {
+          hasPermission: true,
+        }
+      );
 
       // Mock admin service responses
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: mockGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: mockGroups,
+          error: null,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers.mockResolvedValue({
-        data: mockUsers,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers.mockResolvedValue(
+        {
+          data: mockUsers,
+          error: null,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchSummary.mockResolvedValue({
-        data: {
-          total_users: 25,
-          connected_users: 18,
-          unconnected_users: 7,
-          active_groups: 5,
-          pending_requests: 3,
-        },
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchSummary.mockResolvedValue(
+        {
+          data: {
+            total_users: 25,
+            connected_users: 18,
+            unconnected_users: 7,
+            active_groups: 5,
+            pending_requests: 3,
+          },
+          error: null,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue({
-        data: { ...mockGroups[0], status: 'approved' },
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue(
+        {
+          data: { ...mockGroups[0], status: 'approved' },
+          error: null,
+        }
+      );
 
       // Start the journey
       renderWithProviders(<App />);
@@ -241,11 +259,9 @@ describe('Admin User Journeys E2E', () => {
       fireEvent.press(approveButton);
 
       await waitFor(() => {
-        expect(mockAdminServiceWrapper.adminServiceWrapper.approveGroup).toHaveBeenCalledWith(
-          'group-1',
-          'admin-1',
-          undefined
-        );
+        expect(
+          mockAdminServiceWrapper.adminServiceWrapper.approveGroup
+        ).toHaveBeenCalledWith('group-1', 'admin-1', undefined);
       });
 
       await waitFor(() => {
@@ -274,10 +290,18 @@ describe('Admin User Journeys E2E', () => {
 
       // Verify all service calls were made
       expect(mockAuthService.signIn).toHaveBeenCalledTimes(1);
-      expect(mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups).toHaveBeenCalled();
-      expect(mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers).toHaveBeenCalled();
-      expect(mockAdminServiceWrapper.adminServiceWrapper.getChurchSummary).toHaveBeenCalled();
-      expect(mockAdminServiceWrapper.adminServiceWrapper.approveGroup).toHaveBeenCalled();
+      expect(
+        mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups
+      ).toHaveBeenCalled();
+      expect(
+        mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers
+      ).toHaveBeenCalled();
+      expect(
+        mockAdminServiceWrapper.adminServiceWrapper.getChurchSummary
+      ).toHaveBeenCalled();
+      expect(
+        mockAdminServiceWrapper.adminServiceWrapper.approveGroup
+      ).toHaveBeenCalled();
     });
 
     it('should handle admin permission errors gracefully', async () => {
@@ -381,27 +405,33 @@ describe('Admin User Journeys E2E', () => {
       });
 
       // Mock service responses
-      mockJoinRequestService.joinRequestService.getGroupJoinRequests.mockResolvedValue({
-        data: mockJoinRequests,
-        error: null,
-      });
+      mockJoinRequestService.joinRequestService.getGroupJoinRequests.mockResolvedValue(
+        {
+          data: mockJoinRequests,
+          error: null,
+        }
+      );
 
-      mockJoinRequestService.joinRequestService.approveJoinRequest.mockResolvedValue({
-        data: {
-          id: 'membership-1',
-          group_id: 'group-1',
-          user_id: 'user-1',
-          role: 'member' as const,
-          status: 'active' as const,
-          joined_at: '2024-01-01T00:00:00Z',
-        },
-        error: null,
-      });
+      mockJoinRequestService.joinRequestService.approveJoinRequest.mockResolvedValue(
+        {
+          data: {
+            id: 'membership-1',
+            group_id: 'group-1',
+            user_id: 'user-1',
+            role: 'member' as const,
+            status: 'active' as const,
+            joined_at: '2024-01-01T00:00:00Z',
+          },
+          error: null,
+        }
+      );
 
-      mockGroupCreationService.groupCreationService.updateGroupDetails.mockResolvedValue({
-        data: { ...mockGroup, description: 'Updated description' },
-        error: null,
-      });
+      mockGroupCreationService.groupCreationService.updateGroupDetails.mockResolvedValue(
+        {
+          data: { ...mockGroup, description: 'Updated description' },
+          error: null,
+        }
+      );
 
       renderWithProviders(<App />);
 
@@ -427,10 +457,12 @@ describe('Admin User Journeys E2E', () => {
       fireEvent.press(groupsTab);
 
       // Mock groups service to return the leader's group
-      jest.mocked(require('@/services/groups').getGroupsByChurch).mockResolvedValue({
-        data: [mockGroup],
-        error: null,
-      });
+      jest
+        .mocked(require('@/services/groups').getGroupsByChurch)
+        .mockResolvedValue({
+          data: [mockGroup],
+          error: null,
+        });
 
       await waitFor(() => {
         expect(screen.getByText('Bible Study Group')).toBeTruthy();
@@ -456,14 +488,15 @@ describe('Admin User Journeys E2E', () => {
       });
 
       // Approve join request
-      const approveRequestButton = screen.getByTestId('approve-request-request-1');
+      const approveRequestButton = screen.getByTestId(
+        'approve-request-request-1'
+      );
       fireEvent.press(approveRequestButton);
 
       await waitFor(() => {
-        expect(mockJoinRequestService.joinRequestService.approveJoinRequest).toHaveBeenCalledWith(
-          'request-1',
-          'leader-1'
-        );
+        expect(
+          mockJoinRequestService.joinRequestService.approveJoinRequest
+        ).toHaveBeenCalledWith('request-1', 'leader-1');
       });
 
       await waitFor(() => {
@@ -488,7 +521,9 @@ describe('Admin User Journeys E2E', () => {
       fireEvent.press(saveButton);
 
       await waitFor(() => {
-        expect(mockGroupCreationService.groupCreationService.updateGroupDetails).toHaveBeenCalledWith(
+        expect(
+          mockGroupCreationService.groupCreationService.updateGroupDetails
+        ).toHaveBeenCalledWith(
           'group-1',
           expect.objectContaining({
             description: 'Updated description',
@@ -498,9 +533,15 @@ describe('Admin User Journeys E2E', () => {
       });
 
       // Verify all service calls
-      expect(mockJoinRequestService.joinRequestService.getGroupJoinRequests).toHaveBeenCalled();
-      expect(mockJoinRequestService.joinRequestService.approveJoinRequest).toHaveBeenCalled();
-      expect(mockGroupCreationService.groupCreationService.updateGroupDetails).toHaveBeenCalled();
+      expect(
+        mockJoinRequestService.joinRequestService.getGroupJoinRequests
+      ).toHaveBeenCalled();
+      expect(
+        mockJoinRequestService.joinRequestService.approveJoinRequest
+      ).toHaveBeenCalled();
+      expect(
+        mockGroupCreationService.groupCreationService.updateGroupDetails
+      ).toHaveBeenCalled();
     });
 
     it('should handle group leader permission errors', async () => {
@@ -515,10 +556,12 @@ describe('Admin User Journeys E2E', () => {
         reason: 'User is not a leader of this group',
       });
 
-      mockJoinRequestService.joinRequestService.getGroupJoinRequests.mockResolvedValue({
-        data: null,
-        error: new Error('User is not a leader of this group'),
-      });
+      mockJoinRequestService.joinRequestService.getGroupJoinRequests.mockResolvedValue(
+        {
+          data: null,
+          error: new Error('User is not a leader of this group'),
+        }
+      );
 
       renderWithProviders(<App />);
 
@@ -637,16 +680,20 @@ describe('Admin User Journeys E2E', () => {
         error: null,
       });
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: mockGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: mockGroups,
+          error: null,
+        }
+      );
 
       // Mock concurrent approval conflict
-      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue({
-        data: null,
-        error: new Error('Group is not pending approval'),
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue(
+        {
+          data: null,
+          error: new Error('Group is not pending approval'),
+        }
+      );
 
       renderWithProviders(<App />);
 

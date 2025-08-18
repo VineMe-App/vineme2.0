@@ -17,24 +17,27 @@ interface JoinRequestNotificationsProps {
   onRequestPress?: (request: GroupJoinRequestWithUser) => void;
 }
 
-export const JoinRequestNotifications: React.FC<JoinRequestNotificationsProps> = ({
-  userId,
-  onRequestPress,
-}) => {
+export const JoinRequestNotifications: React.FC<
+  JoinRequestNotificationsProps
+> = ({ userId, onRequestPress }) => {
   const { data: userGroups } = useUserGroups(userId);
-  
+
   // Get join requests for all groups where user is a leader
-  const leaderGroups = userGroups?.filter(group => 
-    group.memberships?.some(m => m.user_id === userId && m.role === 'leader')
-  ) || [];
+  const leaderGroups =
+    userGroups?.filter((group) =>
+      group.memberships?.some(
+        (m) => m.user_id === userId && m.role === 'leader'
+      )
+    ) || [];
 
   // Collect all pending requests from leader groups
   const allPendingRequests: GroupJoinRequestWithUser[] = [];
-  
-  leaderGroups.forEach(group => {
+
+  leaderGroups.forEach((group) => {
     const { data: requests } = useGroupJoinRequests(group.id, userId);
-    const pendingRequests = requests?.filter(r => r.status === 'pending') || [];
-    allPendingRequests.push(...pendingRequests.map(r => ({ ...r, group })));
+    const pendingRequests =
+      requests?.filter((r) => r.status === 'pending') || [];
+    allPendingRequests.push(...pendingRequests.map((r) => ({ ...r, group })));
   });
 
   if (allPendingRequests.length === 0) {
@@ -44,8 +47,10 @@ export const JoinRequestNotifications: React.FC<JoinRequestNotificationsProps> =
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
     const requestDate = new Date(dateString);
-    const diffInHours = Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60));
-    
+    const diffInHours = Math.floor(
+      (now.getTime() - requestDate.getTime()) / (1000 * 60 * 60)
+    );
+
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
@@ -60,13 +65,10 @@ export const JoinRequestNotifications: React.FC<JoinRequestNotificationsProps> =
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Join Requests</Text>
-        <Badge
-          text={allPendingRequests.length.toString()}
-          variant="danger"
-        />
+        <Badge text={allPendingRequests.length.toString()} variant="danger" />
       </View>
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.requestsList}
         showsVerticalScrollIndicator={false}
         horizontal
@@ -95,7 +97,7 @@ export const JoinRequestNotifications: React.FC<JoinRequestNotificationsProps> =
             </View>
           </TouchableOpacity>
         ))}
-        
+
         {allPendingRequests.length > 5 && (
           <View style={styles.moreIndicator}>
             <Text style={styles.moreText}>

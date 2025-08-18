@@ -18,8 +18,12 @@ jest.mock('@/services/adminServiceWrapper');
 jest.mock('@/services/permissions');
 
 const mockAdminService = adminService as jest.Mocked<typeof adminService>;
-const mockAdminServiceWrapper = adminServiceWrapper as jest.Mocked<typeof adminServiceWrapper>;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
+const mockAdminServiceWrapper = adminServiceWrapper as jest.Mocked<
+  typeof adminServiceWrapper
+>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
 
 // Mock expo-router
 const mockPush = jest.fn();
@@ -101,16 +105,20 @@ describe('Admin Workflows Integration Tests', () => {
 
     it('should complete full group approval workflow', async () => {
       // Mock initial groups fetch
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: mockGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: mockGroups,
+          error: null,
+        }
+      );
 
       // Mock approval action
-      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue({
-        data: { ...mockGroups[0], status: 'approved' },
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.approveGroup.mockResolvedValue(
+        {
+          data: { ...mockGroups[0], status: 'approved' },
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -126,11 +134,9 @@ describe('Admin Workflows Integration Tests', () => {
 
       // Verify approval was called
       await waitFor(() => {
-        expect(mockAdminServiceWrapper.adminServiceWrapper.approveGroup).toHaveBeenCalledWith(
-          'group-1',
-          'admin-1',
-          undefined
-        );
+        expect(
+          mockAdminServiceWrapper.adminServiceWrapper.approveGroup
+        ).toHaveBeenCalledWith('group-1', 'admin-1', undefined);
       });
 
       // Verify success feedback
@@ -140,15 +146,19 @@ describe('Admin Workflows Integration Tests', () => {
     });
 
     it('should handle group decline workflow with reason', async () => {
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: mockGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: mockGroups,
+          error: null,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.declineGroup.mockResolvedValue({
-        data: { ...mockGroups[0], status: 'denied' },
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.declineGroup.mockResolvedValue(
+        {
+          data: { ...mockGroups[0], status: 'denied' },
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -163,18 +173,24 @@ describe('Admin Workflows Integration Tests', () => {
       // Should show reason input modal
       await waitFor(() => {
         expect(screen.getByText('Decline Group')).toBeTruthy();
-        expect(screen.getByPlaceholderText('Reason for declining (optional)')).toBeTruthy();
+        expect(
+          screen.getByPlaceholderText('Reason for declining (optional)')
+        ).toBeTruthy();
       });
 
       // Enter reason and confirm
-      const reasonInput = screen.getByPlaceholderText('Reason for declining (optional)');
+      const reasonInput = screen.getByPlaceholderText(
+        'Reason for declining (optional)'
+      );
       fireEvent.changeText(reasonInput, 'Duplicate group already exists');
 
       const confirmButton = screen.getByText('Decline Group');
       fireEvent.press(confirmButton);
 
       await waitFor(() => {
-        expect(mockAdminServiceWrapper.adminServiceWrapper.declineGroup).toHaveBeenCalledWith(
+        expect(
+          mockAdminServiceWrapper.adminServiceWrapper.declineGroup
+        ).toHaveBeenCalledWith(
           'group-1',
           'admin-1',
           'Duplicate group already exists'
@@ -183,10 +199,12 @@ describe('Admin Workflows Integration Tests', () => {
     });
 
     it('should handle group closure workflow', async () => {
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: mockGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: mockGroups,
+          error: null,
+        }
+      );
 
       mockAdminServiceWrapper.adminServiceWrapper.closeGroup.mockResolvedValue({
         data: { ...mockGroups[1], status: 'closed' },
@@ -206,18 +224,18 @@ describe('Admin Workflows Integration Tests', () => {
       // Should show confirmation dialog
       await waitFor(() => {
         expect(screen.getByText('Close Group')).toBeTruthy();
-        expect(screen.getByText('Are you sure you want to close this group?')).toBeTruthy();
+        expect(
+          screen.getByText('Are you sure you want to close this group?')
+        ).toBeTruthy();
       });
 
       const confirmCloseButton = screen.getByText('Close Group');
       fireEvent.press(confirmCloseButton);
 
       await waitFor(() => {
-        expect(mockAdminServiceWrapper.adminServiceWrapper.closeGroup).toHaveBeenCalledWith(
-          'group-2',
-          'admin-1',
-          undefined
-        );
+        expect(
+          mockAdminServiceWrapper.adminServiceWrapper.closeGroup
+        ).toHaveBeenCalledWith('group-2', 'admin-1', undefined);
       });
     });
 
@@ -228,15 +246,19 @@ describe('Admin Workflows Integration Tests', () => {
         { ...mockGroups[0], id: 'group-4', title: 'Third Pending Group' },
       ];
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: pendingGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: pendingGroups,
+          error: null,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.batchApproveGroups.mockResolvedValue({
-        successful: ['group-1', 'group-3'],
-        failed: [{ groupId: 'group-4', error: new Error('Approval failed') }],
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.batchApproveGroups.mockResolvedValue(
+        {
+          successful: ['group-1', 'group-3'],
+          failed: [{ groupId: 'group-4', error: new Error('Approval failed') }],
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -259,10 +281,9 @@ describe('Admin Workflows Integration Tests', () => {
       fireEvent.press(batchApproveButton);
 
       await waitFor(() => {
-        expect(mockAdminServiceWrapper.adminServiceWrapper.batchApproveGroups).toHaveBeenCalledWith(
-          ['group-1', 'group-3', 'group-4'],
-          'admin-1'
-        );
+        expect(
+          mockAdminServiceWrapper.adminServiceWrapper.batchApproveGroups
+        ).toHaveBeenCalledWith(['group-1', 'group-3', 'group-4'], 'admin-1');
       });
 
       // Should show batch results
@@ -273,10 +294,12 @@ describe('Admin Workflows Integration Tests', () => {
     });
 
     it('should handle error states in group management', async () => {
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: null,
-        error: new Error('Failed to load groups'),
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: null,
+          error: new Error('Failed to load groups'),
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -286,10 +309,12 @@ describe('Admin Workflows Integration Tests', () => {
       });
 
       // Test retry functionality
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: mockGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: mockGroups,
+          error: null,
+        }
+      );
 
       const retryButton = screen.getByText('Retry');
       fireEvent.press(retryButton);
@@ -331,15 +356,19 @@ describe('Admin Workflows Integration Tests', () => {
     };
 
     it('should display user management dashboard with statistics', async () => {
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers.mockResolvedValue({
-        data: mockUsers,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers.mockResolvedValue(
+        {
+          data: mockUsers,
+          error: null,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchSummary.mockResolvedValue({
-        data: mockSummary,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchSummary.mockResolvedValue(
+        {
+          data: mockSummary,
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageUsersScreen />);
 
@@ -355,15 +384,19 @@ describe('Admin Workflows Integration Tests', () => {
     });
 
     it('should filter users by connection status', async () => {
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers.mockResolvedValue({
-        data: mockUsers,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers.mockResolvedValue(
+        {
+          data: mockUsers,
+          error: null,
+        }
+      );
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchSummary.mockResolvedValue({
-        data: mockSummary,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchSummary.mockResolvedValue(
+        {
+          data: mockSummary,
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageUsersScreen />);
 
@@ -407,10 +440,12 @@ describe('Admin Workflows Integration Tests', () => {
         },
       ];
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers.mockResolvedValue({
-        data: mockUsers,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchUsers.mockResolvedValue(
+        {
+          data: mockUsers,
+          error: null,
+        }
+      );
 
       mockAdminService.userAdminService.getUserGroupHistory.mockResolvedValue({
         data: mockHistory,
@@ -449,7 +484,9 @@ describe('Admin Workflows Integration Tests', () => {
         },
       };
 
-      jest.mocked(require('@/stores/auth').useAuthStore).mockReturnValue(nonAdminStore);
+      jest
+        .mocked(require('@/stores/auth').useAuthStore)
+        .mockReturnValue(nonAdminStore);
 
       mockPermissionService.permissionService.hasPermission.mockResolvedValue({
         hasPermission: false,
@@ -464,25 +501,31 @@ describe('Admin Workflows Integration Tests', () => {
     });
 
     it('should handle permission errors gracefully', async () => {
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: null,
-        error: new Error('Access denied to manage church groups'),
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: null,
+          error: new Error('Access denied to manage church groups'),
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('Access denied to manage church groups')).toBeTruthy();
+        expect(
+          screen.getByText('Access denied to manage church groups')
+        ).toBeTruthy();
       });
     });
   });
 
   describe('Real-time Updates Integration', () => {
     it('should handle real-time group status updates', async () => {
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: mockGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: mockGroups,
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -496,10 +539,12 @@ describe('Admin Workflows Integration Tests', () => {
         mockGroups[1],
       ];
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: updatedGroups,
-        error: null,
-      });
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: updatedGroups,
+          error: null,
+        }
+      );
 
       // Trigger refetch (would normally be done by React Query)
       const refreshButton = screen.getByTestId('refresh-groups');
@@ -548,18 +593,20 @@ describe('Admin Workflows Integration Tests', () => {
         title: `Group ${i}`,
       }));
 
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: {
-          data: largeDataset.slice(0, 20),
-          pagination: {
-            offset: 0,
-            limit: 20,
-            total: 50,
-            hasMore: true,
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: {
+            data: largeDataset.slice(0, 20),
+            pagination: {
+              offset: 0,
+              limit: 20,
+              total: 50,
+              hasMore: true,
+            },
           },
-        },
-        error: null,
-      });
+          error: null,
+        }
+      );
 
       renderWithProviders(<ManageGroupsScreen />);
 
@@ -572,18 +619,20 @@ describe('Admin Workflows Integration Tests', () => {
       expect(screen.getByText('Load More')).toBeTruthy();
 
       // Test load more functionality
-      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue({
-        data: {
-          data: largeDataset.slice(20, 40),
-          pagination: {
-            offset: 20,
-            limit: 20,
-            total: 50,
-            hasMore: true,
+      mockAdminServiceWrapper.adminServiceWrapper.getChurchGroups.mockResolvedValue(
+        {
+          data: {
+            data: largeDataset.slice(20, 40),
+            pagination: {
+              offset: 20,
+              limit: 20,
+              total: 50,
+              hasMore: true,
+            },
           },
-        },
-        error: null,
-      });
+          error: null,
+        }
+      );
 
       const loadMoreButton = screen.getByText('Load More');
       fireEvent.press(loadMoreButton);

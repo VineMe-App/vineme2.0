@@ -21,6 +21,21 @@ export interface SignInData {
   password: string;
 }
 
+export interface CreateReferredUserData {
+  email: string;
+  phone: string;
+  firstName?: string;
+  lastName?: string;
+  note?: string;
+  referrerId: string;
+}
+
+export interface CreateReferredUserResponse {
+  user: User | null;
+  userId?: string;
+  error: Error | null;
+}
+
 export class AuthService {
   /**
    * Sign in with email and password
@@ -142,11 +157,13 @@ export class AuthService {
 
       const { data, error } = await supabase
         .from('users')
-        .select(`
+        .select(
+          `
           *,
           church:churches(*),
           service:services(*)
-        `)
+        `
+        )
         .eq('id', user.id)
         .single();
 
@@ -199,6 +216,7 @@ export class AuthService {
     name: string;
     church_id?: string;
     service_id?: string;
+    newcomer?: boolean;
   }): Promise<{ error: Error | null }> {
     try {
       const user = await this.getCurrentUser();
@@ -220,6 +238,9 @@ export class AuthService {
       }
       if (userData.service_id) {
         payload.service_id = userData.service_id;
+      }
+      if (userData.newcomer !== undefined) {
+        payload.newcomer = userData.newcomer;
       }
       const { error } = await supabase.from('users').upsert(payload, {
         onConflict: 'id',
@@ -305,6 +326,204 @@ export class AuthService {
             ? error
             : new Error('Session validation failed'),
       };
+    }
+  }
+
+  /**
+   * Create a referred user account with email verification
+   * This method is specifically for referral system use
+   */
+  async createReferredUser(
+    data: CreateReferredUserData
+  ): Promise<CreateReferredUserResponse> {
+    try {
+      // Validate input data
+      const validationError = this.validateReferredUserData(data);
+      if (validationError) {
+        return { user: null, error: new Error(validationError) };
+      }
+
+      // Generate a secure temporary password
+      const tempPassword = this.generateSecurePassword();
+
+      // Create auth user with email verification required
+      const { data: authData, error: authError } = await retryWithBackoff(
+        async () => {
+          const result = await supabase.auth.admin.createUser({
+            email: data.email,
+            password: tempPassword,
+            email_confirm: false, // Require email verification
+            user_metadata: {
+              name: this.buildFullName(data.firstName, data.lastName),
+              phone: data.phone,
+              referred: true,
+              referrer_id: data.referrerId,
+            },
+          });
+
+          if (result.error) {
+            throw result.error;
+          }
+
+          return result;
+        }
+      );
+
+      if (authError || !authData.user) {
+        const appError = handleSupabaseError(authError as Error);
+        return {
+          user: null,
+          error: new Error(
+            appError.message || 'Failed to create referred user account'
+          ),
+        };
+      }
+
+      // Create corresponding public user record with newcomer flag
+      const profileError = await this.createReferredUserProfile(
+        authData.user.id,
+        data
+      );
+
+      if (profileError) {
+        // Clean up auth user if profile creation fails
+        try {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user:', cleanupError);
+        }
+        return { user: null, error: profileError };
+      }
+
+      // Trigger email verification for the referred user
+      await this.triggerReferredUserEmailVerification(data.email);
+
+      return {
+        user: authData.user,
+        userId: authData.user.id,
+        error: null,
+      };
+    } catch (error) {
+      const appError = handleSupabaseError(error as Error);
+      return {
+        user: null,
+        error: new Error(
+          appError.message || 'Failed to create referred user'
+        ),
+      };
+    }
+  }
+
+  /**
+   * Private helper: Validate referred user data
+   */
+  private validateReferredUserData(
+    data: CreateReferredUserData
+  ): string | null {
+    if (!data.email || !data.email.trim()) {
+      return 'Email is required';
+    }
+
+    if (!data.phone || !data.phone.trim()) {
+      return 'Phone number is required';
+    }
+
+    if (!data.referrerId || !data.referrerId.trim()) {
+      return 'Referrer ID is required';
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      return 'Invalid email format';
+    }
+
+    // Basic phone validation (allow various formats)
+    const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,}$/;
+    if (!phoneRegex.test(data.phone.replace(/\s/g, ''))) {
+      return 'Invalid phone number format';
+    }
+
+    return null;
+  }
+
+  /**
+   * Private helper: Build full name from first and last name
+   */
+  private buildFullName(firstName?: string, lastName?: string): string {
+    if (firstName && lastName) {
+      return `${firstName.trim()} ${lastName.trim()}`;
+    }
+    return firstName?.trim() || '';
+  }
+
+  /**
+   * Private helper: Generate secure temporary password
+   */
+  private generateSecurePassword(): string {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 16; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+
+  /**
+   * Private helper: Create user profile for referred user
+   */
+  private async createReferredUserProfile(
+    userId: string,
+    data: CreateReferredUserData
+  ): Promise<Error | null> {
+    try {
+      const userName = this.buildFullName(data.firstName, data.lastName);
+
+      const { error } = await supabase.from('users').insert({
+        id: userId,
+        email: data.email,
+        name: userName,
+        phone: data.phone,
+        newcomer: true, // Mark as newcomer for appropriate onboarding
+        roles: ['user'],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) {
+        return new Error(`Failed to create user profile: ${error.message}`);
+      }
+
+      return null;
+    } catch (error) {
+      return error instanceof Error
+        ? error
+        : new Error('Failed to create user profile');
+    }
+  }
+
+  /**
+   * Private helper: Trigger email verification for referred user
+   */
+  private async triggerReferredUserEmailVerification(
+    email: string
+  ): Promise<void> {
+    try {
+      // Use Supabase auth to send verification email
+      const result = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (result?.error) {
+        console.error('Failed to send verification email:', result.error);
+        // Don't throw here as the user account was created successfully
+        // The verification email failure shouldn't block the referral
+      }
+    } catch (error) {
+      console.error('Error triggering email verification:', error);
+      // Don't throw here as the user account was created successfully
     }
   }
 

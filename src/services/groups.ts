@@ -204,7 +204,7 @@ export class GroupService {
     try {
       // For backward compatibility, this now creates a join request instead
       // of immediate membership. The request will need to be approved by group leaders.
-      
+
       // Check if user is already a member
       const { data: existingMembership } = await supabase
         .from('group_memberships')
@@ -223,7 +223,9 @@ export class GroupService {
         if (existingMembership.status === 'pending') {
           return {
             data: null,
-            error: new Error('User already has a pending request for this group'),
+            error: new Error(
+              'User already has a pending request for this group'
+            ),
           };
         }
       }
@@ -392,8 +394,8 @@ export class GroupService {
         return { data: null, error: new Error(friendsError.message) };
       }
 
-      const friendIds = (friendships || []).map(f => f.friend_id);
-      
+      const friendIds = (friendships || []).map((f) => f.friend_id);
+
       if (friendIds.length === 0) {
         return { data: [], error: null };
       }

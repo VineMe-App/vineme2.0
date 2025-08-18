@@ -22,6 +22,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Card } from '../../components/ui/Card';
 import { Avatar } from '../../components/ui/Avatar';
 import { FriendRequestNotifications } from '../../components/friends/FriendRequestNotifications';
+import { ConnectSomeoneSection } from '../../components/referrals/ConnectSomeoneSection';
 import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 
@@ -62,8 +63,7 @@ export default function HomeScreen() {
   const acceptedFriends = friends || [];
   const pendingRequests = pendingFriendRequests || [];
 
-  const isLoading =
-    groupsLoading || friendsLoading || requestsLoading;
+  const isLoading = groupsLoading || friendsLoading || requestsLoading;
 
   // Handle refresh
   const handleRefresh = React.useCallback(async () => {
@@ -123,38 +123,57 @@ export default function HomeScreen() {
                 {userProfile?.church?.name && (
                   <View style={styles.orgRow}>
                     <Ionicons name="home-outline" size={16} color="#374151" />
-                    <Text style={styles.orgText} numberOfLines={1}>{userProfile.church.name}</Text>
+                    <Text style={styles.orgText} numberOfLines={1}>
+                      {userProfile.church.name}
+                    </Text>
                   </View>
                 )}
                 {userProfile?.service?.name && (
                   <View style={styles.orgRow}>
-                    <Ionicons name="calendar-outline" size={16} color="#374151" />
-                    <Text style={styles.orgText} numberOfLines={1}>{userProfile.service.name}</Text>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={16}
+                      color="#374151"
+                    />
+                    <Text style={styles.orgText} numberOfLines={1}>
+                      {userProfile.service.name}
+                    </Text>
                   </View>
                 )}
               </View>
             </View>
           }
         >
-          <TouchableOpacity style={[styles.orgCard, styles.orgCardClickable]} onPress={() => router.push('/admin')}>
+          <TouchableOpacity
+            style={[styles.orgCard, styles.orgCardClickable]}
+            onPress={() => router.push('/admin')}
+          >
             <View style={styles.orgLeft}>
               {userProfile?.church?.name && (
                 <View style={styles.orgRow}>
                   <Ionicons name="home-outline" size={16} color="#374151" />
-                  <Text style={styles.orgText} numberOfLines={1}>{userProfile.church.name}</Text>
+                  <Text style={styles.orgText} numberOfLines={1}>
+                    {userProfile.church.name}
+                  </Text>
                 </View>
               )}
               {userProfile?.service?.name && (
                 <View style={styles.orgRow}>
                   <Ionicons name="calendar-outline" size={16} color="#374151" />
-                  <Text style={styles.orgText} numberOfLines={1}>{userProfile.service.name}</Text>
+                  <Text style={styles.orgText} numberOfLines={1}>
+                    {userProfile.service.name}
+                  </Text>
                 </View>
               )}
             </View>
             <View style={styles.orgRight}>
               <Ionicons name="settings-outline" size={16} color="#111827" />
               <Text style={styles.orgCta}>Manage Church</Text>
-              <Ionicons name="chevron-forward-outline" size={16} color="#6b7280" />
+              <Ionicons
+                name="chevron-forward-outline"
+                size={16}
+                color="#6b7280"
+              />
             </View>
           </TouchableOpacity>
         </ChurchAdminOnly>
@@ -205,15 +224,29 @@ export default function HomeScreen() {
         )}
       </View>
 
+      {/* Connect Someone Section */}
+      <ConnectSomeoneSection onPress={() => router.push('/referral-landing')} />
+
       {/* Small disclaimer about upcoming events (near bottom) */}
-      <TouchableOpacity onPress={() => router.push('/(tabs)/events')} activeOpacity={0.8}>
+      <TouchableOpacity
+        onPress={() => router.push('/(tabs)/events')}
+        activeOpacity={0.8}
+      >
         <Card style={styles.eventsBanner}>
           <View style={styles.eventsBannerRow}>
-            <Ionicons name="information-circle-outline" size={18} color="#6b7280" />
+            <Ionicons
+              name="information-circle-outline"
+              size={18}
+              color="#6b7280"
+            />
             <Text style={styles.eventsBannerText}>
               Events are coming soon. Tap to learn more.
             </Text>
-            <Ionicons name="chevron-forward-outline" size={18} color="#6b7280" />
+            <Ionicons
+              name="chevron-forward-outline"
+              size={18}
+              color="#6b7280"
+            />
           </View>
         </Card>
       </TouchableOpacity>

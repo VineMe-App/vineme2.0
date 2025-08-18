@@ -33,17 +33,23 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const getVariantDescription = () => {
     switch (variant) {
-      case 'success': return 'positive status';
-      case 'warning': return 'warning status';
-      case 'error': return 'error status';
-      case 'primary': return 'primary status';
-      case 'secondary': return 'secondary status';
-      default: return 'status';
+      case 'success':
+        return 'positive status';
+      case 'warning':
+        return 'warning status';
+      case 'error':
+        return 'error status';
+      case 'primary':
+        return 'primary status';
+      case 'secondary':
+        return 'secondary status';
+      default:
+        return 'status';
     }
   };
 
-  const defaultAccessibilityLabel = accessibilityLabel || 
-    `${children} ${getVariantDescription()}`;
+  const defaultAccessibilityLabel =
+    accessibilityLabel || `${children} ${getVariantDescription()}`;
 
   return (
     <View

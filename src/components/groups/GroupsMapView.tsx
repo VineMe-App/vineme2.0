@@ -1,17 +1,29 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, Alert, Dimensions, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  Dimensions,
+  TouchableOpacity,
+} from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { 
-  AccessibilityHelpers, 
-  AdminAccessibilityLabels, 
-  ScreenReaderUtils 
+import {
+  AccessibilityHelpers,
+  AdminAccessibilityLabels,
+  ScreenReaderUtils,
 } from '@/utils/accessibility';
-import MapView, { Marker, Callout, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, {
+  Marker,
+  Callout,
+  Region,
+  PROVIDER_GOOGLE,
+} from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService, Coordinates } from '../../services/location';
-import { 
-  MapClusterer, 
-  MapViewportOptimizer, 
+import {
+  MapClusterer,
+  MapViewportOptimizer,
   MapPerformanceMonitor,
   type Cluster,
   type ClusterPoint,
@@ -62,17 +74,19 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   const [region, setRegion] = useState<Region>(DEFAULT_REGION);
   const [currentRegion, setCurrentRegion] = useState<Region>(DEFAULT_REGION);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
-  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+  const [locationPermissionDenied, setLocationPermissionDenied] =
+    useState(false);
   const [clusters, setClusters] = useState<(Cluster | ClusterPoint)[]>([]);
   const mapRef = useRef<MapView>(null);
-  
+
   // Create clusterer instance
-  const clusterer = useMemo(() => 
-    new MapClusterer({ 
-      radius: clusterRadius,
-      minZoom: 0,
-      maxZoom: 16,
-    }), 
+  const clusterer = useMemo(
+    () =>
+      new MapClusterer({
+        radius: clusterRadius,
+        minZoom: 0,
+        maxZoom: 16,
+      }),
     [clusterRadius]
   );
 
@@ -98,7 +112,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
   const initializeMap = async () => {
     setIsLoadingLocation(true);
-    
+
     try {
       if (__DEV__) {
         console.log(
@@ -135,7 +149,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         4000,
         'getCurrentLocation'
       );
-      
+
       if (currentLocation) {
         setRegion({
           ...currentLocation,
@@ -180,13 +194,13 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
     for (const group of groups) {
       const locationData = locationService.parseGroupLocation(group.location);
-      
+
       let coordinates: Coordinates | null = null;
 
       // Use existing coordinates if available
       if (locationData.coordinates) {
         coordinates = locationData.coordinates;
-      } 
+      }
       // Otherwise try to geocode the address
       else if (locationData.address) {
         const start = Date.now();
@@ -259,12 +273,14 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     if (!enableClustering) return;
 
     const endClustering = MapPerformanceMonitor.startClustering();
-    
+
     try {
       const bounds = MapViewportOptimizer.getOptimalBounds(currentRegion);
-      const zoom = MapViewportOptimizer.getZoomLevel(currentRegion.latitudeDelta);
+      const zoom = MapViewportOptimizer.getZoomLevel(
+        currentRegion.latitudeDelta
+      );
       const newClusters = clusterer.getClusters(bounds, zoom);
-      
+
       setClusters(newClusters);
       MapPerformanceMonitor.recordPointCount(newClusters.length);
     } finally {
@@ -274,7 +290,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
   const handleRequestLocationPermission = async () => {
     const permission = await locationService.requestLocationPermission();
-    
+
     if (permission.granted) {
       setLocationPermissionDenied(false);
       initializeMap();
@@ -289,7 +305,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
   const renderMarker = (item: ClusterPoint | Cluster, index: number) => {
     const isCluster = 'count' in item && item.count > 1;
-    
+
     if (isCluster) {
       return renderClusterMarker(item as Cluster, index);
     } else {
@@ -299,19 +315,22 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
   const renderGroupMarker = (point: ClusterPoint, index: number) => {
     const { data: group, latitude, longitude } = point;
-    
+
     return (
       <Marker
         key={`group-${group.id}-${index}`}
         coordinate={{ latitude, longitude }}
         title={group.title}
         description={group.description}
-        accessibilityLabel={AdminAccessibilityLabels.mapMarker(group.title, group.member_count || 0)}
+        accessibilityLabel={AdminAccessibilityLabels.mapMarker(
+          group.title,
+          group.member_count || 0
+        )}
         accessibilityHint="Double tap to view group details"
         accessibilityRole="button"
       >
         <View style={styles.markerContainer}>
-          <View 
+          <View
             style={styles.marker}
             accessibilityElementsHidden={true}
             importantForAccessibility="no-hide-descendants"
@@ -319,35 +338,39 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             <Ionicons name="book-outline" size={12} color="#fff" />
           </View>
         </View>
-        <Callout 
+        <Callout
           onPress={() => {
             onGroupPress(group);
-            ScreenReaderUtils.announceForAccessibility(`Opening details for ${group.title}`);
+            ScreenReaderUtils.announceForAccessibility(
+              `Opening details for ${group.title}`
+            );
           }}
           accessibilityLabel={`Group details for ${group.title}`}
           accessibilityHint="Double tap to view full group details"
         >
           <View style={styles.calloutContainer}>
-            <Text 
-              style={styles.calloutTitle} 
+            <Text
+              style={styles.calloutTitle}
               numberOfLines={2}
               accessibilityRole="header"
               accessibilityLevel={3}
             >
               {group.title}
             </Text>
-            <Text 
-              style={styles.calloutDescription} 
+            <Text
+              style={styles.calloutDescription}
               numberOfLines={3}
               accessibilityLabel={`Description: ${group.description}`}
             >
               {group.description}
             </Text>
-            <View 
+            <View
               style={styles.calloutDetails}
               accessibilityRole="text"
               accessibilityLabel={`Meeting: ${group.meeting_day} at ${group.meeting_time}${
-                group.location ? `, Location: ${typeof group.location === 'string' ? group.location : group.location.address}` : ''
+                group.location
+                  ? `, Location: ${typeof group.location === 'string' ? group.location : group.location.address}`
+                  : ''
               }`}
             >
               <Text style={styles.calloutDetailText}>
@@ -355,11 +378,13 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
               </Text>
               {group.location && (
                 <Text style={styles.calloutDetailText} numberOfLines={2}>
-                  {typeof group.location === 'string' ? group.location : group.location.address}
+                  {typeof group.location === 'string'
+                    ? group.location
+                    : group.location.address}
                 </Text>
               )}
             </View>
-            <Text 
+            <Text
               style={styles.calloutAction}
               accessibilityLabel="Tap to view full details"
             >
@@ -376,7 +401,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       <Marker
         key={`cluster-${cluster.id}-${index}`}
         coordinate={cluster.coordinates}
-        accessibilityLabel={AdminAccessibilityLabels.clusterMarker(cluster.count)}
+        accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
+          cluster.count
+        )}
         accessibilityHint="Double tap to zoom in and see individual groups"
         accessibilityRole="button"
         onPress={() => {
@@ -387,15 +414,20 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
               latitudeDelta: currentRegion.latitudeDelta * 0.5,
               longitudeDelta: currentRegion.longitudeDelta * 0.5,
             });
-            ScreenReaderUtils.announceForAccessibility(`Zooming in to show ${cluster.count} groups`);
+            ScreenReaderUtils.announceForAccessibility(
+              `Zooming in to show ${cluster.count} groups`
+            );
           }
         }}
       >
         <View style={styles.clusterContainer}>
-          <View 
-            style={[styles.clusterMarker, { 
-              backgroundColor: cluster.count > 10 ? '#d32f2f' : '#007AFF' 
-            }]}
+          <View
+            style={[
+              styles.clusterMarker,
+              {
+                backgroundColor: cluster.count > 10 ? '#d32f2f' : '#007AFF',
+              },
+            ]}
             accessibilityElementsHidden={true}
           >
             <Text style={styles.clusterText}>{cluster.count}</Text>
@@ -406,15 +438,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           accessibilityHint="Double tap marker to zoom in"
         >
           <View style={styles.clusterCallout}>
-            <Text 
-              style={styles.clusterCalloutTitle}
-              accessibilityRole="header"
-            >
+            <Text style={styles.clusterCalloutTitle} accessibilityRole="header">
               {cluster.count} Groups
             </Text>
-            <Text style={styles.clusterCalloutText}>
-              Tap marker to zoom in
-            </Text>
+            <Text style={styles.clusterCalloutText}>Tap marker to zoom in</Text>
           </View>
         </Callout>
       </Marker>
@@ -467,9 +494,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           onPress={() => {
             Alert.alert(
               'Map Locations',
-              `This map shows ${markers.length} groups:\n\n${markers.map(marker => 
-                `• ${marker.group.title} - ${marker.address || 'Location available'}`
-              ).join('\n')}`,
+              `This map shows ${markers.length} groups:\n\n${markers
+                .map(
+                  (marker) =>
+                    `• ${marker.group.title} - ${marker.address || 'Location available'}`
+                )
+                .join('\n')}`,
               [{ text: 'OK' }]
             );
           }}

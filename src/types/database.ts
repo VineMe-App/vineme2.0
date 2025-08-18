@@ -11,6 +11,7 @@ export interface User {
   service_id?: string;
   bio?: string;
   roles: string[];
+  newcomer?: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -200,6 +201,37 @@ export interface ContactAuditLogWithDetails extends ContactAuditLog {
   };
 }
 
+// Referral system types
+export interface GroupReferral {
+  id: string;
+  group_id: string;
+  referrer_id: string;
+  referred_user_id: string;
+  note?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GeneralReferral {
+  id: string;
+  referrer_id: string;
+  referred_user_id: string;
+  note?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroupReferralWithDetails extends GroupReferral {
+  group?: Group;
+  referrer?: User;
+  referred_user?: User;
+}
+
+export interface GeneralReferralWithDetails extends GeneralReferral {
+  referrer?: User;
+  referred_user?: User;
+}
+
 // Database response types
 export type DatabaseUser = User;
 export type DatabaseChurch = Church;
@@ -208,3 +240,5 @@ export type DatabaseGroup = Group;
 export type DatabaseEvent = Event;
 export type DatabaseFriendship = Friendship;
 export type DatabaseTicket = Ticket;
+export type DatabaseGroupReferral = GroupReferral;
+export type DatabaseGeneralReferral = GeneralReferral;

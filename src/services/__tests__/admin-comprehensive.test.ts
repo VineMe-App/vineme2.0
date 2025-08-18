@@ -10,7 +10,9 @@ jest.mock('../supabase', () => ({
 jest.mock('../permissions');
 
 const mockSupabase = global.mockSupabaseClient;
-const mockPermissionService = permissionService as jest.Mocked<typeof permissionService>;
+const mockPermissionService = permissionService as jest.Mocked<
+  typeof permissionService
+>;
 
 describe('Admin Services - Comprehensive Tests', () => {
   beforeEach(() => {
@@ -74,7 +76,11 @@ describe('Admin Services - Comprehensive Tests', () => {
       } as any);
 
       const pagination = { offset: 0, limit: 5 };
-      const result = await groupAdminService.getChurchGroups('church1', false, pagination);
+      const result = await groupAdminService.getChurchGroups(
+        'church1',
+        false,
+        pagination
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toHaveProperty('data');
@@ -105,7 +111,11 @@ describe('Admin Services - Comprehensive Tests', () => {
       } as any);
 
       const pagination = { offset: 0, limit: 5 };
-      const result = await groupAdminService.getChurchGroups('church1', false, pagination);
+      const result = await groupAdminService.getChurchGroups(
+        'church1',
+        false,
+        pagination
+      );
 
       expect(result.error).toBeNull();
       expect((result.data as any).data).toHaveLength(0);
@@ -246,7 +256,11 @@ describe('Admin Services - Comprehensive Tests', () => {
       } as any);
 
       const pagination = { offset: 0, limit: 10 };
-      const result = await userAdminService.getChurchUsers('church1', pagination, 'connected');
+      const result = await userAdminService.getChurchUsers(
+        'church1',
+        pagination,
+        'connected'
+      );
 
       expect(result.error).toBeNull();
       expect(result.data).toHaveProperty('data');
@@ -380,7 +394,9 @@ describe('Admin Services - Comprehensive Tests', () => {
       const result = await groupAdminService.approveGroup('group1', 'user1');
 
       expect(result.error).toBeTruthy();
-      expect(result.error!.message).toBe('User does not have church_admin role');
+      expect(result.error!.message).toBe(
+        'User does not have church_admin role'
+      );
       expect(result.data).toBeNull();
     });
 
@@ -425,7 +441,11 @@ describe('Admin Services - Comprehensive Tests', () => {
           eq: jest.fn().mockReturnValue({
             select: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
-                data: { id: 'group1', status: 'approved', updated_at: '2024-01-01T00:00:00Z' },
+                data: {
+                  id: 'group1',
+                  status: 'approved',
+                  updated_at: '2024-01-01T00:00:00Z',
+                },
                 error: null,
               }),
             }),

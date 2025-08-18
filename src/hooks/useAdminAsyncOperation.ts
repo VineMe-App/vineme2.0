@@ -1,6 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
-import { AppError, handleSupabaseError, retryWithBackoff } from '../utils/errorHandling';
+import {
+  AppError,
+  handleSupabaseError,
+  retryWithBackoff,
+} from '../utils/errorHandling';
 import { globalErrorHandler } from '../utils/globalErrorHandler';
 import { useAuthStore } from '../stores/auth';
 
@@ -138,27 +142,29 @@ export function useAdminAsyncOperation<T = any>(
         }
 
         if (logErrors) {
-          globalErrorHandler.logError(appError, {
-            ...context,
-            retryCount: newRetryCount,
-            operation: operation.name || 'anonymous',
-          }, user?.id);
+          globalErrorHandler.logError(
+            appError,
+            {
+              ...context,
+              retryCount: newRetryCount,
+              operation: operation.name || 'anonymous',
+            },
+            user?.id
+          );
         }
 
         if (showErrorAlert) {
-          Alert.alert(
-            'Operation Failed',
-            getAdminErrorMessage(appError),
-            [
-              { text: 'OK', style: 'default' },
-              ...(appError.retryable && newRetryCount < maxRetries
-                ? [{
+          Alert.alert('Operation Failed', getAdminErrorMessage(appError), [
+            { text: 'OK', style: 'default' },
+            ...(appError.retryable && newRetryCount < maxRetries
+              ? [
+                  {
                     text: 'Retry',
                     onPress: () => retry(operation, context, optimisticConfig),
-                  }]
-                : []),
-            ]
-          );
+                  },
+                ]
+              : []),
+          ]);
         }
 
         onError?.(appError);
@@ -225,11 +231,10 @@ export function useAdminAsyncOperation<T = any>(
       optimisticData: T,
       context?: Record<string, any>
     ) => {
-      return execute(
-        operation,
-        context,
-        { optimisticData, rollbackData: state.data }
-      );
+      return execute(operation, context, {
+        optimisticData,
+        rollbackData: state.data,
+      });
     },
     [execute, state.data]
   );
@@ -257,7 +262,10 @@ function getAdminErrorMessage(error: AppError): string {
     case 'auth':
       return 'Your session has expired. Please sign in again.';
     default:
-      return error.message || 'An unexpected error occurred. Please try again or contact support if the problem persists.';
+      return (
+        error.message ||
+        'An unexpected error occurred. Please try again or contact support if the problem persists.'
+      );
   }
 }
 
@@ -293,7 +301,7 @@ export function useAdminBatchOperation<T = any>(
         try {
           const result = await operations[i]();
           results.push(result);
-          
+
           setBatchState((prev) => ({
             ...prev,
             completed: prev.completed + 1,
@@ -301,7 +309,7 @@ export function useAdminBatchOperation<T = any>(
         } catch (error) {
           const appError = handleSupabaseError(error as Error);
           errors.push(appError);
-          
+
           setBatchState((prev) => ({
             ...prev,
             failed: prev.failed + 1,
@@ -342,7 +350,8 @@ export function useAdminBatchOperation<T = any>(
     ...batchState,
     executeBatch,
     resetBatch,
-    progress: batchState.total > 0 ? batchState.completed / batchState.total : 0,
+    progress:
+      batchState.total > 0 ? batchState.completed / batchState.total : 0,
     hasErrors: batchState.errors.length > 0,
   };
 }

@@ -18,11 +18,10 @@ export default function TabLayout() {
           height: Platform.OS === 'ios' ? 85 : 60,
           justifyContent: 'space-around',
         },
-        tabBarBackground: () => (
+        tabBarBackground: () =>
           Platform.OS === 'ios' ? (
             <BlurView intensity={20} tint="light" style={{ flex: 1 }} />
-          ) : null
-        ),
+          ) : null,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',

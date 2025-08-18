@@ -386,7 +386,10 @@ export class PermissionService {
       return { hasPermission: false, reason: 'User not authenticated' };
     }
 
-    if (user.roles.includes('superadmin') || user.roles.includes('church_admin')) {
+    if (
+      user.roles.includes('superadmin') ||
+      user.roles.includes('church_admin')
+    ) {
       return { hasPermission: true };
     }
 

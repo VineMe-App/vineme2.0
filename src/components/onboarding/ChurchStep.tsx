@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+} from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import type { OnboardingStepProps } from '@/types/app';
 import type { Church, Service } from '@/types/database';
@@ -130,7 +136,7 @@ export default function ChurchStep({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-      <LoadingSpinner size="large" />
+        <LoadingSpinner size="large" />
         <Text style={styles.loadingText}>Loading churches...</Text>
       </View>
     );

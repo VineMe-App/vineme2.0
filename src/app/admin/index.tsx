@@ -13,7 +13,10 @@ export default function AdminDashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Church Admin Dashboard</Text>
 
         <AdminDashboardSummary onRefresh={handleRefresh} />
@@ -80,4 +83,3 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
 });
-

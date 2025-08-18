@@ -39,7 +39,7 @@ export class ContactAuditService {
         accessData.group_id,
         accessData.accessor_id
       );
-      
+
       if (!permissionCheck.hasPermission) {
         return {
           data: null,
@@ -142,7 +142,7 @@ export class ContactAuditService {
         groupId,
         requesterId
       );
-      
+
       if (!permissionCheck.hasPermission) {
         return {
           data: null,
@@ -250,7 +250,7 @@ export class ContactAuditService {
           .eq('user_id', userId)
           .select()
           .single();
-        
+
         data = result.data;
         error = result.error;
       } else {
@@ -265,7 +265,7 @@ export class ContactAuditService {
           })
           .select()
           .single();
-        
+
         data = result.data;
         error = result.error;
       }
@@ -326,7 +326,7 @@ export class ContactAuditService {
         groupId,
         requesterId
       );
-      
+
       if (!permissionCheck.hasPermission) {
         return { data: false, error: new Error('Access denied') };
       }

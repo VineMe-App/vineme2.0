@@ -30,7 +30,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.inputContainer}>
-        <Ionicons name="search-outline" size={16} color="#666" style={styles.leadingIcon} />
+        <Ionicons
+          name="search-outline"
+          size={16}
+          color="#666"
+          style={styles.leadingIcon}
+        />
         <TextInput
           style={styles.input}
           placeholder={placeholder}

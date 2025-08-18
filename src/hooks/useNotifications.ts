@@ -255,12 +255,17 @@ export const useAdminNotifications = (userId?: string) => {
   return {
     unreadNotifications: unreadNotifications || [],
     allNotifications: allNotifications || [],
-    notificationCounts: notificationCounts || { group_requests: 0, join_requests: 0, total: 0 },
+    notificationCounts: notificationCounts || {
+      group_requests: 0,
+      join_requests: 0,
+      total: 0,
+    },
     isLoading: isLoadingUnread || isLoadingAll || isLoadingCounts,
     error: unreadError || allError || countsError,
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,
     refreshNotifications,
-    isMarkingAsRead: markAsReadMutation.isPending || markAllAsReadMutation.isPending,
+    isMarkingAsRead:
+      markAsReadMutation.isPending || markAllAsReadMutation.isPending,
   };
 };

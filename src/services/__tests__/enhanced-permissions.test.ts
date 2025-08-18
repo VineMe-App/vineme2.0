@@ -135,7 +135,8 @@ describe('Enhanced Permission System', () => {
     });
 
     it('should allow group management permissions for their group', async () => {
-      const result = await permissionService.canManageGroupMembership('group-1');
+      const result =
+        await permissionService.canManageGroupMembership('group-1');
       expect(result.hasPermission).toBe(true);
     });
 
@@ -199,7 +200,11 @@ describe('Enhanced Permission System', () => {
     });
 
     it('should have basic user permissions', async () => {
-      const basicPermissions = ['read_own_data', 'update_own_data', 'read_church_data'];
+      const basicPermissions = [
+        'read_own_data',
+        'update_own_data',
+        'read_church_data',
+      ];
 
       for (const permission of basicPermissions) {
         const result = await permissionService.hasPermission(permission as any);
@@ -224,7 +229,7 @@ describe('Enhanced Permission System', () => {
       }
     });
 
-    it('should deny group leadership for groups they don\'t lead', async () => {
+    it("should deny group leadership for groups they don't lead", async () => {
       const result = await permissionService.isGroupLeader('group-1');
       expect(result.hasPermission).toBe(false);
       expect(result.reason).toContain('not a leader of this group');
@@ -294,7 +299,8 @@ describe('Enhanced Permission System', () => {
       const churchAdminResult = await permissionService.isChurchAdmin();
       expect(churchAdminResult.hasPermission).toBe(true);
 
-      const groupLeaderResult = await permissionService.isGroupLeader('any-group');
+      const groupLeaderResult =
+        await permissionService.isGroupLeader('any-group');
       expect(groupLeaderResult.hasPermission).toBe(true);
     });
   });
@@ -315,7 +321,8 @@ describe('Enhanced Permission System', () => {
       expect(churchAdminResult.hasPermission).toBe(false);
       expect(churchAdminResult.reason).toBe('User not authenticated');
 
-      const groupLeaderResult = await permissionService.isGroupLeader('group-1');
+      const groupLeaderResult =
+        await permissionService.isGroupLeader('group-1');
       expect(groupLeaderResult.hasPermission).toBe(false);
       expect(groupLeaderResult.reason).toBe('User not authenticated');
     });

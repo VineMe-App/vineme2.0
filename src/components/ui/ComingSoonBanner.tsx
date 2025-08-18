@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AccessibilityHelpers } from '@/utils/accessibility';
 
@@ -45,41 +39,41 @@ export function ComingSoonBanner({
       accessibilityState={{ disabled: false }}
     >
       <View style={styles.content}>
-        <View 
+        <View
           style={styles.iconContainer}
           accessibilityElementsHidden={true}
           importantForAccessibility="no-hide-descendants"
         >
-          <Ionicons 
-            name="construct" 
-            size={24} 
+          <Ionicons
+            name="construct"
+            size={24}
             color="#f59e0b"
             accessibilityLabel="Under construction icon"
           />
         </View>
         <View style={styles.textContainer}>
-          <Text 
+          <Text
             style={styles.title}
             accessibilityRole="header"
             accessibilityLevel={3}
           >
             {title}
           </Text>
-          <Text 
+          <Text
             style={styles.message}
             accessibilityLabel={`Feature description: ${message}`}
           >
             {message}
           </Text>
         </View>
-        <View 
+        <View
           style={styles.arrowContainer}
           accessibilityElementsHidden={true}
           importantForAccessibility="no-hide-descendants"
         >
-          <Ionicons 
-            name="chevron-forward" 
-            size={20} 
+          <Ionicons
+            name="chevron-forward"
+            size={20}
             color="#9ca3af"
             accessibilityLabel="More information available"
           />

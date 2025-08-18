@@ -40,7 +40,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
           </Text>
         </View>
       </TouchableOpacity>
-      
+
       <TouchableOpacity
         style={[
           styles.toggleButton,
