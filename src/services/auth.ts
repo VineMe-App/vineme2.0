@@ -395,8 +395,8 @@ export class AuthService {
         return { user: null, error: profileError };
       }
 
-      // Trigger email verification for the referred user
-      await this.triggerReferredUserEmailVerification(data.email);
+      // Email verification is now handled by the referral service
+      // using the dedicated emailVerificationService
 
       return {
         user: authData.user,
@@ -505,25 +505,204 @@ export class AuthService {
 
   /**
    * Private helper: Trigger email verification for referred user
+   * Requirement 5.1: Send verification email to referred person's email address
+   * Requirement 5.2: Include "verify email" link for account activation
    */
   private async triggerReferredUserEmailVerification(
     email: string
   ): Promise<void> {
     try {
-      // Use Supabase auth to send verification email
+      // Use Supabase auth to send verification email with custom redirect URL
+      const redirectUrl = this.buildEmailVerificationRedirectUrl();
+      
       const result = await supabase.auth.resend({
         type: 'signup',
         email: email,
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
       });
 
       if (result?.error) {
         console.error('Failed to send verification email:', result.error);
         // Don't throw here as the user account was created successfully
         // The verification email failure shouldn't block the referral
+        throw new Error(`Email verification failed: ${result.error.message}`);
       }
+
+      console.log(`Verification email sent successfully to ${email}`);
     } catch (error) {
       console.error('Error triggering email verification:', error);
-      // Don't throw here as the user account was created successfully
+      // Re-throw to allow proper error handling in calling code
+      throw error instanceof Error 
+        ? error 
+        : new Error('Failed to send verification email');
+    }
+  }
+
+  /**
+   * Build the redirect URL for email verification
+   * This URL will be used when users click the verification link in their email
+   */
+  private buildEmailVerificationRedirectUrl(): string {
+    // Use the app's deep link scheme for mobile app verification
+    return 'vineme://auth/verify-email';
+  }
+
+  /**
+   * Handle email verification from deep link
+   * Requirement 5.3: Allow referred person to complete VineMe account setup
+   * Requirement 5.4: Update user's status appropriately when verification is complete
+   */
+  async handleEmailVerification(
+    accessToken: string,
+    refreshToken: string
+  ): Promise<{ success: boolean; error?: string; user?: User }> {
+    try {
+      // Set the session using the tokens from the verification link
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        console.error('Email verification failed:', error);
+        return { 
+          success: false, 
+          error: 'Email verification failed. The link may be expired or invalid.' 
+        };
+      }
+
+      if (!data.user) {
+        return { 
+          success: false, 
+          error: 'No user found after verification.' 
+        };
+      }
+
+      // Update user's email verification status in our database
+      await this.updateUserVerificationStatus(data.user.id, true);
+
+      // Store the session securely
+      if (data.session) {
+        await secureStorage.storeAuthSession({
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+          expiresAt: data.session.expires_at,
+        });
+      }
+
+      console.log(`Email verification successful for user ${data.user.id}`);
+      
+      return { 
+        success: true, 
+        user: data.user 
+      };
+    } catch (error) {
+      console.error('Error handling email verification:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error 
+          ? error.message 
+          : 'An unexpected error occurred during verification' 
+      };
+    }
+  }
+
+  /**
+   * Update user's email verification status in the database
+   * Requirement 5.4: Update user's status appropriately when verification is complete
+   */
+  private async updateUserVerificationStatus(
+    userId: string, 
+    isVerified: boolean
+  ): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          email_verified: isVerified,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Failed to update user verification status:', error);
+        // Don't throw here as the main verification was successful
+      }
+    } catch (error) {
+      console.error('Error updating user verification status:', error);
+      // Don't throw here as the main verification was successful
+    }
+  }
+
+  /**
+   * Check if a user's email is verified
+   */
+  async isEmailVerified(userId?: string): Promise<boolean> {
+    try {
+      const targetUserId = userId || (await this.getCurrentUser())?.id;
+      
+      if (!targetUserId) {
+        return false;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('email_verified')
+        .eq('id', targetUserId)
+        .single();
+
+      if (error || !data) {
+        return false;
+      }
+
+      return data.email_verified || false;
+    } catch (error) {
+      console.error('Error checking email verification status:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Resend verification email for current user
+   */
+  async resendVerificationEmail(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const user = await this.getCurrentUser();
+      
+      if (!user?.email) {
+        return { 
+          success: false, 
+          error: 'No authenticated user or email found' 
+        };
+      }
+
+      const redirectUrl = this.buildEmailVerificationRedirectUrl();
+      
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user.email,
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
+      });
+
+      if (error) {
+        return { 
+          success: false, 
+          error: `Failed to resend verification email: ${error.message}` 
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error 
+          ? error.message 
+          : 'Failed to resend verification email' 
+      };
     }
   }
 

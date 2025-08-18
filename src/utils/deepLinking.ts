@@ -2,9 +2,10 @@ import * as Linking from 'expo-linking';
 import { Share, Alert } from 'react-native';
 
 export interface DeepLinkData {
-  type: 'group' | 'event';
+  type: 'group' | 'event' | 'auth';
   id: string;
   title?: string;
+  params?: Record<string, any>;
 }
 
 /**
@@ -84,12 +85,23 @@ export const shareEvent = async (
  */
 export const parseDeepLink = (url: string): DeepLinkData | null => {
   try {
-    const { hostname, path } = Linking.parse(url);
+    const { path, queryParams } = Linking.parse(url);
 
     if (!path) return null;
 
     const segments = path.split('/').filter(Boolean);
 
+    // Handle auth links: vineme://auth/verify-email
+    if (segments.length >= 2 && segments[0] === 'auth') {
+      const [, id] = segments;
+      return { 
+        type: 'auth', 
+        id,
+        params: queryParams 
+      };
+    }
+
+    // Handle group and event links
     if (segments.length >= 2) {
       const [type, id] = segments;
 
@@ -118,6 +130,23 @@ export const handleDeepLink = (url: string, router: any) => {
 
   try {
     switch (linkData.type) {
+      case 'auth':
+        if (linkData.id === 'verify-email') {
+          // Build the route with query parameters for email verification
+          const params = new URLSearchParams();
+          if (linkData.params) {
+            Object.entries(linkData.params).forEach(([key, value]) => {
+              if (value) params.append(key, String(value));
+            });
+          }
+          const queryString = params.toString();
+          const route = queryString 
+            ? `/(auth)/verify-email?${queryString}`
+            : '/(auth)/verify-email';
+          router.push(route);
+          return true;
+        }
+        return false;
       case 'group':
         router.push(`/group/${linkData.id}`);
         return true;

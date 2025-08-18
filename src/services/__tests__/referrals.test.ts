@@ -1,35 +1,24 @@
 import { referralService } from '../referrals';
 import { supabase } from '../supabase';
+import { authService } from '../auth';
+import { emailVerificationService } from '../emailVerification';
 import type { CreateReferralData } from '../referrals';
 
-// Mock Supabase
-jest.mock('../supabase', () => ({
-  supabase: {
-    auth: {
-      admin: {
-        createUser: jest.fn(),
-        deleteUser: jest.fn(),
-      },
-      resend: jest.fn(),
-    },
-    from: jest.fn(() => ({
-      insert: jest.fn(() => ({ error: null })),
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn(() => ({ data: { id: 'group-1' }, error: null })),
-          order: jest.fn(() => ({ data: [], error: null })),
-        })),
-        order: jest.fn(() => ({ data: [], error: null })),
-      })),
-    })),
-  },
-}));
+// Mock dependencies
+jest.mock('../supabase');
+jest.mock('../auth');
+jest.mock('../emailVerification');
+jest.mock('../referralDatabase');
 
 // Mock error handling utilities
 jest.mock('../../utils/errorHandling', () => ({
-  handleSupabaseError: jest.fn((error) => ({ message: error.message })),
-  retryWithBackoff: jest.fn((fn) => fn()),
+  handleSupabaseError: jest.fn((error: Error) => ({ message: error.message })),
+  retryWithBackoff: jest.fn((fn: () => any) => fn()),
 }));
+
+const mockSupabase = supabase as jest.Mocked<typeof supabase>;
+const mockAuthService = authService as jest.Mocked<typeof authService>;
+const mockEmailVerificationService = emailVerificationService as jest.Mocked<typeof emailVerificationService>;
 
 describe('ReferralService', () => {
   const mockReferralData: CreateReferralData = {
@@ -47,58 +36,64 @@ describe('ReferralService', () => {
 
   describe('createReferral', () => {
     it('should create a general referral when no groupId is provided', async () => {
-      // Mock successful auth user creation
-      (supabase.auth.admin.createUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'user-123' } },
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
         error: null,
+      });
+
+      // Mock successful email verification
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
       });
 
       // Mock successful database operations
       const mockInsert = jest.fn().mockResolvedValue({ error: null });
-      (supabase.from as jest.Mock).mockReturnValue({
+      mockSupabase.from.mockReturnValue({
         insert: mockInsert,
-      });
+      } as any);
 
       const result = await referralService.createReferral(mockReferralData);
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe('user-123');
-      expect(supabase.auth.admin.createUser).toHaveBeenCalledWith({
+      expect(mockAuthService.createReferredUser).toHaveBeenCalledWith({
         email: 'test@example.com',
-        password: expect.any(String),
-        email_confirm: false,
-        user_metadata: {
-          name: 'John Doe',
-          phone: '+1234567890',
-          referred: true,
-          referrer_id: 'referrer-123',
-        },
+        phone: '+1234567890',
+        firstName: 'John',
+        lastName: 'Doe',
+        note: 'Test referral note',
+        referrerId: 'referrer-123',
       });
     });
 
     it('should create a group referral when groupId is provided', async () => {
       const groupReferralData = { ...mockReferralData, groupId: 'group-123' };
 
-      // Mock successful auth user creation
-      (supabase.auth.admin.createUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'user-123' } },
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
         error: null,
+      });
+
+      // Mock successful email verification
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      // Mock group exists check
+      const mockSelect = jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({ data: { id: 'group-123' }, error: null }),
+        }),
       });
 
       // Mock successful database operations
       const mockInsert = jest.fn().mockResolvedValue({ error: null });
-      const mockSelect = jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          single: jest
-            .fn()
-            .mockResolvedValue({ data: { id: 'group-123' }, error: null }),
-        }),
-      });
-
-      (supabase.from as jest.Mock).mockReturnValue({
+      mockSupabase.from.mockReturnValue({
         insert: mockInsert,
         select: mockSelect,
-      });
+      } as any);
 
       const result = await referralService.createReferral(groupReferralData);
 
@@ -136,37 +131,98 @@ describe('ReferralService', () => {
 
   describe('createGeneralReferral', () => {
     it('should create user account and general referral record', async () => {
-      // Mock successful auth user creation
-      (supabase.auth.admin.createUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'user-123' } },
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
         error: null,
+      });
+
+      // Mock successful email verification
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
       });
 
       // Mock successful database operations
       const mockInsert = jest.fn().mockResolvedValue({ error: null });
-      (supabase.from as jest.Mock).mockReturnValue({
+      mockSupabase.from.mockReturnValue({
         insert: mockInsert,
-      });
+      } as any);
 
-      const result =
-        await referralService.createGeneralReferral(mockReferralData);
+      const result = await referralService.createGeneralReferral(mockReferralData);
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe('user-123');
-      expect(mockInsert).toHaveBeenCalledTimes(2); // Once for users, once for general_referrals
+      expect(mockInsert).toHaveBeenCalledWith({
+        referrer_id: 'referrer-123',
+        referred_user_id: 'user-123',
+        note: 'Test referral note',
+        created_at: expect.any(String),
+        updated_at: expect.any(String),
+      });
     });
 
     it('should handle auth user creation failure', async () => {
-      (supabase.auth.admin.createUser as jest.Mock).mockResolvedValue({
-        data: { user: null },
-        error: { message: 'Auth error' },
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: null,
+        error: 'Auth error',
       });
 
-      const result =
-        await referralService.createGeneralReferral(mockReferralData);
+      const result = await referralService.createGeneralReferral(mockReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Failed to create user account');
+    });
+
+    it('should handle database insertion failure', async () => {
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      // Mock successful email verification
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      // Mock database insertion failure
+      const mockInsert = jest.fn().mockResolvedValue({ 
+        error: { message: 'Database error', code: '23505' } 
+      });
+      mockSupabase.from.mockReturnValue({
+        insert: mockInsert,
+      } as any);
+
+      const result = await referralService.createGeneralReferral(mockReferralData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('This user has already been referred by you');
+    });
+
+    it('should continue if email verification fails', async () => {
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      // Mock email verification failure
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: false,
+        error: 'Email service unavailable',
+      });
+
+      // Mock successful database operations
+      const mockInsert = jest.fn().mockResolvedValue({ error: null });
+      mockSupabase.from.mockReturnValue({
+        insert: mockInsert,
+      } as any);
+
+      const result = await referralService.createGeneralReferral(mockReferralData);
+
+      // Should still succeed even if email fails
+      expect(result.success).toBe(true);
+      expect(result.userId).toBe('user-123');
     });
   });
 
@@ -177,30 +233,40 @@ describe('ReferralService', () => {
       // Mock group exists check
       const mockSelect = jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          single: jest
-            .fn()
-            .mockResolvedValue({ data: { id: 'group-123' }, error: null }),
+          single: jest.fn().mockResolvedValue({ data: { id: 'group-123' }, error: null }),
         }),
       });
 
-      // Mock successful auth user creation
-      (supabase.auth.admin.createUser as jest.Mock).mockResolvedValue({
-        data: { user: { id: 'user-123' } },
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
         error: null,
+      });
+
+      // Mock successful email verification
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
       });
 
       // Mock successful database operations
       const mockInsert = jest.fn().mockResolvedValue({ error: null });
-      (supabase.from as jest.Mock).mockReturnValue({
+      mockSupabase.from.mockReturnValue({
         insert: mockInsert,
         select: mockSelect,
-      });
+      } as any);
 
-      const result =
-        await referralService.createGroupReferral(groupReferralData);
+      const result = await referralService.createGroupReferral(groupReferralData);
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe('user-123');
+      expect(mockInsert).toHaveBeenCalledWith({
+        group_id: 'group-123',
+        referrer_id: 'referrer-123',
+        referred_user_id: 'user-123',
+        note: 'Test referral note',
+        created_at: expect.any(String),
+        updated_at: expect.any(String),
+      });
     });
 
     it('should fail when group does not exist', async () => {
@@ -212,29 +278,64 @@ describe('ReferralService', () => {
       // Mock group not found
       const mockSelect = jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          single: jest
-            .fn()
-            .mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+          single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
         }),
       });
 
-      (supabase.from as jest.Mock).mockReturnValue({
+      mockSupabase.from.mockReturnValue({
         select: mockSelect,
-      });
+      } as any);
 
-      const result =
-        await referralService.createGroupReferral(groupReferralData);
+      const result = await referralService.createGroupReferral(groupReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Group not found');
     });
 
     it('should fail when groupId is missing', async () => {
-      const result =
-        await referralService.createGroupReferral(mockReferralData);
+      const result = await referralService.createGroupReferral(mockReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Group ID is required for group referrals');
+    });
+
+    it('should handle database constraint violations for group referrals', async () => {
+      const groupReferralData = { ...mockReferralData, groupId: 'group-123' };
+
+      // Mock group exists check
+      const mockSelect = jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({ data: { id: 'group-123' }, error: null }),
+        }),
+      });
+
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      // Mock successful email verification
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      // Mock database constraint violation
+      const mockInsert = jest.fn().mockResolvedValue({ 
+        error: { 
+          message: 'insert or update on table violates foreign key constraint',
+          code: '23503'
+        } 
+      });
+      mockSupabase.from.mockReturnValue({
+        insert: mockInsert,
+        select: mockSelect,
+      } as any);
+
+      const result = await referralService.createGroupReferral(groupReferralData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Group not found or has been deleted');
     });
   });
 
@@ -349,15 +450,18 @@ describe('ReferralService', () => {
         insert: mockInsert,
       });
 
-      // Mock email resend
-      (supabase.auth.resend as jest.Mock).mockResolvedValue({ error: null });
+      // Mock email verification service
+      const { emailVerificationService } = require('../emailVerification');
+      emailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
 
       await referralService.createGeneralReferral(mockReferralData);
 
-      expect(supabase.auth.resend).toHaveBeenCalledWith({
-        type: 'signup',
-        email: 'test@example.com',
-      });
+      expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(
+        'test@example.com',
+        true
+      );
     });
 
     it('should not fail referral creation if email verification fails', async () => {
@@ -373,9 +477,11 @@ describe('ReferralService', () => {
         insert: mockInsert,
       });
 
-      // Mock email resend failure
-      (supabase.auth.resend as jest.Mock).mockResolvedValue({
-        error: { message: 'Email service unavailable' },
+      // Mock email verification service failure
+      const { emailVerificationService } = require('../emailVerification');
+      emailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: false,
+        error: 'Email service unavailable',
       });
 
       const result =

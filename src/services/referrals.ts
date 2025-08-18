@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { authService } from './auth';
+import { emailVerificationService } from './emailVerification';
 import type {
   GroupReferral,
   GeneralReferral,
@@ -222,6 +223,8 @@ export class ReferralService {
 
   /**
    * Private helper: Create user account for referred person
+   * Requirement 5.1: Send verification email to referred person's email address
+   * Requirement 5.2: Include "verify email" link for account activation
    */
   private async createUserAccount(
     data: CreateReferralData
@@ -240,6 +243,25 @@ export class ReferralService {
       if (result.error || !result.userId) {
         console.error('Failed to create referred user:', result.error);
         return null;
+      }
+
+      // Send verification email using the dedicated email verification service
+      try {
+        const emailResult = await emailVerificationService.sendVerificationEmail(
+          data.email,
+          true // Mark as referral email
+        );
+
+        if (!emailResult.success) {
+          console.error('Email verification failed:', emailResult.error);
+          // Log the error but don't fail the referral creation
+          // The user account was created successfully
+        } else {
+          console.log(`Verification email sent successfully to ${data.email}`);
+        }
+      } catch (emailError) {
+        console.error('Error sending verification email:', emailError);
+        // Don't fail the referral creation due to email issues
       }
 
       return result.userId;

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { ErrorBoundary, OfflineBanner } from '@/components';
 import { DevToolsOverlay } from '@/components/devtools/DevToolsOverlay';
+import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 import { handleDeepLink } from '@/utils/deepLinking';
 import { useNotifications } from '@/hooks/useNotifications';
 import { logPlatformInfo } from '@/utils/platformTesting';
@@ -115,6 +116,7 @@ function RootLayoutNav() {
   return (
     <>
       <OfflineBanner />
+      <EmailVerificationBanner />
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

@@ -691,37 +691,49 @@ export const useReferrals = (userId?: string) => {
   return {
     // Query data
     referrals: userReferralsQuery.data,
-    isLoading: userReferralsQuery.isLoading,
-    error: userReferralsQuery.error,
-    isRefetching: userReferralsQuery.isRefetching,
+    isLoading: userReferralsQuery.isLoading || referralCountsQuery.isLoading,
+    error: userReferralsQuery.error || referralCountsQuery.error,
+    isRefetching: userReferralsQuery.isRefetching || referralCountsQuery.isRefetching,
+    
+    // Analytics data
+    analytics: referralAnalytics,
+    counts: referralCountsQuery.data,
     
     // Mutation states
     isCreatingGeneral: createGeneralReferral.isPending,
     isCreatingGroup: createGroupReferral.isPending,
     isCreating: createReferral.isPending,
+    isCreatingBatch: createBatchReferrals.isPending,
     
     // Mutation errors
     generalReferralError: createGeneralReferral.error,
     groupReferralError: createGroupReferral.error,
     referralError: createReferral.error,
+    batchReferralError: createBatchReferrals.error,
     
-    // Actions
+    // Actions with validation and feedback
     createGeneralReferral: createGeneralReferralWithFeedback,
     createGroupReferral: createGroupReferralWithFeedback,
     createReferral: createReferralWithFeedback,
+    createBatchReferrals: createBatchReferralsWithFeedback,
     
     // Raw mutations (for advanced usage)
     createGeneralReferralMutation: createGeneralReferral,
     createGroupReferralMutation: createGroupReferral,
     createReferralMutation: createReferral,
+    createBatchReferralsMutation: createBatchReferrals,
+    
+    // Validation helpers
+    validation,
     
     // Helper functions
     getTotalReferrals,
     getRecentReferrals,
     hasReferrals,
     
-    // Refetch function
+    // Refetch functions
     refetch: userReferralsQuery.refetch,
+    refetchCounts: referralCountsQuery.refetch,
   };
 };
 
@@ -731,9 +743,20 @@ export const useReferrals = (userId?: string) => {
 export const useGroupReferralOperations = (groupId: string) => {
   const groupReferralsQuery = useGroupReferrals(groupId);
   const createGroupReferral = useCreateGroupReferral();
+  const validation = useReferralValidation();
 
   const createReferralForGroup = useCallback(
     async (data: Omit<CreateReferralData, 'referrerId' | 'groupId'>) => {
+      // Validate data first
+      const validationErrors = validation.validateReferralData({ ...data, groupId });
+      if (Object.keys(validationErrors).length > 0) {
+        return {
+          success: false,
+          message: 'Please fix the validation errors',
+          validationErrors,
+        };
+      }
+
       try {
         const result = await createGroupReferral.mutateAsync({
           ...data,
@@ -752,7 +775,7 @@ export const useGroupReferralOperations = (groupId: string) => {
         };
       }
     },
-    [createGroupReferral, groupId]
+    [createGroupReferral, groupId, validation]
   );
 
   return {
@@ -771,6 +794,9 @@ export const useGroupReferralOperations = (groupId: string) => {
     
     // Raw mutation (for advanced usage)
     createReferralMutation: createGroupReferral,
+    
+    // Validation helpers
+    validation,
     
     // Refetch function
     refetch: groupReferralsQuery.refetch,
