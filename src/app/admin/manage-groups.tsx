@@ -63,6 +63,19 @@ function GroupManagementCard({
   onViewMembers,
   isLoading = false,
 }: GroupManagementCardProps) {
+  const getStatusVariant = (status: string): 'success' | 'warning' | 'error' | 'secondary' => {
+    switch (status) {
+      case 'approved':
+        return 'success';
+      case 'pending':
+        return 'warning';
+      case 'denied':
+        return 'error';
+      case 'closed':
+      default:
+        return 'secondary';
+    }
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -111,11 +124,13 @@ function GroupManagementCard({
             {group.title}
           </Text>
           <Badge
-            text={getStatusText(group.status)}
-            color={getStatusColor(group.status)}
+            variant={getStatusVariant(group.status)}
+            size="small"
             style={styles.statusBadge}
             {...AccessibilityHelpers.createStatusProps(group.status, group.title)}
-          />
+          >
+            {getStatusText(group.status)}
+          </Badge>
         </View>
         <TouchableOpacity
           style={styles.viewMembersButton}
