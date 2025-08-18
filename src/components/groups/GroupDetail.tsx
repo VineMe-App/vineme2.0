@@ -232,8 +232,8 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           )}
         </View>
 
-        {/* Leaders Section */}
-        {leaders.length > 0 && (
+        {/* Leaders Section - hidden when current user is a leader */}
+        {!isGroupLeader && leaders.length > 0 && (
           <View style={styles.membersSection}>
             <Text style={styles.sectionTitle}>
               Leader{leaders.length > 1 ? 's' : ''}
@@ -266,8 +266,8 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           </View>
         )}
 
-        {/* Members Section */}
-        {regularMembers.length > 0 && (
+        {/* Members Section - visible to non-leaders (including non-members) */}
+        {!isGroupLeader && regularMembers.length > 0 && (
           <View style={styles.membersSection}>
             <View style={styles.membersSectionHeader}>
               <Text style={styles.sectionTitle}>
@@ -317,7 +317,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           </View>
         )}
 
-        {/* Group Leader Panel */}
+        {/* Group Leader Panel - only for leaders */}
         {isGroupLeader && (
           <GroupLeaderPanel
             group={group}
@@ -383,6 +383,8 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           onClose={() => setShowFriendsModal(false)}
           title="Friends in this Group"
           scrollable
+          size="large"
+          style={{ minHeight: 300 }}
         >
           {friendsInGroup.map((friend) => (
             <TouchableOpacity
