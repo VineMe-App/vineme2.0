@@ -1,15 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  TouchableOpacity,
-  Linking,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert } from 'react-native';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
   useEvent,
@@ -180,7 +171,7 @@ export default function EventDetailScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <LoadingSpinner size="large" />
           <Text style={styles.loadingText}>Loading event details...</Text>
         </View>
       </View>

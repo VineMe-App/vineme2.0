@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { useAuthStore } from '../../stores/auth';
 import { router } from 'expo-router';
@@ -88,7 +89,9 @@ export default function HomeScreen() {
     <ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        Platform.OS === 'ios' ? (
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        ) : undefined
       }
     >
       {/* Header with user info */}

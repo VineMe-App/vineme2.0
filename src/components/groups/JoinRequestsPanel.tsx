@@ -1,11 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { JoinRequestCard } from './JoinRequestCard';
 import { EmptyState } from '../ui/EmptyState';
 import { useGroupJoinRequests } from '../../hooks/useJoinRequests';
@@ -39,7 +34,7 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
       <View style={styles.container}>
         <Text style={styles.title}>Join Requests</Text>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#007AFF" />
+          <LoadingSpinner size="small" />
           <Text style={styles.loadingText}>Loading join requests...</Text>
         </View>
       </View>

@@ -57,7 +57,11 @@ export function LoadingSpinner({
       ]}
       testID={testID}
     >
-      <ActivityIndicator size={size} color={color} />
+      <ActivityIndicator
+        size={size}
+        color={color}
+        style={size === 'large' ? styles.indicatorLarge : styles.indicatorSmall}
+      />
       {message && (
         <Animated.Text
           style={[styles.message, animated && { opacity: fadeAnim }]}
@@ -74,6 +78,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: Theme.spacing.lg,
+  },
+  indicatorSmall: {
+    width: 20,
+    height: 20,
+  },
+  indicatorLarge: {
+    width: 36,
+    height: 36,
   },
   overlay: {
     position: 'absolute',

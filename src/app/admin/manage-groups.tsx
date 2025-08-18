@@ -1,15 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  Alert,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert, TouchableOpacity, FlatList, Platform } from 'react-native';
 import { 
   AccessibilityHelpers, 
   AdminAccessibilityLabels, 
@@ -293,7 +283,7 @@ function GroupMembersModal({
 }
 
 export default function ManageGroupsScreen() {
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
   const queryClient = useQueryClient();
   const [selectedGroup, setSelectedGroup] =
     useState<GroupWithAdminDetails | null>(null);
@@ -314,18 +304,16 @@ export default function ManageGroupsScreen() {
     isLoading: false,
   });
 
+  // Local filters for group status
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'closed'>('all');
+
   // Background sync for real-time updates
-  const backgroundSync = useAdminBackgroundSync(user?.church_id);
+  const backgroundSync = useAdminBackgroundSync(userProfile?.church_id);
 
   // Get admin notifications for real-time updates
   const { notificationCounts, refreshNotifications } = useAdminNotifications(user?.id);
 
-  // Auto-enable pagination for large datasets
-  React.useEffect(() => {
-    if (finalGroups.length > 50 && !enablePagination) {
-      setEnablePagination(true);
-    }
-  }, [finalGroups.length, enablePagination]);
+  // Note: auto-enable pagination moved below after finalGroups is defined
 
   // Start background sync when component mounts
   React.useEffect(() => {
@@ -338,7 +326,7 @@ export default function ManageGroupsScreen() {
         backgroundSync.stop();
       }
     };
-  }, [user?.church_id, backgroundSync]);
+  }, [userProfile?.church_id, backgroundSync]);
 
   // Enhanced async operations for admin actions
   const approveOperation = useAdminAsyncOperation({
@@ -405,18 +393,18 @@ export default function ManageGroupsScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.churchGroups(user?.church_id || '', true),
+    queryKey: ADMIN_QUERY_KEYS.churchGroups(userProfile?.church_id || '', true),
     queryFn: async () => {
-      if (!user?.church_id) throw new Error('No church ID found');
+      if (!userProfile?.church_id) throw new Error('No church ID found');
       const result = await adminServiceWrapper.getChurchGroups(
-        user.church_id,
+        userProfile.church_id,
         true,
         { context: { screen: 'manage-groups' } }
       );
       if (result.error) throw result.error;
       return result.data || [];
     },
-    enabled: !!user?.church_id && !enablePagination,
+    enabled: !!userProfile?.church_id && !enablePagination,
     ...ADMIN_CACHE_CONFIGS.CHURCH_GROUPS,
     retry: (failureCount, error) => {
       if (error.message.toLowerCase().includes('permission')) {
@@ -437,9 +425,9 @@ export default function ManageGroupsScreen() {
     isFetchingNextPage,
     refetch: refetchPaginated,
   } = useInfiniteQuery({
-    queryKey: [...ADMIN_QUERY_KEYS.churchGroups(user?.church_id || '', true), 'paginated'],
+    queryKey: [...ADMIN_QUERY_KEYS.churchGroups(userProfile?.church_id || '', true), 'paginated'],
     queryFn: async ({ pageParam = 1 }) => {
-      if (!user?.church_id) throw new Error('No church ID found');
+      if (!userProfile?.church_id) throw new Error('No church ID found');
       
       const pagination = createPaginationParams(
         pageParam, 
@@ -447,7 +435,7 @@ export default function ManageGroupsScreen() {
       );
       
       const result = await adminServiceWrapper.getChurchGroups(
-        user.church_id,
+        userProfile.church_id,
         true,
         pagination,
         { context: { screen: 'manage-groups', page: pageParam } }
@@ -456,7 +444,7 @@ export default function ManageGroupsScreen() {
       if (result.error) throw result.error;
       return result.data;
     },
-    enabled: !!user?.church_id && enablePagination,
+    enabled: !!userProfile?.church_id && enablePagination,
     getNextPageParam: (lastPage) => {
       if (!lastPage || typeof lastPage === 'object' && 'pagination' in lastPage) {
         const paginatedResponse = lastPage as any;
@@ -479,6 +467,21 @@ export default function ManageGroupsScreen() {
   const finalIsLoading = enablePagination ? isPaginatedLoading : isLoading;
   const finalError = enablePagination ? paginatedError : error;
   const finalRefetch = enablePagination ? refetchPaginated : refetch;
+
+  // Auto-enable pagination for large datasets (after finalGroups is computed)
+  React.useEffect(() => {
+    const count = Array.isArray(finalGroups) ? finalGroups.length : 0;
+    if (count > 50 && !enablePagination) {
+      setEnablePagination(true);
+    }
+  }, [finalGroups, enablePagination]);
+
+  // Derive visible groups from status filter
+  const visibleGroups = React.useMemo(() => {
+    const base = Array.isArray(finalGroups) ? finalGroups : [];
+    if (statusFilter === 'all') return base;
+    return base.filter((g: any) => g.status === statusFilter);
+  }, [finalGroups, statusFilter]);
 
   // Enhanced action handlers with confirmation dialogs
   const handleApprove = async (groupId: string) => {
@@ -794,16 +797,23 @@ export default function ManageGroupsScreen() {
       ) : enablePagination ? (
         <FlatList
           style={styles.content}
-          data={finalGroups}
+          data={visibleGroups}
           renderItem={renderGroupItem}
           keyExtractor={(item) => item.id}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.1}
           refreshControl={
-            <RefreshControl refreshing={finalIsLoading} onRefresh={finalRefetch} />
+            Platform.OS === 'ios'
+              ? (
+                  <RefreshControl
+                    refreshing={finalIsLoading}
+                    onRefresh={finalRefetch}
+                  />
+                )
+              : undefined
           }
           ListHeaderComponent={
-            finalGroups.length > 0 ? (
+            visibleGroups.length > 0 ? (
               <View style={styles.summary}>
                 <View style={styles.summaryStats}>
                   <Text style={styles.summaryText}>
@@ -830,7 +840,9 @@ export default function ManageGroupsScreen() {
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.loadingMore}>
-                <ActivityIndicator size="small" color="#007AFF" />
+                <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+                  <LoadingSpinner size="small" />
+                </View>
                 <Text style={styles.loadingMoreText}>Loading more groups...</Text>
               </View>
             ) : null
@@ -850,7 +862,14 @@ export default function ManageGroupsScreen() {
           style={styles.content}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={finalIsLoading} onRefresh={finalRefetch} />
+            Platform.OS === 'ios'
+              ? (
+                  <RefreshControl
+                    refreshing={finalIsLoading}
+                    onRefresh={finalRefetch}
+                  />
+                )
+              : undefined
           }
         >
           {finalGroups && finalGroups.length > 0 ? (
@@ -877,7 +896,21 @@ export default function ManageGroupsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {finalGroups.map((group) => (
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                {(['all','pending','approved','closed'] as const).map((key) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={[styles.filterChip, statusFilter === key && styles.filterChipActive]}
+                    onPress={() => setStatusFilter(key)}
+                  >
+                    <Text style={[styles.filterChipText, statusFilter === key && styles.filterChipTextActive]}>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {visibleGroups.map((group) => (
                 <GroupManagementCard
                   key={group.id}
                   group={group}
@@ -1084,6 +1117,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6c757d',
     textAlign: 'center',
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: '#f3f4f6',
+  },
+  filterChipActive: {
+    backgroundColor: '#007AFF',
+  },
+  filterChipText: {
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: '#fff',
   },
   modalOverlay: {
     position: 'absolute',

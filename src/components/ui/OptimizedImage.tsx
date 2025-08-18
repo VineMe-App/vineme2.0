@@ -1,15 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import {
-  Image,
-  ImageProps,
-  ImageStyle,
-  View,
-  ViewStyle,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
+import { Image, ImageProps, ImageStyle, View, ViewStyle, Text, StyleSheet, Dimensions } from 'react-native';
+import { LoadingSpinner } from './LoadingSpinner';
 import { performanceMonitor } from '../../utils/performance';
 
 interface OptimizedImageProps extends Omit<ImageProps, 'source'> {
@@ -172,7 +163,7 @@ export function OptimizedImage({
 
     return (
       <View style={[styles.placeholder, style]}>
-        <ActivityIndicator size="small" color="#666" />
+        <LoadingSpinner size="small" />
       </View>
     );
   };

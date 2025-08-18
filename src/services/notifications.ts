@@ -533,9 +533,9 @@ export const sendGroupRequestNotification = async (
     // Get all church admins
     const { data: admins, error } = await supabase
       .from('users')
-      .select('id, name')
+      .select('id, name, roles')
       .eq('church_id', churchId)
-      .eq('role', 'church_admin');
+      .contains('roles', ['church_admin']);
 
     if (error) {
       console.error('Error fetching church admins:', error);

@@ -215,17 +215,50 @@ class LocationService {
     if (typeof locationData === 'object') {
       const result: { coordinates?: Coordinates; address?: string } = {};
 
-      // Check for coordinates
-      if (locationData.latitude && locationData.longitude) {
-        result.coordinates = {
-          latitude: locationData.latitude,
-          longitude: locationData.longitude,
-        };
+      // Normalize possible coordinate shapes
+      const extractCoordinates = (obj: any): Coordinates | null => {
+        const hasLatLng = obj && (obj.lat !== undefined) && (obj.lng !== undefined);
+        const hasLatitudeLongitude = obj && (obj.latitude !== undefined) && (obj.longitude !== undefined);
+
+        if (hasLatLng) {
+          const lat = Number(obj.lat);
+          const lng = Number(obj.lng);
+          if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+            return { latitude: lat, longitude: lng };
+          }
+        }
+
+        if (hasLatitudeLongitude) {
+          const lat = Number(obj.latitude);
+          const lng = Number(obj.longitude);
+          if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+            return { latitude: lat, longitude: lng };
+          }
+        }
+
+        return null;
+      };
+
+      // Direct coordinates on root
+      const direct = extractCoordinates(locationData);
+      if (direct) {
+        result.coordinates = direct;
       }
 
-      // Check for address
+      // Nested coordinates under `coordinates`
+      if (!result.coordinates && locationData.coordinates) {
+        const nested = extractCoordinates(locationData.coordinates);
+        if (nested) {
+          result.coordinates = nested;
+        }
+      }
+
+      // Address fields we recognize
       if (locationData.address) {
         result.address = locationData.address;
+      } else if (locationData.text) {
+        // Common field name coming from existing rows in Supabase
+        result.address = String(locationData.text);
       } else if (locationData.formattedAddress) {
         result.address = locationData.formattedAddress;
       }

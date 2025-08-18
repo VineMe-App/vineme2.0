@@ -1,13 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, Alert, Dimensions, TouchableOpacity } from 'react-native';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { 
   AccessibilityHelpers, 
   AdminAccessibilityLabels, 
@@ -85,6 +78,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   // Initialize map region and process group locations
   useEffect(() => {
     initializeMap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups]);
 
   // Update clusters when region changes (with debouncing)
@@ -105,8 +99,41 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     setIsLoadingLocation(true);
     
     try {
+      if (__DEV__) {
+        console.log(
+          '[MapDebug] initializeMap start. groups:',
+          groups?.length ?? 0
+        );
+      }
+      const withTimeout = async <T,>(
+        promise: Promise<T>,
+        ms: number,
+        label: string
+      ): Promise<T | null> => {
+        let timeoutId: any;
+        const timeoutPromise = new Promise<null>((resolve) => {
+          timeoutId = setTimeout(() => {
+            if (__DEV__) {
+              console.warn(`[MapDebug] ${label} timed out after ${ms}ms`);
+            }
+            resolve(null);
+          }, ms);
+        });
+
+        const result = (await Promise.race([
+          promise,
+          timeoutPromise,
+        ])) as T | null;
+        clearTimeout(timeoutId);
+        return result;
+      };
+
       // Try to get user's current location for initial region
-      const currentLocation = await locationService.getCurrentLocation();
+      const currentLocation = await withTimeout(
+        locationService.getCurrentLocation(),
+        4000,
+        'getCurrentLocation'
+      );
       
       if (currentLocation) {
         setRegion({
@@ -115,8 +142,19 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           longitudeDelta: LONGITUDE_DELTA,
         });
         setLocationPermissionDenied(false);
+        if (__DEV__) {
+          console.log(
+            '[MapDebug] Using current location as initial region:',
+            currentLocation
+          );
+        }
       } else {
         setLocationPermissionDenied(true);
+        if (__DEV__) {
+          console.warn(
+            '[MapDebug] No current location available (denied or timed out). Using default region'
+          );
+        }
       }
 
       // Process groups to create markers
@@ -127,6 +165,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       await processGroupLocations();
     } finally {
       setIsLoadingLocation(false);
+      if (__DEV__) {
+        console.log(
+          '[MapDebug] initializeMap complete. markers:',
+          markers.length
+        );
+      }
     }
   };
 
@@ -144,7 +188,39 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       } 
       // Otherwise try to geocode the address
       else if (locationData.address) {
-        coordinates = await locationService.geocodeAddress(locationData.address);
+        const start = Date.now();
+        const addressLabel = locationData.address.slice(0, 60);
+        try {
+          const geocodeWithTimeout = async (): Promise<Coordinates | null> => {
+            let timeoutId: any;
+            const timeout = new Promise<null>((resolve) => {
+              timeoutId = setTimeout(() => {
+                if (__DEV__) {
+                  console.warn(
+                    '[MapDebug] geocodeAddress timed out:',
+                    addressLabel
+                  );
+                }
+                resolve(null);
+              }, 3000);
+            });
+            const result = (await Promise.race([
+              locationService.geocodeAddress(locationData.address as string),
+              timeout,
+            ])) as Coordinates | null;
+            clearTimeout(timeoutId);
+            return result;
+          };
+          coordinates = await geocodeWithTimeout();
+        } finally {
+          if (__DEV__) {
+            console.log(
+              '[MapDebug] geocodeAddress duration(ms):',
+              Date.now() - start,
+              addressLabel
+            );
+          }
+        }
       }
 
       // Add marker if we have valid coordinates
@@ -168,7 +244,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     if (groupMarkers.length > 0 && mapRef.current) {
       setTimeout(() => {
         mapRef.current?.fitToCoordinates(
-          groupMarkers.map(marker => marker.coordinates),
+          groupMarkers.map((marker) => marker.coordinates),
           {
             edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
             animated: true,
@@ -354,7 +430,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   if (isLoading || isLoadingLocation) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <LoadingSpinner size="large" />
         <Text style={styles.loadingText}>Loading map...</Text>
       </View>
     );

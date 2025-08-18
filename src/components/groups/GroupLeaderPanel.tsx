@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -229,7 +222,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Leaders ({leaders.length})</Text>
             {membersLoading ? (
-              <ActivityIndicator size="small" color="#007AFF" style={styles.loader} />
+            <LoadingSpinner size="small" />
             ) : (
               <View style={styles.membersList}>
                 {leaders.map((leader) => (
@@ -259,7 +252,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Members ({regularMembers.length})</Text>
             {membersLoading ? (
-              <ActivityIndicator size="small" color="#007AFF" style={styles.loader} />
+            <LoadingSpinner size="small" />
             ) : (
               <ScrollView style={styles.membersScrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.membersList}>

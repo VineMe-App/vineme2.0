@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
   GroupCard,
@@ -20,7 +13,7 @@ import {
 import { useGroupsByChurch, useGroupMembership } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
-import { ErrorMessage, EmptyState, Button } from '../../components/ui';
+import { ErrorMessage, EmptyState, Button, LoadingSpinner } from '../../components/ui';
 import { applyGroupFilters, getActiveFiltersDescription } from '../../utils/groupFilters';
 import type { GroupWithDetails } from '../../types/database';
 
@@ -112,10 +105,12 @@ export default function GroupsScreen() {
       keyExtractor={(item) => item.id}
       ListEmptyComponent={renderEmptyState}
       refreshControl={
-        <RefreshControl
-          refreshing={isLoadingFn('refresh')}
-          onRefresh={handleRefresh}
-        />
+        Platform.OS === 'ios' ? (
+          <RefreshControl
+            refreshing={isLoadingFn('refresh')}
+            onRefresh={handleRefresh}
+          />
+        ) : undefined
       }
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.listContent}
@@ -148,7 +143,7 @@ export default function GroupsScreen() {
           </Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <LoadingSpinner size="large" />
           <Text style={styles.loadingText}>Loading groups...</Text>
         </View>
       </View>

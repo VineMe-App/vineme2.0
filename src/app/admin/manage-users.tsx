@@ -33,7 +33,7 @@ import { router } from 'expo-router';
 type FilterType = 'all' | 'connected' | 'unconnected';
 
 export default function ManageUsersScreen() {
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
   const [filter, setFilter] = useState<FilterType>('all');
 
   // Get admin notifications for real-time updates
@@ -45,13 +45,13 @@ export default function ManageUsersScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['admin', 'church-users', user?.church_id],
+    queryKey: ['admin', 'church-users', userProfile?.church_id],
     queryFn: async () => {
-      if (!user?.church_id) {
+      if (!userProfile?.church_id) {
         throw new Error('No church ID found');
       }
       const result = await adminServiceWrapper.getChurchUsers(
-        user.church_id,
+        userProfile.church_id,
         { context: { screen: 'manage-users' } }
       );
       if (result.error) {
@@ -59,7 +59,7 @@ export default function ManageUsersScreen() {
       }
       return result.data || [];
     },
-    enabled: !!user?.church_id,
+    enabled: !!userProfile?.church_id,
     refetchInterval: 60000, // Refetch every minute for real-time updates
     retry: (failureCount, error) => {
       // Don't retry permission errors
@@ -77,13 +77,13 @@ export default function ManageUsersScreen() {
     error: summaryError,
     refetch: refetchSummary 
   } = useQuery({
-    queryKey: ['admin', 'church-summary', user?.church_id],
+    queryKey: ['admin', 'church-summary', userProfile?.church_id],
     queryFn: async () => {
-      if (!user?.church_id) {
+      if (!userProfile?.church_id) {
         throw new Error('No church ID found');
       }
       const result = await adminServiceWrapper.getChurchSummary(
-        user.church_id,
+        userProfile.church_id,
         { context: { screen: 'manage-users', section: 'summary' } }
       );
       if (result.error) {
@@ -91,7 +91,7 @@ export default function ManageUsersScreen() {
       }
       return result.data;
     },
-    enabled: !!user?.church_id,
+    enabled: !!userProfile?.church_id,
     refetchInterval: 60000, // Refetch every minute for real-time updates
     retry: (failureCount, error) => {
       // Don't retry permission errors
@@ -320,7 +320,9 @@ export default function ManageUsersScreen() {
           style={styles.content}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+            Platform.OS === 'ios' ? (
+              <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+            ) : undefined
           }
         >
           {filteredUsers.length === 0 ? (

@@ -1,15 +1,6 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Linking,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert } from 'react-native';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { useRouter } from 'expo-router';
 import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
@@ -257,11 +248,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
             </View>
 
             {membersLoading ? (
-              <ActivityIndicator
-                size="small"
-                color="#007AFF"
-                style={styles.loader}
-              />
+              <LoadingSpinner size="small" />
             ) : (
               <View style={styles.membersList}>
                 {displayMembers.map((member) => (

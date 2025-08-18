@@ -3,7 +3,8 @@
  */
 
 import React, { Suspense, ComponentType } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export interface LazyLoadingOptions {
   fallback?: React.ComponentType;
@@ -19,7 +20,7 @@ const DefaultLoadingFallback: React.FC<{ message?: string }> = ({
   message = 'Loading...' 
 }) => (
   <View style={styles.loadingContainer}>
-    <ActivityIndicator size="large" color="#007AFF" />
+    <LoadingSpinner size="large" />
     <Text style={styles.loadingText}>{message}</Text>
   </View>
 );

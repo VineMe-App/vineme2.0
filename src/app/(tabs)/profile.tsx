@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Alert,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useAuthStore } from '@/stores/auth';
 import {
@@ -133,7 +134,9 @@ export default function ProfileScreen() {
         style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          Platform.OS === 'ios' ? (
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          ) : undefined
         }
       >
         {userProfile && (

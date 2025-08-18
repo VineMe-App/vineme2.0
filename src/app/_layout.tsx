@@ -73,8 +73,11 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[1] === 'onboarding';
-    // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id])
-    const inAllowedStacks = segments[0] === 'group' || segments[0] === 'event';
+    // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id], /admin/*)
+    const inAllowedStacks =
+      segments[0] === 'group' ||
+      segments[0] === 'event' ||
+      segments[0] === 'admin';
 
     // Treat onboarding as done if a profile exists OR the persisted flag is set
     const isOnboardingDone = !!userProfile || onboardingCompleted;

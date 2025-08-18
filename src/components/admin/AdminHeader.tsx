@@ -77,7 +77,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
-            {notificationCount && notificationCount > 0 && (
+            {(notificationCount ?? 0) > 0 && (
               <NotificationBadge
                 count={notificationCount}
                 size="small"

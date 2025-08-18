@@ -14,21 +14,21 @@ interface AdminDashboardSummaryProps {
 }
 
 export function AdminDashboardSummary({ onRefresh }: AdminDashboardSummaryProps) {
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
   
   // Get notification counts
   const { notificationCounts, isLoading: isLoadingNotifications } = useAdminNotifications(user?.id);
   
   // Get church summary
   const { data: churchSummary, isLoading: isLoadingSummary } = useQuery({
-    queryKey: ['admin', 'church-summary', user?.church_id],
+    queryKey: ['admin', 'church-summary', userProfile?.church_id],
     queryFn: async () => {
-      if (!user?.church_id) throw new Error('No church ID found');
-      const result = await userAdminService.getChurchSummary(user.church_id);
+      if (!userProfile?.church_id) throw new Error('No church ID found');
+      const result = await userAdminService.getChurchSummary(userProfile.church_id);
       if (result.error) throw result.error;
       return result.data;
     },
-    enabled: !!user?.church_id,
+    enabled: !!userProfile?.church_id,
     refetchInterval: 60000, // Refetch every minute
   });
 

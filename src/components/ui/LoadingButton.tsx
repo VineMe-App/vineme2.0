@@ -54,6 +54,7 @@ export function LoadingButton({
         <ActivityIndicator
           size="small"
           color={variant === 'primary' ? 'white' : '#007AFF'}
+          style={{ width: 16, height: 16 }}
         />
       ) : (
         <Text style={buttonTextStyle}>{title}</Text>

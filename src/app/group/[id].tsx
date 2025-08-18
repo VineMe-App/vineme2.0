@@ -1,11 +1,6 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { GroupDetail } from '../../components/groups';
@@ -43,7 +38,7 @@ export default function GroupDetailScreen() {
   if (groupLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <LoadingSpinner size="large" />
       </View>
     );
   }
