@@ -2,17 +2,23 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { GroupWithDetails } from '../../types/database';
 import { OptimizedImage } from '../ui/OptimizedImage';
+import { Ionicons } from '@expo/vector-icons';
+import { locationService } from '../../services/location';
 
 interface GroupCardProps {
   group: GroupWithDetails;
   onPress: () => void;
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
+  friendsCount?: number;
+  onPressFriends?: () => void;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
   group,
   onPress,
   membershipStatus,
+  friendsCount,
+  onPressFriends,
 }) => {
   if (!group) return null;
   const formatMeetingTime = (day: string, time: string) => {
@@ -20,10 +26,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   };
 
   const formatLocation = (location: any) => {
-    if (!location) return 'Location TBD';
-    if (typeof location === 'string') return location;
-    if (location.address) return location.address;
-    if (location.room) return `Room ${location.room}`;
+    const parsed = locationService.parseGroupLocation(location);
+    if (parsed.address && parsed.address.trim().length > 0) return parsed.address;
+    if (typeof location === 'string' && location.trim().length > 0) return location;
+    if (location?.room) return `Room ${location.room}`;
     return 'Location TBD';
   };
 
@@ -70,18 +76,39 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
           <View style={styles.details}>
             {group.meeting_day && group.meeting_time && (
-              <Text style={styles.meetingTime}>
-                📅 {formatMeetingTime(group.meeting_day, group.meeting_time)}
-              </Text>
+              <View style={styles.detailRow}>
+                <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+                <Text style={styles.detailText} numberOfLines={1}>
+                  {formatMeetingTime(group.meeting_day, group.meeting_time)}
+                </Text>
+              </View>
             )}
-            <Text style={styles.location}>
-              📍 {formatLocation(group.location)}
-            </Text>
-            {group.member_count !== undefined && (
-              <Text style={styles.memberCount}>
-                👥 {group.member_count} member
-                {group.member_count !== 1 ? 's' : ''}
+            <View style={styles.detailRow}>
+              <Ionicons name="location-outline" size={16} color="#6b7280" />
+              <Text style={styles.detailText} numberOfLines={1}>
+                {formatLocation(group.location)}
               </Text>
+            </View>
+            {group.member_count !== undefined && (
+              <View style={styles.detailRow}>
+                <Ionicons name="people-outline" size={16} color="#6b7280" />
+                <Text style={styles.detailText} numberOfLines={1}>
+                  {group.member_count} member{group.member_count !== 1 ? 's' : ''}
+                </Text>
+              </View>
+            )}
+            {typeof friendsCount === 'number' && friendsCount > 0 && (
+              <TouchableOpacity
+                style={[styles.detailRow, styles.friendsPill]}
+                onPress={onPressFriends || onPress}
+                accessibilityRole="button"
+                accessibilityLabel={`View ${friendsCount} friends in this group`}
+              >
+                <Ionicons name="person-circle-outline" size={16} color="#2563eb" />
+                <Text style={[styles.detailText, styles.friendsText]} numberOfLines={1}>
+                  {friendsCount} friend{friendsCount !== 1 ? 's' : ''} in this group
+                </Text>
+              </TouchableOpacity>
             )}
           </View>
 
@@ -173,20 +200,27 @@ const styles = StyleSheet.create({
   details: {
     marginBottom: 8,
   },
-  meetingTime: {
-    fontSize: 14,
-    color: '#333',
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 4,
   },
-  location: {
+  detailText: {
     fontSize: 14,
     color: '#333',
-    marginBottom: 4,
+    flex: 1,
   },
-  memberCount: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
+  friendsPill: {
+    backgroundColor: '#eff6ff',
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  friendsText: {
+    color: '#1d4ed8',
+    fontWeight: '600',
   },
   service: {
     fontSize: 12,

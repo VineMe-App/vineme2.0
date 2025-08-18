@@ -77,7 +77,8 @@ function RootLayoutNav() {
     const inAllowedStacks =
       segments[0] === 'group' ||
       segments[0] === 'event' ||
-      segments[0] === 'admin';
+      segments[0] === 'admin' ||
+      segments[0] === 'user';
 
     // Treat onboarding as done if a profile exists OR the persisted flag is set
     const isOnboardingDone = !!userProfile || onboardingCompleted;

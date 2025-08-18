@@ -45,6 +45,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setMeetingDays,
     setCategories,
     setSearchQuery,
+    setOnlyWithFriends,
     clearFilters,
   } = useGroupFiltersStore();
 
@@ -125,6 +126,20 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                   />
                 </View>
               ))}
+            </View>
+          </View>
+
+          {/* Social Filters */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Social</Text>
+            <View style={styles.checkboxGrid}>
+              <View style={styles.checkboxItem}>
+                <Checkbox
+                  checked={filters.onlyWithFriends}
+                  onPress={() => setOnlyWithFriends(!filters.onlyWithFriends)}
+                  label="Only groups with my friends"
+                />
+              </View>
             </View>
           </View>
 

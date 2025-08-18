@@ -5,6 +5,7 @@ export interface GroupFilters {
   meetingDays: string[];
   categories: string[];
   searchQuery: string;
+  onlyWithFriends: boolean;
 }
 
 interface GroupFiltersState {
@@ -12,6 +13,7 @@ interface GroupFiltersState {
   setMeetingDays: (days: string[]) => void;
   setCategories: (categories: string[]) => void;
   setSearchQuery: (query: string) => void;
+  setOnlyWithFriends: (only: boolean) => void;
   clearFilters: () => void;
   resetFilters: () => void;
 }
@@ -20,6 +22,7 @@ const defaultFilters: GroupFilters = {
   meetingDays: [],
   categories: [],
   searchQuery: '',
+  onlyWithFriends: false,
 };
 
 export const useGroupFiltersStore = create<GroupFiltersState>()(
@@ -40,6 +43,11 @@ export const useGroupFiltersStore = create<GroupFiltersState>()(
       setSearchQuery: (query: string) =>
         set((state) => ({
           filters: { ...state.filters, searchQuery: query },
+        })),
+
+      setOnlyWithFriends: (only: boolean) =>
+        set((state) => ({
+          filters: { ...state.filters, onlyWithFriends: only },
         })),
       
       clearFilters: () =>

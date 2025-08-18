@@ -9,6 +9,7 @@ export interface User {
   church_id?: string;
   avatar_url?: string;
   service_id?: string;
+  bio?: string;
   roles: string[];
   created_at: string;
   updated_at?: string;

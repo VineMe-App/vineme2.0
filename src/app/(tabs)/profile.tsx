@@ -247,7 +247,13 @@ export default function ProfileScreen() {
               {friendsQuery.data && friendsQuery.data.length > 0 ? (
                 <>
                   {friendsQuery.data.slice(0, 5).map((friendship: any) => (
-                    <View key={friendship.id} style={styles.friendItem}>
+                    <TouchableOpacity
+                      key={friendship.id}
+                      style={styles.friendItem}
+                      onPress={() => friendship.friend?.id && router.push(`/user/${friendship.friend.id}`)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View ${friendship.friend?.name || 'user'} profile`}
+                    >
                       <Avatar
                         size={40}
                         imageUrl={friendship.friend?.avatar_url}
@@ -261,7 +267,7 @@ export default function ProfileScreen() {
                           {friendship.friend?.email}
                         </Text>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   ))}
                   {friendsQuery.data.length > 5 && (
                     <TouchableOpacity onPress={() => setShowFriendsModal(true)}>

@@ -50,31 +50,15 @@ export class JoinRequestService {
         }
       }
 
-      // Check for existing join request
-      const { data: existingRequest } = await supabase
-        .from('group_join_requests')
-        .select('id, status')
-        .eq('group_id', requestData.group_id)
-        .eq('user_id', requestData.user_id)
-        .eq('status', 'pending')
-        .single();
-
-      if (existingRequest) {
-        return {
-          data: null,
-          error: new Error('User already has a pending join request for this group'),
-        };
-      }
-
-      // Create the join request
+      // No separate join requests table. Create/ensure a pending membership instead
       const { data, error } = await supabase
-        .from('group_join_requests')
+        .from('group_memberships')
         .insert({
           group_id: requestData.group_id,
           user_id: requestData.user_id,
-          contact_consent: requestData.contact_consent,
-          message: requestData.message,
+          role: 'member',
           status: 'pending',
+          joined_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -113,17 +97,21 @@ export class JoinRequestService {
       }
 
       const { data, error } = await supabase
-        .from('group_join_requests')
+        .from('group_memberships')
         .select(
           `
-          *,
+          id,
+          group_id,
+          user_id,
+          status,
+          joined_at,
           user:users(id, name, avatar_url, email),
           group:groups(id, title)
         `
         )
         .eq('group_id', groupId)
         .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .order('joined_at', { ascending: false });
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -149,15 +137,20 @@ export class JoinRequestService {
   ): Promise<GroupServiceResponse<GroupJoinRequestWithUser[]>> {
     try {
       const { data, error } = await supabase
-        .from('group_join_requests')
+        .from('group_memberships')
         .select(
           `
-          *,
+          id,
+          group_id,
+          user_id,
+          status,
+          joined_at,
           group:groups(id, title, description, meeting_day, meeting_time)
         `
         )
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .eq('status', 'pending')
+        .order('joined_at', { ascending: false });
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -183,24 +176,24 @@ export class JoinRequestService {
     approverId: string
   ): Promise<GroupServiceResponse<GroupMembership>> {
     try {
-      // Get the join request details
-      const { data: joinRequest, error: requestError } = await supabase
-        .from('group_join_requests')
-        .select('*')
+      // Find pending membership by id (treat requestId as membership id)
+      const { data: membershipRecord, error: requestError } = await supabase
+        .from('group_memberships')
+        .select('id, group_id, user_id, status')
         .eq('id', requestId)
         .eq('status', 'pending')
         .single();
 
-      if (requestError || !joinRequest) {
+      if (requestError || !membershipRecord) {
         return {
           data: null,
-          error: new Error('Join request not found or already processed'),
+          error: new Error('Pending membership not found or already processed'),
         };
       }
 
       // Check if approver is a leader of this group
       const permissionCheck = await permissionService.canManageGroup(
-        joinRequest.group_id,
+        membershipRecord.group_id,
         approverId
       );
       if (!permissionCheck.hasPermission) {
@@ -215,13 +208,11 @@ export class JoinRequestService {
       // Start a transaction to approve request and create membership
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
-        .insert({
-          group_id: joinRequest.group_id,
-          user_id: joinRequest.user_id,
-          role: 'member',
+        .update({
           status: 'active',
           joined_at: new Date().toISOString(),
         })
+        .eq('id', requestId)
         .select()
         .single();
 
@@ -229,14 +220,8 @@ export class JoinRequestService {
         return { data: null, error: new Error(membershipError.message) };
       }
 
-      // Update the join request status
-      const { error: updateError } = await supabase
-        .from('group_join_requests')
-        .update({
-          status: 'approved',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
+      // Nothing else to update; membership is the source of truth
+      const updateError = null;
 
       if (updateError) {
         // If updating the request fails, we should rollback the membership
@@ -268,24 +253,24 @@ export class JoinRequestService {
     declinerId: string
   ): Promise<GroupServiceResponse<boolean>> {
     try {
-      // Get the join request details
-      const { data: joinRequest, error: requestError } = await supabase
-        .from('group_join_requests')
-        .select('*')
+      // Get the pending membership record
+      const { data: membershipRecord, error: requestError } = await supabase
+        .from('group_memberships')
+        .select('id, group_id, user_id, status')
         .eq('id', requestId)
         .eq('status', 'pending')
         .single();
 
-      if (requestError || !joinRequest) {
+      if (requestError || !membershipRecord) {
         return {
           data: null,
-          error: new Error('Join request not found or already processed'),
+          error: new Error('Pending membership not found or already processed'),
         };
       }
 
       // Check if decliner is a leader of this group
       const permissionCheck = await permissionService.canManageGroup(
-        joinRequest.group_id,
+        membershipRecord.group_id,
         declinerId
       );
       if (!permissionCheck.hasPermission) {
@@ -299,11 +284,8 @@ export class JoinRequestService {
 
       // Update the join request status
       const { error: updateError } = await supabase
-        .from('group_join_requests')
-        .update({
-          status: 'declined',
-          updated_at: new Date().toISOString(),
-        })
+        .from('group_memberships')
+        .delete()
         .eq('id', requestId);
 
       if (updateError) {
@@ -331,24 +313,24 @@ export class JoinRequestService {
   ): Promise<GroupServiceResponse<boolean>> {
     try {
       // Verify the request belongs to the user
-      const { data: joinRequest, error: requestError } = await supabase
-        .from('group_join_requests')
-        .select('*')
+      const { data: membershipRecord, error: requestError } = await supabase
+        .from('group_memberships')
+        .select('id, user_id, status')
         .eq('id', requestId)
         .eq('user_id', userId)
         .eq('status', 'pending')
         .single();
 
-      if (requestError || !joinRequest) {
+      if (requestError || !membershipRecord) {
         return {
           data: null,
-          error: new Error('Join request not found or cannot be cancelled'),
+          error: new Error('Pending membership not found or cannot be cancelled'),
         };
       }
 
       // Delete the join request
       const { error: deleteError } = await supabase
-        .from('group_join_requests')
+        .from('group_memberships')
         .delete()
         .eq('id', requestId);
 
@@ -378,17 +360,20 @@ export class JoinRequestService {
     try {
       // Get the join request with user details
       const { data: joinRequest, error: requestError } = await supabase
-        .from('group_join_requests')
+        .from('group_memberships')
         .select(
           `
-          *,
+          id,
+          group_id,
+          user_id,
+          status,
+          joined_at,
           user:users(id, name, email, phone),
           group:groups(id)
         `
         )
         .eq('id', requestId)
-        .eq('status', 'approved')
-        .eq('contact_consent', true)
+        .eq('status', 'active')
         .single();
 
       if (requestError || !joinRequest) {

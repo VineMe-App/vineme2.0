@@ -9,7 +9,8 @@ import { useAuthStore } from '../../stores/auth';
 import { shareGroup } from '../../utils/deepLinking';
 
 export default function GroupDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; friends?: string }>();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const { userProfile } = useAuthStore();
 
@@ -60,6 +61,7 @@ export default function GroupDetailScreen() {
         membershipStatus={membershipStatus}
         onMembershipChange={handleMembershipChange}
         onShare={handleShare}
+        openFriendsOnMount={!!params.friends}
       />
     </View>
   );

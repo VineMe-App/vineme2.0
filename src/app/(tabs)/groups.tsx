@@ -1,26 +1,29 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Platform, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
   GroupCard,
   GroupsMapView, 
   ViewToggle,
   FilterPanel,
-  FilterButton,
   SearchBar,
   type ViewMode 
 } from '../../components/groups';
-import { useGroupsByChurch, useGroupMembership } from '../../hooks/useGroups';
+import { useGroupsByChurch, useGroupMembership, useGroupMembers } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
-import { ErrorMessage, EmptyState, Button, LoadingSpinner } from '../../components/ui';
-import { applyGroupFilters, getActiveFiltersDescription } from '../../utils/groupFilters';
+import { ErrorMessage, EmptyState, LoadingSpinner } from '../../components/ui';
+import { applyGroupFilters, getActiveFiltersDescription, getActiveFiltersCount } from '../../utils/groupFilters';
 import type { GroupWithDetails } from '../../types/database';
+import { useFriends } from '../../hooks/useFriendships';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function GroupsScreen() {
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const { filters } = useGroupFiltersStore();
+  const friendsQuery = useFriends(userProfile?.id);
+  const [showSearch, setShowSearch] = useState(false);
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   // Create flow now navigates to dedicated page
@@ -34,11 +37,22 @@ export default function GroupsScreen() {
     refetch,
   } = useGroupsByChurch(userProfile?.church_id);
 
-  // Apply filters to groups
+  // Apply filters to groups (including "only with friends")
   const filteredGroups = useMemo(() => {
     if (!allGroups) return [];
-    return applyGroupFilters(allGroups, filters);
-  }, [allGroups, filters]);
+    let base = applyGroupFilters(allGroups, filters);
+    if (filters.onlyWithFriends) {
+      const friendIds = new Set(
+        (friendsQuery.data || [])
+          .map((f) => f.friend?.id)
+          .filter((id): id is string => !!id)
+      );
+      base = base.filter((g) =>
+        (g.memberships || []).some((m: any) => m.status === 'active' && friendIds.has(m.user_id))
+      );
+    }
+    return base;
+  }, [allGroups, filters, friendsQuery.data]);
 
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {
@@ -81,7 +95,8 @@ export default function GroupsScreen() {
   const renderEmptyState = () => {
     const hasFilters = filters.meetingDays.length > 0 || 
                       filters.categories.length > 0 || 
-                      filters.searchQuery.length > 0;
+                      filters.searchQuery.length > 0 ||
+                      filters.onlyWithFriends;
     
     return (
       <EmptyState
@@ -166,41 +181,39 @@ export default function GroupsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Bible Study Groups</Text>
-        <Text style={styles.subtitle}>
-          Discover and join Bible study groups in your church community
-        </Text>
-        {userProfile?.church_id && (
-          <Button
-            title="Create New Group"
-            onPress={handleCreateGroup}
-            variant="primary"
-            style={styles.createButton}
-          />
-        )}
+      <View style={styles.compactHeader}>
+        <Text style={styles.title}>Groups</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setShowSearch((s) => !s)}>
+            <Ionicons name="search-outline" size={20} color="#374151" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setShowFilterPanel(true)}>
+            <Ionicons name="funnel-outline" size={20} color="#374151" />
+            {getActiveFiltersCount(filters) > 0 && (
+              <View style={styles.badge}><Text style={styles.badgeText}>{getActiveFiltersCount(filters)}</Text></View>
+            )}
+          </TouchableOpacity>
+          {userProfile?.church_id && (
+            <TouchableOpacity style={styles.iconButton} onPress={handleCreateGroup} accessibilityLabel="Create group">
+              <Ionicons name="add-outline" size={22} color="#374151" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      <SearchBar placeholder="Search groups..." />
+      {showSearch && (
+        <SearchBar placeholder="Search groups..." />
+      )}
 
-      <View style={styles.controlsContainer}>
-        <ViewToggle
-          currentView={currentView}
-          onViewChange={setCurrentView}
-        />
-        <FilterButton onPress={() => setShowFilterPanel(true)} />
+      <View style={styles.controlsRow}>
+        <ViewToggle currentView={currentView} onViewChange={setCurrentView} />
       </View>
 
       <View style={styles.contentContainer}>
         {currentView === 'list' ? renderListView() : renderMapView()}
       </View>
 
-      <FilterPanel
-        isVisible={showFilterPanel}
-        onClose={() => setShowFilterPanel(false)}
-      />
-
-      {/* Create group now handled via /group/create route */}
+      <FilterPanel isVisible={showFilterPanel} onClose={() => setShowFilterPanel(false)} />
     </View>
   );
 }
@@ -215,14 +228,31 @@ const GroupItemWithMembership: React.FC<{
     group.id,
     userProfile?.id
   );
+  const { data: members } = useGroupMembers(group.id);
+  const friendsQuery = useFriends(userProfile?.id);
 
   const membershipStatus = membershipData?.membership?.role || null;
+
+  const friendsCount = React.useMemo(() => {
+    const friendIds = new Set(
+      (friendsQuery.data || [])
+        .map((f) => f.friend?.id)
+        .filter((id): id is string => !!id)
+    );
+    return (members || []).filter((m) => m.user?.id && friendIds.has(m.user.id)).length;
+  }, [friendsQuery.data, members]);
 
   return (
     <GroupCard
       group={group}
       onPress={onPress}
       membershipStatus={membershipStatus}
+      friendsCount={friendsCount}
+      onPressFriends={() => {
+        // Navigate to group detail and open friends modal
+        const router = useRouter();
+        router.push(`/group/${group.id}?friends=1`);
+      }}
     />
   );
 };
@@ -232,28 +262,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  header: {
-    padding: 16,
-    paddingBottom: 8,
+  compactHeader: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  controlsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconButton: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  badge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#8b5cf6', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  controlsRow: { paddingHorizontal: 12, paddingTop: 8 },
   contentContainer: {
     flex: 1,
   },

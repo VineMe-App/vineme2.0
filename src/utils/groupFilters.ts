@@ -76,6 +76,7 @@ export const getActiveFiltersCount = (filters: GroupFilters): number => {
   if (filters.meetingDays.length > 0) count++;
   if (filters.categories.length > 0) count++;
   if (filters.searchQuery.trim().length > 0) count++;
+  if (filters.onlyWithFriends) count++;
   
   return count;
 };

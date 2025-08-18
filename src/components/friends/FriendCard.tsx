@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
 import { Avatar } from '../ui/Avatar';
 
 import type { FriendshipWithUser } from '../../services/friendships';
@@ -37,13 +38,18 @@ export function FriendCard({
 
   return (
     <View style={styles.container}>
-      <View style={styles.userInfo}>
+      <TouchableOpacity
+        style={styles.userInfo}
+        onPress={() => friend?.id && router.push(`/user/${friend.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${friend.name}'s profile`}
+      >
         <Avatar imageUrl={friend.avatar_url} name={friend.name} size={50} />
         <View style={styles.textContainer}>
           <Text style={styles.name}>{friend.name}</Text>
           <Text style={styles.email}>{friend.email}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {showActions && (
         <View style={styles.actions}>

@@ -16,6 +16,7 @@ import {
   useSendFriendRequest,
 } from '../../hooks/useFriendships';
 import { useAuth } from '../../hooks/useAuth';
+import { router } from 'expo-router';
 import type { DatabaseUser } from '../../types/database';
 
 interface FriendSearchProps {
@@ -190,13 +191,18 @@ function UserSearchItem({
 
   return (
     <View style={styles.userItem}>
-      <View style={styles.userInfo}>
+      <TouchableOpacity
+        style={styles.userInfo}
+        onPress={() => user.id && router.push(`/user/${user.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${user.name}'s profile`}
+      >
         <Avatar imageUrl={user.avatar_url} name={user.name} size={50} />
         <View style={styles.userDetails}>
           <Text style={styles.userName}>{user.name}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       <Button
         title={buttonState.text}

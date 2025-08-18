@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Alert,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { 
   AccessibilityHelpers, 
