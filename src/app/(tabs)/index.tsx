@@ -189,7 +189,7 @@ export default function HomeScreen() {
                   group={membership.group}
                   membershipStatus={membership.role}
                   onPress={() => router.push(`/group/${membership.group.id}`)}
-                  style={{ width: 260, height: 374, marginHorizontal: 0 }}
+                  style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
                 />
               </View>
             ))}
