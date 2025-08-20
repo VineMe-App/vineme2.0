@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,25 +8,37 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { useRouter } from 'expo-router';
 import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
+import { GroupLeaderPanel } from './GroupLeaderPanel';
+import { JoinRequestModal } from './JoinRequestModal';
 import {
   useJoinGroup,
   useLeaveGroup,
   useGroupMembers,
+  useGroupLeaders,
+  useFriendsInGroup,
 } from '../../hooks/useGroups';
-import type { GroupMembershipWithUser } from '../../types/database';
+import { useUserJoinRequests } from '../../hooks/useJoinRequests';
+// import type { GroupMembershipWithUser } from '../../types/database';
 import { useAuthStore } from '../../stores/auth';
+import { useFriends } from '../../hooks/useFriendships';
+import { Modal } from '../ui/Modal';
+import { Ionicons } from '@expo/vector-icons';
+import { locationService } from '../../services/location';
+import { ReferralFormModal, type ReferralFormData } from '../referrals';
+import { referralService } from '../../services/referrals';
 
 interface GroupDetailProps {
   group: GroupWithDetails;
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
   onMembershipChange?: () => void;
   onShare?: () => void;
+  openFriendsOnMount?: boolean;
 }
 
 export const GroupDetail: React.FC<GroupDetailProps> = ({
@@ -34,48 +46,40 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   membershipStatus,
   onMembershipChange,
   onShare,
+  openFriendsOnMount = false,
 }) => {
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [showJoinRequestModal, setShowJoinRequestModal] = useState(false);
+  const [showFriendsModal, setShowFriendsModal] = useState(openFriendsOnMount);
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
-  const { data: members, isLoading: membersLoading } = useGroupMembers(
-    group.id
-  );
+  const [canSeeMembers, setCanSeeMembers] = useState(false);
+  const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
+  const friendsQuery = useFriends(userProfile?.id);
 
-  const formatMeetingTime = (day: string, time: string) => {
-    return `${day}s at ${time}`;
-  };
+  const formatMeetingTime = (day: string, time: string) => `${day}s at ${time}`;
 
   const formatLocation = (location: any) => {
-    if (!location) return 'Location TBD';
-    if (typeof location === 'string') return location;
-    if (location.address) return location.address;
-    if (location.room) return `Room ${location.room}`;
+    const parsed = locationService.parseGroupLocation(location);
+    if (parsed.address && parsed.address.trim().length > 0)
+      return parsed.address;
+    if (typeof location === 'string' && location.trim().length > 0)
+      return location;
+    if (location?.room) return `Room ${location.room}`;
     return 'Location TBD';
   };
 
-  const handleJoinGroup = async () => {
+  const handleJoinGroup = () => {
     if (!userProfile) {
       Alert.alert('Error', 'You must be signed in to join a group');
       return;
     }
 
-    try {
-      await joinGroupMutation.mutateAsync({
-        groupId: group.id,
-        userId: userProfile.id,
-      });
-      onMembershipChange?.();
-      Alert.alert('Success', 'You have successfully joined the group!');
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to join group'
-      );
-    }
+    setShowJoinRequestModal(true);
   };
 
   const handleLeaveGroup = () => {
@@ -121,17 +125,127 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       });
   };
 
-  const leaders =
-    members?.filter(
-      (member) => member.role === 'leader' || member.role === 'admin'
-    ) || [];
-  const regularMembers =
-    members?.filter((member) => member.role === 'member') || [];
+  // Visibility flags
+  const isChurchAdminForService = Boolean(
+    userProfile?.roles?.includes('church_admin') &&
+      userProfile?.service_id &&
+      group?.service_id &&
+      userProfile.service_id === group.service_id
+  );
+
+  // Compute ability to see members and conditionally fetch them
+  React.useEffect(() => {
+    setCanSeeMembers(Boolean(membershipStatus || isChurchAdminForService));
+  }, [membershipStatus, isChurchAdminForService]);
+
+  // Always fetch leaders; fetch members only if allowed
+  const { data: leadersData } = useGroupLeaders(group.id);
+  const { data: members, isLoading: membersLoading } = useGroupMembers(
+    canSeeMembers ? group.id : undefined
+  );
+  // Always fetch friends in group regardless of membership status
+  const { data: friendsInGroupMemberships } = useFriendsInGroup(
+    group.id,
+    userProfile?.id
+  );
+  // Also fetch all members for friends calculation (this is public data)
+  const { data: allMembers } = useGroupMembers(group.id);
+
+  const leaders = leadersData || [];
+  const regularMembers = (members || []).filter(
+    (member) => member.role === 'member'
+  );
   const displayMembers = showAllMembers
     ? regularMembers
     : regularMembers.slice(0, 6);
 
   const isLoading = joinGroupMutation.isPending || leaveGroupMutation.isPending;
+
+  // Check if current user is a leader of this group
+  const userMembership = members?.find((m) => m.user_id === userProfile?.id);
+  const isGroupLeader = userMembership?.role === 'leader';
+  // removed duplicate isChurchAdminForService
+
+  // Friends in group - use the same logic as groups list
+  const friendsInGroup = useMemo(() => {
+    if (!userProfile?.id || !friendsQuery.data) return [];
+
+    // Get friend IDs from friendships
+    const friendIds = new Set(
+      (friendsQuery.data || [])
+        .map((f) => f.friend?.id)
+        .filter((id): id is string => !!id)
+    );
+
+    // If we have direct friends-in-group data, use it and extract users
+    if (friendsInGroupMemberships && friendsInGroupMemberships.length > 0) {
+      return (friendsInGroupMemberships || [])
+        .map((m: any) => m.user)
+        .filter((user: any) => user && user.id !== userProfile.id);
+    }
+
+    // Fallback to filtering all members by friendship (same as groups list)
+    if (allMembers && allMembers.length > 0) {
+      return (allMembers || [])
+        .filter(
+          (m) => m.status === 'active' && m.user?.id && friendIds.has(m.user.id)
+        )
+        .map((m) => m.user!)
+        .filter((u) => u.id !== userProfile.id);
+    }
+
+    return [];
+  }, [
+    friendsInGroupMemberships,
+    friendsQuery.data,
+    allMembers,
+    userProfile?.id,
+  ]);
+
+  // Check if user has a pending join request for this group
+  const pendingRequest = userJoinRequests?.find(
+    (request) => request.group_id === group.id && request.status === 'pending'
+  );
+
+  const handleGroupUpdated = () => {
+    onMembershipChange?.();
+  };
+
+  const handleReferralSubmit = async (data: ReferralFormData) => {
+    if (!userProfile) {
+      Alert.alert('Error', 'You must be signed in to refer someone');
+      return;
+    }
+
+    try {
+      const result = await referralService.createReferral({
+        ...data,
+        groupId: group.id,
+        referrerId: userProfile.id,
+      });
+
+      if (result.success) {
+        Alert.alert(
+          'Referral Sent!',
+          'Your referral has been sent successfully. They will receive an email to set up their account and join the group.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          result.error || 'Failed to send referral. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error submitting referral:', error);
+      Alert.alert(
+        'Error',
+        'There was an error sending the referral. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -140,6 +254,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       )}
 
       <View style={styles.content}>
+        {/* Header with title and status */}
         <View style={styles.header}>
           <View style={styles.titleSection}>
             <Text style={styles.title}>{group.title}</Text>
@@ -158,10 +273,16 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                 </Text>
               </View>
             )}
+            {group.status === 'pending' && isGroupLeader && (
+              <View style={styles.pendingBadge}>
+                <Ionicons name="time-outline" size={16} color="#b45309" />
+                <Text style={styles.pendingText}>Pending admin approval</Text>
+              </View>
+            )}
           </View>
           {onShare && (
-            <TouchableOpacity onPress={onShare} style={styles.shareButton}>
-              <Text style={styles.shareIcon}>📤</Text>
+            <TouchableOpacity onPress={onShare} style={styles.iconButton}>
+              <Ionicons name="share-outline" size={22} color="#374151" />
             </TouchableOpacity>
           )}
         </View>
@@ -170,43 +291,69 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Meeting Details</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>📅 When:</Text>
-            <Text style={styles.infoValue}>
+          <View style={styles.infoRowAlt}>
+            <Ionicons name="calendar-outline" size={18} color="#6b7280" />
+            <Text style={styles.infoValueAlt} numberOfLines={1}>
               {formatMeetingTime(group.meeting_day, group.meeting_time)}
             </Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>📍 Where:</Text>
-            <Text style={styles.infoValue}>
+          <View style={styles.infoRowAlt}>
+            <Ionicons name="location-outline" size={18} color="#6b7280" />
+            <Text style={styles.infoValueAlt} numberOfLines={1}>
               {formatLocation(group.location)}
             </Text>
           </View>
-          {group.member_count !== undefined && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>👥 Members:</Text>
-              <Text style={styles.infoValue}>
+          {!!group.member_count && (
+            <View style={styles.infoRowAlt}>
+              <Ionicons name="people-outline" size={18} color="#6b7280" />
+              <Text style={styles.infoValueAlt} numberOfLines={1}>
                 {group.member_count} member{group.member_count !== 1 ? 's' : ''}
               </Text>
             </View>
           )}
-          {group.service?.name && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>⛪ Service:</Text>
-              <Text style={styles.infoValue}>{group.service.name}</Text>
-            </View>
+          {friendsInGroup.length > 0 && (
+            <TouchableOpacity
+              style={[styles.infoRowAlt, styles.friendsRow]}
+              onPress={() => setShowFriendsModal(true)}
+            >
+              <Ionicons
+                name="person-circle-outline"
+                size={18}
+                color="#2563eb"
+              />
+              <Text
+                style={[styles.infoValueAlt, styles.friendsText]}
+                numberOfLines={1}
+              >
+                {friendsInGroup.length} friend
+                {friendsInGroup.length !== 1 ? 's' : ''} in this group
+              </Text>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={18}
+                color="#2563eb"
+              />
+            </TouchableOpacity>
           )}
         </View>
 
-        {/* Leaders Section */}
-        {leaders.length > 0 && (
+        {/* Leaders Section - hidden when current user is a leader */}
+        {!isGroupLeader && leaders.length > 0 && (
           <View style={styles.membersSection}>
             <Text style={styles.sectionTitle}>
               Leader{leaders.length > 1 ? 's' : ''}
             </Text>
             <View style={styles.membersList}>
               {leaders.map((member) => (
-                <View key={member.id} style={styles.memberItem}>
+                <TouchableOpacity
+                  key={member.id}
+                  style={styles.memberItem}
+                  onPress={() =>
+                    member.user?.id && router.push(`/user/${member.user.id}`)
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${member.user?.name || 'user'} profile`}
+                >
                   <Avatar
                     size={40}
                     imageUrl={member.user?.avatar_url}
@@ -220,59 +367,71 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                       {member.role === 'admin' ? 'Admin' : 'Leader'}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
         )}
 
-        {/* Members Section */}
-        {regularMembers.length > 0 && (
-          <View style={styles.membersSection}>
-            <View style={styles.membersSectionHeader}>
-              <Text style={styles.sectionTitle}>
-                Members ({regularMembers.length})
-              </Text>
-              {regularMembers.length > 6 && (
-                <TouchableOpacity
-                  onPress={() => setShowAllMembers(!showAllMembers)}
-                  style={styles.showMoreButton}
-                >
-                  <Text style={styles.showMoreText}>
-                    {showAllMembers ? 'Show Less' : 'Show All'}
-                  </Text>
-                </TouchableOpacity>
+        {/* Members Section - visible to members/leaders/admins or service-level church admins */}
+        {(membershipStatus || isChurchAdminForService) &&
+          regularMembers.length > 0 && (
+            <View style={styles.membersSection}>
+              <View style={styles.membersSectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  Members ({regularMembers.length})
+                </Text>
+                {regularMembers.length > 6 && (
+                  <TouchableOpacity
+                    onPress={() => setShowAllMembers(!showAllMembers)}
+                    style={styles.showMoreButton}
+                  >
+                    <Text style={styles.showMoreText}>
+                      {showAllMembers ? 'Show Less' : 'Show All'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {membersLoading ? (
+                <LoadingSpinner size="small" />
+              ) : (
+                <View style={styles.membersList}>
+                  {displayMembers.map((member) => (
+                    <TouchableOpacity
+                      key={member.id}
+                      style={styles.memberItem}
+                      onPress={() =>
+                        member.user?.id &&
+                        router.push(`/user/${member.user.id}`)
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel={`View ${member.user?.name || 'user'} profile`}
+                    >
+                      <Avatar
+                        size={40}
+                        imageUrl={member.user?.avatar_url}
+                        name={member.user?.name || 'Unknown'}
+                      />
+                      <View style={styles.memberInfo}>
+                        <Text style={styles.memberName}>
+                          {member.user?.name || 'Unknown'}
+                        </Text>
+                        <Text style={styles.memberJoinDate}>
+                          Joined{' '}
+                          {new Date(member.joined_at).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               )}
             </View>
+          )}
 
-            {membersLoading ? (
-              <ActivityIndicator
-                size="small"
-                color="#007AFF"
-                style={styles.loader}
-              />
-            ) : (
-              <View style={styles.membersList}>
-                {displayMembers.map((member) => (
-                  <View key={member.id} style={styles.memberItem}>
-                    <Avatar
-                      size={40}
-                      imageUrl={member.user?.avatar_url}
-                      name={member.user?.name || 'Unknown'}
-                    />
-                    <View style={styles.memberInfo}>
-                      <Text style={styles.memberName}>
-                        {member.user?.name || 'Unknown'}
-                      </Text>
-                      <Text style={styles.memberJoinDate}>
-                        Joined {new Date(member.joined_at).toLocaleDateString()}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
+        {/* Group Leader Panel - only for leaders */}
+        {isGroupLeader && (
+          <GroupLeaderPanel group={group} onGroupUpdated={handleGroupUpdated} />
         )}
 
         {/* Action Buttons */}
@@ -281,12 +440,17 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
             <View style={styles.actionButtons}>
               {group.whatsapp_link && (
                 <Button
-                  title="Join WhatsApp Group"
+                  title="Open WhatsApp Group"
                   onPress={handleWhatsAppPress}
                   variant="secondary"
                   style={styles.whatsappButton}
                 />
               )}
+              <Button
+                title="Refer a Friend"
+                onPress={() => setShowReferralModal(true)}
+                variant="secondary"
+              />
               <Button
                 title="Leave Group"
                 onPress={handleLeaveGroup}
@@ -295,15 +459,113 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                 disabled={isLoading}
               />
             </View>
+          ) : pendingRequest ? (
+            <View style={styles.pendingRequestContainer}>
+              <View
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+              >
+                <Ionicons name="time-outline" size={16} color="#92400e" />
+                <Text style={styles.pendingRequestText}>
+                  Your join request is pending approval
+                </Text>
+              </View>
+              <Text style={styles.pendingRequestSubtext}>
+                Group leaders will review your request and get back to you soon.
+              </Text>
+            </View>
           ) : (
-            <Button
-              title="Join Group"
-              onPress={handleJoinGroup}
-              loading={isLoading}
-              disabled={isLoading}
-            />
+            <View style={styles.actionButtons}>
+              <Button
+                title="Request to Join"
+                onPress={handleJoinGroup}
+                loading={isLoading}
+                disabled={isLoading}
+              />
+              <Button
+                title="Refer a Friend"
+                onPress={() => setShowReferralModal(true)}
+                variant="secondary"
+              />
+            </View>
           )}
         </View>
+
+        {/* Join Request Modal */}
+        {userProfile && (
+          <JoinRequestModal
+            visible={showJoinRequestModal}
+            onClose={() => setShowJoinRequestModal(false)}
+            group={group}
+            userId={userProfile.id}
+          />
+        )}
+
+        {/* Friends in Group Modal */}
+        <Modal
+          isVisible={showFriendsModal}
+          onClose={() => setShowFriendsModal(false)}
+          title="Friends in this Group"
+          size="large"
+          scrollable
+          style={styles.friendsModal}
+        >
+          {friendsInGroup.length > 0 ? (
+            <View style={styles.friendsModalContainer}>
+              <Text style={styles.friendsCountText}>
+                {friendsInGroup.length} friend
+                {friendsInGroup.length !== 1 ? 's' : ''} in this group
+              </Text>
+              <View style={styles.friendsList}>
+                {friendsInGroup.map((friend) => (
+                  <TouchableOpacity
+                    key={friend.id}
+                    style={styles.friendItem}
+                    onPress={() => {
+                      setShowFriendsModal(false);
+                      router.push(`/user/${friend.id}`);
+                    }}
+                  >
+                    <Avatar
+                      size={50}
+                      imageUrl={friend.avatar_url}
+                      name={friend.name}
+                    />
+                    <View style={styles.friendInfo}>
+                      <Text style={styles.friendName}>{friend.name}</Text>
+                      {!!friend.email && (
+                        <Text style={styles.friendEmail}>{friend.email}</Text>
+                      )}
+                    </View>
+                    <Ionicons
+                      name="chevron-forward-outline"
+                      size={20}
+                      color="#9ca3af"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.emptyFriendsContainer}>
+              <Ionicons name="people-outline" size={64} color="#9ca3af" />
+              <Text style={styles.emptyFriendsText}>
+                No friends found in this group
+              </Text>
+              <Text style={styles.emptyFriendsSubtext}>
+                When your friends join this group, they'll appear here
+              </Text>
+            </View>
+          )}
+        </Modal>
+
+        {/* Referral Form Modal */}
+        <ReferralFormModal
+          visible={showReferralModal}
+          onClose={() => setShowReferralModal(false)}
+          groupId={group.id}
+          groupName={group.title}
+          onSubmit={handleReferralSubmit}
+        />
       </View>
     </ScrollView>
   );
@@ -332,19 +594,32 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
-  shareButton: {
+  iconButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-  },
-  shareIcon: {
-    fontSize: 20,
+    backgroundColor: '#f3f4f6',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1a1a1a',
     marginBottom: 8,
+  },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fde68a',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  pendingText: {
+    color: '#92400e',
+    fontWeight: '600',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -390,20 +665,25 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 12,
   },
-  infoRow: {
+  infoRowAlt: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 8,
+    marginBottom: 10,
   },
-  infoLabel: {
-    fontSize: 16,
-    color: '#666',
-    width: 80,
-  },
-  infoValue: {
+  infoValueAlt: {
     fontSize: 16,
     color: '#333',
     flex: 1,
+  },
+  friendsRow: {
+    backgroundColor: '#eff6ff',
+    padding: 10,
+    borderRadius: 8,
+  },
+  friendsText: {
+    color: '#1d4ed8',
+    fontWeight: '600',
   },
   membersSection: {
     marginBottom: 24,
@@ -461,5 +741,90 @@ const styles = StyleSheet.create({
   whatsappButton: {
     backgroundColor: '#25D366',
     borderColor: '#25D366',
+  },
+  friendsModal: {
+    width: '90%',
+    maxWidth: 500,
+    minHeight: 400,
+    maxHeight: '80%',
+  },
+  friendsModalContainer: {
+    flex: 1,
+    width: '100%',
+  },
+  friendsCountText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  friendsList: {
+    flex: 1,
+  },
+  friendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    backgroundColor: '#fff',
+  },
+  friendInfo: {
+    flex: 1,
+  },
+  friendName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  friendEmail: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  emptyFriendsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 20,
+    minHeight: 300,
+  },
+  emptyFriendsText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#374151',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptyFriendsSubtext: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 8,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  pendingRequestContainer: {
+    padding: 16,
+    backgroundColor: '#fff3cd',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+    alignItems: 'center',
+  },
+  pendingRequestText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  pendingRequestSubtext: {
+    fontSize: 14,
+    color: '#856404',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

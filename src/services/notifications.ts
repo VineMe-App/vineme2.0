@@ -2,6 +2,8 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../utils/constants';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -9,11 +11,36 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
+// Ensure Android notification channel exists
+const ensureAndroidNotificationChannel = async () => {
+  if (Platform.OS !== 'android') return;
+  try {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  } catch (e) {
+    console.warn(
+      '[Notifications] Failed to set Android notification channel',
+      e
+    );
+  }
+};
+
 export interface NotificationData {
-  type: 'friend_request' | 'event_reminder' | 'group_update';
+  type:
+    | 'friend_request'
+    | 'event_reminder'
+    | 'group_update'
+    | 'group_request'
+    | 'join_request';
   id: string;
   title: string;
   body: string;
@@ -28,6 +55,8 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
     console.warn('Push notifications only work on physical devices');
     return false;
   }
+
+  await ensureAndroidNotificationChannel();
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
@@ -58,8 +87,28 @@ export const getPushToken = async (): Promise<string | null> => {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return null;
 
-    // On development builds, projectId must be provided explicitly
+    // On Android, FCM must be configured or Firebase will not initialize
     const { default: Constants } = await import('expo-constants');
+    const googleServicesConfigured = Boolean(
+      (Constants as any)?.expoConfig?.android?.googleServicesFile ||
+        (Constants as any)?.android?.googleServicesFile
+    );
+
+    // Optional env-based override so you can enable only when configured
+    const envPushEnabled = process.env.EXPO_PUBLIC_ENABLE_PUSH === 'true';
+
+    if (
+      Platform.OS === 'android' &&
+      !googleServicesConfigured &&
+      !envPushEnabled
+    ) {
+      console.warn(
+        '[Notifications] Android push not configured (no google-services.json). Skipping token fetch.'
+      );
+      return null;
+    }
+
+    // On development builds, projectId must be provided explicitly
     const projectId =
       (Constants?.expoConfig as any)?.extra?.eas?.projectId ||
       (Constants as any)?.easConfig?.projectId;
@@ -68,9 +117,21 @@ export const getPushToken = async (): Promise<string | null> => {
       projectId ? { projectId } : undefined
     );
 
-    return token.data;
+    const tokenStr = token.data;
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.PUSH_TOKEN, tokenStr);
+    } catch {}
+    if (__DEV__) console.log('[Notifications] Expo push token:', tokenStr);
+    return tokenStr;
   } catch (error) {
-    console.error('Error getting push token:', error);
+    // Common Android case: FCM not initialized. Provide a clearer hint.
+    if (Platform.OS === 'android') {
+      console.warn(
+        'Error getting push token on Android. Ensure FCM is set up: https://docs.expo.dev/push-notifications/fcm-credentials/'
+      );
+    }
+    // Downgrade to warn to reduce noise during development without FCM
+    console.warn('Error getting push token:', error);
     return null;
   }
 };
@@ -78,22 +139,41 @@ export const getPushToken = async (): Promise<string | null> => {
 /**
  * Register device for push notifications
  */
-export const registerForPushNotifications = async (userId: string): Promise<void> => {
+export const registerForPushNotifications = async (
+  userId: string
+): Promise<void> => {
   try {
     const token = await getPushToken();
     if (!token) return;
 
+    // Ensure a users row exists before attempting to upsert FK-dependent token
+    const { data: userRow, error: userCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userCheckError) {
+      console.warn('[Notifications] Skipping push token save: user check failed', userCheckError);
+      return;
+    }
+    if (!userRow) {
+      if (__DEV__) console.warn('[Notifications] Skipping push token save: no users row yet');
+      return;
+    }
+
     // Store the token in the database
-    const { error } = await supabase
-      .from('user_push_tokens')
-      .upsert({
+    const { error } = await supabase.from('user_push_tokens').upsert(
+      {
         user_id: userId,
         push_token: token,
         platform: Platform.OS,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,platform'
-      });
+      },
+      {
+        onConflict: 'user_id,platform',
+      }
+    );
 
     if (error) {
       console.error('Error storing push token:', error);
@@ -104,9 +184,23 @@ export const registerForPushNotifications = async (userId: string): Promise<void
 };
 
 /**
+ * Read stored Expo push token if available
+ */
+export const getStoredPushToken = async (): Promise<string | null> => {
+  try {
+    const v = await AsyncStorage.getItem(STORAGE_KEYS.PUSH_TOKEN);
+    return v || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Unregister device from push notifications
  */
-export const unregisterFromPushNotifications = async (userId: string): Promise<void> => {
+export const unregisterFromPushNotifications = async (
+  userId: string
+): Promise<void> => {
   try {
     const { error } = await supabase
       .from('user_push_tokens')
@@ -148,7 +242,9 @@ export const scheduleLocalNotification = async (
 /**
  * Cancel a scheduled notification
  */
-export const cancelNotification = async (notificationId: string): Promise<void> => {
+export const cancelNotification = async (
+  notificationId: string
+): Promise<void> => {
   await Notifications.cancelScheduledNotificationAsync(notificationId);
 };
 
@@ -176,6 +272,13 @@ export const handleNotificationResponse = (
       router.push(`/event/${id}`);
       break;
     case 'group_update':
+      router.push(`/group/${id}`);
+      break;
+    case 'group_request':
+      // Navigate to admin groups management screen
+      router.push('/(tabs)/profile'); // TODO: Update when admin screens are implemented
+      break;
+    case 'join_request':
       router.push(`/group/${id}`);
       break;
     default:
@@ -219,7 +322,9 @@ export const sendEventReminderNotification = async (
 ): Promise<string | null> => {
   try {
     const eventDateTime = new Date(eventDate);
-    const reminderTime = new Date(eventDateTime.getTime() - reminderMinutes * 60 * 1000);
+    const reminderTime = new Date(
+      eventDateTime.getTime() - reminderMinutes * 60 * 1000
+    );
 
     // Don't schedule if the reminder time is in the past
     if (reminderTime <= new Date()) {
@@ -258,16 +363,19 @@ export const getNotificationSettings = async (userId: string) => {
       .eq('user_id', userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // Not found error
+    if (error && error.code !== 'PGRST116') {
+      // Not found error
       console.error('Error fetching notification settings:', error);
       return null;
     }
 
-    return data || {
-      friend_requests: true,
-      event_reminders: true,
-      group_updates: true,
-    };
+    return (
+      data || {
+        friend_requests: true,
+        event_reminders: true,
+        group_updates: true,
+      }
+    );
   } catch (error) {
     console.error('Error getting notification settings:', error);
     return null;
@@ -286,15 +394,16 @@ export const updateNotificationSettings = async (
   }
 ) => {
   try {
-    const { error } = await supabase
-      .from('user_notification_settings')
-      .upsert({
+    const { error } = await supabase.from('user_notification_settings').upsert(
+      {
         user_id: userId,
         ...settings,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id'
-      });
+      },
+      {
+        onConflict: 'user_id',
+      }
+    );
 
     if (error) {
       console.error('Error updating notification settings:', error);
@@ -305,5 +414,289 @@ export const updateNotificationSettings = async (
   } catch (error) {
     console.error('Error updating notification settings:', error);
     return false;
+  }
+};
+
+/**
+ * Get unread notifications for a user
+ */
+export const getUnreadNotifications = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('read', false)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching unread notifications:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting unread notifications:', error);
+    return [];
+  }
+};
+
+/**
+ * Get all notifications for a user
+ */
+export const getUserNotifications = async (
+  userId: string,
+  limit: number = 50
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching user notifications:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting user notifications:', error);
+    return [];
+  }
+};
+
+/**
+ * Mark notification as read
+ */
+export const markNotificationAsRead = async (notificationId: string) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('id', notificationId);
+
+    if (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    return false;
+  }
+};
+
+/**
+ * Mark all notifications as read for a user
+ */
+export const markAllNotificationsAsRead = async (userId: string) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('read', false);
+
+    if (error) {
+      console.error('Error marking all notifications as read:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    return false;
+  }
+};
+
+/**
+ * Get notification count by type for admin dashboard
+ */
+export const getAdminNotificationCounts = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('type')
+      .eq('user_id', userId)
+      .eq('read', false);
+
+    if (error) {
+      console.error('Error fetching admin notification counts:', error);
+      return { group_requests: 0, join_requests: 0, total: 0 };
+    }
+
+    const counts = data?.reduce(
+      (acc, notification) => {
+        if (notification.type === 'group_request') {
+          acc.group_requests++;
+        } else if (notification.type === 'join_request') {
+          acc.join_requests++;
+        }
+        acc.total++;
+        return acc;
+      },
+      { group_requests: 0, join_requests: 0, total: 0 }
+    ) || { group_requests: 0, join_requests: 0, total: 0 };
+
+    return counts;
+  } catch (error) {
+    console.error('Error getting admin notification counts:', error);
+    return { group_requests: 0, join_requests: 0, total: 0 };
+  }
+};
+
+/**
+ * Send group creation request notification to church admins
+ */
+export const sendGroupRequestNotification = async (
+  churchId: string,
+  groupTitle: string,
+  creatorName: string,
+  groupId?: string
+): Promise<void> => {
+  try {
+    // Get all church admins
+    const { data: admins, error } = await supabase
+      .from('users')
+      .select('id, name, roles')
+      .eq('church_id', churchId)
+      .contains('roles', ['church_admin']);
+
+    if (error) {
+      console.error('Error fetching church admins:', error);
+      return;
+    }
+
+    if (!admins || admins.length === 0) {
+      console.warn('No church admins found for notification');
+      return;
+    }
+
+    // Create notification record in database for each admin
+    const notifications = admins.map((admin) => ({
+      user_id: admin.id,
+      type: 'group_request' as const,
+      title: 'New Group Request',
+      body: `${creatorName} has requested to create "${groupTitle}"`,
+      data: {
+        churchId,
+        groupTitle,
+        creatorName,
+        groupId: groupId || churchId,
+        action_url: '/admin/manage-groups',
+      },
+      read: false,
+      created_at: new Date().toISOString(),
+    }));
+
+    // Store notifications in database
+    const { error: insertError } = await supabase
+      .from('notifications')
+      .insert(notifications);
+
+    if (insertError) {
+      console.error('Error storing notifications:', insertError);
+    }
+
+    // Send push notifications to each admin
+    const notification: NotificationData = {
+      type: 'group_request',
+      id: groupId || churchId,
+      title: 'New Group Request',
+      body: `${creatorName} has requested to create "${groupTitle}"`,
+      data: { churchId, groupTitle, creatorName, groupId },
+    };
+
+    // Schedule local notification for immediate display
+    await scheduleLocalNotification(notification);
+
+    console.log('Group request notifications sent to', admins.length, 'admins');
+  } catch (error) {
+    console.error('Error sending group request notification:', error);
+  }
+};
+
+/**
+ * Send join request notification to group leaders
+ */
+export const sendJoinRequestNotification = async (
+  groupId: string,
+  groupTitle: string,
+  requesterName: string,
+  requesterId?: string
+): Promise<void> => {
+  try {
+    // Get all group leaders
+    const { data: leaders, error } = await supabase
+      .from('group_memberships')
+      .select(
+        `
+        user_id,
+        user:users(id, name)
+      `
+      )
+      .eq('group_id', groupId)
+      .eq('role', 'leader')
+      .eq('status', 'active');
+
+    if (error) {
+      console.error('Error fetching group leaders:', error);
+      return;
+    }
+
+    if (!leaders || leaders.length === 0) {
+      console.warn('No group leaders found for notification');
+      return;
+    }
+
+    // Create notification record in database for each leader
+    const notifications = leaders.map((leader) => ({
+      user_id: leader.user_id,
+      type: 'join_request' as const,
+      title: 'New Join Request',
+      body: `${requesterName} wants to join "${groupTitle}"`,
+      data: {
+        groupId,
+        groupTitle,
+        requesterName,
+        requesterId,
+        action_url: `/group/${groupId}`,
+      },
+      read: false,
+      created_at: new Date().toISOString(),
+    }));
+
+    // Store notifications in database
+    const { error: insertError } = await supabase
+      .from('notifications')
+      .insert(notifications);
+
+    if (insertError) {
+      console.error('Error storing notifications:', insertError);
+    }
+
+    // Send push notification to each leader
+    const notification: NotificationData = {
+      type: 'join_request',
+      id: groupId,
+      title: 'New Join Request',
+      body: `${requesterName} wants to join "${groupTitle}"`,
+      data: { groupId, groupTitle, requesterName, requesterId },
+    };
+
+    // Schedule local notification for immediate display
+    await scheduleLocalNotification(notification);
+
+    console.log(
+      'Join request notifications sent to',
+      leaders.length,
+      'leaders'
+    );
+  } catch (error) {
+    console.error('Error sending join request notification:', error);
   }
 };

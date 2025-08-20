@@ -5,6 +5,34 @@ global.__DEV__ = true;
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 
+// Mock React Native Platform
+jest.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    select: jest.fn((obj) => obj.ios || obj.default),
+  },
+  StyleSheet: {
+    create: jest.fn((styles) => styles),
+    flatten: jest.fn((styles) => styles),
+  },
+  View: 'View',
+  Text: 'Text',
+  TouchableOpacity: 'TouchableOpacity',
+  TextInput: 'TextInput',
+  ScrollView: 'ScrollView',
+  FlatList: 'FlatList',
+  Modal: 'Modal',
+  Alert: {
+    alert: jest.fn(),
+  },
+  ActivityIndicator: 'ActivityIndicator',
+  RefreshControl: 'RefreshControl',
+  SafeAreaView: 'SafeAreaView',
+  Dimensions: {
+    get: jest.fn(() => ({ width: 375, height: 812 })),
+  },
+}));
+
 // Mock Expo modules
 jest.mock('expo-constants', () => ({
   expoConfig: {
@@ -22,10 +50,31 @@ jest.mock('expo-secure-store', () => ({
   isAvailableAsync: jest.fn(() => Promise.resolve(true)),
 }));
 
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted' })
+  ),
+  getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ data: 'test-token' })),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
+  cancelScheduledNotificationAsync: jest.fn(),
+  cancelAllScheduledNotificationsAsync: jest.fn(),
+}));
+
+jest.mock('expo-device', () => ({
+  isDevice: true,
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
   getItem: jest.fn(),
   removeItem: jest.fn(),
+}));
+
+jest.mock('@react-native-community/netinfo', () => ({
+  fetch: jest.fn(() => Promise.resolve({ isConnected: true })),
+  addEventListener: jest.fn(() => jest.fn()),
 }));
 
 jest.mock('expo-router', () => ({
@@ -42,8 +91,12 @@ const mockSupabaseClient = {
     signInWithPassword: jest.fn(),
     signUp: jest.fn(),
     signOut: jest.fn(),
-    getUser: jest.fn(() => Promise.resolve({ data: { user: null }, error: null })),
-    onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+    getUser: jest.fn(() =>
+      Promise.resolve({ data: { user: null }, error: null })
+    ),
+    onAuthStateChange: jest.fn(() => ({
+      data: { subscription: { unsubscribe: jest.fn() } },
+    })),
   },
   from: jest.fn(() => ({
     select: jest.fn().mockReturnThis(),
@@ -56,6 +109,8 @@ const mockSupabaseClient = {
     and: jest.fn().mockReturnThis(),
     in: jest.fn().mockReturnThis(),
     contains: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     single: jest.fn(() => Promise.resolve({ data: null, error: null })),
     maybeSingle: jest.fn(() => Promise.resolve({ data: null, error: null })),
   })),

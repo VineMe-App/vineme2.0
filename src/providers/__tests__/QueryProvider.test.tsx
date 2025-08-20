@@ -9,7 +9,7 @@ const TestComponent = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['test'],
     queryFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       return 'test data';
     },
   });
@@ -83,7 +83,7 @@ describe('QueryProvider', () => {
       const query1 = useQuery({
         queryKey: ['query1'],
         queryFn: async () => {
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
           return 'data1';
         },
       });
@@ -91,7 +91,7 @@ describe('QueryProvider', () => {
       const query2 = useQuery({
         queryKey: ['query2'],
         queryFn: async () => {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
           return 'data2';
         },
       });

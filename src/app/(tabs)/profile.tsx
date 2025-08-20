@@ -7,27 +7,29 @@ import {
   RefreshControl,
   Alert,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useAuthStore } from '@/stores/auth';
 import {
   useUserProfile,
   useUserGroupMemberships,
-  useUserFriendships,
   useDeleteAccount,
 } from '@/hooks/useUsers';
 import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
-import { AdminOnly, PermissionGate } from '@/components/ui/RoleBasedRender';
-import { EditProfileModal } from '@/components/profile/EditProfileModal';
+import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
+import { EditProfileModal, PrivacySettingsModal } from '@/components/profile';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
+// Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const deleteAccountMutation = useDeleteAccount();
 
   const {
@@ -43,20 +45,20 @@ export default function ProfileScreen() {
     refetch: refetchGroups,
   } = useUserGroupMemberships(user?.id);
 
-  const { isLoading: friendsLoading, refetch: refetchFriends } =
-    useUserFriendships(user?.id);
-
   // Use the new friendship hooks for better data management
   const friendsQuery = useFriends(user?.id);
   const receivedRequestsQuery = useReceivedFriendRequests(user?.id);
 
-  const isLoading = profileLoading || groupsLoading || friendsLoading;
+  const isLoading =
+    profileLoading ||
+    groupsLoading ||
+    friendsQuery.isLoading ||
+    receivedRequestsQuery.isLoading;
 
   const handleRefresh = async () => {
     await Promise.all([
       refetchProfile(),
       refetchGroups(),
-      refetchFriends(),
       friendsQuery.refetch(),
       receivedRequestsQuery.refetch(),
     ]);
@@ -70,7 +72,7 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await signOut();
-          router.replace('/(auth)/sign-in');
+          router.replace({ pathname: '/(auth)/sign-in' as any });
         },
       },
     ]);
@@ -90,9 +92,12 @@ export default function ProfileScreen() {
             try {
               await deleteAccountMutation.mutateAsync(user.id);
               await signOut();
-              router.replace('/(auth)/sign-in');
+              router.replace({ pathname: '/(auth)/sign-in' as any });
             } catch (e) {
-              Alert.alert('Error', 'Failed to delete account. Please try again.');
+              Alert.alert(
+                'Error',
+                'Failed to delete account. Please try again.'
+              );
             }
           },
         },
@@ -141,7 +146,9 @@ export default function ProfileScreen() {
               />
 
               <Text style={styles.name}>{userProfile.name}</Text>
-              <Text style={styles.email}>{userProfile.email}</Text>
+              {user?.email ? (
+                <Text style={styles.email}>{user.email}</Text>
+              ) : null}
 
               <Button
                 title="Edit Profile"
@@ -154,17 +161,19 @@ export default function ProfileScreen() {
 
             {/* Friend Request Notifications */}
             <FriendRequestNotifications
-              userId={user?.id}
+              requests={(receivedRequestsQuery.data as any[]) || []}
               onPress={() => setShowFriendsModal(true)}
             />
 
             <View style={styles.infoSection}>
               <Text style={styles.sectionTitle}>Profile Information</Text>
 
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue}>{userProfile.email}</Text>
-              </View>
+              {user?.email ? (
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Email</Text>
+                  <Text style={styles.infoValue}>{user.email}</Text>
+                </View>
+              ) : null}
 
               {userProfile.church && (
                 <View style={styles.infoItem}>
@@ -239,7 +248,16 @@ export default function ProfileScreen() {
               {friendsQuery.data && friendsQuery.data.length > 0 ? (
                 <>
                   {friendsQuery.data.slice(0, 5).map((friendship: any) => (
-                    <View key={friendship.id} style={styles.friendItem}>
+                    <TouchableOpacity
+                      key={friendship.id}
+                      style={styles.friendItem}
+                      onPress={() =>
+                        friendship.friend?.id &&
+                        router.push(`/user/${friendship.friend.id}`)
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel={`View ${friendship.friend?.name || 'user'} profile`}
+                    >
                       <Avatar
                         size={40}
                         imageUrl={friendship.friend?.avatar_url}
@@ -253,7 +271,7 @@ export default function ProfileScreen() {
                           {friendship.friend?.email}
                         </Text>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   ))}
                   {friendsQuery.data.length > 5 && (
                     <TouchableOpacity onPress={() => setShowFriendsModal(true)}>
@@ -283,50 +301,29 @@ export default function ProfileScreen() {
         )}
 
         {/* Admin Features */}
-        <AdminOnly>
+        <ChurchAdminOnly>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Admin Tools</Text>
-            <View style={styles.adminActions}>
-              <PermissionGate permission="manage_church_events">
-                <Button
-                  title="Manage Events"
-                  onPress={() => {
-                    Alert.alert('Admin Feature', 'Event management coming soon!');
-                  }}
-                  variant="secondary"
-                  size="small"
-                  style={styles.adminButton}
-                />
-              </PermissionGate>
-              
-              <PermissionGate permission="manage_church_groups">
-                <Button
-                  title="Manage Groups"
-                  onPress={() => {
-                    Alert.alert('Admin Feature', 'Group management coming soon!');
-                  }}
-                  variant="secondary"
-                  size="small"
-                  style={styles.adminButton}
-                />
-              </PermissionGate>
-              
-              <PermissionGate permission="manage_church_users">
-                <Button
-                  title="Manage Users"
-                  onPress={() => {
-                    Alert.alert('Admin Feature', 'User management coming soon!');
-                  }}
-                  variant="secondary"
-                  size="small"
-                  style={styles.adminButton}
-                />
-              </PermissionGate>
-            </View>
+            <Text style={styles.sectionTitle}>Admin</Text>
+            <Button
+              title="Open Admin Dashboard"
+              onPress={() => router.push('/admin')}
+              variant="primary"
+            />
           </View>
-        </AdminOnly>
+        </ChurchAdminOnly>
 
         <View style={styles.actionsSection}>
+          <Button
+            title="Privacy Settings"
+            onPress={() => setShowPrivacyModal(true)}
+            variant="secondary"
+            style={styles.privacyButton}
+          />
+          <Button
+            title="Security"
+            onPress={() => router.push('/profile/security')}
+            variant="secondary"
+          />
           <Button
             title="Sign Out"
             onPress={handleSignOut}
@@ -355,6 +352,14 @@ export default function ProfileScreen() {
         onClose={() => setShowFriendsModal(false)}
         userId={user?.id}
       />
+
+      {user?.id && (
+        <PrivacySettingsModal
+          visible={showPrivacyModal}
+          onClose={() => setShowPrivacyModal(false)}
+          userId={user.id}
+        />
+      )}
     </View>
   );
 }
@@ -507,6 +512,9 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
+  },
+  privacyButton: {
+    marginBottom: 16,
   },
   signOutButton: {
     marginTop: 16,

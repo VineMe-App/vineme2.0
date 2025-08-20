@@ -1,5 +1,8 @@
 import { secureStorage, SECURE_STORAGE_KEYS } from '../secureStorage';
 
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // Mock Expo SecureStore
 jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(),
@@ -40,9 +43,6 @@ Object.defineProperty(global, 'atob', {
   writable: true,
 });
 
-import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 const mockSecureStore = SecureStore as jest.Mocked<typeof SecureStore>;
 const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 
@@ -77,7 +77,9 @@ describe('SecureStorageService', () => {
     it('should retrieve items using SecureStore on native', async () => {
       mockSecureStore.getItemAsync.mockResolvedValue('test-token');
 
-      const result = await secureStorage.getItem(SECURE_STORAGE_KEYS.AUTH_TOKEN);
+      const result = await secureStorage.getItem(
+        SECURE_STORAGE_KEYS.AUTH_TOKEN
+      );
 
       expect(result).toBe('test-token');
       expect(mockSecureStore.getItemAsync).toHaveBeenCalledWith(
@@ -107,10 +109,14 @@ describe('SecureStorageService', () => {
       await secureStorage.setBiometricEnabled(true);
 
       // Store with biometric authentication
-      await secureStorage.setItem(SECURE_STORAGE_KEYS.AUTH_TOKEN, 'test-token', {
-        requireAuthentication: true,
-        authenticationPrompt: 'Custom prompt',
-      });
+      await secureStorage.setItem(
+        SECURE_STORAGE_KEYS.AUTH_TOKEN,
+        'test-token',
+        {
+          requireAuthentication: true,
+          authenticationPrompt: 'Custom prompt',
+        }
+      );
 
       expect(mockSecureStore.setItemAsync).toHaveBeenCalledWith(
         SECURE_STORAGE_KEYS.AUTH_TOKEN,
@@ -148,10 +154,14 @@ describe('SecureStorageService', () => {
       const encryptedValue = Buffer.from('test-token').toString('base64');
       mockLocalStorage.getItem.mockReturnValue(encryptedValue);
 
-      const result = await secureStorage.getItem(SECURE_STORAGE_KEYS.AUTH_TOKEN);
+      const result = await secureStorage.getItem(
+        SECURE_STORAGE_KEYS.AUTH_TOKEN
+      );
 
       expect(result).toBe('test-token');
-      expect(mockLocalStorage.getItem).toHaveBeenCalledWith(SECURE_STORAGE_KEYS.AUTH_TOKEN);
+      expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+        SECURE_STORAGE_KEYS.AUTH_TOKEN
+      );
       expect(global.atob).toHaveBeenCalledWith(encryptedValue);
     });
 
@@ -248,7 +258,10 @@ describe('SecureStorageService', () => {
 
       await secureStorage.setNonSensitiveItem('test-key', 'test-value');
 
-      expect(mockAsyncStorage.setItem).toHaveBeenCalledWith('test-key', 'test-value');
+      expect(mockAsyncStorage.setItem).toHaveBeenCalledWith(
+        'test-key',
+        'test-value'
+      );
     });
 
     it('should retrieve non-sensitive data using AsyncStorage', async () => {
@@ -273,7 +286,9 @@ describe('SecureStorageService', () => {
     });
 
     it('should handle SecureStore errors gracefully', async () => {
-      mockSecureStore.setItemAsync.mockRejectedValue(new Error('SecureStore error'));
+      mockSecureStore.setItemAsync.mockRejectedValue(
+        new Error('SecureStore error')
+      );
 
       await expect(
         secureStorage.setItem(SECURE_STORAGE_KEYS.AUTH_TOKEN, 'test-token')
@@ -281,17 +296,25 @@ describe('SecureStorageService', () => {
     });
 
     it('should return null when retrieval fails', async () => {
-      mockSecureStore.getItemAsync.mockRejectedValue(new Error('SecureStore error'));
+      mockSecureStore.getItemAsync.mockRejectedValue(
+        new Error('SecureStore error')
+      );
 
-      const result = await secureStorage.getItem(SECURE_STORAGE_KEYS.AUTH_TOKEN);
+      const result = await secureStorage.getItem(
+        SECURE_STORAGE_KEYS.AUTH_TOKEN
+      );
 
       expect(result).toBeNull();
     });
 
     it('should handle clear all errors', async () => {
-      mockSecureStore.deleteItemAsync.mockRejectedValue(new Error('Delete error'));
+      mockSecureStore.deleteItemAsync.mockRejectedValue(
+        new Error('Delete error')
+      );
 
-      await expect(secureStorage.clearAll()).rejects.toThrow('Failed to clear secure storage');
+      await expect(secureStorage.clearAll()).rejects.toThrow(
+        'Failed to clear secure storage'
+      );
     });
   });
 
@@ -309,7 +332,9 @@ describe('SecureStorageService', () => {
     it('should check if item exists', async () => {
       mockSecureStore.getItemAsync.mockResolvedValue('test-value');
 
-      const result = await secureStorage.hasItem(SECURE_STORAGE_KEYS.AUTH_TOKEN);
+      const result = await secureStorage.hasItem(
+        SECURE_STORAGE_KEYS.AUTH_TOKEN
+      );
 
       expect(result).toBe(true);
     });
@@ -317,7 +342,9 @@ describe('SecureStorageService', () => {
     it('should return false when item does not exist', async () => {
       mockSecureStore.getItemAsync.mockResolvedValue(null);
 
-      const result = await secureStorage.hasItem(SECURE_STORAGE_KEYS.AUTH_TOKEN);
+      const result = await secureStorage.hasItem(
+        SECURE_STORAGE_KEYS.AUTH_TOKEN
+      );
 
       expect(result).toBe(false);
     });

@@ -5,10 +5,14 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   church_id?: string;
   avatar_url?: string;
   service_id?: string;
+  bio?: string;
   roles: string[];
+  newcomer?: boolean;
+  email_verified?: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -60,7 +64,18 @@ export interface GroupMembership {
   user_id: string;
   role: 'member' | 'leader' | 'admin';
   joined_at: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
+}
+
+export interface GroupJoinRequest {
+  id: string;
+  group_id: string;
+  user_id: string;
+  contact_consent: boolean;
+  message?: string;
+  status: 'pending' | 'approved' | 'declined';
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface Event {
@@ -116,11 +131,18 @@ export interface GroupMembershipWithUser extends GroupMembership {
   user?: User;
 }
 
+export interface GroupJoinRequestWithUser extends GroupJoinRequest {
+  user?: User;
+  group?: Group;
+}
+
 export interface GroupWithDetails extends Group {
   service?: Service;
   church?: Church;
   memberships?: GroupMembershipWithUser[];
+  join_requests?: GroupJoinRequestWithUser[];
   member_count?: number;
+  pending_requests_count?: number;
 }
 
 export interface EventWithDetails extends Event {
@@ -142,6 +164,75 @@ export interface UserWithDetails extends User {
   friendships?: Friendship[];
 }
 
+// Contact sharing and privacy types
+export interface ContactAuditLog {
+  id: string;
+  user_id: string; // User whose contact was accessed
+  accessor_id: string; // User who accessed the contact
+  group_id: string; // Group context for the access
+  join_request_id?: string; // Related join request if applicable
+  access_type: 'view' | 'call' | 'email' | 'message';
+  contact_fields: string[]; // Which fields were accessed (email, phone, etc.)
+  created_at: string;
+}
+
+export interface ContactPrivacySettings {
+  id: string;
+  user_id: string;
+  allow_email_sharing: boolean;
+  allow_phone_sharing: boolean;
+  allow_contact_by_leaders: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ContactAuditLogWithDetails extends ContactAuditLog {
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  accessor?: {
+    id: string;
+    name: string;
+  };
+  group?: {
+    id: string;
+    title: string;
+  };
+}
+
+// Referral system types
+export interface GroupReferral {
+  id: string;
+  group_id: string;
+  referrer_id: string;
+  referred_user_id: string;
+  note?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GeneralReferral {
+  id: string;
+  referrer_id: string;
+  referred_user_id: string;
+  note?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroupReferralWithDetails extends GroupReferral {
+  group?: Group;
+  referrer?: User;
+  referred_user?: User;
+}
+
+export interface GeneralReferralWithDetails extends GeneralReferral {
+  referrer?: User;
+  referred_user?: User;
+}
+
 // Database response types
 export type DatabaseUser = User;
 export type DatabaseChurch = Church;
@@ -150,3 +241,5 @@ export type DatabaseGroup = Group;
 export type DatabaseEvent = Event;
 export type DatabaseFriendship = Friendship;
 export type DatabaseTicket = Ticket;
+export type DatabaseGroupReferral = GroupReferral;
+export type DatabaseGeneralReferral = GeneralReferral;

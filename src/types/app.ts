@@ -23,6 +23,7 @@ export interface OnboardingData {
   service_id?: string;
   interests: string[];
   preferred_meeting_night: string;
+  group_status?: 'existing' | 'looking';
 }
 
 export interface OnboardingStep {

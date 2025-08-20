@@ -37,9 +37,9 @@ export const ComponentShowcase: React.FC = () => {
       initialValue: '',
     },
     email: {
-      rules: { 
-        required: true, 
-        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ 
+      rules: {
+        required: true,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
       },
       initialValue: '',
     },
@@ -52,7 +52,7 @@ export const ComponentShowcase: React.FC = () => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>UI Component Showcase</Text>
-      
+
       {/* Buttons Section */}
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Buttons</Text>
@@ -76,34 +76,31 @@ export const ComponentShowcase: React.FC = () => {
       {/* Inputs Section */}
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Inputs</Text>
-        <Input 
-          label="Basic Input" 
-          placeholder="Enter text here" 
+        <Input label="Basic Input" placeholder="Enter text here" />
+        <Input
+          label="Required Input"
+          placeholder="This field is required"
+          required
         />
-        <Input 
-          label="Required Input" 
-          placeholder="This field is required" 
-          required 
+        <Input
+          label="Input with Error"
+          placeholder="Invalid input"
+          error="This field is required"
         />
-        <Input 
-          label="Input with Error" 
-          placeholder="Invalid input" 
-          error="This field is required" 
+        <Input
+          label="Input with Helper Text"
+          placeholder="Enter your email"
+          helperText="We'll never share your email"
         />
-        <Input 
-          label="Input with Helper Text" 
-          placeholder="Enter your email" 
-          helperText="We'll never share your email" 
+        <Input
+          label="Filled Variant"
+          placeholder="Filled input"
+          variant="filled"
         />
-        <Input 
-          label="Filled Variant" 
-          placeholder="Filled input" 
-          variant="filled" 
-        />
-        <Input 
-          label="Outlined Variant" 
-          placeholder="Outlined input" 
-          variant="outlined" 
+        <Input
+          label="Outlined Variant"
+          placeholder="Outlined input"
+          variant="outlined"
         />
       </Card>
 
@@ -119,8 +116,8 @@ export const ComponentShowcase: React.FC = () => {
         <Card variant="elevated" style={styles.exampleCard}>
           <Text>Elevated Card</Text>
         </Card>
-        <Card 
-          variant="default" 
+        <Card
+          variant="default"
           style={styles.exampleCard}
           onPress={() => console.log('Card pressed')}
         >
@@ -131,13 +128,13 @@ export const ComponentShowcase: React.FC = () => {
       {/* Form Components Section */}
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Form Components</Text>
-        
+
         <Checkbox
           checked={checkboxChecked}
           onPress={() => setCheckboxChecked(!checkboxChecked)}
           label="I agree to the terms and conditions"
         />
-        
+
         <Select
           label="Select Option"
           options={selectOptions}
@@ -193,11 +190,7 @@ export const ComponentShowcase: React.FC = () => {
           title="No items found"
           message="There are no items to display at this time."
           action={
-            <Button 
-              title="Refresh" 
-              onPress={() => {}} 
-              variant="outline" 
-            />
+            <Button title="Refresh" onPress={() => {}} variant="outline" />
           }
         />
       </Card>
@@ -205,11 +198,8 @@ export const ComponentShowcase: React.FC = () => {
       {/* Modal Section */}
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Modal</Text>
-        <Button
-          title="Open Modal"
-          onPress={() => setModalVisible(true)}
-        />
-        
+        <Button title="Open Modal" onPress={() => setModalVisible(true)} />
+
         <Modal
           isVisible={modalVisible}
           onClose={() => setModalVisible(false)}
@@ -244,7 +234,7 @@ export const ComponentShowcase: React.FC = () => {
               />
             )}
           </FormField>
-          
+
           <FormField name="email">
             {({ value, error, onChange, onBlur }) => (
               <Input
@@ -259,7 +249,7 @@ export const ComponentShowcase: React.FC = () => {
               />
             )}
           </FormField>
-          
+
           <Button
             title="Submit Form"
             onPress={() => {
@@ -273,14 +263,40 @@ export const ComponentShowcase: React.FC = () => {
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Design Tokens</Text>
         <Text style={styles.tokenText}>
-          All components use consistent design tokens for colors, spacing, typography, and shadows.
+          All components use consistent design tokens for colors, spacing,
+          typography, and shadows.
         </Text>
         <View style={styles.colorRow}>
-          <View style={[styles.colorSwatch, { backgroundColor: Theme.colors.primary }]} />
-          <View style={[styles.colorSwatch, { backgroundColor: Theme.colors.secondary }]} />
-          <View style={[styles.colorSwatch, { backgroundColor: Theme.colors.success }]} />
-          <View style={[styles.colorSwatch, { backgroundColor: Theme.colors.warning }]} />
-          <View style={[styles.colorSwatch, { backgroundColor: Theme.colors.error }]} />
+          <View
+            style={[
+              styles.colorSwatch,
+              { backgroundColor: Theme.colors.primary },
+            ]}
+          />
+          <View
+            style={[
+              styles.colorSwatch,
+              { backgroundColor: Theme.colors.secondary },
+            ]}
+          />
+          <View
+            style={[
+              styles.colorSwatch,
+              { backgroundColor: Theme.colors.success },
+            ]}
+          />
+          <View
+            style={[
+              styles.colorSwatch,
+              { backgroundColor: Theme.colors.warning },
+            ]}
+          />
+          <View
+            style={[
+              styles.colorSwatch,
+              { backgroundColor: Theme.colors.error },
+            ]}
+          />
         </View>
       </Card>
     </ScrollView>

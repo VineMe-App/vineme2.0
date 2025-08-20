@@ -5,11 +5,11 @@ import {
   ImageStyle,
   View,
   ViewStyle,
-  ActivityIndicator,
   Text,
   StyleSheet,
   Dimensions,
 } from 'react-native';
+import { LoadingSpinner } from './LoadingSpinner';
 import { performanceMonitor } from '../../utils/performance';
 
 interface OptimizedImageProps extends Omit<ImageProps, 'source'> {
@@ -52,7 +52,7 @@ export function OptimizedImage({
   const [hasError, setHasError] = useState(false);
   const [shouldLoad, setShouldLoad] = useState(!lazy);
   const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
-  
+
   const imageRef = useRef<Image>(null);
   const containerRef = useRef<View>(null);
 
@@ -63,19 +63,24 @@ export function OptimizedImage({
     }
 
     let uri = source.uri;
-    
+
     // Add optimization parameters for supported services
-    if (uri.includes('supabase') || uri.includes('cloudinary') || uri.includes('imagekit')) {
+    if (
+      uri.includes('supabase') ||
+      uri.includes('cloudinary') ||
+      uri.includes('imagekit')
+    ) {
       const url = new URL(uri);
-      
+
       // Calculate optimal dimensions
-      const targetWidth = maxWidth || (style as ImageStyle)?.width || screenWidth;
+      const targetWidth =
+        maxWidth || (style as ImageStyle)?.width || screenWidth;
       const targetHeight = maxHeight || (style as ImageStyle)?.height;
-      
+
       // Add quality parameter
       const qualityMap = { low: 60, medium: 80, high: 95 };
       url.searchParams.set('quality', qualityMap[quality].toString());
-      
+
       // Add dimension parameters
       if (targetWidth && typeof targetWidth === 'number') {
         url.searchParams.set('width', Math.round(targetWidth).toString());
@@ -83,10 +88,10 @@ export function OptimizedImage({
       if (targetHeight && typeof targetHeight === 'number') {
         url.searchParams.set('height', Math.round(targetHeight).toString());
       }
-      
+
       // Add format optimization
       url.searchParams.set('format', 'webp');
-      
+
       uri = url.toString();
     }
 
@@ -113,35 +118,52 @@ export function OptimizedImage({
     setIsLoading(true);
     setHasError(false);
     setLoadStartTime(Date.now());
-    performanceMonitor.startTimer(`image_load_${source}`);
+    const sourceKey =
+      typeof source === 'number'
+        ? `asset_${String(source)}`
+        : (source as { uri: string }).uri || 'unknown';
+    performanceMonitor.startTimer(`image_load_${sourceKey}`);
     onLoadStart?.();
   }, [source, onLoadStart]);
 
   const handleLoadEnd = useCallback(() => {
     setIsLoading(false);
-    
+
     if (loadStartTime) {
       const loadTime = Date.now() - loadStartTime;
       performanceMonitor.recordMetric('image_load_time', loadTime, {
-        source: typeof source === 'string' ? source : 'local',
+        source:
+          typeof source === 'number'
+            ? 'local'
+            : (source as { uri?: string }).uri || 'unknown',
         quality,
         lazy,
       });
     }
-    
-    performanceMonitor.endTimer(`image_load_${source}`);
+
+    const sourceKey =
+      typeof source === 'number'
+        ? `asset_${String(source)}`
+        : (source as { uri: string }).uri || 'unknown';
+    performanceMonitor.endTimer(`image_load_${sourceKey}`);
     onLoadEnd?.();
   }, [source, loadStartTime, quality, lazy, onLoadEnd]);
 
-  const handleError = useCallback((error: any) => {
-    setIsLoading(false);
-    setHasError(true);
-    performanceMonitor.recordMetric('image_load_error', 1, {
-      source: typeof source === 'string' ? source : 'local',
-      error: error?.nativeEvent?.error || 'Unknown error',
-    });
-    onError?.(error);
-  }, [source, onError]);
+  const handleError = useCallback(
+    (error: any) => {
+      setIsLoading(false);
+      setHasError(true);
+      performanceMonitor.recordMetric('image_load_error', 1, {
+        source:
+          typeof source === 'number'
+            ? 'local'
+            : (source as { uri?: string }).uri || 'unknown',
+        error: error?.nativeEvent?.error || 'Unknown error',
+      });
+      onError?.(error);
+    },
+    [source, onError]
+  );
 
   const renderPlaceholder = () => {
     if (placeholder) {
@@ -150,7 +172,7 @@ export function OptimizedImage({
 
     return (
       <View style={[styles.placeholder, style]}>
-        <ActivityIndicator size="small" color="#666" />
+        <LoadingSpinner size="small" />
       </View>
     );
   };
@@ -210,7 +232,10 @@ export function preloadImages(imageUris: string[]): Promise<void[]> {
           resolve();
         })
         .catch((error) => {
-          performanceMonitor.recordMetric('image_preload_error', 1, { uri, error });
+          performanceMonitor.recordMetric('image_preload_error', 1, {
+            uri,
+            error,
+          });
           reject(error);
         });
     });

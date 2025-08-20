@@ -45,7 +45,9 @@ describe('GroupCard', () => {
     render(<GroupCard group={mockGroup} />);
 
     expect(screen.getByText('Young Adults Bible Study')).toBeTruthy();
-    expect(screen.getByText('A weekly Bible study for young adults')).toBeTruthy();
+    expect(
+      screen.getByText('A weekly Bible study for young adults')
+    ).toBeTruthy();
     expect(screen.getByText('Wednesday at 7:00 PM')).toBeTruthy();
     expect(screen.getByText('12 members')).toBeTruthy();
   });

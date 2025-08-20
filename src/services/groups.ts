@@ -34,15 +34,28 @@ export class GroupService {
   ): Promise<GroupServiceResponse<GroupWithDetails[]>> {
     try {
       // Check permission to access church data
-      const permissionCheck = await permissionService.canAccessChurchData(churchId);
+      const permissionCheck =
+        await permissionService.canAccessChurchData(churchId);
       if (!permissionCheck.hasPermission) {
-        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to church data') };
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to church data'
+          ),
+        };
       }
 
       // Validate RLS compliance
-      const rlsCheck = await permissionService.validateRLSCompliance('groups', 'select', { church_id: [churchId] });
+      const rlsCheck = await permissionService.validateRLSCompliance(
+        'groups',
+        'select',
+        { church_id: [churchId] }
+      );
       if (!rlsCheck.hasPermission) {
-        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
+        return {
+          data: null,
+          error: new Error(rlsCheck.reason || 'RLS policy violation'),
+        };
       }
 
       const { data, error } = await supabase
@@ -109,7 +122,7 @@ export class GroupService {
             role,
             status,
             joined_at,
-            user:users(id, name, avatar_url, email)
+            user:users(id, name, avatar_url)
           )
         `
         )
@@ -152,8 +165,7 @@ export class GroupService {
           *,
           group:groups(
             *,
-            service:services(*),
-            
+            service:services(*)
           )
         `
         )
@@ -181,7 +193,8 @@ export class GroupService {
   }
 
   /**
-   * Join a group
+   * Join a group (deprecated - use joinRequestService.createJoinRequest instead)
+   * This method is kept for backward compatibility but now creates a join request
    */
   async joinGroup(
     groupId: string,
@@ -189,17 +202,8 @@ export class GroupService {
     role: 'member' | 'leader' = 'member'
   ): Promise<GroupServiceResponse<GroupMembership>> {
     try {
-      // Check permission to manage group membership
-      const permissionCheck = await permissionService.canManageGroupMembership(groupId, userId);
-      if (!permissionCheck.hasPermission) {
-        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to manage group membership') };
-      }
-
-      // Validate RLS compliance for group membership insertion
-      const rlsCheck = await permissionService.validateRLSCompliance('group_memberships', 'insert', { user_id: userId });
-      if (!rlsCheck.hasPermission) {
-        return { data: null, error: new Error(rlsCheck.reason || 'RLS policy violation') };
-      }
+      // For backward compatibility, this now creates a join request instead
+      // of immediate membership. The request will need to be approved by group leaders.
 
       // Check if user is already a member
       const { data: existingMembership } = await supabase
@@ -216,33 +220,24 @@ export class GroupService {
             error: new Error('User is already a member of this group'),
           };
         }
-
-        // Reactivate existing membership
-        const { data, error } = await supabase
-          .from('group_memberships')
-          .update({
-            status: 'active',
-            joined_at: new Date().toISOString(),
-          })
-          .eq('id', existingMembership.id)
-          .select()
-          .single();
-
-        if (error) {
-          return { data: null, error: new Error(error.message) };
+        if (existingMembership.status === 'pending') {
+          return {
+            data: null,
+            error: new Error(
+              'User already has a pending request for this group'
+            ),
+          };
         }
-
-        return { data, error: null };
       }
 
-      // Create new membership
+      // Create pending membership instead of active membership
       const { data, error } = await supabase
         .from('group_memberships')
         .insert({
           group_id: groupId,
           user_id: userId,
           role,
-          status: 'active',
+          status: 'pending',
           joined_at: new Date().toISOString(),
         })
         .select()
@@ -271,9 +266,17 @@ export class GroupService {
   ): Promise<GroupServiceResponse<boolean>> {
     try {
       // Check permission to manage group membership
-      const permissionCheck = await permissionService.canManageGroupMembership(groupId, userId);
+      const permissionCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        userId
+      );
       if (!permissionCheck.hasPermission) {
-        return { data: null, error: new Error(permissionCheck.reason || 'Access denied to manage group membership') };
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage group membership'
+          ),
+        };
       }
 
       const { error } = await supabase
@@ -349,7 +352,7 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url, email)
+          user:users(id, name, avatar_url)
         `
         )
         .eq('group_id', groupId)
@@ -368,6 +371,98 @@ export class GroupService {
           error instanceof Error
             ? error
             : new Error('Failed to get group members'),
+      };
+    }
+  }
+
+  /**
+   * Get user's friends who are in a specific group (active memberships)
+   */
+  async getFriendsInGroup(
+    groupId: string,
+    userId: string
+  ): Promise<GroupServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      // First get the user's friends
+      const { data: friendships, error: friendsError } = await supabase
+        .from('friendships')
+        .select('friend_id')
+        .eq('user_id', userId)
+        .eq('status', 'accepted');
+
+      if (friendsError) {
+        return { data: null, error: new Error(friendsError.message) };
+      }
+
+      const friendIds = (friendships || []).map((f) => f.friend_id);
+
+      if (friendIds.length === 0) {
+        return { data: [], error: null };
+      }
+
+      // Then get group memberships for those friends
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, name, avatar_url)
+        `
+        )
+        .eq('group_id', groupId)
+        .eq('status', 'active')
+        .in('user_id', friendIds)
+        .order('joined_at');
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      const memberships = (data || []).filter((m: any) => Boolean(m.user?.id));
+      return { data: memberships as any, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get friends in group'),
+      };
+    }
+  }
+
+  /**
+   * Get group leaders/admins only (publicly visible)
+   */
+  async getGroupLeaders(
+    groupId: string
+  ): Promise<GroupServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, name, avatar_url)
+        `
+        )
+        .eq('group_id', groupId)
+        .eq('status', 'active')
+        .in('role', ['leader', 'admin'])
+        .order('joined_at');
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get group leaders'),
       };
     }
   }

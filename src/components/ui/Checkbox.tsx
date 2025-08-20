@@ -49,7 +49,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({
           disabled && styles.disabled,
         ]}
       >
-        {checked && <View style={[styles.checkmark, styles[`${size}Checkmark`]]} />}
+        {checked && (
+          <View style={[styles.checkmark, styles[`${size}Checkmark`]]} />
+        )}
       </View>
       {label && (
         <Text

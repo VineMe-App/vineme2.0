@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Avatar } from '../ui/Avatar';
-import type { FriendshipWithUser } from '../../types/database';
+// import type { FriendshipWithUser } from '../../types/database';
 
 interface FriendRequestNotificationsProps {
-  requests?: FriendshipWithUser[];
+  requests?: any[];
   onPress?: () => void;
   maxDisplay?: number;
 }
@@ -42,11 +42,7 @@ export function FriendRequestNotifications({
 
           return (
             <View key={request.id} style={styles.requestItem}>
-              <Avatar
-                uri={sender.avatar_url}
-                name={sender.name}
-                size={32}
-              />
+              <Avatar uri={sender.avatar_url} name={sender.name} size={32} />
               <Text style={styles.requestText} numberOfLines={1}>
                 <Text style={styles.senderName}>{sender.name}</Text> wants to be
                 friends

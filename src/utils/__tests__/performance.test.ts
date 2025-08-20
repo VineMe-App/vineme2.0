@@ -27,17 +27,17 @@ describe('Performance Monitor', () => {
   describe('Timer functionality', () => {
     it('should start and end timers correctly', () => {
       const timerName = 'test_timer';
-      
+
       performanceMonitor.startTimer(timerName);
-      
+
       // Simulate some work
       const startTime = Date.now();
       while (Date.now() - startTime < 10) {
         // Wait 10ms
       }
-      
+
       const duration = performanceMonitor.endTimer(timerName);
-      
+
       expect(duration).toBeGreaterThan(0);
       expect(duration).toBeLessThan(100); // Should be less than 100ms
     });
@@ -65,7 +65,7 @@ describe('Performance Monitor', () => {
 
     it('should calculate average metrics', () => {
       const metricName = 'average_test';
-      
+
       performanceMonitor.recordMetric(metricName, 10);
       performanceMonitor.recordMetric(metricName, 20);
       performanceMonitor.recordMetric(metricName, 30);
@@ -91,7 +91,7 @@ describe('Performance Monitor', () => {
 
       const metrics = performanceMonitor.getMetrics();
       expect(metrics.length).toBe(3);
-      
+
       // Should keep the most recent metrics
       expect(metrics[0].value).toBe(2);
       expect(metrics[1].value).toBe(3);

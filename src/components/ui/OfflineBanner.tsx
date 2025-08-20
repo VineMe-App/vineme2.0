@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+} from 'react-native';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 
 export function OfflineBanner() {
@@ -77,13 +83,13 @@ export function OfflineBanner() {
   };
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
-        styles.banner, 
-        { 
+        styles.banner,
+        {
           backgroundColor: getBackgroundColor(),
-          transform: [{ translateY: slideAnim }] 
-        }
+          transform: [{ translateY: slideAnim }],
+        },
       ]}
     >
       <View style={styles.content}>

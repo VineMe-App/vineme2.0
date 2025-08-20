@@ -31,7 +31,7 @@ npm start
 # Test on iOS
 npm run test:ios
 
-# Test on Android  
+# Test on Android
 npm run test:android
 
 # Run unit tests
@@ -46,6 +46,7 @@ npm run test:coverage
 ### 🍎 iOS Testing
 
 #### Core Functionality
+
 - [ ] App launches successfully
 - [ ] Authentication flow works (sign-in/sign-up)
 - [ ] Onboarding flow completes
@@ -55,6 +56,7 @@ npm run test:coverage
 - [ ] Share functionality works with native share sheet
 
 #### UI/UX Testing
+
 - [ ] Safe area insets respected (notch/home indicator)
 - [ ] Tab bar styling matches iOS design guidelines
 - [ ] Loading animations smooth (60fps)
@@ -64,6 +66,7 @@ npm run test:coverage
 - [ ] Haptic feedback works (if implemented)
 
 #### iOS-Specific Features
+
 - [ ] Biometric authentication (Face ID/Touch ID)
 - [ ] Background app refresh
 - [ ] Spotlight search integration
@@ -75,6 +78,7 @@ npm run test:coverage
 ### 🤖 Android Testing
 
 #### Core Functionality
+
 - [ ] App launches successfully
 - [ ] Authentication flow works (sign-in/sign-up)
 - [ ] Onboarding flow completes
@@ -84,6 +88,7 @@ npm run test:coverage
 - [ ] Share functionality works with Android share sheet
 
 #### UI/UX Testing
+
 - [ ] Status bar styling appropriate
 - [ ] Navigation bar handling (gesture/button navigation)
 - [ ] Loading animations smooth
@@ -93,6 +98,7 @@ npm run test:coverage
 - [ ] Hardware back button handling
 
 #### Android-Specific Features
+
 - [ ] Biometric authentication (fingerprint/face unlock)
 - [ ] Background processing restrictions
 - [ ] App shortcuts
@@ -104,29 +110,27 @@ npm run test:coverage
 ### 📱 Device-Specific Testing
 
 #### Screen Sizes
+
 - [ ] **Small phones** (iPhone SE, small Android phones)
   - Text remains readable
   - Touch targets are adequate (44pt minimum)
   - Content doesn't overflow
-  
 - [ ] **Standard phones** (iPhone 14, Pixel 7)
   - Optimal layout and spacing
   - All features accessible
-  
 - [ ] **Large phones** (iPhone 14 Pro Max, large Android phones)
   - Content scales appropriately
   - No excessive white space
-  
 - [ ] **Tablets** (iPad, Android tablets)
   - Layout adapts to larger screens
   - Navigation remains intuitive
 
 #### Performance Testing
+
 - [ ] **Low-end devices**
   - App remains responsive
   - Animations don't stutter
   - Memory usage reasonable
-  
 - [ ] **High-end devices**
   - Takes advantage of better hardware
   - Smooth 120Hz display support (if available)
@@ -134,12 +138,14 @@ npm run test:coverage
 ### 🌐 Network Testing
 
 #### Connection States
+
 - [ ] **Online**: All features work normally
 - [ ] **Offline**: Graceful degradation, offline banner shows
 - [ ] **Slow connection**: Loading states show, timeouts handled
 - [ ] **Connection loss**: Proper error handling and retry mechanisms
 
 #### Data Usage
+
 - [ ] Images load efficiently
 - [ ] Caching works properly
 - [ ] Background sync respects user preferences
@@ -147,12 +153,14 @@ npm run test:coverage
 ### 🔒 Security Testing
 
 #### Authentication
+
 - [ ] Secure token storage
 - [ ] Proper session management
 - [ ] Biometric authentication secure
 - [ ] Deep link security (no sensitive data in URLs)
 
 #### Data Protection
+
 - [ ] User data encrypted at rest
 - [ ] Secure communication (HTTPS)
 - [ ] Proper permission handling
@@ -161,6 +169,7 @@ npm run test:coverage
 ### 🎯 Feature-Specific Testing
 
 #### Groups Feature
+
 - [ ] Browse groups loads correctly
 - [ ] Group details display properly
 - [ ] Join/leave functionality works
@@ -168,6 +177,7 @@ npm run test:coverage
 - [ ] Share group functionality works
 
 #### Events Feature
+
 - [ ] Events list loads correctly
 - [ ] Event details display properly
 - [ ] Registration/cancellation works
@@ -175,6 +185,7 @@ npm run test:coverage
 - [ ] Share event functionality works
 
 #### Profile Feature
+
 - [ ] Profile displays correctly
 - [ ] Edit profile works
 - [ ] Avatar upload works
@@ -182,6 +193,7 @@ npm run test:coverage
 - [ ] Settings save properly
 
 #### Social Features
+
 - [ ] Friend requests send/receive
 - [ ] Friend list displays
 - [ ] Notifications work properly
@@ -190,6 +202,7 @@ npm run test:coverage
 ## Automated Testing
 
 ### Unit Tests
+
 ```bash
 # Run all unit tests
 npm run test:unit
@@ -199,12 +212,14 @@ npm run test:coverage
 ```
 
 ### Integration Tests
+
 ```bash
 # Run integration tests
 npm run test:integration
 ```
 
 ### End-to-End Tests
+
 ```bash
 # Run E2E tests
 npm run test:e2e
@@ -213,6 +228,7 @@ npm run test:e2e
 ## Performance Benchmarks
 
 ### Target Metrics
+
 - **App Launch Time**: < 3 seconds
 - **Screen Transitions**: < 300ms
 - **API Response Handling**: < 1 second for cached data
@@ -220,6 +236,7 @@ npm run test:e2e
 - **Battery Usage**: Minimal background usage
 
 ### Monitoring Tools
+
 - React DevTools Profiler
 - Flipper (for debugging)
 - Expo Development Tools
@@ -235,9 +252,9 @@ When reporting platform-specific issues, include:
 **OS Version**: [OS version]
 **App Version**: [App version]
 **Steps to Reproduce**:
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 **Expected Behavior**:
 [What should happen]
@@ -257,6 +274,7 @@ When reporting platform-specific issues, include:
 Before releasing to production:
 
 ### Pre-Release Testing
+
 - [ ] All automated tests pass
 - [ ] Manual testing completed on both platforms
 - [ ] Performance benchmarks met
@@ -264,12 +282,14 @@ Before releasing to production:
 - [ ] Accessibility testing completed
 
 ### Platform-Specific Preparation
+
 - [ ] **iOS**: App Store Connect metadata updated
 - [ ] **Android**: Google Play Console metadata updated
 - [ ] Screenshots updated for both platforms
 - [ ] Release notes prepared
 
 ### Post-Release Monitoring
+
 - [ ] Crash reporting configured
 - [ ] Performance monitoring active
 - [ ] User feedback channels monitored
@@ -278,16 +298,19 @@ Before releasing to production:
 ## Troubleshooting Common Issues
 
 ### iOS Issues
+
 - **Build failures**: Check Xcode version compatibility
 - **Simulator issues**: Reset simulator, clear derived data
 - **Code signing**: Verify certificates and provisioning profiles
 
 ### Android Issues
+
 - **Build failures**: Check Android SDK versions
 - **Emulator issues**: Wipe emulator data, restart ADB
 - **Gradle issues**: Clean build, check Java version
 
 ### Cross-Platform Issues
+
 - **Metro bundler**: Clear cache with `--clear-cache`
 - **Node modules**: Delete and reinstall
 - **Expo issues**: Check Expo CLI version, update if needed

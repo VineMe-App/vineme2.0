@@ -7,7 +7,9 @@ import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 
 import NameStep from './NameStep';
+import EmailStep from './EmailStep';
 import ChurchStep from './ChurchStep';
+import GroupStatusStep from './GroupStatusStep';
 import InterestsStep from './InterestsStep';
 import MeetingNightStep from './MeetingNightStep';
 
@@ -18,9 +20,19 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     component: NameStep,
   },
   {
+    id: 'email',
+    title: 'Your Email',
+    component: EmailStep,
+  },
+  {
     id: 'church',
     title: 'Select Church',
     component: ChurchStep,
+  },
+  {
+    id: 'group-status',
+    title: 'Group Status',
+    component: GroupStatusStep,
   },
   {
     id: 'interests',
@@ -42,6 +54,7 @@ export default function OnboardingFlow() {
     service_id: undefined,
     interests: [],
     preferred_meeting_night: '',
+    group_status: undefined,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +99,11 @@ export default function OnboardingFlow() {
     // Save data to local storage
     await saveOnboardingData(updatedData);
 
+    if (__DEV__) {
+      const step = ONBOARDING_STEPS[currentStepIndex]?.id;
+      console.log('[Onboarding] Next pressed:', step, updatedData);
+    }
+
     // If this is the last step, complete onboarding
     if (currentStepIndex === ONBOARDING_STEPS.length - 1) {
       await completeOnboarding(updatedData);
@@ -111,14 +129,21 @@ export default function OnboardingFlow() {
     setError(null);
 
     try {
-      // Create user profile in database
+      if (__DEV__)
+        console.log('[Onboarding] Creating user profile...', {
+          hasUser: !!user,
+        });
+      // Create user profile in database AFTER we have an email (EmailStep links auth.user)
       const success = await createUserProfile({
         name: data.name,
         church_id: data.church_id,
         service_id: data.service_id,
+        newcomer: false,
       });
 
       if (!success) {
+        if (__DEV__)
+          console.log('[Onboarding] createUserProfile returned false');
         setError('Failed to create user profile. Please try again.');
         setIsLoading(false);
         return;
@@ -131,6 +156,7 @@ export default function OnboardingFlow() {
       await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
 
       // Navigate to main app
+      if (__DEV__) console.log('[Onboarding] Completed. Navigating to /(tabs)');
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Error completing onboarding:', error);

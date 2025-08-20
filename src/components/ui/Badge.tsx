@@ -4,11 +4,20 @@ import { Theme } from '../../utils/theme';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error';
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'warning'
+    | 'error';
   size?: 'small' | 'medium' | 'large';
   style?: ViewStyle;
   textStyle?: TextStyle;
   testID?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityRole?: string;
 }
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -18,16 +27,38 @@ export const Badge: React.FC<BadgeProps> = ({
   style,
   textStyle,
   testID,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityRole = 'text',
 }) => {
+  const getVariantDescription = () => {
+    switch (variant) {
+      case 'success':
+        return 'positive status';
+      case 'warning':
+        return 'warning status';
+      case 'error':
+        return 'error status';
+      case 'primary':
+        return 'primary status';
+      case 'secondary':
+        return 'secondary status';
+      default:
+        return 'status';
+    }
+  };
+
+  const defaultAccessibilityLabel =
+    accessibilityLabel || `${children} ${getVariantDescription()}`;
+
   return (
     <View
-      style={[
-        styles.badge,
-        styles[variant],
-        styles[size],
-        style,
-      ]}
+      style={[styles.badge, styles[variant], styles[size], style]}
       testID={testID}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={defaultAccessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessible={true}
     >
       <Text
         style={[
@@ -36,6 +67,8 @@ export const Badge: React.FC<BadgeProps> = ({
           styles[`${size}Text`],
           textStyle,
         ]}
+        accessibilityElementsHidden={true}
+        importantForAccessibility="no-hide-descendants"
       >
         {children}
       </Text>

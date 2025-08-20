@@ -10,16 +10,18 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
-          backgroundColor: Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.95)' : '#fff',
+          backgroundColor:
+            Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.95)' : '#fff',
           borderTopWidth: 1,
           borderTopColor: '#E5E5EA',
           paddingBottom: Platform.OS === 'ios' ? 20 : 5,
           height: Platform.OS === 'ios' ? 85 : 60,
-          position: 'absolute',
-          ...(Platform.OS === 'ios' && {
-            backdropFilter: 'blur(20px)',
-          }),
+          justifyContent: 'space-around',
         },
+        tabBarBackground: () =>
+          Platform.OS === 'ios' ? (
+            <BlurView intensity={20} tint="light" style={{ flex: 1 }} />
+          ) : null,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
@@ -63,10 +65,13 @@ export default function TabLayout() {
         options={{
           title: 'Events',
           tabBarLabel: 'Events',
-          headerTitle: 'Church Events',
+          headerTitle: 'Events - Coming Soon!',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           ),
+          tabBarBadge: 'Beta',
+          // Hide from the tab bar to avoid spacing gaps
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -78,6 +83,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
+        }}
+      />
+      {/* Remove security from the tab bar by disabling direct href */}
+      <Tabs.Screen
+        name="profile/security"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

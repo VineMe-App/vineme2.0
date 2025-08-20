@@ -21,43 +21,43 @@ The component library is built on a foundation of design tokens that ensure cons
 import { Theme } from '../../utils/theme';
 
 // Primary colors
-Theme.colors.primary      // #007AFF
-Theme.colors.secondary    // #5856D6
+Theme.colors.primary; // #007AFF
+Theme.colors.secondary; // #5856D6
 
 // Semantic colors
-Theme.colors.success      // #34C759
-Theme.colors.warning      // #FF9500
-Theme.colors.error        // #FF3B30
+Theme.colors.success; // #34C759
+Theme.colors.warning; // #FF9500
+Theme.colors.error; // #FF3B30
 
 // Text colors
-Theme.colors.textPrimary    // #111827
-Theme.colors.textSecondary  // #6B7280
-Theme.colors.textTertiary   // #9CA3AF
+Theme.colors.textPrimary; // #111827
+Theme.colors.textSecondary; // #6B7280
+Theme.colors.textTertiary; // #9CA3AF
 ```
 
 ### Typography
 
 ```typescript
 // Font sizes
-Theme.typography.fontSize.xs    // 12
-Theme.typography.fontSize.sm    // 14
-Theme.typography.fontSize.base  // 16
-Theme.typography.fontSize.lg    // 18
+Theme.typography.fontSize.xs; // 12
+Theme.typography.fontSize.sm; // 14
+Theme.typography.fontSize.base; // 16
+Theme.typography.fontSize.lg; // 18
 
 // Font weights
-Theme.typography.fontWeight.normal   // '400'
-Theme.typography.fontWeight.medium   // '500'
-Theme.typography.fontWeight.semiBold // '600'
-Theme.typography.fontWeight.bold     // '700'
+Theme.typography.fontWeight.normal; // '400'
+Theme.typography.fontWeight.medium; // '500'
+Theme.typography.fontWeight.semiBold; // '600'
+Theme.typography.fontWeight.bold; // '700'
 ```
 
 ### Spacing
 
 ```typescript
-Theme.spacing.xs    // 4
-Theme.spacing.sm    // 8
-Theme.spacing.base  // 16
-Theme.spacing.xl    // 24
+Theme.spacing.xs; // 4
+Theme.spacing.sm; // 8
+Theme.spacing.base; // 16
+Theme.spacing.xl; // 24
 ```
 
 ## Components
@@ -97,16 +97,16 @@ A flexible input component with validation support.
 import { Input } from '../components/ui';
 
 // Basic usage
-<Input 
-  label="Email" 
+<Input
+  label="Email"
   placeholder="Enter your email"
   value={email}
   onChangeText={setEmail}
 />
 
 // With validation
-<Input 
-  label="Password" 
+<Input
+  label="Password"
   placeholder="Enter password"
   value={password}
   onChangeText={setPassword}
@@ -156,9 +156,9 @@ import { Form, FormField, Input, Button } from '../components/ui';
 
 const formConfig = {
   email: {
-    rules: { 
-      required: true, 
-      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ 
+    rules: {
+      required: true,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
     initialValue: '',
   },
@@ -182,7 +182,7 @@ const formConfig = {
       />
     )}
   </FormField>
-  
+
   <FormField name="password">
     {({ value, error, onChange, onBlur }) => (
       <Input
@@ -196,9 +196,9 @@ const formConfig = {
       />
     )}
   </FormField>
-  
+
   <Button title="Submit" onPress={() => {}} />
-</Form>
+</Form>;
 ```
 
 ### Select
@@ -220,7 +220,7 @@ const options = [
   value={selectedValue}
   onSelect={(option) => setSelectedValue(option.value)}
   placeholder="Select an option"
-/>
+/>;
 ```
 
 ### Checkbox
@@ -234,7 +234,7 @@ import { Checkbox } from '../components/ui';
   checked={isChecked}
   onPress={() => setIsChecked(!isChecked)}
   label="I agree to the terms and conditions"
-/>
+/>;
 ```
 
 ### Badge
@@ -265,7 +265,7 @@ import { Modal, Button } from '../components/ui';
 >
   <Text>Are you sure you want to continue?</Text>
   <Button title="Confirm" onPress={handleConfirm} />
-</Modal>
+</Modal>;
 ```
 
 ### Loading States
@@ -305,7 +305,7 @@ const rules = {
   minLength: 3,
   maxLength: 50,
   pattern: /^[a-zA-Z\s]+$/,
-  custom: (value) => value === 'admin' ? 'Username not allowed' : undefined
+  custom: (value) => (value === 'admin' ? 'Username not allowed' : undefined),
 };
 ```
 

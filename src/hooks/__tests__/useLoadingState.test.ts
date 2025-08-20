@@ -120,7 +120,10 @@ describe('useLoadingState', () => {
     const mockOperation = jest.fn().mockResolvedValue('success');
 
     await act(async () => {
-      const response = await result.current.withLoading('testOp', mockOperation);
+      const response = await result.current.withLoading(
+        'testOp',
+        mockOperation
+      );
       expect(response).toBe('success');
     });
 

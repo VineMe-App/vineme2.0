@@ -9,16 +9,21 @@ interface ErrorMessageProps {
   style?: any;
 }
 
-export function ErrorMessage({ error, onRetry, showRetry = true, style }: ErrorMessageProps) {
+export function ErrorMessage({
+  error,
+  onRetry,
+  showRetry = true,
+  style,
+}: ErrorMessageProps) {
   const getMessage = () => {
     if (typeof error === 'string') {
       return error;
     }
-    
+
     if ('type' in error) {
       return getErrorMessage(error);
     }
-    
+
     return error.message || 'An unexpected error occurred';
   };
 
@@ -26,11 +31,11 @@ export function ErrorMessage({ error, onRetry, showRetry = true, style }: ErrorM
     if (typeof error === 'string') {
       return true;
     }
-    
+
     if ('retryable' in error) {
       return error.retryable;
     }
-    
+
     return true;
   };
 

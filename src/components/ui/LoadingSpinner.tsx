@@ -1,5 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet, Animated } from 'react-native';
+import {
+  View,
+  ActivityIndicator,
+  Text,
+  StyleSheet,
+  Animated,
+} from 'react-native';
 import { Theme } from '../../utils/theme';
 import { fadeIn, pulse } from '../../utils/animations';
 
@@ -12,13 +18,13 @@ interface LoadingSpinnerProps {
   animated?: boolean;
 }
 
-export function LoadingSpinner({ 
-  size = 'large', 
-  color = Theme.colors.primary, 
+export function LoadingSpinner({
+  size = 'large',
+  color = Theme.colors.primary,
   message,
   overlay = false,
   testID,
-  animated = true
+  animated = true,
 }: LoadingSpinnerProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -27,7 +33,7 @@ export function LoadingSpinner({
     if (animated) {
       // Fade in animation
       fadeIn(fadeAnim, 300).start();
-      
+
       // Pulse animation for the container
       pulse(pulseAnim, 0.98, 1.02, 2000).start();
     } else {
@@ -36,26 +42,29 @@ export function LoadingSpinner({
     }
   }, [fadeAnim, pulseAnim, animated]);
 
-  const containerStyle = overlay ? [styles.container, styles.overlay] : styles.container;
+  const containerStyle = overlay
+    ? [styles.container, styles.overlay]
+    : styles.container;
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         containerStyle,
         animated && {
           opacity: fadeAnim,
           transform: [{ scale: pulseAnim }],
-        }
-      ]} 
+        },
+      ]}
       testID={testID}
     >
-      <ActivityIndicator size={size} color={color} />
+      <ActivityIndicator
+        size={size}
+        color={color}
+        style={size === 'large' ? styles.indicatorLarge : styles.indicatorSmall}
+      />
       {message && (
-        <Animated.Text 
-          style={[
-            styles.message,
-            animated && { opacity: fadeAnim }
-          ]}
+        <Animated.Text
+          style={[styles.message, animated && { opacity: fadeAnim }]}
         >
           {message}
         </Animated.Text>
@@ -69,6 +78,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: Theme.spacing.lg,
+  },
+  indicatorSmall: {
+    width: 20,
+    height: 20,
+  },
+  indicatorLarge: {
+    width: 36,
+    height: 36,
   },
   overlay: {
     position: 'absolute',

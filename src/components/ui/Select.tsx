@@ -10,6 +10,7 @@ import {
   TextStyle,
 } from 'react-native';
 import { Theme } from '../../utils/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export interface SelectOption {
   label: string;
@@ -47,15 +48,15 @@ export const Select: React.FC<SelectProps> = ({
     multiple ? (Array.isArray(value) ? value : []) : []
   );
 
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = options.find((option) => option.value === value);
   const displayText = selectedOption?.label || placeholder;
 
   const handleSelect = (option: SelectOption) => {
     if (multiple) {
       const newValues = selectedValues.includes(option.value)
-        ? selectedValues.filter(v => v !== option.value)
+        ? selectedValues.filter((v) => v !== option.value)
         : [...selectedValues, option.value];
-      
+
       setSelectedValues(newValues);
       onSelect({ ...option, value: newValues });
     } else {
@@ -69,8 +70,10 @@ export const Select: React.FC<SelectProps> = ({
       style={[
         styles.option,
         item.disabled && styles.optionDisabled,
-        (multiple && selectedValues.includes(item.value)) && styles.optionSelected,
-        (!multiple && item.value === value) && styles.optionSelected,
+        multiple &&
+          selectedValues.includes(item.value) &&
+          styles.optionSelected,
+        !multiple && item.value === value && styles.optionSelected,
       ]}
       onPress={() => handleSelect(item)}
       disabled={item.disabled}
@@ -79,8 +82,10 @@ export const Select: React.FC<SelectProps> = ({
         style={[
           styles.optionText,
           item.disabled && styles.optionTextDisabled,
-          (multiple && selectedValues.includes(item.value)) && styles.optionTextSelected,
-          (!multiple && item.value === value) && styles.optionTextSelected,
+          multiple &&
+            selectedValues.includes(item.value) &&
+            styles.optionTextSelected,
+          !multiple && item.value === value && styles.optionTextSelected,
         ]}
       >
         {item.label}
@@ -91,7 +96,7 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      
+
       <TouchableOpacity
         style={[
           styles.selector,
@@ -113,7 +118,11 @@ export const Select: React.FC<SelectProps> = ({
         >
           {displayText}
         </Text>
-        <Text style={styles.arrow}>▼</Text>
+        <Ionicons
+          name="chevron-down-outline"
+          size={16}
+          color={Theme.colors.textSecondary}
+        />
       </TouchableOpacity>
 
       {error && <Text style={styles.errorText}>{error}</Text>}

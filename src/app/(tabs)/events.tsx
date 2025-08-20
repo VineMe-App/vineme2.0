@@ -1,109 +1,73 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
-import { router } from 'expo-router';
-import { useEventsByChurch, useUserTicket } from '../../hooks/useEvents';
-import { useAuth } from '../../hooks/useAuth';
-import { EventCard } from '../../components/events';
-import type { EventWithDetails } from '../../types/database';
-
-interface EventListItemProps {
-  event: EventWithDetails;
-  userId?: string;
-}
-
-function EventListItem({ event, userId }: EventListItemProps) {
-  const { data: ticketStatus } = useUserTicket(event.id, userId || '');
-
-  const handlePress = () => {
-    router.push(`/event/${event.id}`);
-  };
-
-  return (
-    <EventCard
-      event={event}
-      onPress={handlePress}
-      showTicketStatus={!!userId}
-      hasTicket={ticketStatus?.hasTicket || false}
-    />
-  );
-}
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ComingSoonBanner } from '../../components/ui/ComingSoonBanner';
 
 export default function EventsScreen() {
-  const { user, userProfile } = useAuth();
-  const {
-    data: events,
-    isLoading,
-    error,
-  } = useEventsByChurch(userProfile?.church_id || '');
-
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading events...</Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Failed to load events</Text>
-          <Text style={styles.errorSubtext}>{error.message}</Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (!userProfile?.church_id) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>No Church Selected</Text>
-          <Text style={styles.errorSubtext}>
-            Please complete your profile setup to view church events
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Church Events</Text>
-        <Text style={styles.subtitle}>
-          Stay updated with upcoming church events and activities
-        </Text>
-      </View>
+      <View style={styles.content}>
+        {/* Main Coming Soon Banner */}
+        <ComingSoonBanner
+          title="Events Coming Soon!"
+          message="We're working hard to bring you an amazing events experience. Stay tuned for updates!"
+        />
 
-      {!events || events.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No upcoming events</Text>
-          <Text style={styles.emptySubtext}>
-            Check back later for new events from your church
+        {/* Feature Preview */}
+        <View style={styles.previewSection}>
+          <Text style={styles.previewTitle}>What's Coming</Text>
+
+          <View style={styles.featureItem}>
+            <Ionicons name="calendar" size={24} color="#007AFF" />
+            <View style={styles.featureText}>
+              <Text style={styles.featureTitle}>Church Events</Text>
+              <Text style={styles.featureDescription}>
+                View and register for upcoming church events and activities
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.featureItem}>
+            <Ionicons name="ticket" size={24} color="#007AFF" />
+            <View style={styles.featureText}>
+              <Text style={styles.featureTitle}>Event Registration</Text>
+              <Text style={styles.featureDescription}>
+                Easy registration and ticket management for church events
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.featureItem}>
+            <Ionicons name="notifications" size={24} color="#007AFF" />
+            <View style={styles.featureText}>
+              <Text style={styles.featureTitle}>Event Reminders</Text>
+              <Text style={styles.featureDescription}>
+                Get notified about upcoming events you're registered for
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.featureItem}>
+            <Ionicons name="people" size={24} color="#007AFF" />
+            <View style={styles.featureText}>
+              <Text style={styles.featureTitle}>Community Events</Text>
+              <Text style={styles.featureDescription}>
+                Connect with your church community through special events
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Focus Message */}
+        <View style={styles.focusSection}>
+          <Text style={styles.focusTitle}>In the Meantime</Text>
+          <Text style={styles.focusMessage}>
+            We're focusing on making the Groups experience amazing! Check out
+            the Groups tab to connect with Bible study groups and fellowship
+            opportunities in your church community.
           </Text>
         </View>
-      ) : (
-        <FlatList
-          data={events}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <EventListItem event={item} userId={user?.id} />
-          )}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      </View>
     </View>
   );
 }
@@ -111,70 +75,80 @@ export default function EventsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  previewSection: {
     backgroundColor: '#fff',
-  },
-  header: {
-    padding: 24,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  listContainer: {
-    paddingTop: 8,
-    paddingBottom: 24,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
+    borderRadius: 12,
+    padding: 20,
     marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  previewTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 16,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  featureText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  featureDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  focusSection: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  focusTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 12,
+  },
+  focusMessage: {
     fontSize: 16,
     color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  errorSubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    lineHeight: 24,
   },
 });

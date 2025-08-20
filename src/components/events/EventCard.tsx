@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Linking,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { EventWithDetails } from '../../types/database';
 import { formatDateTime, isToday } from '../../utils/helpers';
 import { OptimizedImage } from '../ui/OptimizedImage';
@@ -117,8 +118,8 @@ export const EventCard: React.FC<EventCardProps> = ({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.content}>
         {event.image_url && (
-          <OptimizedImage 
-            source={{ uri: event.image_url }} 
+          <OptimizedImage
+            source={{ uri: event.image_url }}
             style={styles.image}
             quality="medium"
             lazy={true}
@@ -148,7 +149,20 @@ export const EventCard: React.FC<EventCardProps> = ({
               )}
               {showTicketStatus && hasTicket && (
                 <View style={styles.ticketBadge}>
-                  <Text style={styles.ticketText}>✓ Registered</Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={14}
+                      color="#2e7d32"
+                    />
+                    <Text style={styles.ticketText}>Registered</Text>
+                  </View>
                 </View>
               )}
             </View>
@@ -159,34 +173,50 @@ export const EventCard: React.FC<EventCardProps> = ({
           </Text>
 
           <View style={styles.details}>
-            <Text style={styles.eventDate}>
-              📅 {formatEventDate(event.start_date)}
-            </Text>
+            <View style={styles.metaRow}>
+              <Ionicons name="calendar-outline" size={14} color="#6b7280" />
+              <Text style={styles.eventMeta}>
+                {formatEventDate(event.start_date)}
+              </Text>
+            </View>
 
             {formatEventDuration() && (
-              <Text style={styles.eventDuration}>
-                ⏰ {formatEventDuration()}
-              </Text>
+              <View style={styles.metaRow}>
+                <Ionicons name="time-outline" size={14} color="#6b7280" />
+                <Text style={styles.eventMeta}>{formatEventDuration()}</Text>
+              </View>
             )}
 
-            <Text style={styles.eventLocation}>
-              📍 {getLocationText(event.location)}
-            </Text>
+            <View style={styles.metaRow}>
+              <Ionicons name="location-outline" size={14} color="#6b7280" />
+              <Text style={styles.eventMeta}>
+                {getLocationText(event.location)}
+              </Text>
+            </View>
 
             {event.host && (
-              <Text style={styles.eventHost}>
-                👤 Hosted by {event.host.name}
-              </Text>
+              <View style={styles.metaRow}>
+                <Ionicons name="person-outline" size={14} color="#6b7280" />
+                <Text style={styles.eventMeta}>
+                  Hosted by {event.host.name}
+                </Text>
+              </View>
             )}
 
             {event.price && (
-              <Text style={styles.eventPrice}>💰 ${event.price}</Text>
+              <View style={styles.metaRow}>
+                <Ionicons name="cash-outline" size={14} color="#16a34a" />
+                <Text style={styles.eventMeta}>${event.price}</Text>
+              </View>
             )}
 
             {event.recurrence_pattern && (
-              <Text style={styles.recurrenceText}>
-                🔄 {getRecurrenceText(event.recurrence_pattern)}
-              </Text>
+              <View style={styles.metaRow}>
+                <Ionicons name="sync-outline" size={14} color="#6b7280" />
+                <Text style={styles.eventMeta}>
+                  {getRecurrenceText(event.recurrence_pattern)}
+                </Text>
+              </View>
             )}
           </View>
 
@@ -196,14 +226,20 @@ export const EventCard: React.FC<EventCardProps> = ({
                 style={styles.whatsappButton}
                 onPress={handleWhatsAppPress}
               >
-                <Text style={styles.whatsappText}>💬 Join WhatsApp</Text>
+                <View style={styles.metaRow}>
+                  <Ionicons name="logo-whatsapp" size={16} color="#fff" />
+                  <Text style={styles.whatsappText}>Join WhatsApp</Text>
+                </View>
               </TouchableOpacity>
             )}
 
             {event.requires_ticket && event.ticket_count !== undefined && (
-              <Text style={styles.ticketCount}>
-                🎫 {event.ticket_count} registered
-              </Text>
+              <View style={styles.metaRow}>
+                <Ionicons name="ticket-outline" size={14} color="#6b7280" />
+                <Text style={styles.ticketCount}>
+                  {event.ticket_count} registered
+                </Text>
+              </View>
             )}
           </View>
         </View>
@@ -289,6 +325,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 4,
   },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  eventMeta: { fontSize: 14, color: '#666' },
   eventDate: {
     fontSize: 14,
     color: '#333',

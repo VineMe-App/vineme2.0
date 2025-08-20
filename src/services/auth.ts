@@ -10,81 +10,25 @@ export interface AuthResponse {
   error: Error | null;
 }
 
-export interface SignUpData {
+// Password authentication interfaces removed - phone-first authentication only
+
+export interface CreateReferredUserData {
   email: string;
-  password: string;
-  name?: string;
+  phone: string;
+  firstName?: string;
+  lastName?: string;
+  note?: string;
+  referrerId: string;
 }
 
-export interface SignInData {
-  email: string;
-  password: string;
+export interface CreateReferredUserResponse {
+  user: User | null;
+  userId?: string;
+  error: Error | null;
 }
 
 export class AuthService {
-  /**
-   * Sign in with email and password
-   */
-  async signIn({ email, password }: SignInData): Promise<AuthResponse> {
-    try {
-      const { data, error } = await retryWithBackoff(async () => {
-        const result = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (result.error) {
-          throw result.error;
-        }
-        
-        return result;
-      });
-
-      // Store authentication session securely
-      if (data.session) {
-        await secureStorage.storeAuthSession({
-          accessToken: data.session.access_token,
-          refreshToken: data.session.refresh_token,
-          expiresAt: data.session.expires_at,
-        });
-      }
-
-      return { user: data.user, error: null };
-    } catch (error) {
-      const appError = handleSupabaseError(error as Error);
-      return { user: null, error: new Error(appError.message) };
-    }
-  }
-
-  /**
-   * Sign up with email and password
-   */
-  async signUp({ email, password, name }: SignUpData): Promise<AuthResponse> {
-    try {
-      const { data, error } = await retryWithBackoff(async () => {
-        const result = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name: name || '',
-            },
-          },
-        });
-        
-        if (result.error) {
-          throw result.error;
-        }
-        
-        return result;
-      });
-
-      return { user: data.user, error: null };
-    } catch (error) {
-      const appError = handleSupabaseError(error as Error);
-      return { user: null, error: new Error(appError.message) };
-    }
-  }
+  // Password authentication removed - phone-first authentication only
 
   /**
    * Sign out the current user
@@ -142,16 +86,19 @@ export class AuthService {
 
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(
+          `
+          *,
+          church:churches(*),
+          service:services(*)
+        `
+        )
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error getting user profile:', error.message);
-        return null;
-      }
+      if (error) return null;
 
-      return data;
+      return data || null;
     } catch (error) {
       console.error('Error getting user profile:', error);
       return null;
@@ -195,6 +142,7 @@ export class AuthService {
     name: string;
     church_id?: string;
     service_id?: string;
+    newcomer?: boolean;
   }): Promise<{ error: Error | null }> {
     try {
       const user = await this.getCurrentUser();
@@ -205,11 +153,16 @@ export class AuthService {
       // Insert minimal required fields to avoid 400s from missing FKs or columns
       const payload: Record<string, any> = {
         id: user.id,
-        email: user.email || '',
         name: userData.name,
         roles: ['user'],
         updated_at: new Date().toISOString(),
       };
+      // Respect NOT NULL/UNIQUE constraints: only include email if present
+      if (user.email) {
+        payload.email = user.email;
+      }
+
+      // phone/email removed from public.users; use auth.user for credentials
 
       if (userData.church_id) {
         payload.church_id = userData.church_id;
@@ -217,9 +170,11 @@ export class AuthService {
       if (userData.service_id) {
         payload.service_id = userData.service_id;
       }
-      const { error } = await supabase
-        .from('users')
-        .upsert(payload, {
+      if (userData.newcomer !== undefined) {
+        payload.newcomer = userData.newcomer;
+      }
+      
+      const { error } = await supabase.from('users').upsert(payload, {
           onConflict: 'id',
           ignoreDuplicates: false,
         });
@@ -245,7 +200,10 @@ export class AuthService {
   /**
    * Check if current session is valid and refresh if needed
    */
-  async validateAndRefreshSession(): Promise<{ user: User | null; error: Error | null }> {
+  async validateAndRefreshSession(): Promise<{
+    user: User | null;
+    error: Error | null;
+  }> {
     try {
       const { data, error } = await supabase.auth.getSession();
       
@@ -269,9 +227,10 @@ export class AuthService {
       const now = Math.floor(Date.now() / 1000);
       const fiveMinutes = 5 * 60;
 
-      if (expiresAt && (expiresAt - now) < fiveMinutes) {
+      if (expiresAt && expiresAt - now < fiveMinutes) {
         // Refresh the session
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        const { data: refreshData, error: refreshError } =
+          await supabase.auth.refreshSession();
         
         if (refreshError) {
           await secureStorage.clearAuthSession();
@@ -294,10 +253,235 @@ export class AuthService {
     } catch (error) {
       return {
         user: null,
-        error: error instanceof Error ? error : new Error('Session validation failed'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Session validation failed'),
       };
     }
   }
+
+  /**
+   * Create a referred user account with email verification
+   * This method is specifically for referral system use
+   */
+  async createReferredUser(
+    data: CreateReferredUserData
+  ): Promise<CreateReferredUserResponse> {
+    try {
+      // Validate input data
+      const validationError = this.validateReferredUserData(data);
+      if (validationError) {
+        return { user: null, error: new Error(validationError) };
+      }
+
+      // Generate a secure temporary password
+      const tempPassword = this.generateSecurePassword();
+
+      // Create auth user with email verification required
+      const { data: authData, error: authError } = await retryWithBackoff(
+        async () => {
+          const result = await supabase.auth.admin.createUser({
+            email: data.email,
+            password: tempPassword,
+            email_confirm: false, // Require email verification
+            user_metadata: {
+              name: this.buildFullName(data.firstName, data.lastName),
+              phone: data.phone,
+              referred: true,
+              referrer_id: data.referrerId,
+            },
+          });
+
+          if (result.error) {
+            throw result.error;
+          }
+
+          return result;
+        }
+      );
+
+      if (authError || !authData.user) {
+        const appError = handleSupabaseError((authError ?? new Error('Unknown auth error')) as Error);
+        return {
+          user: null,
+          error: new Error(
+            appError.message || 'Failed to create referred user account'
+          ),
+        };
+      }
+
+      // Create corresponding public user record with newcomer flag
+      const profileError = await this.createReferredUserProfile(
+        authData.user.id,
+        data
+      );
+
+      if (profileError) {
+        // Clean up auth user if profile creation fails
+        try {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user:', cleanupError);
+        }
+        return { user: null, error: profileError };
+      }
+
+      // Email verification is now handled by the referral service
+      // using the dedicated emailVerificationService
+
+      return {
+        user: authData.user,
+        userId: authData.user.id,
+        error: null,
+      };
+    } catch (error) {
+      const appError = handleSupabaseError(error as Error);
+      return {
+        user: null,
+        error: new Error(
+          appError.message || 'Failed to create referred user'
+        ),
+      };
+    }
+  }
+
+  /**
+   * Private helper: Validate referred user data
+   */
+  private validateReferredUserData(
+    data: CreateReferredUserData
+  ): string | null {
+    if (!data.email || !data.email.trim()) {
+      return 'Email is required';
+    }
+
+    if (!data.phone || !data.phone.trim()) {
+      return 'Phone number is required';
+    }
+
+    if (!data.referrerId || !data.referrerId.trim()) {
+      return 'Referrer ID is required';
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      return 'Invalid email format';
+    }
+
+    // Basic phone validation (allow various formats)
+    const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,}$/;
+    if (!phoneRegex.test(data.phone.replace(/\s/g, ''))) {
+      return 'Invalid phone number format';
+    }
+
+    return null;
+  }
+
+  /**
+   * Private helper: Build full name from first and last name
+   */
+  private buildFullName(firstName?: string, lastName?: string): string {
+    if (firstName && lastName) {
+      return `${firstName.trim()} ${lastName.trim()}`;
+    }
+    return firstName?.trim() || '';
+  }
+
+  /**
+   * Private helper: Generate secure temporary password
+   */
+  private generateSecurePassword(): string {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 16; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+
+  /**
+   * Private helper: Create user profile for referred user
+   */
+  private async createReferredUserProfile(
+    userId: string,
+    data: CreateReferredUserData
+  ): Promise<Error | null> {
+    try {
+      const userName = this.buildFullName(data.firstName, data.lastName);
+
+      const { error } = await supabase.from('users').insert({
+        id: userId,
+        email: data.email,
+        name: userName,
+        phone: data.phone,
+        newcomer: true, // Mark as newcomer for appropriate onboarding
+        roles: ['user'],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) {
+        return new Error(`Failed to create user profile: ${error.message}`);
+      }
+
+      return null;
+    } catch (error) {
+      return error instanceof Error
+        ? error
+        : new Error('Failed to create user profile');
+    }
+  }
+
+  /**
+   * Private helper: Trigger email verification for referred user
+   * Requirement 5.1: Send verification email to referred person's email address
+   * Requirement 5.2: Include "verify email" link for account activation
+   */
+  private async triggerReferredUserEmailVerification(
+    email: string
+  ): Promise<void> {
+    try {
+      // Use Supabase auth to send verification email with custom redirect URL
+      const redirectUrl = this.buildEmailVerificationRedirectUrl();
+      
+      const result = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
+      });
+
+      if (result?.error) {
+        console.error('Failed to send verification email:', result.error);
+        // Don't throw here as the user account was created successfully
+        // The verification email failure shouldn't block the referral
+        throw new Error(`Email verification failed: ${result.error.message}`);
+      }
+
+      console.log(`Verification email sent successfully to ${email}`);
+    } catch (error) {
+      console.error('Error triggering email verification:', error);
+      // Re-throw to allow proper error handling in calling code
+      throw error instanceof Error 
+        ? error 
+        : new Error('Failed to send verification email');
+    }
+  }
+
+  /**
+   * Build the redirect URL for email verification
+   * This URL will be used when users click the verification link in their email
+   */
+  private buildEmailVerificationRedirectUrl(): string {
+    // Use the app's deep link scheme for mobile app verification
+    return 'vineme://auth/verify-email';
+  }
+
+  // Email verification methods removed - phone-only verification
 
   /**
    * Listen to authentication state changes
@@ -326,6 +510,244 @@ export class AuthService {
       
       callback(session?.user || null);
     });
+  }
+
+  /**
+   * Sign up with phone number (preferred method)
+   */
+  async signUpWithPhone(
+    rawPhone: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const phone = this.normalizePhone(rawPhone);
+      if (!phone) {
+        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({ 
+        phone,
+        options: { shouldCreateUser: true }
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send verification code',
+      };
+    }
+  }
+
+  /**
+   * Sign in with phone number
+   */
+  async signInWithPhone(
+    rawPhone: string
+  ): Promise<{ success: boolean; error?: string; userNotFound?: boolean }> {
+    try {
+      const phone = this.normalizePhone(rawPhone);
+      if (!phone) {
+        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({ 
+        phone,
+        options: { shouldCreateUser: false }
+      });
+
+      if (error) {
+        // Check if user not found
+        if (error.message.toLowerCase().includes('user not found') || 
+            error.message.toLowerCase().includes('invalid login credentials')) {
+          return { 
+            success: false, 
+            error: "This phone isn't linked yet. Please log in with your email, then link your phone in Profile → Security.",
+            userNotFound: true
+          };
+        }
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send verification code',
+      };
+    }
+  }
+
+  /**
+   * Sign in with email (fallback method) - sends magic link
+   */
+  async signInWithEmail(
+    email: string
+  ): Promise<{ success: boolean; error?: string; userNotFound?: boolean }> {
+    try {
+      // Allow email login via magic link (no email signups)
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: 'vineme://auth/verify-email',
+        },
+      });
+
+      if (error) {
+        const msg = error.message.toLowerCase();
+        // Check if user not found
+        if (msg.includes('user not found') || msg.includes('invalid login credentials')) {
+          return { 
+            success: false, 
+            error: "This email isn't linked yet. Please sign up with your phone first.",
+            userNotFound: true
+          };
+        }
+        // Some projects configure supabase to block email sign-in entirely; surface a better message
+        if (msg.includes('signups not allowed') || msg.includes('disabled') || msg.includes('not allowed')) {
+          return { success: false, error: 'Email login is currently disabled by server policy.' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send magic link',
+      };
+    }
+  }
+
+  /**
+   * Verify OTP code for SMS or email
+   */
+  async verifyOtp(
+    phoneOrEmail: string,
+    code: string,
+    type: 'sms' | 'email'
+  ): Promise<{ success: boolean; error?: string; user?: User }> {
+    try {
+      // Expect 4-digit code for SMS, 6-digit for email
+      const expectedLength = type === 'sms' ? 4 : 6;
+      if (!new RegExp(`^\\d{${expectedLength}}$`).test(code)) {
+        return { 
+          success: false, 
+          error: `Enter the ${expectedLength}-digit code` 
+        };
+      }
+
+      let verifyOptions;
+      if (type === 'sms') {
+        const normalizedPhone = this.normalizePhone(phoneOrEmail);
+        if (!normalizedPhone) {
+          return { success: false, error: 'Invalid phone number format' };
+        }
+        verifyOptions = {
+          phone: normalizedPhone,
+          token: code,
+          type: 'sms' as const
+        };
+      } else {
+        verifyOptions = {
+          email: phoneOrEmail,
+          token: code,
+          type: 'email' as const
+        };
+      }
+
+      const { data, error } = await supabase.auth.verifyOtp(verifyOptions);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (!data?.session?.user) {
+        return { success: false, error: 'Verification failed. Try again.' };
+      }
+
+      // Store session securely
+      if (data.session) {
+        await secureStorage.storeAuthSession({
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+          expiresAt: data.session.expires_at,
+        });
+      }
+
+      return { success: true, user: data.session.user };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to verify code',
+      };
+    }
+  }
+
+  /**
+   * Link email to existing phone-authenticated user (no verification required)
+   */
+  async linkEmail(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase.auth.updateUser({ email });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to link email',
+      };
+    }
+  }
+
+  /**
+   * Link phone to existing email-authenticated user
+   */
+  async linkPhone(rawPhone: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const phone = this.normalizePhone(rawPhone);
+      if (!phone) {
+        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+      }
+
+      const { error } = await supabase.auth.updateUser({ phone });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to link phone',
+      };
+    }
+  }
+
+  /**
+   * Normalize phone to E.164 format
+   */
+  private normalizePhone(input: string): string | null {
+    if (!input) return null;
+    
+    // Remove all non-digit characters except +
+    const cleaned = input.replace(/[^\d+]/g, '');
+    
+    // Must start with + and have at least 10 digits
+    if (!cleaned.startsWith('+') || cleaned.length < 11) {
+      return null;
+    }
+    
+    return cleaned;
   }
 }
 

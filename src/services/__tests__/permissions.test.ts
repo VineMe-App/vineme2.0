@@ -39,7 +39,9 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
@@ -61,7 +63,9 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
@@ -92,7 +96,9 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
@@ -114,7 +120,9 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
@@ -137,12 +145,16 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
 
-      const result = await permissionService.hasPermission('manage_church_events');
+      const result = await permissionService.hasPermission(
+        'manage_church_events'
+      );
       expect(result.hasPermission).toBe(false);
       expect(result.reason).toContain('Insufficient permissions');
     });
@@ -163,7 +175,9 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
@@ -186,7 +200,9 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
@@ -211,12 +227,18 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
 
-      const result = await permissionService.validateRLSCompliance('users', 'select', { id: 'user-1' });
+      const result = await permissionService.validateRLSCompliance(
+        'users',
+        'select',
+        { id: 'user-1' }
+      );
       expect(result.hasPermission).toBe(true);
     });
 
@@ -233,12 +255,18 @@ describe('PermissionService', () => {
       (mockSupabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockUser, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockUser, error: null }),
           }),
         }),
       });
 
-      const result = await permissionService.validateRLSCompliance('users', 'select', { id: 'user-2' });
+      const result = await permissionService.validateRLSCompliance(
+        'users',
+        'select',
+        { id: 'user-2' }
+      );
       expect(result.hasPermission).toBe(false);
       expect(result.reason).toContain('RLS policy violation');
     });

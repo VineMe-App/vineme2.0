@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { permissionService, type UserRole, type Permission } from '../../services/permissions';
+import {
+  permissionService,
+  type UserRole,
+  type Permission,
+} from '../../services/permissions';
 
 interface RoleBasedRenderProps {
   children: React.ReactNode;
@@ -29,7 +33,7 @@ export const RoleBasedRender: React.FC<RoleBasedRenderProps> = ({
 
   const checkAccess = async () => {
     setIsLoading(true);
-    
+
     try {
       let roleAccess = true;
       let permissionAccess = true;
@@ -39,7 +43,7 @@ export const RoleBasedRender: React.FC<RoleBasedRenderProps> = ({
         if (requireAll) {
           // User must have ALL required roles
           const roleChecks = await Promise.all(
-            requiredRoles.map(role => permissionService.hasRole(role))
+            requiredRoles.map((role) => permissionService.hasRole(role))
           );
           roleAccess = roleChecks.every(Boolean);
         } else {
@@ -53,15 +57,23 @@ export const RoleBasedRender: React.FC<RoleBasedRenderProps> = ({
         if (requireAll) {
           // User must have ALL required permissions
           const permissionChecks = await Promise.all(
-            requiredPermissions.map(permission => permissionService.hasPermission(permission))
+            requiredPermissions.map((permission) =>
+              permissionService.hasPermission(permission)
+            )
           );
-          permissionAccess = permissionChecks.every(check => check.hasPermission);
+          permissionAccess = permissionChecks.every(
+            (check) => check.hasPermission
+          );
         } else {
           // User must have ANY of the required permissions
           const permissionChecks = await Promise.all(
-            requiredPermissions.map(permission => permissionService.hasPermission(permission))
+            requiredPermissions.map((permission) =>
+              permissionService.hasPermission(permission)
+            )
           );
-          permissionAccess = permissionChecks.some(check => check.hasPermission);
+          permissionAccess = permissionChecks.some(
+            (check) => check.hasPermission
+          );
         }
       }
 
@@ -111,11 +123,11 @@ interface SuperAdminOnlyProps {
 /**
  * Convenience component for superadmin-only content
  */
-export const SuperAdminOnly: React.FC<SuperAdminOnlyProps> = ({ children, fallback }) => (
-  <RoleBasedRender
-    requiredRoles={['superadmin']}
-    fallback={fallback}
-  >
+export const SuperAdminOnly: React.FC<SuperAdminOnlyProps> = ({
+  children,
+  fallback,
+}) => (
+  <RoleBasedRender requiredRoles={['superadmin']} fallback={fallback}>
     {children}
   </RoleBasedRender>
 );
@@ -128,7 +140,10 @@ interface ChurchMemberOnlyProps {
 /**
  * Convenience component for church member content (users with a church_id)
  */
-export const ChurchMemberOnly: React.FC<ChurchMemberOnlyProps> = ({ children, fallback }) => (
+export const ChurchMemberOnly: React.FC<ChurchMemberOnlyProps> = ({
+  children,
+  fallback,
+}) => (
   <RoleBasedRender
     requiredPermissions={['read_church_data']}
     fallback={fallback}
@@ -140,17 +155,140 @@ export const ChurchMemberOnly: React.FC<ChurchMemberOnlyProps> = ({ children, fa
 interface PermissionGateProps {
   children: React.ReactNode;
   permission: Permission;
+  resourceId?: string;
   fallback?: React.ReactNode;
 }
 
 /**
  * Convenience component for permission-based rendering
  */
-export const PermissionGate: React.FC<PermissionGateProps> = ({ children, permission, fallback }) => (
-  <RoleBasedRender
-    requiredPermissions={[permission]}
-    fallback={fallback}
-  >
-    {children}
-  </RoleBasedRender>
-);
+export const PermissionGate: React.FC<PermissionGateProps> = ({
+  children,
+  permission,
+  resourceId,
+  fallback,
+}) => {
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    checkPermission();
+  }, [permission, resourceId]);
+
+  const checkPermission = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await permissionService.hasPermission(
+        permission,
+        resourceId
+      );
+      setHasAccess(result.hasPermission);
+    } catch (error) {
+      console.error('Error checking permission:', error);
+      setHasAccess(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <View />;
+  }
+
+  if (!hasAccess) {
+    return fallback ? <>{fallback}</> : null;
+  }
+
+  return <>{children}</>;
+};
+
+interface GroupLeaderOnlyProps {
+  children: React.ReactNode;
+  groupId: string;
+  fallback?: React.ReactNode;
+}
+
+/**
+ * Convenience component for group leader-only content
+ */
+export const GroupLeaderOnly: React.FC<GroupLeaderOnlyProps> = ({
+  children,
+  groupId,
+  fallback,
+}) => {
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    checkGroupLeadership();
+  }, [groupId]);
+
+  const checkGroupLeadership = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await permissionService.isGroupLeader(groupId);
+      setHasAccess(result.hasPermission);
+    } catch (error) {
+      console.error('Error checking group leadership:', error);
+      setHasAccess(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <View />;
+  }
+
+  if (!hasAccess) {
+    return fallback ? <>{fallback}</> : null;
+  }
+
+  return <>{children}</>;
+};
+
+interface ChurchAdminOnlyProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}
+
+/**
+ * Convenience component for church admin-only content
+ */
+export const ChurchAdminOnly: React.FC<ChurchAdminOnlyProps> = ({
+  children,
+  fallback,
+}) => {
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    checkChurchAdmin();
+  }, []);
+
+  const checkChurchAdmin = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await permissionService.isChurchAdmin();
+      setHasAccess(result.hasPermission);
+    } catch (error) {
+      console.error('Error checking church admin:', error);
+      setHasAccess(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <View />;
+  }
+
+  if (!hasAccess) {
+    return fallback ? <>{fallback}</> : null;
+  }
+
+  return <>{children}</>;
+};

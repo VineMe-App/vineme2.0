@@ -1,4 +1,9 @@
-import { QueryClient, QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  focusManager,
+  onlineManager,
+} from '@tanstack/react-query';
 import { Platform, AppState } from 'react-native';
 import { ReactNode, lazy, Suspense, useEffect } from 'react';
 import { handleSupabaseError } from '../utils/errorHandling';
@@ -9,9 +14,9 @@ import { getPerformanceConfig } from '../config/performance';
 import NetInfo from '@react-native-community/netinfo';
 
 // Lazy load devtools only in development and on web
-const ReactQueryDevtools = 
+const ReactQueryDevtools =
   __DEV__ && Platform.OS === 'web'
-    ? lazy(() => 
+    ? lazy(() =>
         import('@tanstack/react-query-devtools').then((d) => ({
           default: d.ReactQueryDevtools,
         }))
@@ -20,7 +25,7 @@ const ReactQueryDevtools =
 
 const performanceConfig = getPerformanceConfig();
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // Optimized caching configuration from performance config
@@ -32,7 +37,7 @@ const queryClient = new QueryClient({
       refetchOnMount: true, // Refetch when component mounts if data is stale
       retry: (failureCount, error) => {
         const appError = handleSupabaseError(error as Error);
-        
+
         // Log errors for monitoring
         globalErrorHandler.logError(appError, {
           queryRetry: true,
@@ -44,12 +49,16 @@ const queryClient = new QueryClient({
           errorType: appError.type,
           errorMessage: appError.message,
         });
-        
+
         // Don't retry auth or validation errors
-        if (appError.type === 'auth' || appError.type === 'validation' || appError.type === 'permission') {
+        if (
+          appError.type === 'auth' ||
+          appError.type === 'validation' ||
+          appError.type === 'permission'
+        ) {
           return false;
         }
-        
+
         // Retry network errors up to configured count
         return failureCount < performanceConfig.reactQuery.retry.count;
       },
@@ -59,7 +68,7 @@ const queryClient = new QueryClient({
       networkMode: performanceConfig.reactQuery.networkMode.mutations,
       retry: (failureCount, error) => {
         const appError = handleSupabaseError(error as Error);
-        
+
         // Log errors for monitoring
         globalErrorHandler.logError(appError, {
           mutationRetry: true,
@@ -71,12 +80,16 @@ const queryClient = new QueryClient({
           errorType: appError.type,
           errorMessage: appError.message,
         });
-        
+
         // Don't retry auth, validation, or permission errors
-        if (appError.type === 'auth' || appError.type === 'validation' || appError.type === 'permission') {
+        if (
+          appError.type === 'auth' ||
+          appError.type === 'validation' ||
+          appError.type === 'permission'
+        ) {
           return false;
         }
-        
+
         // Retry network errors up to 2 times for mutations (more conservative)
         return failureCount < 2;
       },
@@ -118,7 +131,10 @@ function QueryProviderInner({ children }: QueryProviderProps) {
       {children}
       {ReactQueryDevtools && (
         <Suspense fallback={null}>
-          <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+          <ReactQueryDevtools
+            initialIsOpen={false}
+            buttonPosition="bottom-right"
+          />
         </Suspense>
       )}
     </>

@@ -1,5 +1,12 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 
 interface LoadingButtonProps {
   title: string;
@@ -44,9 +51,10 @@ export function LoadingButton({
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'primary' ? 'white' : '#007AFF'} 
+        <ActivityIndicator
+          size="small"
+          color={variant === 'primary' ? 'white' : '#007AFF'}
+          style={{ width: 16, height: 16 }}
         />
       ) : (
         <Text style={buttonTextStyle}>{title}</Text>

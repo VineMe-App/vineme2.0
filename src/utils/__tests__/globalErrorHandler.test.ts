@@ -33,7 +33,7 @@ describe('GlobalErrorHandler', () => {
 
   it('should handle regular Error objects', () => {
     const error = new Error('Regular error');
-    
+
     globalErrorHandler.logError(error);
 
     const recentErrors = globalErrorHandler.getRecentErrors(1);
@@ -50,7 +50,7 @@ describe('GlobalErrorHandler', () => {
 
     const recentErrors = globalErrorHandler.getRecentErrors(100);
     expect(recentErrors.length).toBeLessThanOrEqual(50);
-    
+
     // Should keep the most recent errors
     const lastError = recentErrors[recentErrors.length - 1];
     expect(lastError.error.message).toBe('Error 59');
@@ -72,7 +72,7 @@ describe('GlobalErrorHandler', () => {
 
     const recentErrors = globalErrorHandler.getRecentErrors(5);
     expect(recentErrors).toHaveLength(5);
-    
+
     // Should return the most recent 5
     expect(recentErrors[0].error.message).toBe('Error 5');
     expect(recentErrors[4].error.message).toBe('Error 9');

@@ -7,6 +7,12 @@ export { groupService } from './groups';
 export { eventService } from './events';
 export { friendshipService } from './friendships';
 export { permissionService } from './permissions';
+export { groupAdminService, userAdminService } from './admin';
+export { groupCreationService } from './groupCreation';
+export { joinRequestService } from './joinRequests';
+export { locationService } from './location';
+export { contactAuditService } from './contactAudit';
+export { referralService, ReferralDatabaseUtils, REFERRAL_SCHEMA_SQL, COMPLETE_REFERRAL_SCHEMA } from './referrals';
 export type { AuthResponse, SignUpData, SignInData } from './auth';
 export type { UpdateUserProfileData, UserServiceResponse } from './users';
 export type {
@@ -20,3 +26,32 @@ export type {
   FriendshipWithUser,
   FriendshipStatus,
 } from './friendships';
+export type {
+  AdminServiceResponse,
+  GroupWithAdminDetails,
+  GroupJoinRequest,
+  GroupApprovalHistory,
+  UserWithGroupStatus,
+  ChurchUserSummary,
+  CreateGroupData,
+  UpdateGroupData,
+} from './admin';
+export type {
+  GroupServiceResponse as JoinRequestServiceResponse,
+  CreateJoinRequestData,
+} from './joinRequests';
+export type {
+  Coordinates,
+  Address,
+  LocationPermissionStatus,
+} from './location';
+export type {
+  ContactAuditServiceResponse,
+  LogContactAccessData,
+  UpdatePrivacySettingsData,
+} from './contactAudit';
+export type {
+  CreateReferralData,
+  ReferralResponse,
+  ReferralServiceResponse,
+} from './referrals';

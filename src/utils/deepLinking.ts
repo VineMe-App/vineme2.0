@@ -2,9 +2,10 @@ import * as Linking from 'expo-linking';
 import { Share, Alert } from 'react-native';
 
 export interface DeepLinkData {
-  type: 'group' | 'event';
+  type: 'group' | 'event' | 'auth' | 'referral';
   id: string;
   title?: string;
+  params?: Record<string, any>;
 }
 
 /**
@@ -12,12 +13,14 @@ export interface DeepLinkData {
  */
 export const generateDeepLink = (data: DeepLinkData): string => {
   const baseUrl = Linking.createURL('');
-  
+
   switch (data.type) {
     case 'group':
       return `${baseUrl}group/${data.id}`;
     case 'event':
       return `${baseUrl}event/${data.id}`;
+    case 'referral':
+      return `${baseUrl}referral/${data.id}`;
     default:
       return baseUrl;
   }
@@ -28,8 +31,12 @@ export const generateDeepLink = (data: DeepLinkData): string => {
  */
 export const shareGroup = async (groupId: string, groupTitle: string) => {
   try {
-    const deepLink = generateDeepLink({ type: 'group', id: groupId, title: groupTitle });
-    
+    const deepLink = generateDeepLink({
+      type: 'group',
+      id: groupId,
+      title: groupTitle,
+    });
+
     const shareOptions = {
       message: `Check out this Bible study group: ${groupTitle}\n\nJoin us on VineMe: ${deepLink}`,
       url: deepLink,
@@ -46,12 +53,22 @@ export const shareGroup = async (groupId: string, groupTitle: string) => {
 /**
  * Share an event with others
  */
-export const shareEvent = async (eventId: string, eventTitle: string, eventDate?: string) => {
+export const shareEvent = async (
+  eventId: string,
+  eventTitle: string,
+  eventDate?: string
+) => {
   try {
-    const deepLink = generateDeepLink({ type: 'event', id: eventId, title: eventTitle });
-    
-    const dateText = eventDate ? `\nDate: ${new Date(eventDate).toLocaleDateString()}` : '';
-    
+    const deepLink = generateDeepLink({
+      type: 'event',
+      id: eventId,
+      title: eventTitle,
+    });
+
+    const dateText = eventDate
+      ? `\nDate: ${new Date(eventDate).toLocaleDateString()}`
+      : '';
+
     const shareOptions = {
       message: `Check out this church event: ${eventTitle}${dateText}\n\nView details on VineMe: ${deepLink}`,
       url: deepLink,
@@ -70,20 +87,41 @@ export const shareEvent = async (eventId: string, eventTitle: string, eventDate?
  */
 export const parseDeepLink = (url: string): DeepLinkData | null => {
   try {
-    const { hostname, path } = Linking.parse(url);
-    
+    const { path, queryParams } = Linking.parse(url);
+
     if (!path) return null;
-    
+
     const segments = path.split('/').filter(Boolean);
-    
+
+    // Handle auth links: vineme://auth/verify-email
+    if (segments.length >= 2 && segments[0] === 'auth') {
+      const [, id] = segments;
+      return { 
+        type: 'auth', 
+        id,
+        params: queryParams 
+      };
+    }
+
+    // Handle referral landing page: vineme://referral/landing
+    if (segments.length >= 2 && segments[0] === 'referral') {
+      const [, id] = segments;
+      return { 
+        type: 'referral', 
+        id,
+        params: queryParams 
+      };
+    }
+
+    // Handle group and event links
     if (segments.length >= 2) {
       const [type, id] = segments;
-      
+
       if ((type === 'group' || type === 'event') && id) {
         return { type, id };
       }
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error parsing deep link:', error);
@@ -96,14 +134,37 @@ export const parseDeepLink = (url: string): DeepLinkData | null => {
  */
 export const handleDeepLink = (url: string, router: any) => {
   const linkData = parseDeepLink(url);
-  
+
   if (!linkData) {
     console.warn('Invalid deep link format:', url);
     return false;
   }
-  
+
   try {
     switch (linkData.type) {
+      case 'auth':
+        if (linkData.id === 'verify-email') {
+          // Build the route with query parameters for email verification
+          const params = new URLSearchParams();
+          if (linkData.params) {
+            Object.entries(linkData.params).forEach(([key, value]) => {
+              if (value) params.append(key, String(value));
+            });
+          }
+          const queryString = params.toString();
+          const route = queryString 
+            ? `/(auth)/verify-email?${queryString}`
+            : '/(auth)/verify-email';
+          router.push(route);
+          return true;
+        }
+        return false;
+      case 'referral':
+        if (linkData.id === 'landing') {
+          router.push('/referral-landing');
+          return true;
+        }
+        return false;
       case 'group':
         router.push(`/group/${linkData.id}`);
         return true;
@@ -120,16 +181,42 @@ export const handleDeepLink = (url: string, router: any) => {
 };
 
 /**
+ * Share referral landing page with others
+ */
+export const shareReferralLanding = async () => {
+  try {
+    const deepLink = generateDeepLink({
+      type: 'referral',
+      id: 'landing',
+      title: 'Connect Someone to VineMe',
+    });
+
+    const shareOptions = {
+      message: `Help connect someone to our community!\n\nUse VineMe to refer friends to Bible study groups: ${deepLink}`,
+      url: deepLink,
+      title: 'Connect Someone to VineMe',
+    };
+
+    await Share.share(shareOptions);
+  } catch (error) {
+    console.error('Error sharing referral landing:', error);
+    Alert.alert('Error', 'Failed to share referral link. Please try again.');
+  }
+};
+
+/**
  * Generate shareable web URL (for social media, etc.)
  */
 export const generateWebUrl = (data: DeepLinkData): string => {
   const baseWebUrl = 'https://vineme.app'; // Replace with actual web URL when available
-  
+
   switch (data.type) {
     case 'group':
       return `${baseWebUrl}/group/${data.id}`;
     case 'event':
       return `${baseWebUrl}/event/${data.id}`;
+    case 'referral':
+      return `${baseWebUrl}/referral/${data.id}`;
     default:
       return baseWebUrl;
   }

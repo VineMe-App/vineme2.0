@@ -5,8 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  ActivityIndicator,
 } from 'react-native';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 import type { OnboardingStepProps } from '@/types/app';
 import type { Church, Service } from '@/types/database';
 import { churchService } from '@/services/churches';
@@ -18,9 +18,13 @@ export default function ChurchStep({
   isLoading,
 }: OnboardingStepProps) {
   const [churches, setChurches] = useState<Church[]>([]);
-  const [selectedChurchId, setSelectedChurchId] = useState<string | undefined>(data.church_id);
+  const [selectedChurchId, setSelectedChurchId] = useState<string | undefined>(
+    data.church_id
+  );
   const [services, setServices] = useState<Service[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(data.service_id);
+  const [selectedServiceId, setSelectedServiceId] = useState<
+    string | undefined
+  >(data.service_id);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +66,8 @@ export default function ChurchStep({
 
   const loadServices = async (churchId: string) => {
     try {
-      const { data: svc, error } = await churchService.getServicesByChurch(churchId);
+      const { data: svc, error } =
+        await churchService.getServicesByChurch(churchId);
       if (!error && svc) {
         setServices(svc);
         // Reset service if it doesn't belong to the new church
@@ -131,7 +136,7 @@ export default function ChurchStep({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <LoadingSpinner size="large" />
         <Text style={styles.loadingText}>Loading churches...</Text>
       </View>
     );
@@ -177,7 +182,9 @@ export default function ChurchStep({
 
         {selectedChurchId && (
           <>
-            <Text style={[styles.title, { marginTop: 16 }]}>Select a service (optional)</Text>
+            <Text style={[styles.title, { marginTop: 16 }]}>
+              Select a service (optional)
+            </Text>
             <View>
               {services.map((svc) => (
                 <TouchableOpacity
@@ -193,13 +200,16 @@ export default function ChurchStep({
                     <Text
                       style={[
                         styles.churchName,
-                        selectedServiceId === svc.id && styles.churchNameSelected,
+                        selectedServiceId === svc.id &&
+                          styles.churchNameSelected,
                       ]}
                     >
                       {svc.name}
                     </Text>
                     <Text style={styles.churchAddress}>
-                      {svc.day_of_week !== undefined ? `Meets on ${svc.day_of_week}` : ''}
+                      {svc.day_of_week !== undefined
+                        ? `Meets on ${svc.day_of_week}`
+                        : ''}
                     </Text>
                   </View>
                   {selectedServiceId === svc.id && (

@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { GroupDetail } from '../../components/groups';
@@ -8,7 +15,8 @@ import { useAuthStore } from '../../stores/auth';
 import { shareGroup } from '../../utils/deepLinking';
 
 export default function GroupDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; friends?: string }>();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const { userProfile } = useAuthStore();
 
@@ -22,6 +30,10 @@ export default function GroupDetailScreen() {
   const { data: membershipData, refetch: refetchMembership } =
     useGroupMembership(id, userProfile?.id);
 
+  const handleRefresh = async () => {
+    await Promise.all([refetchGroup(), refetchMembership()]);
+  };
+
   const handleMembershipChange = () => {
     // Refetch both group data and membership status
     refetchGroup();
@@ -34,10 +46,10 @@ export default function GroupDetailScreen() {
     }
   };
 
-  if (groupLoading) {
+  if (groupLoading && !group) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <LoadingSpinner size="large" />
       </View>
     );
   }
@@ -53,14 +65,20 @@ export default function GroupDetailScreen() {
   const membershipStatus = membershipData?.membership?.role || null;
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={groupLoading} onRefresh={handleRefresh} />
+      }
+    >
       <GroupDetail
         group={group}
         membershipStatus={membershipStatus}
         onMembershipChange={handleMembershipChange}
         onShare={handleShare}
+        openFriendsOnMount={!!params.friends}
       />
-    </View>
+    </ScrollView>
   );
 }
 

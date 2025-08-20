@@ -2,7 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { getPlatformInfo, testPlatformFeatures, logPlatformInfo } from '../../utils/platformTesting';
+import {
+  getPlatformInfo,
+  testPlatformFeatures,
+  logPlatformInfo,
+} from '../../utils/platformTesting';
 
 export const PlatformDebugInfo: React.FC = () => {
   const platformInfo = getPlatformInfo();
@@ -34,11 +38,18 @@ export const PlatformDebugInfo: React.FC = () => {
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Model:</Text>
-          <Text style={styles.value}>{platformInfo.modelName || 'Unknown'}</Text>
+          <Text style={styles.value}>
+            {platformInfo.modelName || 'Unknown'}
+          </Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Is Device:</Text>
-          <Text style={[styles.value, platformInfo.isDevice ? styles.success : styles.warning]}>
+          <Text
+            style={[
+              styles.value,
+              platformInfo.isDevice ? styles.success : styles.warning,
+            ]}
+          >
             {platformInfo.isDevice ? 'Yes' : 'No (Simulator)'}
           </Text>
         </View>
@@ -49,7 +60,9 @@ export const PlatformDebugInfo: React.FC = () => {
         {Object.entries(supportedFeatures).map(([feature, supported]) => (
           <View key={feature} style={styles.infoRow}>
             <Text style={styles.label}>{feature}:</Text>
-            <Text style={[styles.value, supported ? styles.success : styles.error]}>
+            <Text
+              style={[styles.value, supported ? styles.success : styles.error]}
+            >
               {supported ? '✅ Supported' : '❌ Not Supported'}
             </Text>
           </View>

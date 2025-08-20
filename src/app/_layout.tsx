@@ -3,9 +3,12 @@ import { Stack, router, useSegments } from 'expo-router';
 import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryProvider } from '@/providers/QueryProvider';
+import { AuthProvider } from '@/providers/AuthProvider';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { ErrorBoundary, OfflineBanner } from '@/components';
+import { DevToolsOverlay } from '@/components/devtools/DevToolsOverlay';
+
 import { handleDeepLink } from '@/utils/deepLinking';
 import { useNotifications } from '@/hooks/useNotifications';
 import { logPlatformInfo } from '@/utils/platformTesting';
@@ -17,7 +20,7 @@ function RootLayoutNav() {
   const [onboardingCompleted, setOnboardingCompleted] = useState<
     boolean | null
   >(null);
-  
+
   // Initialize notifications
   useNotifications();
 
@@ -25,12 +28,12 @@ function RootLayoutNav() {
     // Initialize auth state when app starts
     initialize();
     checkOnboardingStatus();
-    
+
     // Log platform information for debugging
     if (__DEV__) {
       logPlatformInfo();
     }
-    
+
     // Handle deep links
     const handleInitialUrl = async () => {
       const initialUrl = await Linking.getInitialURL();
@@ -41,14 +44,14 @@ function RootLayoutNav() {
         }, 1000);
       }
     };
-    
+
     handleInitialUrl();
-    
+
     // Listen for incoming deep links while app is running
     const subscription = Linking.addEventListener('url', ({ url }) => {
       handleDeepLink(url, router);
     });
-    
+
     return () => {
       subscription?.remove();
     };
@@ -72,21 +75,46 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[1] === 'onboarding';
-    // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id])
-    const inAllowedStacks = segments[0] === 'group' || segments[0] === 'event';
+    // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id], /admin/*)
+    const inAllowedStacks =
+      segments[0] === 'group' ||
+      segments[0] === 'event' ||
+      segments[0] === 'admin' ||
+      segments[0] === 'user' ||
+      // Allow referral landing screen outside of tabs
+      segments[0] === 'referral-landing';
+
+    // Onboarding is done ONLY when a profile exists and newcomer !== true.
+    // If there is no profile yet, we must force onboarding regardless of any persisted flag.
+    const hasProfile = !!userProfile;
+    const isOnboardingDone = hasProfile ? userProfile.newcomer !== true : false;
+
+    if (__DEV__) {
+      console.log(
+        '[NavDebug] isInitialized:',
+        isInitialized,
+        'onboardingCompleted:',
+        onboardingCompleted
+      );
+      console.log('[NavDebug] segments:', segments);
+      console.log('[NavDebug] user:', !!user, 'profile:', !!userProfile);
+    }
 
     if (user) {
       // User is authenticated
-      if (!onboardingCompleted && !inOnboarding) {
+      if (!isOnboardingDone && !inOnboarding) {
+        if (__DEV__) console.log('[NavDebug] redirect -> /(auth)/onboarding');
         // User needs onboarding
         router.replace('/(auth)/onboarding');
-      } else if (onboardingCompleted && !(inTabsGroup || inAllowedStacks)) {
+      } else if (isOnboardingDone && !(inTabsGroup || inAllowedStacks)) {
+        if (__DEV__) console.log('[NavDebug] redirect -> /(tabs)');
         // User completed onboarding, go to main app
         router.replace('/(tabs)');
       }
     } else if (!inAuthGroup) {
-      // User is not signed in and not in auth group, redirect to sign in
-      router.replace('/(auth)/sign-in');
+      if (__DEV__) console.log('[NavDebug] redirect -> /(auth)/welcome');
+      // User is not signed in and not in auth group, redirect to welcome
+      router.replace('/(auth)/welcome');
     }
   }, [user, userProfile, segments, isInitialized, onboardingCompleted]);
 
@@ -97,7 +125,9 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="referral-landing" options={{ headerShown: false }} />
       </Stack>
+      {__DEV__ && <DevToolsOverlay />}
     </>
   );
 }
@@ -106,7 +136,9 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryProvider>
-        <RootLayoutNav />
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
       </QueryProvider>
     </ErrorBoundary>
   );
