@@ -6,6 +6,7 @@ import {
   Alert,
   Dimensions,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import {
@@ -19,6 +20,7 @@ import MapView, {
   Region,
   PROVIDER_GOOGLE,
 } from 'react-native-maps';
+import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService, Coordinates } from '../../services/location';
 import {
@@ -78,6 +80,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     useState(false);
   const [clusters, setClusters] = useState<(Cluster | ClusterPoint)[]>([]);
   const mapRef = useRef<MapView>(null);
+
+  // Selection state for card panel
+  const [selectedItems, setSelectedItems] = useState<GroupWithDetails[] | null>(
+    null
+  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Create clusterer instance
   const clusterer = useMemo(
@@ -322,6 +330,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         coordinate={{ latitude, longitude }}
         title={group.title}
         description={group.description}
+        onPress={() => {
+          setSelectedItems([group]);
+          setSelectedIndex(0);
+        }}
         accessibilityLabel={AdminAccessibilityLabels.mapMarker(
           group.title,
           group.member_count || 0
@@ -338,60 +350,6 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             <Ionicons name="book-outline" size={12} color="#fff" />
           </View>
         </View>
-        <Callout
-          onPress={() => {
-            onGroupPress(group);
-            ScreenReaderUtils.announceForAccessibility(
-              `Opening details for ${group.title}`
-            );
-          }}
-          accessibilityLabel={`Group details for ${group.title}`}
-          accessibilityHint="Double tap to view full group details"
-        >
-          <View style={styles.calloutContainer}>
-            <Text
-              style={styles.calloutTitle}
-              numberOfLines={2}
-              accessibilityRole="header"
-              accessibilityLevel={3}
-            >
-              {group.title}
-            </Text>
-            <Text
-              style={styles.calloutDescription}
-              numberOfLines={3}
-              accessibilityLabel={`Description: ${group.description}`}
-            >
-              {group.description}
-            </Text>
-            <View
-              style={styles.calloutDetails}
-              accessibilityRole="text"
-              accessibilityLabel={`Meeting: ${group.meeting_day} at ${group.meeting_time}${
-                group.location
-                  ? `, Location: ${typeof group.location === 'string' ? group.location : group.location.address}`
-                  : ''
-              }`}
-            >
-              <Text style={styles.calloutDetailText}>
-                {group.meeting_day} at {group.meeting_time}
-              </Text>
-              {group.location && (
-                <Text style={styles.calloutDetailText} numberOfLines={2}>
-                  {typeof group.location === 'string'
-                    ? group.location
-                    : group.location.address}
-                </Text>
-              )}
-            </View>
-            <Text
-              style={styles.calloutAction}
-              accessibilityLabel="Tap to view full details"
-            >
-              Tap to view details
-            </Text>
-          </View>
-        </Callout>
       </Marker>
     );
   };
@@ -404,20 +362,16 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
           cluster.count
         )}
-        accessibilityHint="Double tap to zoom in and see individual groups"
+        accessibilityHint="Double tap to view groups in this area"
         accessibilityRole="button"
         onPress={() => {
-          // Zoom into cluster
-          if (mapRef.current) {
-            mapRef.current.animateToRegion({
-              ...cluster.coordinates,
-              latitudeDelta: currentRegion.latitudeDelta * 0.5,
-              longitudeDelta: currentRegion.longitudeDelta * 0.5,
-            });
-            ScreenReaderUtils.announceForAccessibility(
-              `Zooming in to show ${cluster.count} groups`
-            );
-          }
+          // Show swipeable cards for groups within this cluster
+          const items = cluster.points.map((p) => p.data);
+          setSelectedItems(items);
+          setSelectedIndex(0);
+          ScreenReaderUtils.announceForAccessibility(
+            `Showing ${cluster.count} groups in this area`
+          );
         }}
       >
         <View style={styles.clusterContainer}>
@@ -433,17 +387,6 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             <Text style={styles.clusterText}>{cluster.count}</Text>
           </View>
         </View>
-        <Callout
-          accessibilityLabel={`Cluster of ${cluster.count} groups`}
-          accessibilityHint="Double tap marker to zoom in"
-        >
-          <View style={styles.clusterCallout}>
-            <Text style={styles.clusterCalloutTitle} accessibilityRole="header">
-              {cluster.count} Groups
-            </Text>
-            <Text style={styles.clusterCalloutText}>Tap marker to zoom in</Text>
-          </View>
-        </Callout>
       </Marker>
     );
   };
@@ -470,6 +413,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
+        mapId={GOOGLE_MAPS_MAP_ID}
         initialRegion={region}
         showsUserLocation={!locationPermissionDenied}
         showsMyLocationButton={!locationPermissionDenied}
@@ -477,6 +421,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         showsScale={true}
         loadingEnabled={true}
         onRegionChangeComplete={handleRegionChangeComplete}
+        onPress={() => setSelectedItems(null)}
         moveOnMarkerPress={false}
         showsPointsOfInterest={false}
         showsBuildings={false}
@@ -487,30 +432,113 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         {(enableClustering ? clusters : markers).map(renderMarker)}
       </MapView>
 
-      {/* Accessibility alternative - List of locations */}
-      <View style={styles.accessibilityAlternative}>
-        <TouchableOpacity
-          style={styles.accessibilityButton}
-          onPress={() => {
-            Alert.alert(
-              'Map Locations',
-              `This map shows ${markers.length} groups:\n\n${markers
-                .map(
-                  (marker) =>
-                    `• ${marker.group.title} - ${marker.address || 'Location available'}`
-                )
-                .join('\n')}`,
-              [{ text: 'OK' }]
-            );
-          }}
-          {...AccessibilityHelpers.createButtonProps(
-            'View map locations as text',
-            'Double tap to hear all group locations'
+      {selectedItems && selectedItems.length > 0 && (
+        <View style={styles.cardPanel}>
+          <View style={styles.cardPanelHeader}> 
+            <Text style={styles.cardPanelTitle}>
+              {selectedItems.length > 1
+                ? `${selectedIndex + 1} of ${selectedItems.length}`
+                : 'Group'}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setSelectedItems(null)}
+              accessibilityLabel="Close group preview"
+              accessibilityRole="button"
+            >
+              <Ionicons name="close" size={20} color="#111827" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(e) => {
+              const page = Math.round(
+                e.nativeEvent.contentOffset.x /
+                  Math.max(1, e.nativeEvent.layoutMeasurement.width)
+              );
+              setSelectedIndex(Math.min(Math.max(page, 0), selectedItems.length - 1));
+            }}
+          >
+            {selectedItems.map((g) => (
+              <View key={g.id} style={styles.card}>
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {g.title}
+                </Text>
+                {g.location && (
+                  <Text style={styles.cardSubtitle} numberOfLines={1}>
+                    {typeof g.location === 'string'
+                      ? g.location
+                      : g.location.address}
+                  </Text>
+                )}
+                <Text style={styles.cardDescription} numberOfLines={2}>
+                  {g.description}
+                </Text>
+                <View style={styles.cardMetaRow}>
+                  <Ionicons name="time-outline" size={14} color="#6b7280" />
+                  <Text style={styles.cardMetaText}>
+                    {g.meeting_day} • {g.meeting_time}
+                  </Text>
+                </View>
+                <View style={styles.cardActions}>
+                  <TouchableOpacity
+                    style={styles.viewButton}
+                    onPress={() => onGroupPress(g)}
+                    accessibilityLabel={`View details for ${g.title}`}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.viewButtonText}>View Group</Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#fff"
+                      style={{ marginLeft: 4 }}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+          {selectedItems.length > 1 && (
+            <View style={styles.dotsContainer}>
+              {selectedItems.map((_, i) => (
+                <View
+                  key={i}
+                  style={[styles.dot, i === selectedIndex && styles.dotActive]}
+                />
+              ))}
+            </View>
           )}
-        >
-          <Text style={styles.accessibilityButtonText}>List Locations</Text>
-        </TouchableOpacity>
-      </View>
+        </View>
+      )}
+
+      {/* Accessibility alternative - List of locations (hidden when a card panel is open) */}
+      {!selectedItems && (
+        <View style={styles.accessibilityAlternative}>
+          <TouchableOpacity
+            style={styles.accessibilityButton}
+            onPress={() => {
+              Alert.alert(
+                'Map Locations',
+                `This map shows ${markers.length} groups:\n\n${markers
+                  .map(
+                    (marker) =>
+                      `• ${marker.group.title} - ${marker.address || 'Location available'}`
+                  )
+                  .join('\n')}`,
+                [{ text: 'OK' }]
+              );
+            }}
+            {...AccessibilityHelpers.createButtonProps(
+              'View map locations as text',
+              'Double tap to hear all group locations'
+            )}
+          >
+            <Text style={styles.accessibilityButtonText}>List Locations</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {locationPermissionDenied && (
         <View style={styles.permissionBanner}>
@@ -537,8 +565,8 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </View>
       )}
 
-      {/* Performance info in development */}
-      {__DEV__ && (
+      {/* Performance info in development (hidden when a card panel is open) */}
+      {__DEV__ && !selectedItems && (
         <View style={styles.performanceInfo}>
           <Text style={styles.performanceText}>
             Points: {markers.length} | Visible: {clusters.length}
@@ -730,6 +758,99 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontFamily: 'monospace',
+  },
+  cardPanel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingVertical: 8,
+    backgroundColor: 'transparent',
+  },
+  cardPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  cardPanelTitle: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  card: {
+    width: width - 32,
+    marginHorizontal: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  cardDescription: {
+    fontSize: 13,
+    color: '#374151',
+    marginTop: 8,
+  },
+  cardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  cardMetaText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginLeft: 6,
+  },
+  cardActions: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  viewButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 8,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 3,
+    backgroundColor: '#d1d5db',
+  },
+  dotActive: {
+    backgroundColor: '#111827',
   },
   accessibilityAlternative: {
     position: 'absolute',

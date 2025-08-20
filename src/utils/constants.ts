@@ -104,3 +104,7 @@ export const STORAGE_KEYS = {
   SERVICE_CHANGE_USED_PREFIX: 'service_change_used_',
   PUSH_TOKEN: 'expo_push_token',
 } as const;
+
+// Google Maps Platform: Cloud-based map styling (Map ID)
+// Provided by user to unify map appearance across the app
+export const GOOGLE_MAPS_MAP_ID = 'c91a34b33bf20ca276d3e31c' as const;
