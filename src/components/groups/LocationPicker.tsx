@@ -12,7 +12,8 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
 import { Input, Button } from '../ui';
 import { locationService, type Coordinates } from '../../services/location';
 import { debounce } from '../../utils';
@@ -159,6 +160,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         <MapView
           ref={mapRef}
           style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          mapId={GOOGLE_MAPS_MAP_ID}
           initialRegion={region}
           onRegionChangeComplete={handleRegionChangeComplete}
           showsUserLocation
