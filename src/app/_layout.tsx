@@ -79,7 +79,9 @@ function RootLayoutNav() {
       segments[0] === 'group' ||
       segments[0] === 'event' ||
       segments[0] === 'admin' ||
-      segments[0] === 'user';
+      segments[0] === 'user' ||
+      // Allow referral landing screen outside of tabs
+      segments[0] === 'referral-landing';
 
     // Treat onboarding as done if a profile exists OR the persisted flag is set
     const isOnboardingDone = !!userProfile || onboardingCompleted;
@@ -121,6 +123,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="referral-landing" options={{ headerShown: false }} />
       </Stack>
       {__DEV__ && <DevToolsOverlay />}
     </>

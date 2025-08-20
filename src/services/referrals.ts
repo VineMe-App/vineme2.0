@@ -7,8 +7,15 @@ import type {
   GroupReferralWithDetails,
   GeneralReferralWithDetails,
 } from '../types/database';
-import { handleSupabaseError, retryWithBackoff } from '../utils/errorHandling';
+import { handleSupabaseError, retryWithBackoff, ValidationError } from '../utils/errorHandling';
 import { ReferralDatabaseUtils } from './referralDatabase';
+import {
+  validateServerReferralData,
+  sanitizeReferralInput,
+  referralRateLimiter,
+  createReferralErrorMessage,
+  type ReferralFormData,
+} from '../utils/referralValidation';
 
 export interface CreateReferralData {
   email: string;
@@ -20,10 +27,20 @@ export interface CreateReferralData {
   referrerId: string;
 }
 
+export interface ReferralError {
+  type: 'validation' | 'rate_limit' | 'duplicate' | 'network' | 'email' | 'unknown';
+  message: string;
+  field?: string;
+  retryable: boolean;
+  suggestions?: string[];
+}
+
 export interface ReferralResponse {
   success: boolean;
   userId?: string;
   error?: string;
+  errorDetails?: ReferralError;
+  warnings?: Record<string, string>;
 }
 
 export interface ReferralServiceResponse<T = any> {
@@ -35,26 +52,114 @@ export class ReferralService {
   /**
    * Main entry point for creating referrals
    * Routes to appropriate method based on whether groupId is provided
+   * Requirement 4.4: Validate all required fields before processing
+   * Requirement 4.5: Add rate limiting and spam protection
    */
   async createReferral(data: CreateReferralData): Promise<ReferralResponse> {
     try {
-      // Validate required fields
-      const validationError = this.validateReferralData(data);
-      if (validationError) {
-        return { success: false, error: validationError };
+      // Sanitize input data
+      const sanitizedData = sanitizeReferralInput(data);
+
+      // Check rate limiting first
+      const rateLimitCheck = referralRateLimiter.canMakeReferral(data.referrerId);
+      if (!rateLimitCheck.allowed) {
+        return {
+          success: false,
+          error: rateLimitCheck.reason,
+          errorDetails: {
+            type: 'rate_limit',
+            message: rateLimitCheck.reason || 'Rate limit exceeded',
+            retryable: true,
+            suggestions: [
+              `Try again in ${rateLimitCheck.retryAfter} ${rateLimitCheck.retryAfter === 1 ? 'minute' : 'minutes'}`,
+              'You can check your referral history in your profile',
+              'Contact support if you need to make urgent referrals',
+            ],
+          },
+        };
       }
 
-      // Route to appropriate referral type
-      if (data.groupId) {
-        return await this.createGroupReferral(data);
-      } else {
-        return await this.createGeneralReferral(data);
+      // Comprehensive server-side validation
+      const validation = validateServerReferralData(
+        sanitizedData,
+        data.referrerId,
+        data.groupId
+      );
+
+      if (!validation.isValid) {
+        const firstError = Object.entries(validation.errors)[0];
+        return {
+          success: false,
+          error: firstError[1],
+          errorDetails: {
+            type: 'validation',
+            message: firstError[1],
+            field: firstError[0],
+            retryable: true,
+            suggestions: [
+              'Please check the highlighted fields and correct any errors',
+              'Make sure the email address is valid and spelled correctly',
+              'Ensure the phone number includes area code',
+            ],
+          },
+        };
       }
+
+      // Check for duplicate referrals
+      const duplicateCheck = await this.checkForDuplicateReferral(
+        sanitizedData.email,
+        data.referrerId,
+        data.groupId
+      );
+
+      if (duplicateCheck.isDuplicate) {
+        return {
+          success: false,
+          error: duplicateCheck.message,
+          errorDetails: {
+            type: 'duplicate',
+            message: duplicateCheck.message,
+            retryable: false,
+            suggestions: [
+              'Check if they already have an account',
+              'Try referring them to a different group',
+              'Contact them directly to help with their account',
+            ],
+          },
+        };
+      }
+
+      // Record the referral attempt for rate limiting
+      referralRateLimiter.recordReferral(data.referrerId);
+
+      // Route to appropriate referral type with retry logic
+      const result = await retryWithBackoff(async () => {
+        if (data.groupId) {
+          return await this.createGroupReferral(sanitizedData);
+        } else {
+          return await this.createGeneralReferral(sanitizedData);
+        }
+      }, 2, 1000);
+
+      // Add warnings if any
+      if (validation.warnings) {
+        result.warnings = validation.warnings;
+      }
+
+      return result;
     } catch (error) {
+      const errorDetails = createReferralErrorMessage(error);
       const appError = handleSupabaseError(error as Error);
+      
       return {
         success: false,
-        error: appError.message || 'Failed to create referral',
+        error: errorDetails.message,
+        errorDetails: {
+          type: this.getErrorType(error),
+          message: errorDetails.message,
+          retryable: errorDetails.retryable,
+          suggestions: errorDetails.suggestions,
+        },
       };
     }
   }
@@ -352,34 +457,109 @@ export class ReferralService {
   }
 
   /**
-   * Private helper: Validate referral data
+   * Check for duplicate referrals to prevent spam and conflicts
+   * Requirement 4.5: Add spam protection for referral submissions
    */
-  private validateReferralData(data: CreateReferralData): string | null {
-    if (!data.email || !data.email.trim()) {
-      return 'Email is required';
-    }
+  private async checkForDuplicateReferral(
+    email: string,
+    referrerId: string,
+    groupId?: string
+  ): Promise<{ isDuplicate: boolean; message: string }> {
+    try {
+      // Check if user already exists with this email
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', email.toLowerCase())
+        .single();
 
-    if (!data.phone || !data.phone.trim()) {
-      return 'Phone number is required';
-    }
+      if (userError && userError.code !== 'PGRST116') {
+        // Error other than "no rows found"
+        throw userError;
+      }
 
-    if (!data.referrerId || !data.referrerId.trim()) {
-      return 'Referrer ID is required';
-    }
+      if (existingUser) {
+        // User exists, check if they were already referred by this person
+        if (groupId) {
+          // Check group referrals
+          const { data: groupReferral, error: groupRefError } = await supabase
+            .from('group_referrals')
+            .select('id')
+            .eq('referred_user_id', existingUser.id)
+            .eq('referrer_id', referrerId)
+            .eq('group_id', groupId)
+            .single();
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
-      return 'Invalid email format';
-    }
+          if (groupRefError && groupRefError.code !== 'PGRST116') {
+            throw groupRefError;
+          }
 
-    // Basic phone validation (allow various formats)
-    const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,}$/;
-    if (!phoneRegex.test(data.phone.replace(/\s/g, ''))) {
-      return 'Invalid phone number format';
-    }
+          if (groupReferral) {
+            return {
+              isDuplicate: true,
+              message: 'You have already referred this person to this group',
+            };
+          }
+        } else {
+          // Check general referrals
+          const { data: generalReferral, error: generalRefError } = await supabase
+            .from('general_referrals')
+            .select('id')
+            .eq('referred_user_id', existingUser.id)
+            .eq('referrer_id', referrerId)
+            .single();
 
-    return null;
+          if (generalRefError && generalRefError.code !== 'PGRST116') {
+            throw generalRefError;
+          }
+
+          if (generalReferral) {
+            return {
+              isDuplicate: true,
+              message: 'You have already made a general referral for this person',
+            };
+          }
+        }
+
+        return {
+          isDuplicate: true,
+          message: 'This person already has an account. You can invite them to join groups directly.',
+        };
+      }
+
+      return { isDuplicate: false, message: '' };
+    } catch (error) {
+      console.error('Error checking for duplicate referral:', error);
+      // Don't block referral creation due to duplicate check errors
+      return { isDuplicate: false, message: '' };
+    }
+  }
+
+  /**
+   * Determine error type for better error handling
+   */
+  private getErrorType(error: any): ReferralError['type'] {
+    if (error instanceof ValidationError) {
+      return 'validation';
+    }
+    
+    if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+      return 'rate_limit';
+    }
+    
+    if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+      return 'duplicate';
+    }
+    
+    if (error.message?.includes('network') || error.message?.includes('connection')) {
+      return 'network';
+    }
+    
+    if (error.message?.includes('email')) {
+      return 'email';
+    }
+    
+    return 'unknown';
   }
 
   /**

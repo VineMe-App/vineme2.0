@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import { Share, Alert } from 'react-native';
 
 export interface DeepLinkData {
-  type: 'group' | 'event' | 'auth';
+  type: 'group' | 'event' | 'auth' | 'referral';
   id: string;
   title?: string;
   params?: Record<string, any>;
@@ -19,6 +19,8 @@ export const generateDeepLink = (data: DeepLinkData): string => {
       return `${baseUrl}group/${data.id}`;
     case 'event':
       return `${baseUrl}event/${data.id}`;
+    case 'referral':
+      return `${baseUrl}referral/${data.id}`;
     default:
       return baseUrl;
   }
@@ -101,6 +103,16 @@ export const parseDeepLink = (url: string): DeepLinkData | null => {
       };
     }
 
+    // Handle referral landing page: vineme://referral/landing
+    if (segments.length >= 2 && segments[0] === 'referral') {
+      const [, id] = segments;
+      return { 
+        type: 'referral', 
+        id,
+        params: queryParams 
+      };
+    }
+
     // Handle group and event links
     if (segments.length >= 2) {
       const [type, id] = segments;
@@ -147,6 +159,12 @@ export const handleDeepLink = (url: string, router: any) => {
           return true;
         }
         return false;
+      case 'referral':
+        if (linkData.id === 'landing') {
+          router.push('/referral-landing');
+          return true;
+        }
+        return false;
       case 'group':
         router.push(`/group/${linkData.id}`);
         return true;
@@ -163,6 +181,30 @@ export const handleDeepLink = (url: string, router: any) => {
 };
 
 /**
+ * Share referral landing page with others
+ */
+export const shareReferralLanding = async () => {
+  try {
+    const deepLink = generateDeepLink({
+      type: 'referral',
+      id: 'landing',
+      title: 'Connect Someone to VineMe',
+    });
+
+    const shareOptions = {
+      message: `Help connect someone to our community!\n\nUse VineMe to refer friends to Bible study groups: ${deepLink}`,
+      url: deepLink,
+      title: 'Connect Someone to VineMe',
+    };
+
+    await Share.share(shareOptions);
+  } catch (error) {
+    console.error('Error sharing referral landing:', error);
+    Alert.alert('Error', 'Failed to share referral link. Please try again.');
+  }
+};
+
+/**
  * Generate shareable web URL (for social media, etc.)
  */
 export const generateWebUrl = (data: DeepLinkData): string => {
@@ -173,6 +215,8 @@ export const generateWebUrl = (data: DeepLinkData): string => {
       return `${baseWebUrl}/group/${data.id}`;
     case 'event':
       return `${baseWebUrl}/event/${data.id}`;
+    case 'referral':
+      return `${baseWebUrl}/referral/${data.id}`;
     default:
       return baseWebUrl;
   }

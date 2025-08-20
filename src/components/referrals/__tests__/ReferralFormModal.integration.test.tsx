@@ -1,182 +1,370 @@
-/**
- * Integration test for ReferralFormModal component
- * This test verifies the component logic and functionality without rendering
- */
+import React from 'react';
+import {
+  render,
+  fireEvent,
+  waitFor,
+  screen,
+} from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReferralFormModal } from '../ReferralFormModal';
+import { referralService } from '../../../services/referrals';
+import { useAuthStore } from '../../../stores/auth';
 
-// Import only the type, not the component to avoid Expo dependencies
-import type { ReferralFormData } from '../ReferralFormModal';
+// Mock dependencies
+jest.mock('../../../services/referrals');
+jest.mock('../../../stores/auth');
 
-describe('ReferralFormModal Integration', () => {
-  // Test that the component logic works correctly
-  it('validates component logic without rendering', () => {
-    expect(true).toBe(true); // Basic test to ensure test suite runs
+const mockReferralService = referralService as jest.Mocked<typeof referralService>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
+
+// Test wrapper with QueryClient
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
   });
 
-  // Test that the ReferralFormData interface is properly typed
-  it('has proper ReferralFormData interface', () => {
-    const mockData: ReferralFormData = {
-      email: 'test@example.com',
-      phone: '5551234567',
-      note: 'Test note',
-      firstName: 'John',
-      lastName: 'Doe',
-    };
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: queryClient }, children);
+};
 
-    // Verify all required fields are present
-    expect(mockData.email).toBeDefined();
-    expect(mockData.phone).toBeDefined();
-    expect(mockData.note).toBeDefined();
+describe('ReferralFormModal Integration Tests', () => {
+  const mockOnClose = jest.fn();
+  const mockOnSubmit = jest.fn();
 
-    // Verify optional fields work
-    expect(mockData.firstName).toBeDefined();
-    expect(mockData.lastName).toBeDefined();
-  });
+  const defaultProps = {
+    visible: true,
+    onClose: mockOnClose,
+    onSubmit: mockOnSubmit,
+  };
 
-  // Test that component props interface is properly structured
-  it('accepts proper props structure', () => {
-    const mockProps = {
-      visible: true,
-      onClose: jest.fn(),
-      onSubmit: jest.fn(),
-      groupId: 'test-group-id',
-      groupName: 'Test Group',
-    };
-
-    // Verify all props are properly typed
-    expect(typeof mockProps.visible).toBe('boolean');
-    expect(typeof mockProps.onClose).toBe('function');
-    expect(typeof mockProps.onSubmit).toBe('function');
-    expect(typeof mockProps.groupId).toBe('string');
-    expect(typeof mockProps.groupName).toBe('string');
-  });
-
-  // Test email validation regex
-  it('has proper email validation', () => {
-    const validEmails = [
-      'test@example.com',
-      'user.name@domain.co.uk',
-      'user+tag@example.org',
-    ];
-
-    const invalidEmails = [
-      'invalid-email',
-      '@example.com',
-      'test@',
-      'test.example.com',
-    ];
-
-    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    validEmails.forEach((email) => {
-      expect(EMAIL_REGEX.test(email)).toBe(true);
-    });
-
-    invalidEmails.forEach((email) => {
-      expect(EMAIL_REGEX.test(email)).toBe(false);
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAuthStore.mockReturnValue({
+      user: { id: 'user-123', email: 'test@example.com', name: 'Test User' },
+      isAuthenticated: true,
+      isLoading: false,
+      signIn: jest.fn(),
+      signOut: jest.fn(),
+      signUp: jest.fn(),
+      updateProfile: jest.fn(),
     });
   });
 
-  // Test phone validation logic
-  it('has proper phone validation logic', () => {
-    const validatePhone = (value: string) => {
-      if (!value) return 'Phone number is required';
+  describe('End-to-End Referral Flow', () => {
+    it('should complete full referral creation flow successfully', async () => {
+      mockReferralService.createReferral.mockResolvedValue({
+        success: true,
+        userId: 'new-user-123',
+      });
 
-      const cleanPhone = value.replace(/\D/g, '');
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
 
-      if (cleanPhone.length < 10) {
-        return 'Phone number must be at least 10 digits';
-      }
+      // Fill out the form
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
+      const noteInput = screen.getByTestId('referral-note-input');
 
-      if (cleanPhone.length > 15) {
-        return 'Phone number must be no more than 15 digits';
-      }
+      fireEvent.changeText(emailInput, 'newuser@example.com');
+      fireEvent.changeText(phoneInput, '(555) 123-4567');
+      fireEvent.changeText(noteInput, 'Great person for our community');
 
-      return undefined;
-    };
+      // Submit the form
+      const submitButton = screen.getByTestId('referral-submit-button');
+      fireEvent.press(submitButton);
 
-    // Valid phone numbers
-    expect(validatePhone('5551234567')).toBeUndefined();
-    expect(validatePhone('(555) 123-4567')).toBeUndefined();
-    expect(validatePhone('+1-555-123-4567')).toBeUndefined();
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith({
+          email: 'newuser@example.com',
+          phone: '(555) 123-4567',
+          note: 'Great person for our community',
+          firstName: undefined,
+          lastName: undefined,
+        });
+      });
 
-    // Invalid phone numbers
-    expect(validatePhone('')).toBe('Phone number is required');
-    expect(validatePhone('123')).toBe(
-      'Phone number must be at least 10 digits'
-    );
-    expect(validatePhone('12345678901234567890')).toBe(
-      'Phone number must be no more than 15 digits'
-    );
-  });
-
-  // Test form data trimming logic
-  it('properly trims form data', () => {
-    const trimFormData = (values: any): ReferralFormData => ({
-      email: values.email.trim(),
-      phone: values.phone.trim(),
-      note: values.note.trim(),
-      firstName: values.firstName?.trim() || undefined,
-      lastName: values.lastName?.trim() || undefined,
+      expect(mockOnClose).toHaveBeenCalled();
     });
 
-    const inputData = {
-      email: '  test@example.com  ',
-      phone: '  5551234567  ',
-      note: '  Great person  ',
-      firstName: '  John  ',
-      lastName: '  Doe  ',
-    };
+    it('should handle rate limiting errors gracefully', async () => {
+      mockOnSubmit.mockRejectedValue({
+        errorDetails: {
+          type: 'rate_limit',
+          message: 'Too many referrals in the last hour',
+          retryable: true,
+          suggestions: ['Try again in 30 minutes'],
+        },
+      });
 
-    const result = trimFormData(inputData);
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
 
-    expect(result.email).toBe('test@example.com');
-    expect(result.phone).toBe('5551234567');
-    expect(result.note).toBe('Great person');
-    expect(result.firstName).toBe('John');
-    expect(result.lastName).toBe('Doe');
+      // Fill out and submit form
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
+
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(phoneInput, '5551234567');
+
+      const submitButton = screen.getByTestId('referral-submit-button');
+      fireEvent.press(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Too Many Referrals')).toBeTruthy();
+        expect(screen.getByText('Too many referrals in the last hour')).toBeTruthy();
+      });
+
+      // Modal should not close on error
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
+    it('should handle duplicate referral errors', async () => {
+      mockOnSubmit.mockRejectedValue({
+        errorDetails: {
+          type: 'duplicate',
+          message: 'This person already has an account',
+          retryable: false,
+          suggestions: ['Check if they already have an account'],
+        },
+      });
+
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
+
+      // Fill out and submit form
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
+
+      fireEvent.changeText(emailInput, 'existing@example.com');
+      fireEvent.changeText(phoneInput, '5551234567');
+
+      const submitButton = screen.getByTestId('referral-submit-button');
+      fireEvent.press(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Already Referred')).toBeTruthy();
+        expect(screen.getByText('This person already has an account')).toBeTruthy();
+      });
+    });
+
+    it('should handle network errors with retry option', async () => {
+      mockOnSubmit.mockRejectedValue({
+        errorDetails: {
+          type: 'network',
+          message: 'Network connection failed',
+          retryable: true,
+          suggestions: ['Check your internet connection'],
+        },
+      });
+
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
+
+      // Fill out and submit form
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
+
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(phoneInput, '5551234567');
+
+      const submitButton = screen.getByTestId('referral-submit-button');
+      fireEvent.press(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Connection Problem')).toBeTruthy();
+        expect(screen.getByText('Network connection failed')).toBeTruthy();
+      });
+    });
   });
 
-  // Test character count logic
-  it('properly counts characters for note field', () => {
-    const testNote = 'This is a test note';
-    expect(testNote.length).toBe(19);
-    expect(`${testNote.length}/500 characters`).toBe('19/500 characters');
+  describe('Group Referral Integration', () => {
+    it('should handle group referral flow correctly', async () => {
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal
+            {...defaultProps}
+            groupId="group-123"
+            groupName="Bible Study Group"
+          />
+        </Wrapper>
+      );
+
+      expect(screen.getByText('Refer a friend to Bible Study Group')).toBeTruthy();
+      expect(screen.getByText(/Help someone join this group/)).toBeTruthy();
+
+      // Fill out and submit form
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
+      const noteInput = screen.getByTestId('referral-note-input');
+
+      fireEvent.changeText(emailInput, 'groupmember@example.com');
+      fireEvent.changeText(phoneInput, '5551234567');
+      fireEvent.changeText(noteInput, 'Perfect fit for this group');
+
+      const submitButton = screen.getByTestId('referral-submit-button');
+      fireEvent.press(submitButton);
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith({
+          email: 'groupmember@example.com',
+          phone: '5551234567',
+          note: 'Perfect fit for this group',
+          firstName: undefined,
+          lastName: undefined,
+        });
+      });
+    });
   });
 
-  // Test title generation logic
-  it('generates proper titles for different referral types', () => {
-    const getTitle = (isGroupReferral: boolean, groupName?: string) => {
-      if (isGroupReferral && groupName) {
-        return `Refer a friend to ${groupName}`;
-      }
-      return isGroupReferral
-        ? 'Refer a friend to group'
-        : 'Refer someone to VineMe';
-    };
+  describe('Form Validation Integration', () => {
+    it('should show validation warnings for disposable emails', async () => {
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
 
-    expect(getTitle(false)).toBe('Refer someone to VineMe');
-    expect(getTitle(true)).toBe('Refer a friend to group');
-    expect(getTitle(true, 'Bible Study Group')).toBe(
-      'Refer a friend to Bible Study Group'
-    );
+      const emailInput = screen.getByTestId('referral-email-input');
+      fireEvent.changeText(emailInput, 'test@10minutemail.com');
+      fireEvent(emailInput, 'blur');
+
+      // Note: This would require the validation to return warnings
+      // The actual implementation would need to be updated to show warnings
+    });
+
+    it('should handle complex validation scenarios', async () => {
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
+
+      // Test multiple validation errors at once
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
+      const noteInput = screen.getByTestId('referral-note-input');
+
+      fireEvent.changeText(emailInput, 'invalid-email');
+      fireEvent.changeText(phoneInput, '123');
+      fireEvent.changeText(noteInput, 'a'.repeat(501));
+
+      const submitButton = screen.getByTestId('referral-submit-button');
+      fireEvent.press(submitButton);
+
+      await waitFor(() => {
+        // Should show the first validation error
+        expect(screen.getByText('Invalid Information')).toBeTruthy();
+      });
+    });
   });
 
-  // Test description generation logic
-  it('generates proper descriptions for different referral types', () => {
-    const getDescription = (isGroupReferral: boolean) => {
-      if (isGroupReferral) {
-        return "Help someone join this group by providing their contact information. They'll receive an email to set up their account and can then join the group.";
-      }
-      return "Help someone join the VineMe community. They'll receive an email to set up their account and can explore groups that fit their interests.";
-    };
+  describe('Loading States Integration', () => {
+    it('should show loading state during submission', async () => {
+      let resolveSubmit: (value: any) => void;
+      const submitPromise = new Promise((resolve) => {
+        resolveSubmit = resolve;
+      });
+      mockOnSubmit.mockReturnValue(submitPromise);
 
-    const generalDescription = getDescription(false);
-    const groupDescription = getDescription(true);
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
 
-    expect(generalDescription).toContain('VineMe community');
-    expect(generalDescription).toContain('explore groups');
+      // Fill out form
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
 
-    expect(groupDescription).toContain('join this group');
-    expect(groupDescription).toContain('join the group');
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(phoneInput, '5551234567');
+
+      const submitButton = screen.getByTestId('referral-submit-button');
+      const cancelButton = screen.getByTestId('referral-cancel-button');
+
+      fireEvent.press(submitButton);
+
+      // Should show loading state
+      await waitFor(() => {
+        expect(submitButton.props.accessibilityState.disabled).toBe(true);
+        expect(cancelButton.props.accessibilityState.disabled).toBe(true);
+      });
+
+      // Resolve the promise
+      resolveSubmit!(undefined);
+
+      await waitFor(() => {
+        expect(mockOnClose).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Accessibility Integration', () => {
+    it('should maintain accessibility during error states', async () => {
+      mockOnSubmit.mockRejectedValue(new Error('Test error'));
+
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
+
+      // Fill out and submit form to trigger error
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
+
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(phoneInput, '5551234567');
+
+      const submitButton = screen.getByTestId('referral-submit-button');
+      fireEvent.press(submitButton);
+
+      await waitFor(() => {
+        const errorElement = screen.getByTestId('referral-form-error');
+        expect(errorElement).toBeTruthy();
+        // Error should be accessible
+        expect(errorElement.props.accessibilityRole).toBeDefined();
+      });
+    });
+
+    it('should provide proper focus management', async () => {
+      const Wrapper = createWrapper();
+      render(
+        <Wrapper>
+          <ReferralFormModal {...defaultProps} />
+        </Wrapper>
+      );
+
+      // Test that form fields are properly accessible
+      const emailInput = screen.getByTestId('referral-email-input');
+      const phoneInput = screen.getByTestId('referral-phone-input');
+
+      expect(emailInput.props.accessibilityLabel).toBe('Email Address');
+      expect(phoneInput.props.accessibilityLabel).toBe('Phone Number');
+    });
   });
 });

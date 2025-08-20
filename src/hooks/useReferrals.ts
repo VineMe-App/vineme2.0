@@ -202,7 +202,10 @@ export const useCreateGeneralReferral = () => {
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to create general referral');
+        const error = new Error(result.error || 'Failed to create general referral');
+        (error as any).errorDetails = result.errorDetails;
+        (error as any).warnings = result.warnings;
+        throw error;
       }
 
       return result;
@@ -263,7 +266,10 @@ export const useCreateGroupReferral = () => {
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to create group referral');
+        const error = new Error(result.error || 'Failed to create group referral');
+        (error as any).errorDetails = result.errorDetails;
+        (error as any).warnings = result.warnings;
+        throw error;
       }
 
       return result;
@@ -333,7 +339,10 @@ export const useCreateReferral = () => {
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to create referral');
+        const error = new Error(result.error || 'Failed to create referral');
+        (error as any).errorDetails = result.errorDetails;
+        (error as any).warnings = result.warnings;
+        throw error;
       }
 
       return result;

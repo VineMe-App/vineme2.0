@@ -1,12 +1,14 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Modal } from '../ui/Modal';
 import { Form, FormField, FormConfig, useFormContext } from '../ui/Form';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import { Theme } from '../../utils/theme';
+import { validateReferralForm, type ReferralFormData } from '../../utils/referralValidation';
 
-export interface ReferralFormData {
+export interface ReferralFormModalData {
   email: string;
   phone: string;
   note: string;
@@ -14,11 +16,18 @@ export interface ReferralFormData {
   lastName?: string;
 }
 
+interface FormError {
+  title: string;
+  message: string;
+  suggestions?: string[];
+  retryable: boolean;
+}
+
 interface ReferralFormModalProps {
   visible: boolean;
   onClose: () => void;
   groupId?: string; // Optional for group-specific referrals
-  onSubmit: (data: ReferralFormData) => Promise<void>;
+  onSubmit: (data: ReferralFormModalData) => Promise<void>;
   groupName?: string; // For display purposes in group referrals
 }
 
@@ -33,6 +42,8 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
   groupName,
 }) => {
   const isGroupReferral = !!groupId;
+  const [formError, setFormError] = useState<FormError | null>(null);
+  const [warnings, setWarnings] = useState<Record<string, string>>({});
 
   // Form configuration with validation rules
   const formConfig: FormConfig = {
@@ -54,10 +65,15 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
         required: true,
         pattern: EMAIL_REGEX,
         custom: (value: string) => {
-          if (value && !EMAIL_REGEX.test(value)) {
-            return 'Please enter a valid email address';
-          }
-          return undefined;
+          if (!value) return 'Email address is required';
+          
+          const validation = validateReferralForm({
+            email: value,
+            phone: '',
+            note: '',
+          });
+          
+          return validation.errors.email || undefined;
         },
       },
     },
@@ -67,19 +83,14 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
         required: true,
         custom: (value: string) => {
           if (!value) return 'Phone number is required';
-
-          // Remove all non-digit characters for validation
-          const cleanPhone = value.replace(/\D/g, '');
-
-          if (cleanPhone.length < 10) {
-            return 'Phone number must be at least 10 digits';
-          }
-
-          if (cleanPhone.length > 15) {
-            return 'Phone number must be no more than 15 digits';
-          }
-
-          return undefined;
+          
+          const validation = validateReferralForm({
+            email: '',
+            phone: value,
+            note: '',
+          });
+          
+          return validation.errors.phone || undefined;
         },
       },
     },
@@ -94,7 +105,11 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
   const handleSubmit = useCallback(
     async (values: any) => {
       try {
-        const formData: ReferralFormData = {
+        // Clear previous errors and warnings
+        setFormError(null);
+        setWarnings({});
+
+        const formData: ReferralFormModalData = {
           email: values.email.trim(),
           phone: values.phone.trim(),
           note: values.note.trim(),
@@ -102,15 +117,58 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
           lastName: values.lastName?.trim() || undefined,
         };
 
+        // Client-side validation
+        const validation = validateReferralForm(formData);
+        
+        if (!validation.isValid) {
+          const firstError = Object.entries(validation.errors)[0];
+          setFormError({
+            title: 'Invalid Information',
+            message: firstError[1],
+            retryable: true,
+            suggestions: [
+              'Please check the highlighted fields and correct any errors',
+              'Make sure the email address is valid and spelled correctly',
+              'Ensure the phone number includes area code',
+            ],
+          });
+          return;
+        }
+
+        // Set warnings if any
+        if (validation.warnings) {
+          setWarnings(validation.warnings);
+        }
+
         await onSubmit(formData);
         onClose();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error submitting referral:', error);
-        Alert.alert(
-          'Error',
-          'There was an error submitting the referral. Please try again.',
-          [{ text: 'OK' }]
-        );
+        
+        // Handle different types of errors
+        if (error.errorDetails) {
+          setFormError({
+            title: error.errorDetails.type === 'rate_limit' ? 'Too Many Referrals' : 
+                   error.errorDetails.type === 'duplicate' ? 'Already Referred' :
+                   error.errorDetails.type === 'validation' ? 'Invalid Information' :
+                   error.errorDetails.type === 'network' ? 'Connection Problem' :
+                   'Referral Failed',
+            message: error.errorDetails.message,
+            retryable: error.errorDetails.retryable,
+            suggestions: error.errorDetails.suggestions,
+          });
+        } else {
+          setFormError({
+            title: 'Referral Failed',
+            message: error.message || 'There was an error submitting the referral. Please try again.',
+            retryable: true,
+            suggestions: [
+              'Please try again in a few moments',
+              'Check that all information is correct',
+              'Contact support if the problem continues',
+            ],
+          });
+        }
       }
     },
     [onSubmit, onClose]
@@ -144,6 +202,28 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
     >
       <View style={styles.container}>
         <Text style={styles.description}>{getDescription()}</Text>
+
+        {formError && (
+          <View style={styles.errorContainer}>
+            <ErrorMessage
+              title={formError.title}
+              message={formError.message}
+              suggestions={formError.suggestions}
+              onRetry={formError.retryable ? () => setFormError(null) : undefined}
+              testID="referral-form-error"
+            />
+          </View>
+        )}
+
+        {Object.keys(warnings).length > 0 && (
+          <View style={styles.warningContainer}>
+            {Object.entries(warnings).map(([field, warning]) => (
+              <Text key={field} style={styles.warningText}>
+                ⚠️ {warning}
+              </Text>
+            ))}
+          </View>
+        )}
 
         <Form config={formConfig} onSubmit={handleSubmit}>
           <View style={styles.nameRow}>
@@ -285,6 +365,22 @@ const styles = StyleSheet.create({
     color: Theme.colors.textSecondary,
     lineHeight: 22,
     marginBottom: Theme.spacing.lg,
+  },
+  errorContainer: {
+    marginBottom: Theme.spacing.lg,
+  },
+  warningContainer: {
+    backgroundColor: Theme.colors.warning + '20',
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.md,
+    marginBottom: Theme.spacing.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: Theme.colors.warning,
+  },
+  warningText: {
+    fontSize: Theme.typography.fontSize.sm,
+    color: Theme.colors.warning,
+    lineHeight: 20,
   },
   nameRow: {
     flexDirection: 'row',

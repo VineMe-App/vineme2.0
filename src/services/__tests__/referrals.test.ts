@@ -2,6 +2,7 @@ import { referralService } from '../referrals';
 import { supabase } from '../supabase';
 import { authService } from '../auth';
 import { emailVerificationService } from '../emailVerification';
+import { referralRateLimiter } from '../../utils/referralValidation';
 import type { CreateReferralData } from '../referrals';
 
 // Mock dependencies
@@ -14,6 +15,23 @@ jest.mock('../referralDatabase');
 jest.mock('../../utils/errorHandling', () => ({
   handleSupabaseError: jest.fn((error: Error) => ({ message: error.message })),
   retryWithBackoff: jest.fn((fn: () => any) => fn()),
+}));
+
+// Mock referral validation utilities
+jest.mock('../../utils/referralValidation', () => ({
+  validateServerReferralData: jest.fn(() => ({ isValid: true, errors: {} })),
+  sanitizeReferralInput: jest.fn((data: any) => data),
+  referralRateLimiter: {
+    canMakeReferral: jest.fn(() => ({ allowed: true })),
+    recordReferral: jest.fn(),
+    clearAllRateLimits: jest.fn(),
+  },
+  createReferralErrorMessage: jest.fn((error: Error) => ({
+    title: 'Error',
+    message: error.message,
+    actionable: true,
+    retryable: true,
+  })),
 }));
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
@@ -742,6 +760,389 @@ describe('ReferralService', () => {
         expect(result.success).toBe(false);
         expect(result.error).toBe('Cannot refer yourself');
       });
+    });
+  });
+});
+
+  describe('Error Handling and Validation', () => {
+    beforeEach(() => {
+      // Clear rate limiter for each test
+      (referralRateLimiter as any).clearAllRateLimits();
+    });
+
+    it('should handle rate limiting', async () => {
+      // Mock rate limiter to return rate limit exceeded
+      jest.spyOn(referralRateLimiter, 'canMakeReferral').mockReturnValue({
+        allowed: false,
+        reason: 'Too many referrals in the last hour. You can make 5 referrals per hour.',
+        retryAfter: 30,
+      });
+
+      const result = await referralService.createReferral(mockReferralData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Too many referrals');
+      expect(result.errorDetails?.type).toBe('rate_limit');
+      expect(result.errorDetails?.retryable).toBe(true);
+      expect(result.errorDetails?.suggestions).toContain('Try again in 30 minutes');
+    });
+
+    it('should handle validation errors', async () => {
+      const invalidData: CreateReferralData = {
+        ...mockReferralData,
+        email: 'invalid-email',
+        phone: '123',
+      };
+
+      const result = await referralService.createReferral(invalidData);
+
+      expect(result.success).toBe(false);
+      expect(result.errorDetails?.type).toBe('validation');
+      expect(result.errorDetails?.retryable).toBe(true);
+    });
+
+    it('should handle duplicate referrals', async () => {
+      // Mock existing user
+      mockSupabase.from.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { id: 'existing-user-123', email: 'test@example.com' },
+              error: null,
+            }),
+          }),
+        }),
+      } as any);
+
+      // Mock existing referral
+      mockSupabase.from.mockReturnValueOnce({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: { id: 'existing-user-123', email: 'test@example.com' },
+              error: null,
+            }),
+          }),
+        }),
+      } as any);
+
+      const result = await referralService.createReferral(mockReferralData);
+
+      expect(result.success).toBe(false);
+      expect(result.errorDetails?.type).toBe('duplicate');
+      expect(result.errorDetails?.retryable).toBe(false);
+    });
+
+    it('should handle network errors', async () => {
+      // Mock network error
+      mockAuthService.createReferredUser.mockRejectedValue(
+        new Error('Network connection failed')
+      );
+
+      const result = await referralService.createReferral(mockReferralData);
+
+      expect(result.success).toBe(false);
+      expect(result.errorDetails?.type).toBe('network');
+      expect(result.errorDetails?.retryable).toBe(true);
+    });
+
+    it('should handle email service failures gracefully', async () => {
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      // Mock email service failure
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: false,
+        error: 'Email service unavailable',
+      });
+
+      // Mock successful database operations
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      const result = await referralService.createReferral(mockReferralData);
+
+      // Should still succeed even if email fails
+      expect(result.success).toBe(true);
+      expect(result.userId).toBe('user-123');
+    });
+
+    it('should sanitize input data', async () => {
+      const dirtyData: CreateReferralData = {
+        email: '  TEST@EXAMPLE.COM  ',
+        phone: '  +1 234 567 890  ',
+        note: '  This is a test note  ',
+        firstName: '  John  ',
+        lastName: '  Doe  ',
+        referrerId: 'referrer-123',
+      };
+
+      // Mock successful operations
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      const result = await referralService.createReferral(dirtyData);
+
+      expect(result.success).toBe(true);
+      
+      // Verify that createReferredUser was called with sanitized data
+      expect(mockAuthService.createReferredUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'test@example.com',
+          phone: '+1 234 567 890',
+          firstName: 'John',
+          lastName: 'Doe',
+        })
+      );
+    });
+
+    it('should provide warnings for suspicious input', async () => {
+      const suspiciousData: CreateReferralData = {
+        ...mockReferralData,
+        email: 'test@10minutemail.com', // Disposable email
+      };
+
+      // Mock successful operations
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      const result = await referralService.createReferral(suspiciousData);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.email).toContain('Disposable email addresses');
+    });
+
+    it('should handle database constraint violations', async () => {
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      // Mock database constraint violation
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({
+          error: { code: '23505', message: 'duplicate key value violates unique constraint' },
+        }),
+      } as any);
+
+      const result = await referralService.createReferral(mockReferralData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('already been referred');
+    });
+
+    it('should handle foreign key constraint violations', async () => {
+      // Mock successful user creation
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      // Mock foreign key constraint violation
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({
+          error: { code: '23503', message: 'insert or update on table violates foreign key constraint' },
+        }),
+      } as any);
+
+      const result = await referralService.createReferral(mockReferralData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Invalid referrer or user reference');
+    });
+
+    it('should record referral attempts for rate limiting', async () => {
+      const recordSpy = jest.spyOn(referralRateLimiter, 'recordReferral');
+
+      // Mock successful operations
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      await referralService.createReferral(mockReferralData);
+
+      expect(recordSpy).toHaveBeenCalledWith(mockReferralData.referrerId);
+    });
+
+    it('should handle invalid UUID formats', async () => {
+      const invalidUuidData: CreateReferralData = {
+        ...mockReferralData,
+        referrerId: 'invalid-uuid',
+        groupId: 'also-invalid',
+      };
+
+      const result = await referralService.createReferral(invalidUuidData);
+
+      expect(result.success).toBe(false);
+      expect(result.errorDetails?.type).toBe('validation');
+      expect(result.error).toContain('Invalid referrer ID format');
+    });
+
+    it('should suggest email domain corrections', async () => {
+      const typoData: CreateReferralData = {
+        ...mockReferralData,
+        email: 'test@gmail.co', // Common typo
+      };
+
+      // Mock successful operations
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      const result = await referralService.createReferral(typoData);
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.email).toContain('test@gmail.com');
+    });
+
+    it('should handle retry logic for transient failures', async () => {
+      let attemptCount = 0;
+      
+      // Mock transient failure followed by success
+      mockAuthService.createReferredUser.mockImplementation(() => {
+        attemptCount++;
+        if (attemptCount === 1) {
+          return Promise.reject(new Error('Temporary network error'));
+        }
+        return Promise.resolve({ userId: 'user-123', error: null });
+      });
+
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      const result = await referralService.createReferral(mockReferralData);
+
+      expect(result.success).toBe(true);
+      expect(attemptCount).toBe(2); // Should have retried once
+    });
+  });
+
+  describe('Input Validation Edge Cases', () => {
+    it('should handle extremely long input strings', async () => {
+      const longData: CreateReferralData = {
+        ...mockReferralData,
+        note: 'a'.repeat(1000), // Exceeds 500 char limit
+        firstName: 'a'.repeat(100), // Exceeds 50 char limit
+        lastName: 'a'.repeat(100), // Exceeds 50 char limit
+      };
+
+      const result = await referralService.createReferral(longData);
+
+      expect(result.success).toBe(false);
+      expect(result.errorDetails?.type).toBe('validation');
+    });
+
+    it('should handle special characters in names', async () => {
+      const specialCharData: CreateReferralData = {
+        ...mockReferralData,
+        firstName: "O'Connor",
+        lastName: "Smith-Jones",
+      };
+
+      // Mock successful operations
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      const result = await referralService.createReferral(specialCharData);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should handle international characters in names', async () => {
+      const internationalData: CreateReferralData = {
+        ...mockReferralData,
+        firstName: "José",
+        lastName: "Müller",
+      };
+
+      const result = await referralService.createReferral(internationalData);
+
+      expect(result.success).toBe(false);
+      expect(result.errorDetails?.type).toBe('validation');
+      expect(result.error).toContain('invalid characters');
+    });
+
+    it('should handle empty note field correctly', async () => {
+      const emptyNoteData: CreateReferralData = {
+        ...mockReferralData,
+        note: '',
+      };
+
+      // Mock successful operations
+      mockAuthService.createReferredUser.mockResolvedValue({
+        userId: 'user-123',
+        error: null,
+      });
+
+      mockEmailVerificationService.sendVerificationEmail.mockResolvedValue({
+        success: true,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      const result = await referralService.createReferral(emptyNoteData);
+
+      expect(result.success).toBe(true);
     });
   });
 });
