@@ -85,6 +85,13 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Remove security from the tab bar by disabling direct href */}
+      <Tabs.Screen
+        name="profile/security"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

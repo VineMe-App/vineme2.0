@@ -122,7 +122,7 @@ export class GroupService {
             role,
             status,
             joined_at,
-            user:users(id, name, avatar_url, email)
+            user:users(id, name, avatar_url)
           )
         `
         )
@@ -352,7 +352,7 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url, email)
+          user:users(id, name, avatar_url)
         `
         )
         .eq('group_id', groupId)
@@ -406,7 +406,7 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url, email)
+          user:users(id, name, avatar_url)
         `
         )
         .eq('group_id', groupId)
@@ -443,7 +443,7 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url, email)
+          user:users(id, name, avatar_url)
         `
         )
         .eq('group_id', groupId)

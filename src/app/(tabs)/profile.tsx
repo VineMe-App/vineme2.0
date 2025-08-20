@@ -72,7 +72,7 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await signOut();
-          router.replace('/(auth)/sign-in');
+          router.replace({ pathname: '/(auth)/sign-in' as any });
         },
       },
     ]);
@@ -92,7 +92,7 @@ export default function ProfileScreen() {
             try {
               await deleteAccountMutation.mutateAsync(user.id);
               await signOut();
-              router.replace('/(auth)/sign-in');
+              router.replace({ pathname: '/(auth)/sign-in' as any });
             } catch (e) {
               Alert.alert(
                 'Error',
@@ -146,7 +146,9 @@ export default function ProfileScreen() {
               />
 
               <Text style={styles.name}>{userProfile.name}</Text>
-              <Text style={styles.email}>{userProfile.email}</Text>
+              {user?.email ? (
+                <Text style={styles.email}>{user.email}</Text>
+              ) : null}
 
               <Button
                 title="Edit Profile"
@@ -159,17 +161,19 @@ export default function ProfileScreen() {
 
             {/* Friend Request Notifications */}
             <FriendRequestNotifications
-              userId={user?.id}
+              requests={(receivedRequestsQuery.data as any[]) || []}
               onPress={() => setShowFriendsModal(true)}
             />
 
             <View style={styles.infoSection}>
               <Text style={styles.sectionTitle}>Profile Information</Text>
 
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue}>{userProfile.email}</Text>
-              </View>
+              {user?.email ? (
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Email</Text>
+                  <Text style={styles.infoValue}>{user.email}</Text>
+                </View>
+              ) : null}
 
               {userProfile.church && (
                 <View style={styles.infoItem}>
@@ -314,6 +318,11 @@ export default function ProfileScreen() {
             onPress={() => setShowPrivacyModal(true)}
             variant="secondary"
             style={styles.privacyButton}
+          />
+          <Button
+            title="Security"
+            onPress={() => router.push('/profile/security')}
+            variant="secondary"
           />
           <Button
             title="Sign Out"

@@ -3,11 +3,12 @@ import { Stack, router, useSegments } from 'expo-router';
 import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryProvider } from '@/providers/QueryProvider';
+import { AuthProvider } from '@/providers/AuthProvider';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { ErrorBoundary, OfflineBanner } from '@/components';
 import { DevToolsOverlay } from '@/components/devtools/DevToolsOverlay';
-import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
+
 import { handleDeepLink } from '@/utils/deepLinking';
 import { useNotifications } from '@/hooks/useNotifications';
 import { logPlatformInfo } from '@/utils/platformTesting';
@@ -83,8 +84,10 @@ function RootLayoutNav() {
       // Allow referral landing screen outside of tabs
       segments[0] === 'referral-landing';
 
-    // Treat onboarding as done if a profile exists OR the persisted flag is set
-    const isOnboardingDone = !!userProfile || onboardingCompleted;
+    // Onboarding is done ONLY when a profile exists and newcomer !== true.
+    // If there is no profile yet, we must force onboarding regardless of any persisted flag.
+    const hasProfile = !!userProfile;
+    const isOnboardingDone = hasProfile ? userProfile.newcomer !== true : false;
 
     if (__DEV__) {
       console.log(
@@ -109,16 +112,15 @@ function RootLayoutNav() {
         router.replace('/(tabs)');
       }
     } else if (!inAuthGroup) {
-      if (__DEV__) console.log('[NavDebug] redirect -> /(auth)/sign-in');
-      // User is not signed in and not in auth group, redirect to sign in
-      router.replace('/(auth)/sign-in');
+      if (__DEV__) console.log('[NavDebug] redirect -> /(auth)/welcome');
+      // User is not signed in and not in auth group, redirect to welcome
+      router.replace('/(auth)/welcome');
     }
   }, [user, userProfile, segments, isInitialized, onboardingCompleted]);
 
   return (
     <>
       <OfflineBanner />
-      <EmailVerificationBanner />
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -134,7 +136,9 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryProvider>
-        <RootLayoutNav />
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
       </QueryProvider>
     </ErrorBoundary>
   );

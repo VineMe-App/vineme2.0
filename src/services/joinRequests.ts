@@ -112,7 +112,7 @@ export class JoinRequestService {
           user_id,
           status,
           joined_at,
-          user:users(id, name, avatar_url, email),
+          user:users(id, name, avatar_url),
           group:groups(id, title)
         `
         )

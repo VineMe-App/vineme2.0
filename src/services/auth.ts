@@ -10,16 +10,7 @@ export interface AuthResponse {
   error: Error | null;
 }
 
-export interface SignUpData {
-  email: string;
-  password: string;
-  name?: string;
-}
-
-export interface SignInData {
-  email: string;
-  password: string;
-}
+// Password authentication interfaces removed - phone-first authentication only
 
 export interface CreateReferredUserData {
   email: string;
@@ -37,69 +28,7 @@ export interface CreateReferredUserResponse {
 }
 
 export class AuthService {
-  /**
-   * Sign in with email and password
-   */
-  async signIn({ email, password }: SignInData): Promise<AuthResponse> {
-    try {
-      const { data, error } = await retryWithBackoff(async () => {
-        const result = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (result.error) {
-          throw result.error;
-        }
-
-        return result;
-      });
-
-      // Store authentication session securely
-      if (data.session) {
-        await secureStorage.storeAuthSession({
-          accessToken: data.session.access_token,
-          refreshToken: data.session.refresh_token,
-          expiresAt: data.session.expires_at,
-        });
-      }
-
-      return { user: data.user, error: null };
-    } catch (error) {
-      const appError = handleSupabaseError(error as Error);
-      return { user: null, error: new Error(appError.message) };
-    }
-  }
-
-  /**
-   * Sign up with email and password
-   */
-  async signUp({ email, password, name }: SignUpData): Promise<AuthResponse> {
-    try {
-      const { data, error } = await retryWithBackoff(async () => {
-        const result = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name: name || '',
-            },
-          },
-        });
-
-        if (result.error) {
-          throw result.error;
-        }
-
-        return result;
-      });
-
-      return { user: data.user, error: null };
-    } catch (error) {
-      const appError = handleSupabaseError(error as Error);
-      return { user: null, error: new Error(appError.message) };
-    }
-  }
+  // Password authentication removed - phone-first authentication only
 
   /**
    * Sign out the current user
@@ -114,7 +43,7 @@ export class AuthService {
 
       // Clear secure storage on sign out
       await secureStorage.clearAuthSession();
-
+      
       // Clear permission cache
       permissionService.clearUserCache();
 
@@ -165,14 +94,11 @@ export class AuthService {
         `
         )
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error getting user profile:', error.message);
-        return null;
-      }
+      if (error) return null;
 
-      return data;
+      return data || null;
     } catch (error) {
       console.error('Error getting user profile:', error);
       return null;
@@ -227,11 +153,16 @@ export class AuthService {
       // Insert minimal required fields to avoid 400s from missing FKs or columns
       const payload: Record<string, any> = {
         id: user.id,
-        email: user.email || '',
         name: userData.name,
         roles: ['user'],
         updated_at: new Date().toISOString(),
       };
+      // Respect NOT NULL/UNIQUE constraints: only include email if present
+      if (user.email) {
+        payload.email = user.email;
+      }
+
+      // phone/email removed from public.users; use auth.user for credentials
 
       if (userData.church_id) {
         payload.church_id = userData.church_id;
@@ -242,10 +173,11 @@ export class AuthService {
       if (userData.newcomer !== undefined) {
         payload.newcomer = userData.newcomer;
       }
+      
       const { error } = await supabase.from('users').upsert(payload, {
-        onConflict: 'id',
-        ignoreDuplicates: false,
-      });
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        });
 
       if (error) {
         // Surface full error info in dev to diagnose 400s
@@ -274,7 +206,7 @@ export class AuthService {
   }> {
     try {
       const { data, error } = await supabase.auth.getSession();
-
+      
       if (error) {
         return { user: null, error: new Error(error.message) };
       }
@@ -299,7 +231,7 @@ export class AuthService {
         // Refresh the session
         const { data: refreshData, error: refreshError } =
           await supabase.auth.refreshSession();
-
+        
         if (refreshError) {
           await secureStorage.clearAuthSession();
           return { user: null, error: new Error('Session refresh failed') };
@@ -312,7 +244,7 @@ export class AuthService {
             refreshToken: refreshData.session.refresh_token,
             expiresAt: refreshData.session.expires_at,
           });
-
+          
           return { user: refreshData.session.user, error: null };
         }
       }
@@ -370,7 +302,7 @@ export class AuthService {
       );
 
       if (authError || !authData.user) {
-        const appError = handleSupabaseError(authError as Error);
+        const appError = handleSupabaseError((authError ?? new Error('Unknown auth error')) as Error);
         return {
           user: null,
           error: new Error(
@@ -549,162 +481,7 @@ export class AuthService {
     return 'vineme://auth/verify-email';
   }
 
-  /**
-   * Handle email verification from deep link
-   * Requirement 5.3: Allow referred person to complete VineMe account setup
-   * Requirement 5.4: Update user's status appropriately when verification is complete
-   */
-  async handleEmailVerification(
-    accessToken: string,
-    refreshToken: string
-  ): Promise<{ success: boolean; error?: string; user?: User }> {
-    try {
-      // Set the session using the tokens from the verification link
-      const { data, error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-
-      if (error) {
-        console.error('Email verification failed:', error);
-        return { 
-          success: false, 
-          error: 'Email verification failed. The link may be expired or invalid.' 
-        };
-      }
-
-      if (!data.user) {
-        return { 
-          success: false, 
-          error: 'No user found after verification.' 
-        };
-      }
-
-      // Update user's email verification status in our database
-      await this.updateUserVerificationStatus(data.user.id, true);
-
-      // Store the session securely
-      if (data.session) {
-        await secureStorage.storeAuthSession({
-          accessToken: data.session.access_token,
-          refreshToken: data.session.refresh_token,
-          expiresAt: data.session.expires_at,
-        });
-      }
-
-      console.log(`Email verification successful for user ${data.user.id}`);
-      
-      return { 
-        success: true, 
-        user: data.user 
-      };
-    } catch (error) {
-      console.error('Error handling email verification:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error 
-          ? error.message 
-          : 'An unexpected error occurred during verification' 
-      };
-    }
-  }
-
-  /**
-   * Update user's email verification status in the database
-   * Requirement 5.4: Update user's status appropriately when verification is complete
-   */
-  private async updateUserVerificationStatus(
-    userId: string, 
-    isVerified: boolean
-  ): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ 
-          email_verified: isVerified,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
-
-      if (error) {
-        console.error('Failed to update user verification status:', error);
-        // Don't throw here as the main verification was successful
-      }
-    } catch (error) {
-      console.error('Error updating user verification status:', error);
-      // Don't throw here as the main verification was successful
-    }
-  }
-
-  /**
-   * Check if a user's email is verified
-   */
-  async isEmailVerified(userId?: string): Promise<boolean> {
-    try {
-      const targetUserId = userId || (await this.getCurrentUser())?.id;
-      
-      if (!targetUserId) {
-        return false;
-      }
-
-      const { data, error } = await supabase
-        .from('users')
-        .select('email_verified')
-        .eq('id', targetUserId)
-        .single();
-
-      if (error || !data) {
-        return false;
-      }
-
-      return data.email_verified || false;
-    } catch (error) {
-      console.error('Error checking email verification status:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Resend verification email for current user
-   */
-  async resendVerificationEmail(): Promise<{ success: boolean; error?: string }> {
-    try {
-      const user = await this.getCurrentUser();
-      
-      if (!user?.email) {
-        return { 
-          success: false, 
-          error: 'No authenticated user or email found' 
-        };
-      }
-
-      const redirectUrl = this.buildEmailVerificationRedirectUrl();
-      
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: user.email,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      });
-
-      if (error) {
-        return { 
-          success: false, 
-          error: `Failed to resend verification email: ${error.message}` 
-        };
-      }
-
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error 
-          ? error.message 
-          : 'Failed to resend verification email' 
-      };
-    }
-  }
+  // Email verification methods removed - phone-only verification
 
   /**
    * Listen to authentication state changes
@@ -730,9 +507,247 @@ export class AuthService {
           expiresAt: session.expires_at,
         });
       }
-
+      
       callback(session?.user || null);
     });
+  }
+
+  /**
+   * Sign up with phone number (preferred method)
+   */
+  async signUpWithPhone(
+    rawPhone: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const phone = this.normalizePhone(rawPhone);
+      if (!phone) {
+        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({ 
+        phone,
+        options: { shouldCreateUser: true }
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send verification code',
+      };
+    }
+  }
+
+  /**
+   * Sign in with phone number
+   */
+  async signInWithPhone(
+    rawPhone: string
+  ): Promise<{ success: boolean; error?: string; userNotFound?: boolean }> {
+    try {
+      const phone = this.normalizePhone(rawPhone);
+      if (!phone) {
+        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({ 
+        phone,
+        options: { shouldCreateUser: false }
+      });
+
+      if (error) {
+        // Check if user not found
+        if (error.message.toLowerCase().includes('user not found') || 
+            error.message.toLowerCase().includes('invalid login credentials')) {
+          return { 
+            success: false, 
+            error: "This phone isn't linked yet. Please log in with your email, then link your phone in Profile → Security.",
+            userNotFound: true
+          };
+        }
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send verification code',
+      };
+    }
+  }
+
+  /**
+   * Sign in with email (fallback method) - sends magic link
+   */
+  async signInWithEmail(
+    email: string
+  ): Promise<{ success: boolean; error?: string; userNotFound?: boolean }> {
+    try {
+      // Allow email login via magic link (no email signups)
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: 'vineme://auth/verify-email',
+        },
+      });
+
+      if (error) {
+        const msg = error.message.toLowerCase();
+        // Check if user not found
+        if (msg.includes('user not found') || msg.includes('invalid login credentials')) {
+          return { 
+            success: false, 
+            error: "This email isn't linked yet. Please sign up with your phone first.",
+            userNotFound: true
+          };
+        }
+        // Some projects configure supabase to block email sign-in entirely; surface a better message
+        if (msg.includes('signups not allowed') || msg.includes('disabled') || msg.includes('not allowed')) {
+          return { success: false, error: 'Email login is currently disabled by server policy.' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send magic link',
+      };
+    }
+  }
+
+  /**
+   * Verify OTP code for SMS or email
+   */
+  async verifyOtp(
+    phoneOrEmail: string,
+    code: string,
+    type: 'sms' | 'email'
+  ): Promise<{ success: boolean; error?: string; user?: User }> {
+    try {
+      // Expect 4-digit code for SMS, 6-digit for email
+      const expectedLength = type === 'sms' ? 4 : 6;
+      if (!new RegExp(`^\\d{${expectedLength}}$`).test(code)) {
+        return { 
+          success: false, 
+          error: `Enter the ${expectedLength}-digit code` 
+        };
+      }
+
+      let verifyOptions;
+      if (type === 'sms') {
+        const normalizedPhone = this.normalizePhone(phoneOrEmail);
+        if (!normalizedPhone) {
+          return { success: false, error: 'Invalid phone number format' };
+        }
+        verifyOptions = {
+          phone: normalizedPhone,
+          token: code,
+          type: 'sms' as const
+        };
+      } else {
+        verifyOptions = {
+          email: phoneOrEmail,
+          token: code,
+          type: 'email' as const
+        };
+      }
+
+      const { data, error } = await supabase.auth.verifyOtp(verifyOptions);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (!data?.session?.user) {
+        return { success: false, error: 'Verification failed. Try again.' };
+      }
+
+      // Store session securely
+      if (data.session) {
+        await secureStorage.storeAuthSession({
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+          expiresAt: data.session.expires_at,
+        });
+      }
+
+      return { success: true, user: data.session.user };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to verify code',
+      };
+    }
+  }
+
+  /**
+   * Link email to existing phone-authenticated user (no verification required)
+   */
+  async linkEmail(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase.auth.updateUser({ email });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to link email',
+      };
+    }
+  }
+
+  /**
+   * Link phone to existing email-authenticated user
+   */
+  async linkPhone(rawPhone: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const phone = this.normalizePhone(rawPhone);
+      if (!phone) {
+        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+      }
+
+      const { error } = await supabase.auth.updateUser({ phone });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to link phone',
+      };
+    }
+  }
+
+  /**
+   * Normalize phone to E.164 format
+   */
+  private normalizePhone(input: string): string | null {
+    if (!input) return null;
+    
+    // Remove all non-digit characters except +
+    const cleaned = input.replace(/[^\d+]/g, '');
+    
+    // Must start with + and have at least 10 digits
+    if (!cleaned.startsWith('+') || cleaned.length < 11) {
+      return null;
+    }
+    
+    return cleaned;
   }
 }
 

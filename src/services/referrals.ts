@@ -467,11 +467,12 @@ export class ReferralService {
   ): Promise<{ isDuplicate: boolean; message: string }> {
     try {
       // Check if user already exists with this email
-      const { data: existingUser, error: userError } = await supabase
-        .from('users')
-        .select('id, email')
-        .eq('email', email.toLowerCase())
-        .single();
+      // public.users no longer stores email; rely on auth to detect existing users by email
+      const { data: existingUser, error: userError } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 1,
+        email: email.toLowerCase(),
+      }) as any;
 
       if (userError && userError.code !== 'PGRST116') {
         // Error other than "no rows found"

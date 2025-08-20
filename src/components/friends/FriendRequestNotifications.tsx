@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Avatar } from '../ui/Avatar';
-import type { FriendshipWithUser } from '../../types/database';
+// import type { FriendshipWithUser } from '../../types/database';
 
 interface FriendRequestNotificationsProps {
-  requests?: FriendshipWithUser[];
+  requests?: any[];
   onPress?: () => void;
   maxDisplay?: number;
 }

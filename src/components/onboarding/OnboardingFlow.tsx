@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 
 import NameStep from './NameStep';
+import EmailStep from './EmailStep';
 import ChurchStep from './ChurchStep';
 import GroupStatusStep from './GroupStatusStep';
 import InterestsStep from './InterestsStep';
@@ -17,6 +18,11 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'name',
     title: 'Your Name',
     component: NameStep,
+  },
+  {
+    id: 'email',
+    title: 'Your Email',
+    component: EmailStep,
   },
   {
     id: 'church',
@@ -127,12 +133,12 @@ export default function OnboardingFlow() {
         console.log('[Onboarding] Creating user profile...', {
           hasUser: !!user,
         });
-      // Create user profile in database
+      // Create user profile in database AFTER we have an email (EmailStep links auth.user)
       const success = await createUserProfile({
         name: data.name,
         church_id: data.church_id,
         service_id: data.service_id,
-        newcomer: data.group_status === 'looking',
+        newcomer: false,
       });
 
       if (!success) {

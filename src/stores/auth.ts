@@ -11,9 +11,13 @@ interface AuthState {
   isInitialized: boolean;
   error: string | null;
 
-  // Actions
-  signIn: (email: string, password: string) => Promise<boolean>;
-  signUp: (email: string, password: string, name?: string) => Promise<boolean>;
+  // Actions - password authentication removed
+  signUpWithPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
+  signInWithPhone: (phone: string) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
+  signInWithEmail: (email: string) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
+  verifyOtp: (phoneOrEmail: string, code: string, type: 'sms' | 'email') => Promise<{ success: boolean; error?: string; user?: User }>;
+  linkEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
+  linkPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   loadUserProfile: () => Promise<void>;
   updateUserProfile: (updates: Partial<DatabaseUser>) => Promise<boolean>;
@@ -35,66 +39,123 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isInitialized: false,
   error: null,
 
-  // Actions
-  signIn: async (email: string, password: string): Promise<boolean> => {
+  // Password authentication methods removed - phone-first authentication only
+
+  signUpWithPhone: async (phone: string) => {
     set({ isLoading: true, error: null });
-
     try {
-      const { user, error } = await authService.signIn({ email, password });
-
-      if (error) {
-        set({ error: error.message, isLoading: false });
-        return false;
+      const result = await authService.signUpWithPhone(phone);
+      set({ isLoading: false });
+      if (!result.success && result.error) {
+        set({ error: result.error });
       }
-
-      if (user) {
-        set({ user, isLoading: false });
-        // Load user profile after successful sign in
-        await get().loadUserProfile();
-        return true;
-      }
-
-      set({ error: 'Sign in failed', isLoading: false });
-      return false;
+      return result;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Sign in failed';
+      const errorMessage = error instanceof Error ? error.message : 'Phone sign up failed';
       set({ error: errorMessage, isLoading: false });
-      return false;
+      return { success: false, error: errorMessage };
     }
   },
 
-  signUp: async (
-    email: string,
-    password: string,
-    name?: string
-  ): Promise<boolean> => {
+  signInWithPhone: async (phone: string) => {
     set({ isLoading: true, error: null });
-
     try {
-      const { user, error } = await authService.signUp({
-        email,
-        password,
-        name,
-      });
-
-      if (error) {
-        set({ error: error.message, isLoading: false });
-        return false;
+      const result = await authService.signInWithPhone(phone);
+      set({ isLoading: false });
+      if (!result.success && result.error) {
+        set({ error: result.error });
       }
-
-      if (user) {
-        set({ user, isLoading: false });
-        return true;
-      }
-
-      set({ error: 'Sign up failed', isLoading: false });
-      return false;
+      return result;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Sign up failed';
+      const errorMessage = error instanceof Error ? error.message : 'Phone sign in failed';
       set({ error: errorMessage, isLoading: false });
-      return false;
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  signInWithEmail: async (email: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const result = await authService.signInWithEmail(email);
+      set({ isLoading: false });
+      if (!result.success && result.error) {
+        set({ error: result.error });
+      }
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Email sign in failed';
+      set({ error: errorMessage, isLoading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  verifyOtp: async (phoneOrEmail: string, code: string, type: 'sms' | 'email') => {
+    set({ isLoading: true, error: null });
+    try {
+      const result = await authService.verifyOtp(phoneOrEmail, code, type);
+      if (result.success && result.user) {
+        set({ user: result.user, isLoading: false });
+        // Load user profile after successful verification
+        await get().loadUserProfile();
+
+        // If no profile exists yet: only auto-create if we already have an email on the auth user
+        // Otherwise, let onboarding collect email first to satisfy NOT NULL + uniqueness
+        if (!get().userProfile && result.user.email) {
+          const fallbackName =
+            (result.user.user_metadata as any)?.name ||
+            result.user.phone ||
+            'New User';
+          await get().createUserProfile({
+            name: String(fallbackName),
+            newcomer: true,
+          });
+        }
+      } else {
+        set({ isLoading: false });
+        if (result.error) {
+          set({ error: result.error });
+        }
+      }
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+      set({ error: errorMessage, isLoading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  linkEmail: async (email: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const result = await authService.linkEmail(email);
+      set({ isLoading: false });
+      if (!result.success && result.error) {
+        set({ error: result.error });
+      }
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Email linking failed';
+      set({ error: errorMessage, isLoading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  linkPhone: async (phone: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const result = await authService.linkPhone(phone);
+      set({ isLoading: false });
+      if (result.success) {
+        // Reload user profile to get updated phone
+        await get().loadUserProfile();
+      } else if (result.error) {
+        set({ error: result.error });
+      }
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Phone linking failed';
+      set({ error: errorMessage, isLoading: false });
+      return { success: false, error: errorMessage };
     }
   },
 

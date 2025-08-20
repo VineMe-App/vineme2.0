@@ -259,7 +259,7 @@ export class UserService {
         .select(
           `
           *,
-          friend:users!friendships_friend_id_fkey(id, name, avatar_url, email)
+          friend:users!friendships_friend_id_fkey(id, name, avatar_url)
         `
         )
         .eq('user_id', userId)
@@ -282,7 +282,7 @@ export class UserService {
   }
 
   /**
-   * Search users by name or email
+   * Search users by name (email removed from public.users)
    */
   async searchUsers(
     query: string,
@@ -291,8 +291,8 @@ export class UserService {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, avatar_url, church_id')
-        .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+        .select('id, name, avatar_url, church_id')
+        .ilike('name', `%${query}%`)
         .limit(limit);
 
       if (error) {

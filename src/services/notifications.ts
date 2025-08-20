@@ -146,6 +146,22 @@ export const registerForPushNotifications = async (
     const token = await getPushToken();
     if (!token) return;
 
+    // Ensure a users row exists before attempting to upsert FK-dependent token
+    const { data: userRow, error: userCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userCheckError) {
+      console.warn('[Notifications] Skipping push token save: user check failed', userCheckError);
+      return;
+    }
+    if (!userRow) {
+      if (__DEV__) console.warn('[Notifications] Skipping push token save: no users row yet');
+      return;
+    }
+
     // Store the token in the database
     const { error } = await supabase.from('user_push_tokens').upsert(
       {

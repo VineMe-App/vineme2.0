@@ -149,14 +149,14 @@ export class GroupAdminService {
           *,
           service:services(*),
           church:churches(*),
-          creator:users!groups_created_by_fkey(id, name, email, avatar_url),
+          creator:users!groups_created_by_fkey(id, name, avatar_url),
           memberships:group_memberships(
             id,
             user_id,
             role,
             status,
             joined_at,
-            user:users(id, name, avatar_url, email)
+            user:users(id, name, avatar_url)
           )
         `,
           { count: pagination ? 'exact' : undefined }
