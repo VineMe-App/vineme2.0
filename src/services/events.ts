@@ -65,8 +65,7 @@ export class EventService {
           host:users!events_host_id_fkey(
             id,
             name,
-            avatar_url,
-            email
+            avatar_url
           ),
           church:churches!events_church_id_fkey(
             id,
@@ -118,8 +117,7 @@ export class EventService {
           host:users!events_host_id_fkey(
             id,
             name,
-            avatar_url,
-            email
+            avatar_url
           ),
           church:churches!events_church_id_fkey(
             id,
@@ -188,8 +186,7 @@ export class EventService {
             host:users!events_host_id_fkey(
               id,
               name,
-              avatar_url,
-              email
+              avatar_url
             ),
             church:churches!events_church_id_fkey(
               id,
@@ -271,8 +268,7 @@ export class EventService {
           host:users!events_host_id_fkey(
             id,
             name,
-            avatar_url,
-            email
+            avatar_url
           ),
           church:churches(
             id,

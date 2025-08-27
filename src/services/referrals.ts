@@ -246,8 +246,8 @@ export class ReferralService {
           `
           *,
           group:groups(*),
-          referrer:users!group_referrals_referrer_id_fkey(id, name, email),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name, email)
+          referrer:users!group_referrals_referrer_id_fkey(id, name),
+          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
         `
         )
         .eq('referrer_id', userId)
@@ -263,8 +263,8 @@ export class ReferralService {
         .select(
           `
           *,
-          referrer:users!general_referrals_referrer_id_fkey(id, name, email),
-          referred_user:users!general_referrals_referred_user_id_fkey(id, name, email)
+          referrer:users!general_referrals_referrer_id_fkey(id, name),
+          referred_user:users!general_referrals_referred_user_id_fkey(id, name)
         `
         )
         .eq('referrer_id', userId)
@@ -303,8 +303,8 @@ export class ReferralService {
           `
           *,
           group:groups(*),
-          referrer:users!group_referrals_referrer_id_fkey(id, name, email),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name, email)
+          referrer:users!group_referrals_referrer_id_fkey(id, name),
+          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
         `
         )
         .eq('group_id', groupId)
@@ -744,8 +744,8 @@ export class ReferralService {
         .select(`
           *,
           group:groups(*),
-          referrer:users!group_referrals_referrer_id_fkey(id, name, email),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name, email)
+          referrer:users!group_referrals_referrer_id_fkey(id, name),
+          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
         `)
         .eq('referred_user_id', userId)
         .single();
@@ -755,8 +755,8 @@ export class ReferralService {
         .from('general_referrals')
         .select(`
           *,
-          referrer:users!general_referrals_referrer_id_fkey(id, name, email),
-          referred_user:users!general_referrals_referred_user_id_fkey(id, name, email)
+          referrer:users!general_referrals_referrer_id_fkey(id, name),
+          referred_user:users!general_referrals_referred_user_id_fkey(id, name)
         `)
         .eq('referred_user_id', userId)
         .single();

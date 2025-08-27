@@ -379,7 +379,7 @@ export class JoinRequestService {
           user_id,
           status,
           joined_at,
-          user:users(id, name, email, phone),
+          user:users(id, name, phone),
           group:groups(id)
         `
         )

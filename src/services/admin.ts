@@ -484,7 +484,7 @@ export class GroupAdminService {
           user_id,
           status,
           joined_at,
-          user:users(id, name, email, avatar_url)
+          user:users(id, name, avatar_url)
         `
         )
         .eq('group_id', groupId)
