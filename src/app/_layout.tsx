@@ -84,10 +84,12 @@ function RootLayoutNav() {
       // Allow referral landing screen outside of tabs
       segments[0] === 'referral-landing';
 
-    // Onboarding is done ONLY when a profile exists and newcomer !== true.
+    // Onboarding is done when profile exists and onboarding_complete === true on server.
     // If there is no profile yet, we must force onboarding regardless of any persisted flag.
     const hasProfile = !!userProfile;
-    const isOnboardingDone = hasProfile ? userProfile.newcomer !== true : false;
+    const isOnboardingDone = hasProfile
+      ? userProfile.onboarding_complete === true
+      : false;
 
     if (__DEV__) {
       console.log(

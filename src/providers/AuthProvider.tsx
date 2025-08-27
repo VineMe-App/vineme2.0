@@ -29,6 +29,7 @@ interface AuthContextType {
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
+    onboarding_complete?: boolean;
   }) => Promise<boolean>;
   clearError: () => void;
 }
@@ -52,7 +53,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Computed values
   const isAuthenticated = !!authStore.user;
   const hasProfile = !!authStore.userProfile;
-  const needsOnboarding = isAuthenticated && !hasProfile;
+  const needsOnboarding = isAuthenticated && (!hasProfile || authStore.userProfile?.onboarding_complete !== true);
 
   const contextValue: AuthContextType = {
     // State

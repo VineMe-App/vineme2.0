@@ -143,6 +143,7 @@ export class AuthService {
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
+    onboarding_complete?: boolean;
   }): Promise<{ error: Error | null }> {
     try {
       const user = await this.getCurrentUser();
@@ -172,6 +173,9 @@ export class AuthService {
       }
       if (userData.newcomer !== undefined) {
         payload.newcomer = userData.newcomer;
+      }
+      if (userData.onboarding_complete !== undefined) {
+        payload.onboarding_complete = userData.onboarding_complete;
       }
       
       const { error } = await supabase.from('users').upsert(payload, {
@@ -417,7 +421,8 @@ export class AuthService {
         email: data.email,
         name: userName,
         phone: data.phone,
-        newcomer: true, // Mark as newcomer for appropriate onboarding
+        newcomer: true, // Still a newcomer (needs help finding a group)
+        onboarding_complete: false, // Explicitly require onboarding
         roles: ['user'],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

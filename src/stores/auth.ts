@@ -26,6 +26,7 @@ interface AuthState {
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
+    onboarding_complete?: boolean;
   }) => Promise<boolean>;
   clearError: () => void;
   initialize: () => Promise<void>;
@@ -108,6 +109,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await get().createUserProfile({
             name: String(fallbackName),
             newcomer: true,
+            onboarding_complete: false,
           });
         }
       } else {
@@ -228,6 +230,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
+    onboarding_complete?: boolean;
   }): Promise<boolean> => {
     set({ isLoading: true, error: null });
 
