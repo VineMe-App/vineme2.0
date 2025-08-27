@@ -488,7 +488,7 @@ export class GroupService {
       // Get referrer details
       const { data: referrer, error: referrerError } = await supabase
         .from('users')
-        .select('name, email')
+        .select('name')
         .eq('id', referralData.referrer_id)
         .single();
 

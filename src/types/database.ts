@@ -4,7 +4,8 @@
 export interface User {
   id: string;
   name: string;
-  email: string;
+  // Email moved to auth.users; not exposed in public.users
+  email?: string;
   phone?: string;
   church_id?: string;
   avatar_url?: string;
@@ -12,6 +13,7 @@ export interface User {
   bio?: string;
   roles: string[];
   newcomer?: boolean;
+  onboarding_complete?: boolean;
   email_verified?: boolean;
   created_at: string;
   updated_at?: string;
@@ -190,7 +192,7 @@ export interface ContactAuditLogWithDetails extends ContactAuditLog {
   user?: {
     id: string;
     name: string;
-    email: string;
+    email?: string;
   };
   accessor?: {
     id: string;

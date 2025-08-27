@@ -133,12 +133,15 @@ export default function OnboardingFlow() {
         console.log('[Onboarding] Creating user profile...', {
           hasUser: !!user,
         });
+      // Compute newcomer based on group status: if looking -> newcomer stays true; if existing -> false.
+      const isLookingForGroup = data.group_status === 'looking';
       // Create user profile in database AFTER we have an email (EmailStep links auth.user)
       const success = await createUserProfile({
         name: data.name,
         church_id: data.church_id,
         service_id: data.service_id,
-        newcomer: false,
+        newcomer: isLookingForGroup, // remain newcomer if looking for a group
+        onboarding_complete: true, // explicitly mark onboarding complete
       });
 
       if (!success) {
@@ -149,7 +152,7 @@ export default function OnboardingFlow() {
         return;
       }
 
-      // Save onboarding completion status
+      // Save onboarding completion status locally (legacy local gate; server flag is source of truth)
       await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETED, 'true');
 
       // Clear onboarding data from storage

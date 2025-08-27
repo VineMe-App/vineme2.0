@@ -252,8 +252,8 @@ export class FriendshipService {
         .select(
           `
           *,
-          friend:users!friendships_friend_id_fkey(id, name, email, avatar_url, church_id),
-          user:users!friendships_user_id_fkey(id, name, email, avatar_url, church_id)
+          friend:users!friendships_friend_id_fkey(id, name, avatar_url, church_id),
+          user:users!friendships_user_id_fkey(id, name, avatar_url, church_id)
         `
         )
         .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
@@ -299,7 +299,7 @@ export class FriendshipService {
         .select(
           `
           *,
-          friend:users!friendships_friend_id_fkey(id, name, email, avatar_url, church_id)
+          friend:users!friendships_friend_id_fkey(id, name, avatar_url, church_id)
         `
         )
         .eq('user_id', userId)
@@ -333,7 +333,7 @@ export class FriendshipService {
         .select(
           `
           *,
-          user:users!friendships_user_id_fkey(id, name, email, avatar_url, church_id)
+          user:users!friendships_user_id_fkey(id, name, avatar_url, church_id)
         `
         )
         .eq('friend_id', userId)
@@ -401,8 +401,8 @@ export class FriendshipService {
         .select(
           `
           *,
-          friend:users!friendships_friend_id_fkey(id, name, email, avatar_url, church_id),
-          user:users!friendships_user_id_fkey(id, name, email, avatar_url, church_id)
+          friend:users!friendships_friend_id_fkey(id, name, avatar_url, church_id),
+          user:users!friendships_user_id_fkey(id, name, avatar_url, church_id)
         `
         )
         .or(`user_id.eq.${userId},friend_id.eq.${userId}`);

@@ -105,7 +105,7 @@ export class ContactAuditService {
         .select(
           `
           *,
-          user:users!contact_audit_logs_user_id_fkey(id, name, email),
+          user:users!contact_audit_logs_user_id_fkey(id, name),
           accessor:users!contact_audit_logs_accessor_id_fkey(id, name),
           group:groups(id, title)
         `
@@ -155,7 +155,7 @@ export class ContactAuditService {
         .select(
           `
           *,
-          user:users!contact_audit_logs_user_id_fkey(id, name, email),
+          user:users!contact_audit_logs_user_id_fkey(id, name),
           accessor:users!contact_audit_logs_accessor_id_fkey(id, name),
           group:groups(id, title)
         `
