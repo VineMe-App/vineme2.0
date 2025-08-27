@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { devLogger } from '../../utils/devLogger';
 import { globalErrorHandler } from '../../utils/globalErrorHandler';
@@ -26,15 +27,13 @@ import {
 } from '../../services/notifications';
 
 export function DevToolsOverlay() {
-  if (!__DEV__) return null as any;
-
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<
     'state' | 'logs' | 'errors' | 'queries' | 'notifs'
   >('state');
   const [tick, setTick] = useState(0);
   const segments = useSegments();
-  const { user, userProfile } = useAuthStore();
+  const { user, userProfile, signOut } = useAuthStore();
 
   useEffect(() => {
     devLogger.attach();
@@ -48,6 +47,26 @@ export function DevToolsOverlay() {
     [tick]
   );
   const queries = useMemo(() => getQuerySummary(queryClient), [tick]);
+
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+            setOpen(false);
+          } catch (error) {
+            console.error('Logout failed:', error);
+          }
+        },
+      },
+    ]);
+  };
+
+  if (!__DEV__) return null as any;
 
   return (
     <>
@@ -75,12 +94,19 @@ export function DevToolsOverlay() {
               )
             )}
           </View>
-          <TouchableOpacity
-            onPress={() => setOpen(false)}
-            style={styles.closeBtn}
-          >
-            <Text style={styles.closeText}>Close</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            {user && (
+              <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => setOpen(false)}
+              style={styles.closeBtn}
+            >
+              <Text style={styles.closeText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView style={styles.content}>
@@ -196,7 +222,20 @@ const styles = StyleSheet.create({
   },
   tabActive: { backgroundColor: '#2563eb' },
   tabText: { color: 'white', fontSize: 12 },
-  closeBtn: { position: 'absolute', right: 16, top: 48 },
+  headerActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  logoutBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: '#ef4444',
+  },
+  logoutText: { color: 'white', fontSize: 12 },
+  closeBtn: { paddingVertical: 6, paddingHorizontal: 10 },
   closeText: { color: 'white', fontSize: 14 },
   content: { padding: 12, backgroundColor: '#f9fafb' },
   sectionTitle: { fontWeight: '700', marginBottom: 8 },

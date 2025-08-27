@@ -158,10 +158,7 @@ export class AuthService {
         roles: ['user'],
         updated_at: new Date().toISOString(),
       };
-      // Respect NOT NULL/UNIQUE constraints: only include email if present
-      if (user.email) {
-        payload.email = user.email;
-      }
+      // Email is stored in auth.users only; do not write to public.users
 
       // phone/email removed from public.users; use auth.user for credentials
 
@@ -273,8 +270,14 @@ export class AuthService {
     data: CreateReferredUserData
   ): Promise<CreateReferredUserResponse> {
     try {
+      // Normalize phone early to avoid duplicate accounts due to formatting
+      const normalizedPhone = this.normalizePhone(data.phone || '');
+      if (!normalizedPhone) {
+        return { user: null, error: new Error('Invalid phone number format') };
+      }
+
       // Validate input data
-      const validationError = this.validateReferredUserData(data);
+      const validationError = this.validateReferredUserData({ ...data, phone: normalizedPhone });
       if (validationError) {
         return { user: null, error: new Error(validationError) };
       }
@@ -291,7 +294,7 @@ export class AuthService {
             email_confirm: false, // Require email verification
             user_metadata: {
               name: this.buildFullName(data.firstName, data.lastName),
-              phone: data.phone,
+              phone: normalizedPhone,
               referred: true,
               referrer_id: data.referrerId,
             },
@@ -318,7 +321,7 @@ export class AuthService {
       // Create corresponding public user record with newcomer flag
       const profileError = await this.createReferredUserProfile(
         authData.user.id,
-        data
+        { ...data, phone: normalizedPhone }
       );
 
       if (profileError) {
@@ -374,11 +377,9 @@ export class AuthService {
       return 'Invalid email format';
     }
 
-    // Basic phone validation (allow various formats)
-    const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,}$/;
-    if (!phoneRegex.test(data.phone.replace(/\s/g, ''))) {
-      return 'Invalid phone number format';
-    }
+    // Require normalizable E.164 format (with or without trunk prefix typos)
+    const normalized = this.normalizePhone(data.phone);
+    if (!normalized) return 'Invalid phone number format';
 
     return null;
   }
@@ -418,9 +419,8 @@ export class AuthService {
 
       const { error } = await supabase.from('users').insert({
         id: userId,
-        email: data.email,
         name: userName,
-        phone: data.phone,
+        phone: this.normalizePhone(data.phone) || data.phone,
         newcomer: true, // Still a newcomer (needs help finding a group)
         onboarding_complete: false, // Explicitly require onboarding
         roles: ['user'],
@@ -743,16 +743,38 @@ export class AuthService {
    */
   private normalizePhone(input: string): string | null {
     if (!input) return null;
-    
-    // Remove all non-digit characters except +
-    const cleaned = input.replace(/[^\d+]/g, '');
-    
-    // Must start with + and have at least 10 digits
-    if (!cleaned.startsWith('+') || cleaned.length < 11) {
-      return null;
+
+    let s = String(input).trim();
+    // Convert common international prefix 00 to +
+    s = s.replace(/^00\s*/, '+');
+    // Remove spaces, hyphens, dots, parentheses
+    s = s.replace(/[\s\-\.\(\)]/g, '');
+    // Ensure only + and digits remain
+    if (!/^\+?\d+$/.test(s)) return null;
+
+    // Default to UK (+44) if no leading + provided
+    if (!s.startsWith('+')) {
+      // If starts with UK country code without + (e.g., 44...), normalize
+      if (s.startsWith('44')) {
+        s = `+${s.replace(/^44(0?)/, '44')}`; // remove optional trunk 0 after 44
+      } else if (s.startsWith('0')) {
+        // National UK format like 07... => +44 7...
+        s = `+44${s.slice(1)}`;
+      } else {
+        // Assume UK by default
+        s = `+44${s}`;
+      }
     }
-    
-    return cleaned;
+
+    // Drop a single national trunk '0' erroneously included after country code
+    // Example: +44 075... -> +4475...
+    s = s.replace(/^(\+44)0(\d{4,})$/, '$1$2');
+
+    // Basic E.164 length check (max 15 digits after +; min reasonable length)
+    const digits = s.replace(/\D/g, '');
+    if (digits.length < 8 || digits.length > 15) return null;
+
+    return s;
   }
 }
 

@@ -9,11 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import {
-  AccessibilityHelpers,
-  AdminAccessibilityLabels,
-  ScreenReaderUtils,
-} from '@/utils/accessibility';
+import { AdminAccessibilityLabels, ScreenReaderUtils } from '@/utils/accessibility';
 import MapView, {
   Marker,
   Callout,
@@ -513,32 +509,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </View>
       )}
 
-      {/* Accessibility alternative - List of locations (hidden when a card panel is open) */}
-      {!selectedItems && (
-        <View style={styles.accessibilityAlternative}>
-          <TouchableOpacity
-            style={styles.accessibilityButton}
-            onPress={() => {
-              Alert.alert(
-                'Map Locations',
-                `This map shows ${markers.length} groups:\n\n${markers
-                  .map(
-                    (marker) =>
-                      `• ${marker.group.title} - ${marker.address || 'Location available'}`
-                  )
-                  .join('\n')}`,
-                [{ text: 'OK' }]
-              );
-            }}
-            {...AccessibilityHelpers.createButtonProps(
-              'View map locations as text',
-              'Double tap to hear all group locations'
-            )}
-          >
-            <Text style={styles.accessibilityButtonText}>List Locations</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Accessibility alternative removed: list locations button no longer shown */}
 
       {locationPermissionDenied && (
         <View style={styles.permissionBanner}>
@@ -565,14 +536,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </View>
       )}
 
-      {/* Performance info in development (hidden when a card panel is open) */}
-      {__DEV__ && !selectedItems && (
-        <View style={styles.performanceInfo}>
-          <Text style={styles.performanceText}>
-            Points: {markers.length} | Visible: {clusters.length}
-          </Text>
-        </View>
-      )}
+      {/* Development performance info removed */}
     </View>
   );
 };
@@ -747,17 +711,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   performanceInfo: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 8,
-    borderRadius: 4,
+    // removed
   },
   performanceText: {
-    color: '#fff',
-    fontSize: 12,
-    fontFamily: 'monospace',
+    // removed
   },
   cardPanel: {
     position: 'absolute',
@@ -853,27 +810,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#111827',
   },
   accessibilityAlternative: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
+    // removed
   },
   accessibilityButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    // removed
   },
   accessibilityButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    // removed
   },
 });
