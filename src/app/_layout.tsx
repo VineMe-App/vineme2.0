@@ -173,7 +173,7 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider initialTheme="system">
+      <ThemeProvider initialTheme="light">
         <QueryProvider>
           <AuthProvider>
             <RootLayoutNav />

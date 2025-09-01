@@ -34,11 +34,13 @@ import type { GroupWithDetails } from '../../types/database';
 import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
+import { useTheme } from '@/theme/provider/useTheme';
 
 export default function GroupsScreen() {
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const { filters } = useGroupFiltersStore();
+  const { theme } = useTheme();
   const friendsQuery = useFriends(userProfile?.id);
   const [showSearch, setShowSearch] = useState(false);
   const [sortByDistance, setSortByDistance] = useState(false);
@@ -206,7 +208,12 @@ export default function GroupsScreen() {
 
   if (isLoading && !allGroups) {
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Bible Study Groups</Text>
           <Text style={styles.subtitle}>
@@ -223,7 +230,12 @@ export default function GroupsScreen() {
 
   if (error && !allGroups) {
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Bible Study Groups</Text>
           <Text style={styles.subtitle}>
@@ -236,8 +248,18 @@ export default function GroupsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.compactHeader}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
+      <View
+        style={[
+          styles.compactHeader,
+          { backgroundColor: theme.colors.surface.primary },
+        ]}
+      >
         <Text style={styles.title}>Groups</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -359,12 +381,10 @@ const GroupItemWithMembership: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   compactHeader: {
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

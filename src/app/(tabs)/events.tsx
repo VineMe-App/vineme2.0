@@ -2,10 +2,17 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ComingSoonBanner } from '../../components/ui/ComingSoonBanner';
+import { useTheme } from '@/theme/provider/useTheme';
 
 export default function EventsScreen() {
+  const { theme } = useTheme();
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
       <View style={styles.content}>
         {/* Main Coming Soon Banner */}
         <ComingSoonBanner
@@ -14,7 +21,12 @@ export default function EventsScreen() {
         />
 
         {/* Feature Preview */}
-        <View style={styles.previewSection}>
+        <View
+          style={[
+            styles.previewSection,
+            { backgroundColor: theme.colors.surface.primary },
+          ]}
+        >
           <Text style={styles.previewTitle}>What's Coming</Text>
 
           <View style={styles.featureItem}>
@@ -75,14 +87,12 @@ export default function EventsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   content: {
     flex: 1,
     padding: 16,
   },
   previewSection: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
     marginTop: 16,
