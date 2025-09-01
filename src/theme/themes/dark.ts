@@ -15,6 +15,7 @@ import {
   spacing,
   shadows,
   borderRadius,
+  animations,
 } from '../tokens';
 import { ThemeConfig } from './types';
 import { defaultAssets } from '../../assets';
@@ -93,19 +94,7 @@ export const darkTheme: ThemeConfig = {
     '3xl': { ...shadows['3xl'], shadowColor: '#000000', shadowOpacity: 0.6 },
   },
 
-  animations: {
-    duration: {
-      fast: 150,
-      normal: 300,
-      slow: 500,
-    },
-    easing: {
-      linear: 'linear',
-      easeIn: 'ease-in',
-      easeOut: 'ease-out',
-      easeInOut: 'ease-in-out',
-    },
-  },
+  animations,
 
   assets: defaultAssets,
 };

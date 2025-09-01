@@ -9,22 +9,11 @@ import {
   ThemeSpacing,
   ThemeShadows,
   ThemeBorderRadius,
+  AnimationConfig,
 } from '../tokens';
 import { AssetConfig } from '../../assets';
 
-export interface AnimationConfig {
-  duration: {
-    fast: number;
-    normal: number;
-    slow: number;
-  };
-  easing: {
-    linear: string;
-    easeIn: string;
-    easeOut: string;
-    easeInOut: string;
-  };
-}
+// AnimationConfig is now imported from tokens
 
 // AssetConfig is now imported from assets module
 

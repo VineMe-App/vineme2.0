@@ -15,6 +15,7 @@ import {
   spacing,
   shadows,
   borderRadius,
+  animations,
 } from '../tokens';
 import { ThemeConfig } from './types';
 import { defaultAssets } from '../../assets';
@@ -70,19 +71,7 @@ export const lightTheme: ThemeConfig = {
   borderRadius,
   shadows,
 
-  animations: {
-    duration: {
-      fast: 150,
-      normal: 300,
-      slow: 500,
-    },
-    easing: {
-      linear: 'linear',
-      easeIn: 'ease-in',
-      easeOut: 'ease-out',
-      easeInOut: 'ease-in-out',
-    },
-  },
+  animations,
 
   assets: defaultAssets,
 };

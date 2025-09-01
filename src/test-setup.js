@@ -35,6 +35,38 @@ jest.mock('react-native', () => ({
     getColorScheme: jest.fn(() => 'light'),
     addChangeListener: jest.fn(() => ({ remove: jest.fn() })),
   },
+  Animated: {
+    loop: jest.fn((animation) => ({
+      start: jest.fn(),
+      stop: jest.fn(),
+    })),
+    timing: jest.fn(() => ({
+      start: jest.fn((callback) => {
+        if (callback) callback({ finished: true });
+      }),
+      stop: jest.fn(),
+    })),
+    spring: jest.fn(() => ({
+      start: jest.fn((callback) => {
+        if (callback) callback({ finished: true });
+      }),
+      stop: jest.fn(),
+    })),
+    sequence: jest.fn((animations) => ({
+      start: jest.fn(),
+      stop: jest.fn(),
+    })),
+    Value: jest.fn(() => ({
+      setValue: jest.fn(),
+      interpolate: jest.fn(() => 1),
+    })),
+    View: 'AnimatedView',
+  },
+  AccessibilityInfo: {
+    announceForAccessibility: jest.fn(),
+    isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
+    isScreenReaderEnabled: jest.fn(() => Promise.resolve(false)),
+  },
 }));
 
 // Mock Expo modules

@@ -9,6 +9,34 @@ export { Divider } from './Divider';
 export { Input } from './Input';
 export { LoadingSpinner } from './LoadingSpinner';
 export { LoadingButton } from './LoadingButton';
+
+// Loading and Animation components
+export {
+  Spinner,
+  Skeleton,
+  SkeletonText,
+  SkeletonAvatar,
+  ProgressBar,
+  CircularProgress,
+  FadeIn,
+  SlideIn,
+  ScaleIn,
+  Pulse,
+  StaggeredAnimation,
+} from './Loading';
+export type {
+  SpinnerProps,
+  SkeletonProps,
+  SkeletonTextProps,
+  SkeletonAvatarProps,
+  ProgressBarProps,
+  CircularProgressProps,
+  FadeInProps,
+  SlideInProps,
+  ScaleInProps,
+  PulseProps,
+  StaggeredAnimationProps,
+} from './Loading';
 export { Modal } from './Modal';
 export { Select } from './Select';
 export { ErrorMessage } from './ErrorMessage';
