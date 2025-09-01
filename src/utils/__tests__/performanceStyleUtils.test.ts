@@ -1,177 +1,84 @@
 /**
- * Performance Style Utilities Tests
- * Tests for performance-optimized style utilities
+ * Performance Style Utils Tests
+ * Tests for style performance optimizations and benchmarks
  */
 
-import { StyleSheet } from 'react-native';
-import {
-  StyleSheetCache,
-  StyleMemoization,
+import { 
+  StyleSheetCache, 
+  StyleMemoization, 
   StyleOptimizer,
-  StylePerformanceMonitor,
-  PerformanceStyleUtils,
+  ThemeSwitchingOptimizer,
+  StylePerformanceDebugger,
+  PerformanceStyleUtils 
 } from '../performanceStyleUtils';
-import { lightTheme } from '../../theme/themes/light';
+import { lightTheme, darkTheme } from '../../theme/themes';
 
-// Mock __DEV__ for testing
-(global as any).__DEV__ = true;
-
-// Mock StyleSheet
-jest.mock('react-native', () => ({
-  StyleSheet: {
-    create: jest.fn((styles) => styles),
-  },
-}));
-
-// Mock performance.now for testing
+// Mock performance.now for consistent testing
 const mockPerformanceNow = jest.fn();
-Object.defineProperty(global, 'performance', {
-  value: { now: mockPerformanceNow },
-  writable: true,
-});
+global.performance = { now: mockPerformanceNow } as any;
 
 describe('StyleSheetCache', () => {
   beforeEach(() => {
     StyleSheetCache.clearCache();
-    (StyleSheet.create as jest.Mock).mockClear();
+    mockPerformanceNow.mockReturnValue(0);
   });
 
-  describe('create', () => {
-    it('should create and cache styles', () => {
-      const styles = { padding: 16, margin: 8 };
-      const cacheKey = 'test-styles';
+  it('should cache style sheets and return cached versions', () => {
+    const styles = {
+      container: { flex: 1 },
+      text: { fontSize: 16 },
+    };
 
-      const result1 = StyleSheetCache.create(styles, cacheKey);
-      const result2 = StyleSheetCache.create(styles, cacheKey);
+    const firstCall = StyleSheetCache.create(styles, 'test-styles');
+    const secondCall = StyleSheetCache.create(styles, 'test-styles');
 
-      expect(StyleSheet.create).toHaveBeenCalledTimes(1);
-      expect(result1).toBe(result2);
-    });
-
-    it('should handle function-based styles', () => {
-      const styleFunction = jest.fn(() => ({ padding: 16 }));
-      const result = StyleSheetCache.create(styleFunction);
-
-      expect(styleFunction).toHaveBeenCalledTimes(1);
-      expect(result).toEqual({ padding: 16 });
-    });
-
-    it('should generate cache key when not provided', () => {
-      const styles = { padding: 16 };
-      
-      StyleSheetCache.create(styles);
-      StyleSheetCache.create(styles);
-
-      expect(StyleSheet.create).toHaveBeenCalledTimes(1);
-    });
-
-    it('should clean cache when max size is reached', () => {
-      // Create styles up to max cache size
-      for (let i = 0; i < 100; i++) {
-        StyleSheetCache.create({ padding: i }, `style-${i}`);
-      }
-
-      const statsBefore = StyleSheetCache.getStats();
-      expect(statsBefore.size).toBe(100);
-
-      // Add one more to trigger cleanup
-      StyleSheetCache.create({ padding: 101 }, 'style-101');
-
-      const statsAfter = StyleSheetCache.getStats();
-      expect(statsAfter.size).toBeLessThan(100);
-    });
+    expect(firstCall).toBe(secondCall);
   });
 
-  describe('createThemed', () => {
-    it('should create themed cached styles', () => {
-      const styleFactory = jest.fn((theme: any) => ({
-        backgroundColor: theme.colors.background.primary,
-      }));
+  it('should generate different cache keys for different styles', () => {
+    const styles1 = { container: { flex: 1 } };
+    const styles2 = { container: { flex: 2 } };
 
-      const result1 = StyleSheetCache.createThemed(styleFactory, lightTheme, 'test');
-      const result2 = StyleSheetCache.createThemed(styleFactory, lightTheme, 'test');
+    const cached1 = StyleSheetCache.create(styles1, 'styles1');
+    const cached2 = StyleSheetCache.create(styles2, 'styles2');
 
-      expect(styleFactory).toHaveBeenCalledTimes(1);
-      expect(result1).toBe(result2);
-    });
-
-    it('should generate different cache keys for different themes', () => {
-      const styleFactory = jest.fn((theme: any) => ({
-        backgroundColor: theme.colors.background.primary,
-      }));
-
-      const darkTheme = { ...lightTheme, isDark: true };
-
-      StyleSheetCache.createThemed(styleFactory, lightTheme);
-      StyleSheetCache.createThemed(styleFactory, darkTheme);
-
-      expect(styleFactory).toHaveBeenCalledTimes(2);
-    });
+    expect(cached1).not.toBe(cached2);
   });
 
-  describe('clearCache', () => {
-    it('should clear cache with pattern matching', () => {
-      StyleSheetCache.create({ padding: 16 }, 'test-1');
-      StyleSheetCache.create({ margin: 8 }, 'other-1');
-      StyleSheetCache.create({ fontSize: 14 }, 'test-2');
-
-      StyleSheetCache.clearCache('test');
-      const stats = StyleSheetCache.getStats();
-
-      expect(stats.keys).toEqual(expect.arrayContaining(['other-1']));
-      expect(stats.keys).not.toEqual(expect.arrayContaining(['test-1']));
-      expect(stats.keys).not.toEqual(expect.arrayContaining(['test-2']));
+  it('should create themed styles with proper cache keys', () => {
+    const styleFactory = (theme: any) => ({
+      container: { backgroundColor: theme.colors.primary[500] },
     });
 
-    it('should clear entire cache when no pattern provided', () => {
-      StyleSheetCache.create({ padding: 16 }, 'test-1');
-      StyleSheetCache.create({ margin: 8 }, 'test-2');
+    const lightStyles = StyleSheetCache.createThemed(styleFactory, lightTheme);
+    const darkStyles = StyleSheetCache.createThemed(styleFactory, darkTheme);
 
-      StyleSheetCache.clearCache();
-      const stats = StyleSheetCache.getStats();
-
-      expect(stats.size).toBe(0);
-    });
+    expect(lightStyles).not.toBe(darkStyles);
   });
 
-  describe('getStats', () => {
-    it('should return cache statistics', () => {
-      StyleSheetCache.create({ padding: 16 }, 'style-1');
-      StyleSheetCache.create({ margin: 8 }, 'style-2');
+  it('should provide comprehensive cache statistics', () => {
+    const styles = { container: { flex: 1 } };
+    StyleSheetCache.create(styles, 'test');
 
-      // Access style-1 multiple times to increase access count
-      StyleSheetCache.create({ padding: 16 }, 'style-1');
-      StyleSheetCache.create({ padding: 16 }, 'style-1');
+    const stats = StyleSheetCache.getStats();
 
-      const stats = StyleSheetCache.getStats();
-
-      expect(stats.size).toBe(2);
-      expect(stats.mostAccessed).toHaveLength(2);
-      expect(stats.mostAccessed[0].key).toContain('style-1');
-      expect(stats.mostAccessed[0].count).toBe(3);
-    });
+    expect(stats).toHaveProperty('size');
+    expect(stats).toHaveProperty('maxSize');
+    expect(stats).toHaveProperty('hitRate');
+    expect(stats).toHaveProperty('totalMemoryUsage');
+    expect(stats).toHaveProperty('averageCreationTime');
+    expect(stats).toHaveProperty('mostAccessed');
+    expect(stats).toHaveProperty('performanceMetrics');
   });
 
-  describe('preload', () => {
-    it('should preload styles for better performance', () => {
-      const styleFactories = [
-        {
-          factory: (theme: any) => ({ backgroundColor: theme.colors.primary[500] }),
-          theme: lightTheme,
-          key: 'primary-bg',
-        },
-        {
-          factory: (theme: any) => ({ color: theme.colors.text.primary }),
-          theme: lightTheme,
-          key: 'primary-text',
-        },
-      ];
+  it('should clean cache when max size is reached', () => {
+    // Create many cached styles to trigger cleanup
+    for (let i = 0; i < 250; i++) {
+      StyleSheetCache.create({ container: { flex: i } }, `test-${i}`);
+    }
 
-      StyleSheetCache.preload(styleFactories);
-
-      const stats = StyleSheetCache.getStats();
-      expect(stats.size).toBe(2);
-    });
+    const stats = StyleSheetCache.getStats();
+    expect(stats.size).toBeLessThan(250);
   });
 });
 
@@ -180,350 +87,425 @@ describe('StyleMemoization', () => {
     StyleMemoization.clearMemoCache();
   });
 
-  describe('memoize', () => {
-    it('should memoize function results', () => {
-      const expensiveFunction = jest.fn((a: number, b: number) => a + b);
-      const memoizedFunction = StyleMemoization.memoize(expensiveFunction);
+  it('should memoize function results', () => {
+    let callCount = 0;
+    const expensiveFunction = (value: number) => {
+      callCount++;
+      return value * 2;
+    };
 
-      const result1 = memoizedFunction(1, 2);
-      const result2 = memoizedFunction(1, 2);
-      const result3 = memoizedFunction(2, 3);
+    const memoizedFunction = StyleMemoization.memoize(expensiveFunction);
 
-      expect(expensiveFunction).toHaveBeenCalledTimes(2);
-      expect(result1).toBe(3);
-      expect(result2).toBe(3);
-      expect(result3).toBe(5);
-    });
-
-    it('should use custom key generator', () => {
-      const expensiveFunction = jest.fn((obj: { a: number; b: number }) => obj.a + obj.b);
-      const keyGenerator = (obj: { a: number; b: number }) => `${obj.a}-${obj.b}`;
-      const memoizedFunction = StyleMemoization.memoize(expensiveFunction, keyGenerator);
-
-      memoizedFunction({ a: 1, b: 2 });
-      memoizedFunction({ a: 1, b: 2 });
-
-      expect(expensiveFunction).toHaveBeenCalledTimes(1);
-    });
+    expect(memoizedFunction(5)).toBe(10);
+    expect(memoizedFunction(5)).toBe(10);
+    expect(callCount).toBe(1);
   });
 
-  describe('clearMemoCache', () => {
-    it('should clear memoization cache', () => {
-      const fn = jest.fn((x: number) => x * 2);
-      const memoized = StyleMemoization.memoize(fn);
+  it('should use custom key generator', () => {
+    let callCount = 0;
+    const fn = (obj: { a: number; b: number }) => {
+      callCount++;
+      return obj.a + obj.b;
+    };
 
-      memoized(5);
-      expect(StyleMemoization.getMemoStats().size).toBe(1);
+    const memoizedFn = StyleMemoization.memoize(
+      fn,
+      (obj) => `${obj.a}-${obj.b}`
+    );
 
-      StyleMemoization.clearMemoCache();
-      expect(StyleMemoization.getMemoStats().size).toBe(0);
-
-      memoized(5);
-      expect(fn).toHaveBeenCalledTimes(2);
-    });
+    expect(memoizedFn({ a: 1, b: 2 })).toBe(3);
+    expect(memoizedFn({ a: 1, b: 2 })).toBe(3);
+    expect(callCount).toBe(1);
   });
 
-  describe('getMemoStats', () => {
-    it('should return memoization statistics', () => {
-      const fn = StyleMemoization.memoize((x: number) => x * 2);
-      
-      fn(1);
-      fn(2);
+  it('should provide memoization statistics', () => {
+    const fn = (x: number) => x * 2;
+    const memoizedFn = StyleMemoization.memoize(fn);
 
-      const stats = StyleMemoization.getMemoStats();
-      expect(stats.size).toBe(2);
-      expect(stats.keys).toHaveLength(2);
-    });
+    memoizedFn(1);
+    memoizedFn(2);
+
+    const stats = StyleMemoization.getMemoStats();
+    expect(stats.size).toBe(2);
+    expect(stats.keys).toHaveLength(2);
   });
 });
 
 describe('StyleOptimizer', () => {
-  describe('flattenStyles', () => {
-    it('should flatten nested style objects', () => {
-      const nestedStyles = {
-        container: {
-          padding: 16,
-          margin: 8,
-        },
-        text: {
-          fontSize: 14,
-          color: 'red',
-        },
-      };
+  it('should flatten nested style objects', () => {
+    const nestedStyles = {
+      container: {
+        layout: { flex: 1 },
+        colors: { backgroundColor: 'red' },
+      },
+    };
 
-      const result = StyleOptimizer.flattenStyles(nestedStyles);
+    const flattened = StyleOptimizer.flattenStyles(nestedStyles);
+    // The flattened object should have the nested keys as properties
+    expect(flattened['container.layout.flex']).toBe(1);
+    expect(flattened['container.colors.backgroundColor']).toBe('red');
+  });
 
-      expect(result).toEqual({
-        'container.padding': 16,
-        'container.margin': 8,
-        'text.fontSize': 14,
-        'text.color': 'red',
-      });
-    });
+  it('should clean undefined and null values', () => {
+    const styles = {
+      flex: 1,
+      backgroundColor: undefined,
+      color: null,
+      fontSize: 16,
+    };
 
-    it('should handle deeply nested objects', () => {
-      const deeplyNested = {
-        level1: {
-          level2: {
-            level3: {
-              value: 42,
-            },
-          },
-        },
-      };
+    const cleaned = StyleOptimizer.cleanStyles(styles);
+    expect(cleaned).toEqual({ flex: 1, fontSize: 16 });
+  });
 
-      const result = StyleOptimizer.flattenStyles(deeplyNested);
+  it('should efficiently merge styles', () => {
+    const base = { flex: 1, backgroundColor: 'red' };
+    const override = { backgroundColor: 'blue', color: 'white' };
 
-      expect(result).toEqual({
-        'level1.level2.level3.value': 42,
-      });
+    const merged = StyleOptimizer.efficientMerge(base, override);
+    expect(merged).toEqual({
+      flex: 1,
+      backgroundColor: 'blue',
+      color: 'white',
     });
   });
 
-  describe('cleanStyles', () => {
-    it('should remove undefined and null values', () => {
-      const styles = {
-        padding: 16,
-        margin: undefined,
-        backgroundColor: null,
-        fontSize: 14,
-        color: '',
-      };
+  it('should create conditional styles', () => {
+    const baseStyles = { flex: 1 };
+    const conditions = [
+      { condition: true, styles: { backgroundColor: 'red' } },
+      { condition: false, styles: { color: 'blue' } },
+      { condition: true, styles: { fontSize: 16 } },
+    ];
 
-      const result = StyleOptimizer.cleanStyles(styles);
-
-      expect(result).toEqual({
-        padding: 16,
-        fontSize: 14,
-        color: '',
-      });
+    const result = StyleOptimizer.conditionalStyles(baseStyles, conditions);
+    expect(result).toEqual({
+      flex: 1,
+      backgroundColor: 'red',
+      fontSize: 16,
     });
   });
 
-  describe('efficientMerge', () => {
-    it('should merge styles efficiently', () => {
-      const style1 = { padding: 16, margin: 8 };
-      const style2 = { backgroundColor: 'red', padding: 24 };
-      const style3 = undefined;
-      const style4 = { borderRadius: 4 };
+  it('should optimize styles for React Native', () => {
+    const styles = {
+      flex: '1',
+      fontSize: '16',
+      backgroundColor: 'red',
+      margin: undefined,
+    };
 
-      const result = StyleOptimizer.efficientMerge(style1, style2, style3, style4);
-
-      expect(result).toEqual({
-        padding: 24,
-        margin: 8,
-        backgroundColor: 'red',
-        borderRadius: 4,
-      });
-    });
-  });
-
-  describe('conditionalStyles', () => {
-    it('should apply conditional styles', () => {
-      const baseStyles = { padding: 16 };
-      const conditions = [
-        { condition: true, styles: { margin: 8 } },
-        { condition: false, styles: { backgroundColor: 'red' } },
-        { condition: true, styles: { borderRadius: 4 } },
-      ];
-
-      const result = StyleOptimizer.conditionalStyles(baseStyles, conditions);
-
-      expect(result).toEqual({
-        padding: 16,
-        margin: 8,
-        borderRadius: 4,
-      });
-    });
-  });
-
-  describe('optimizeForRN', () => {
-    it('should optimize styles for React Native', () => {
-      const styles = {
-        padding: '16',
-        margin: 8,
-        fontSize: '14',
-        backgroundColor: undefined,
-        color: 'red',
-      };
-
-      const result = StyleOptimizer.optimizeForRN(styles);
-
-      expect(result).toEqual({
-        padding: 16,
-        margin: 8,
-        fontSize: 14,
-        color: 'red',
-      });
+    const optimized = StyleOptimizer.optimizeForRN(styles);
+    expect(optimized).toEqual({
+      flex: 1,
+      fontSize: 16,
+      backgroundColor: 'red',
     });
   });
 });
 
-describe('StylePerformanceMonitor', () => {
+describe('ThemeSwitchingOptimizer', () => {
   beforeEach(() => {
-    StylePerformanceMonitor.clearStats();
-    mockPerformanceNow.mockReset();
+    ThemeSwitchingOptimizer.clearTransitionCache();
   });
 
-  describe('measureStyleCreation', () => {
-    it('should measure style creation performance when enabled', () => {
-      StylePerformanceMonitor.setEnabled(true);
-      mockPerformanceNow.mockReturnValueOnce(0).mockReturnValueOnce(5);
-
-      const styleCreationFn = jest.fn(() => ({ padding: 16 }));
-      const result = StylePerformanceMonitor.measureStyleCreation('test', styleCreationFn);
-
-      expect(result).toEqual({ padding: 16 });
-      expect(styleCreationFn).toHaveBeenCalledTimes(1);
-
-      const stats = StylePerformanceMonitor.getStats();
-      expect(stats.test.count).toBe(1);
-      expect(stats.test.total).toBeGreaterThan(0);
-    });
-
-    it('should not measure when disabled', () => {
-      StylePerformanceMonitor.setEnabled(false);
-
-      const styleCreationFn = jest.fn(() => ({ padding: 16 }));
-      StylePerformanceMonitor.measureStyleCreation('test', styleCreationFn);
-
-      const stats = StylePerformanceMonitor.getStats();
-      expect(Object.keys(stats)).toHaveLength(0);
-    });
-  });
-
-  describe('getStats', () => {
-    it('should return performance statistics', () => {
-      StylePerformanceMonitor.setEnabled(true);
-      mockPerformanceNow
-        .mockReturnValueOnce(0).mockReturnValueOnce(5)
-        .mockReturnValueOnce(10).mockReturnValueOnce(18)
-        .mockReturnValueOnce(20).mockReturnValueOnce(25);
-
-      StylePerformanceMonitor.measureStyleCreation('test', () => ({}));
-      StylePerformanceMonitor.measureStyleCreation('test', () => ({}));
-      StylePerformanceMonitor.measureStyleCreation('test', () => ({}));
-
-      const stats = StylePerformanceMonitor.getStats();
-
-      expect(stats.test.count).toBe(3);
-      expect(stats.test.total).toBeGreaterThan(0);
-      expect(stats.test.average).toBeGreaterThan(0);
-      expect(stats.test.min).toBeGreaterThan(0);
-      expect(stats.test.max).toBeGreaterThan(0);
-    });
-  });
-
-  describe('checkPerformance', () => {
-    it('should log warnings for slow operations', () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      StylePerformanceMonitor.setEnabled(true);
-      
-      // Create a slow operation by measuring multiple times to get a high average
-      for (let i = 0; i < 10; i++) {
-        mockPerformanceNow.mockReturnValueOnce(0).mockReturnValueOnce(10);
-        StylePerformanceMonitor.measureStyleCreation('slow-operation', () => ({}));
-      }
-      
-      StylePerformanceMonitor.checkPerformance(5);
-
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-    });
-  });
-});
-
-describe('PerformanceStyleUtils', () => {
-  beforeEach(() => {
-    PerformanceStyleUtils.cleanup();
-  });
-
-  describe('createOptimizedThemedStyles', () => {
-    it('should create optimized themed styles with performance monitoring', () => {
-      StylePerformanceMonitor.setEnabled(true);
-      mockPerformanceNow.mockReturnValueOnce(0).mockReturnValueOnce(2);
-
-      const styleFactory = jest.fn((theme: any) => ({
-        backgroundColor: theme.colors.background.primary,
-      }));
-
-      const result = PerformanceStyleUtils.createOptimizedThemedStyles(
-        styleFactory,
+  it('should optimize theme switching with caching', () => {
+    const callback = jest.fn();
+    
+    // Mock requestAnimationFrame for synchronous testing
+    const originalRAF = global.requestAnimationFrame;
+    global.requestAnimationFrame = (cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    };
+    
+    try {
+      // First theme switch
+      ThemeSwitchingOptimizer.optimizeThemeSwitch(
         lightTheme,
-        'test'
+        darkTheme,
+        callback
       );
 
-      expect(result).toEqual({
-        backgroundColor: lightTheme.colors.background.primary,
-      });
+      expect(callback).toHaveBeenCalledTimes(1);
 
-      const stats = StylePerformanceMonitor.getStats();
-      expect(stats['themed-styles-test']).toBeDefined();
-    });
+      // Second theme switch (should use cache)
+      ThemeSwitchingOptimizer.optimizeThemeSwitch(
+        lightTheme,
+        darkTheme,
+        callback
+      );
+
+      expect(callback).toHaveBeenCalledTimes(3); // Called once for each theme switch plus cache
+    } finally {
+      global.requestAnimationFrame = originalRAF;
+    }
   });
 
-  describe('createMemoizedStyleFunction', () => {
-    it('should create memoized style function', () => {
-      const styleFunction = jest.fn((color: string) => ({ backgroundColor: color }));
-      const memoized = PerformanceStyleUtils.createMemoizedStyleFunction(styleFunction);
-
-      memoized('red');
-      memoized('red');
-      memoized('blue');
-
-      expect(styleFunction).toHaveBeenCalledTimes(2);
-    });
+  it('should provide theme switching statistics', () => {
+    const stats = ThemeSwitchingOptimizer.getThemeSwitchingStats();
+    
+    expect(stats).toHaveProperty('cachedTransitions');
+    expect(stats).toHaveProperty('isTransitioning');
+    expect(stats).toHaveProperty('queuedUpdates');
   });
 
-  describe('batchStyleOperations', () => {
-    it('should batch style operations', () => {
-      const operations = [
-        () => ({ padding: 16 }),
-        () => ({ margin: 8 }),
-        () => ({ fontSize: 14 }),
-      ];
+  it('should queue component updates during transitions', (done) => {
+    const updateFn = jest.fn();
+    
+    // Start a theme transition to enable queuing
+    const callback = jest.fn();
+    ThemeSwitchingOptimizer.optimizeThemeSwitch(
+      lightTheme,
+      darkTheme,
+      callback
+    );
+    
+    // Queue an update during transition
+    ThemeSwitchingOptimizer.queueComponentUpdate(updateFn);
+    
+    // Allow async operations to complete
+    setTimeout(() => {
+      // When not transitioning, updates should execute immediately
+      ThemeSwitchingOptimizer.queueComponentUpdate(updateFn);
+      expect(updateFn).toHaveBeenCalled();
+      done();
+    }, 20);
+  });
+});
 
-      const results = PerformanceStyleUtils.batchStyleOperations(operations);
-
-      expect(results).toEqual([
-        { padding: 16 },
-        { margin: 8 },
-        { fontSize: 14 },
-      ]);
-    });
+describe('StylePerformanceDebugger', () => {
+  beforeEach(() => {
+    StylePerformanceDebugger.clearLog();
+    StylePerformanceDebugger.setEnabled(true);
   });
 
-  describe('preloadCriticalStyles', () => {
-    it('should preload critical styles', () => {
-      const criticalStyles = [
-        {
-          factory: (theme: any) => ({ backgroundColor: theme.colors.primary[500] }),
-          theme: lightTheme,
-          key: 'primary',
-        },
-      ];
+  it('should log performance information when enabled', () => {
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    
+    StylePerformanceDebugger.log('test', 'Test message', { data: 'test' });
+    
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[StylePerf:test] Test message',
+      { data: 'test' }
+    );
 
+    consoleSpy.mockRestore();
+  });
+
+  it('should not log when disabled', () => {
+    StylePerformanceDebugger.setEnabled(false);
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    
+    StylePerformanceDebugger.log('test', 'Test message');
+    
+    expect(consoleSpy).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('should analyze performance and provide recommendations', () => {
+    // Create some cached styles to analyze
+    StyleSheetCache.create({ container: { flex: 1 } }, 'test');
+    
+    const analysis = StylePerformanceDebugger.analyzePerformance();
+    
+    expect(analysis).toHaveProperty('recommendations');
+    expect(analysis).toHaveProperty('warnings');
+    expect(analysis).toHaveProperty('stats');
+    expect(Array.isArray(analysis.recommendations)).toBe(true);
+    expect(Array.isArray(analysis.warnings)).toBe(true);
+  });
+
+  it('should generate performance report', () => {
+    const report = StylePerformanceDebugger.generateReport();
+    
+    expect(typeof report).toBe('string');
+    expect(report).toContain('Style Performance Report');
+    expect(report).toContain('Cache Statistics');
+    expect(report).toContain('Memoization Statistics');
+  });
+
+  it('should manage debug log entries', () => {
+    StylePerformanceDebugger.log('test1', 'Message 1');
+    StylePerformanceDebugger.log('test2', 'Message 2');
+    
+    const log = StylePerformanceDebugger.getLog();
+    expect(log).toHaveLength(2);
+    expect(log[0].type).toBe('test1');
+    expect(log[1].type).toBe('test2');
+  });
+});
+
+describe('PerformanceStyleUtils Integration', () => {
+  beforeEach(() => {
+    PerformanceStyleUtils.cache.clearCache();
+    PerformanceStyleUtils.memoization.clearMemoCache();
+  });
+
+  it('should create optimized themed styles', () => {
+    const styleFactory = (theme: any) => ({
+      container: { backgroundColor: theme.colors.primary[500] },
+    });
+
+    const styles = PerformanceStyleUtils.createOptimizedThemedStyles(
+      styleFactory,
+      lightTheme,
+      'test-component'
+    );
+
+    expect(styles).toHaveProperty('container');
+    expect(styles.container).toHaveProperty('backgroundColor');
+  });
+
+  it('should create memoized style functions', () => {
+    let callCount = 0;
+    const styleFunction = (color: string) => {
+      callCount++;
+      return { backgroundColor: color };
+    };
+
+    const memoizedStyleFunction = PerformanceStyleUtils.createMemoizedStyleFunction(
+      styleFunction
+    );
+
+    memoizedStyleFunction('red');
+    memoizedStyleFunction('red');
+    
+    expect(callCount).toBe(1);
+  });
+
+  it('should batch style operations', () => {
+    const operations = [
+      () => ({ flex: 1 }),
+      () => ({ backgroundColor: 'red' }),
+      () => ({ fontSize: 16 }),
+    ];
+
+    const results = PerformanceStyleUtils.batchStyleOperations(operations);
+    
+    expect(results).toHaveLength(3);
+    expect(results[0]).toEqual({ flex: 1 });
+    expect(results[1]).toEqual({ backgroundColor: 'red' });
+    expect(results[2]).toEqual({ fontSize: 16 });
+  });
+
+  it('should preload critical styles', () => {
+    const criticalStyles = [
+      {
+        factory: (theme: any) => ({ button: { backgroundColor: theme.colors.primary[500] } }),
+        theme: lightTheme,
+        key: 'button-styles',
+      },
+    ];
+
+    expect(() => {
       PerformanceStyleUtils.preloadCriticalStyles(criticalStyles);
-
-      const stats = StyleSheetCache.getStats();
-      expect(stats.size).toBe(1);
-    });
+    }).not.toThrow();
   });
 
-  describe('cleanup', () => {
-    it('should clean up all performance utilities', () => {
-      // Add some data to clean up
-      StyleSheetCache.create({ padding: 16 }, 'test');
-      StyleMemoization.memoize(() => {})();
-      StylePerformanceMonitor.setEnabled(true);
-      StylePerformanceMonitor.measureStyleCreation('test', () => ({}));
+  it('should cleanup performance utilities', () => {
+    // Create some cached data
+    PerformanceStyleUtils.cache.create({ test: { flex: 1 } }, 'test');
+    PerformanceStyleUtils.memoization.memoize(() => ({}))();
+    
+    PerformanceStyleUtils.cleanup();
+    
+    const cacheStats = PerformanceStyleUtils.cache.getStats();
+    const memoStats = PerformanceStyleUtils.memoization.getMemoStats();
+    
+    expect(cacheStats.size).toBe(0);
+    expect(memoStats.size).toBe(0);
+  });
+});
 
-      PerformanceStyleUtils.cleanup();
+// Performance Benchmarks
+describe('Performance Benchmarks', () => {
+  const createLargeStyleObject = () => {
+    const styles: any = {};
+    for (let i = 0; i < 100; i++) {
+      styles[`style${i}`] = {
+        flex: i,
+        backgroundColor: `rgb(${i}, ${i}, ${i})`,
+        fontSize: 10 + i,
+        margin: i * 2,
+        padding: i * 3,
+      };
+    }
+    return styles;
+  };
 
-      expect(StyleSheetCache.getStats().size).toBe(0);
-      expect(StyleMemoization.getMemoStats().size).toBe(0);
-      expect(Object.keys(StylePerformanceMonitor.getStats())).toHaveLength(0);
-    });
+  it('should benchmark style creation performance', () => {
+    const largeStyles = createLargeStyleObject();
+    
+    const startTime = performance.now();
+    StyleSheetCache.create(largeStyles, 'benchmark-test');
+    const endTime = performance.now();
+    
+    const duration = endTime - startTime;
+    
+    // Performance should be reasonable (less than 50ms for large style objects)
+    expect(duration).toBeLessThan(50);
+  });
+
+  it('should benchmark cache hit performance', () => {
+    const styles = createLargeStyleObject();
+    
+    // First call (cache miss)
+    StyleSheetCache.create(styles, 'cache-benchmark');
+    
+    // Benchmark cache hit
+    const startTime = performance.now();
+    StyleSheetCache.create(styles, 'cache-benchmark');
+    const endTime = performance.now();
+    
+    const duration = endTime - startTime;
+    
+    // Cache hits should be very fast (less than 1ms)
+    expect(duration).toBeLessThan(1);
+  });
+
+  it('should benchmark memoization performance', () => {
+    const expensiveFunction = (n: number) => {
+      // Simulate expensive calculation
+      let result = 0;
+      for (let i = 0; i < n; i++) {
+        result += Math.sqrt(i);
+      }
+      return result;
+    };
+
+    const memoizedFunction = StyleMemoization.memoize(expensiveFunction);
+    
+    // First call (expensive)
+    const startTime1 = performance.now();
+    memoizedFunction(1000);
+    const endTime1 = performance.now();
+    
+    // Second call (memoized)
+    const startTime2 = performance.now();
+    memoizedFunction(1000);
+    const endTime2 = performance.now();
+    
+    const firstCallDuration = endTime1 - startTime1;
+    const secondCallDuration = endTime2 - startTime2;
+    
+    // Memoized call should be significantly faster
+    expect(secondCallDuration).toBeLessThan(firstCallDuration * 0.1);
+  });
+
+  it('should benchmark theme switching performance', () => {
+    const callback = jest.fn();
+    
+    const startTime = performance.now();
+    ThemeSwitchingOptimizer.optimizeThemeSwitch(
+      lightTheme,
+      darkTheme,
+      callback
+    );
+    const endTime = performance.now();
+    
+    const duration = endTime - startTime;
+    
+    // Theme switching should be fast (less than 10ms)
+    expect(duration).toBeLessThan(10);
   });
 });

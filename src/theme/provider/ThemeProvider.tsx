@@ -3,7 +3,7 @@
  * Provides theme context and manages theme switching with smooth transitions
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Appearance, ColorSchemeName } from 'react-native';
 import { ThemeContext } from './ThemeContext';
 import { lightTheme, darkTheme } from '../themes';
@@ -15,6 +15,10 @@ import {
   ThemeContextValue 
 } from '../themes/types';
 import { assetManager, AssetConfig } from '../../assets';
+import { 
+  ThemeSwitchingOptimizer, 
+  StylePerformanceDebugger 
+} from '../../utils/performanceStyleUtils';
 
 /**
  * ThemeProvider component that manages theme state and provides context
@@ -27,6 +31,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   const [systemColorScheme, setSystemColorScheme] = useState<ColorSchemeName>(
     Appearance.getColorScheme()
   );
+  const previousThemeRef = useRef<Theme | null>(null);
 
   // Listen to system color scheme changes
   useEffect(() => {
@@ -56,11 +61,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return isDark ? darkTheme : lightTheme;
   }, [isDark]);
 
-  // Create the complete theme object
-  const theme: Theme = useMemo(() => ({
-    ...currentThemeConfig,
-    isDark,
-  }), [currentThemeConfig, isDark]);
+  // Create the complete theme object with performance optimization
+  const theme: Theme = useMemo(() => {
+    const newTheme = {
+      ...currentThemeConfig,
+      isDark,
+    };
+
+    // Log theme creation for performance monitoring
+    StylePerformanceDebugger.log('theme_creation', 'Theme object created', {
+      themeName: newTheme.name,
+      isDark: newTheme.isDark,
+    });
+
+    return newTheme;
+  }, [currentThemeConfig, isDark]);
 
   // Theme switching functions
   const setTheme = useCallback((newTheme: ThemeConfig) => {
@@ -91,12 +106,36 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   }, []);
 
   const toggleTheme = useCallback(() => {
+    const previousTheme = previousThemeRef.current;
+    
     if (themeMode === 'system') {
       // If currently system, toggle to opposite of current system setting
-      setThemeMode(systemColorScheme === 'dark' ? 'light' : 'dark');
+      const newMode = systemColorScheme === 'dark' ? 'light' : 'dark';
+      
+      if (previousTheme) {
+        const newTheme = newMode === 'dark' ? darkTheme : lightTheme;
+        ThemeSwitchingOptimizer.optimizeThemeSwitch(
+          previousTheme,
+          { ...newTheme, isDark: newMode === 'dark' },
+          () => setThemeMode(newMode)
+        );
+      } else {
+        setThemeMode(newMode);
+      }
     } else {
       // Toggle between light and dark
-      setThemeMode(themeMode === 'light' ? 'dark' : 'light');
+      const newMode = themeMode === 'light' ? 'dark' : 'light';
+      
+      if (previousTheme) {
+        const newTheme = newMode === 'dark' ? darkTheme : lightTheme;
+        ThemeSwitchingOptimizer.optimizeThemeSwitch(
+          previousTheme,
+          { ...newTheme, isDark: newMode === 'dark' },
+          () => setThemeMode(newMode)
+        );
+      } else {
+        setThemeMode(newMode);
+      }
     }
   }, [themeMode, systemColorScheme]);
 
@@ -112,7 +151,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
   }, []);
 
-  // Create context value
+  // Update previous theme reference for performance optimization
+  useEffect(() => {
+    previousThemeRef.current = theme;
+  }, [theme]);
+
+  // Create context value with performance optimization
   const contextValue: ThemeContextValue = useMemo(() => ({
     theme,
     setTheme,

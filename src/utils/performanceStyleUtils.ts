@@ -5,6 +5,7 @@
 
 import { StyleSheet, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { Theme } from '../theme/themes/types';
+import { performanceMonitor } from './performance';
 
 // Style types
 type StyleValue = ViewStyle | TextStyle | ImageStyle;
@@ -12,15 +13,17 @@ type StyleDefinition = Record<string, StyleValue>;
 type StyleFactory<T> = (theme: Theme) => T;
 
 /**
- * Advanced StyleSheet caching system
+ * Advanced StyleSheet caching system with LRU eviction and performance monitoring
  */
 export class StyleSheetCache {
   private static cache = new Map<string, any>();
-  private static maxCacheSize = 100;
+  private static maxCacheSize = 200; // Increased for better caching
   private static accessCount = new Map<string, number>();
+  private static creationTimes = new Map<string, number>();
+  private static memoryUsage = new Map<string, number>();
 
   /**
-   * Create or retrieve cached StyleSheet
+   * Create or retrieve cached StyleSheet with performance monitoring
    */
   static create<T extends StyleDefinition>(
     styles: T | (() => T),
@@ -28,8 +31,12 @@ export class StyleSheetCache {
   ): T {
     const key = cacheKey || this.generateKey(styles);
     
+    // Performance monitoring for cache hits
+    const startTime = performance.now();
+    
     if (this.cache.has(key)) {
       this.incrementAccessCount(key);
+      performanceMonitor.recordMetric('style_cache_hit', performance.now() - startTime, { key });
       return this.cache.get(key);
     }
 
@@ -38,11 +45,24 @@ export class StyleSheetCache {
       this.cleanCache();
     }
 
+    // Performance monitoring for style creation
+    const creationStart = performance.now();
     const styleObject = typeof styles === 'function' ? styles() : styles;
     const createdStyles = StyleSheet.create(styleObject);
+    const creationTime = performance.now() - creationStart;
+    
+    // Estimate memory usage (rough approximation)
+    const memoryEstimate = this.estimateMemoryUsage(styleObject);
     
     this.cache.set(key, createdStyles);
     this.accessCount.set(key, 1);
+    this.creationTimes.set(key, creationTime);
+    this.memoryUsage.set(key, memoryEstimate);
+    
+    // Record performance metrics
+    performanceMonitor.recordMetric('style_cache_miss', performance.now() - startTime, { key });
+    performanceMonitor.recordMetric('style_creation_time', creationTime, { key });
+    performanceMonitor.recordMetric('style_memory_usage', memoryEstimate, { key });
     
     return createdStyles;
   }
@@ -72,10 +92,37 @@ export class StyleSheetCache {
   }
 
   /**
-   * Generate theme-specific cache key
+   * Generate theme-specific cache key with hash for better performance
    */
   private static generateThemeKey(theme: Theme): string {
-    return `theme:${theme.name}:${theme.isDark ? 'dark' : 'light'}`;
+    // Create a more efficient hash-based key
+    const themeHash = this.hashTheme(theme);
+    return `theme:${theme.name}:${theme.isDark ? 'dark' : 'light'}:${themeHash}`;
+  }
+
+  /**
+   * Generate hash for theme to detect changes efficiently
+   */
+  private static hashTheme(theme: Theme): string {
+    // Simple hash based on key theme properties
+    const keyProps = {
+      colors: theme.colors.primary,
+      spacing: theme.spacing.md,
+      typography: theme.typography.fontSize.body,
+    };
+    return btoa(JSON.stringify(keyProps)).slice(0, 8);
+  }
+
+  /**
+   * Estimate memory usage of style object
+   */
+  private static estimateMemoryUsage(styleObject: any): number {
+    // Rough estimation based on JSON string length
+    try {
+      return JSON.stringify(styleObject).length * 2; // Approximate bytes
+    } catch {
+      return 1000; // Default estimate
+    }
   }
 
   /**
@@ -121,27 +168,58 @@ export class StyleSheetCache {
   }
 
   /**
-   * Get cache statistics
+   * Get comprehensive cache statistics
    */
   static getStats(): {
     size: number;
     maxSize: number;
     hitRate: number;
-    mostAccessed: Array<{ key: string; count: number }>;
+    totalMemoryUsage: number;
+    averageCreationTime: number;
+    mostAccessed: Array<{ key: string; count: number; creationTime: number; memoryUsage: number }>;
+    performanceMetrics: {
+      slowestCreations: Array<{ key: string; time: number }>;
+      largestMemoryUsage: Array<{ key: string; memory: number }>;
+    };
   } {
     const totalAccess = Array.from(this.accessCount.values()).reduce((a, b) => a + b, 0);
     const hitRate = totalAccess > 0 ? (totalAccess - this.cache.size) / totalAccess : 0;
     
+    const totalMemoryUsage = Array.from(this.memoryUsage.values()).reduce((a, b) => a + b, 0);
+    const totalCreationTime = Array.from(this.creationTimes.values()).reduce((a, b) => a + b, 0);
+    const averageCreationTime = this.creationTimes.size > 0 ? totalCreationTime / this.creationTimes.size : 0;
+    
     const mostAccessed = Array.from(this.accessCount.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
-      .map(([key, count]) => ({ key, count }));
+      .map(([key, count]) => ({
+        key,
+        count,
+        creationTime: this.creationTimes.get(key) || 0,
+        memoryUsage: this.memoryUsage.get(key) || 0,
+      }));
+
+    const slowestCreations = Array.from(this.creationTimes.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([key, time]) => ({ key, time }));
+
+    const largestMemoryUsage = Array.from(this.memoryUsage.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([key, memory]) => ({ key, memory }));
 
     return {
       size: this.cache.size,
       maxSize: this.maxCacheSize,
       hitRate,
+      totalMemoryUsage,
+      averageCreationTime,
       mostAccessed,
+      performanceMetrics: {
+        slowestCreations,
+        largestMemoryUsage,
+      },
     };
   }
 
@@ -391,6 +469,319 @@ export class StylePerformanceMonitor {
 }
 
 /**
+ * Efficient theme switching utilities
+ */
+export class ThemeSwitchingOptimizer {
+  private static themeTransitionCache = new Map<string, any>();
+  private static componentUpdateQueue = new Set<() => void>();
+  private static isTransitioning = false;
+
+  /**
+   * Optimize theme switching by batching updates
+   */
+  static optimizeThemeSwitch(
+    fromTheme: Theme,
+    toTheme: Theme,
+    callback: () => void
+  ): void {
+    const transitionKey = `${fromTheme.name}-to-${toTheme.name}`;
+    
+    // Check if we have a cached transition
+    if (this.themeTransitionCache.has(transitionKey)) {
+      const cachedTransition = this.themeTransitionCache.get(transitionKey);
+      cachedTransition();
+      callback();
+      return;
+    }
+
+    // Start performance monitoring
+    performanceMonitor.startTimer('theme_switch');
+    this.isTransitioning = true;
+
+    // Batch the theme switch
+    this.batchThemeUpdates(() => {
+      // Clear theme-specific cache entries
+      StyleSheetCache.clearCache(`theme:${fromTheme.name}`);
+      
+      // Preload critical styles for new theme
+      this.preloadCriticalStylesForTheme(toTheme);
+      
+      // Execute callback
+      callback();
+      
+      // Cache this transition for future use
+      this.themeTransitionCache.set(transitionKey, callback);
+      
+      this.isTransitioning = false;
+      performanceMonitor.endTimer('theme_switch', {
+        fromTheme: fromTheme.name,
+        toTheme: toTheme.name,
+      });
+    });
+  }
+
+  /**
+   * Batch theme updates to prevent unnecessary re-renders
+   */
+  private static batchThemeUpdates(updateFn: () => void): void {
+    // Use React's batching mechanism if available, otherwise use setTimeout
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(() => {
+        updateFn();
+        this.flushComponentUpdates();
+      });
+    } else {
+      setTimeout(() => {
+        updateFn();
+        this.flushComponentUpdates();
+      }, 0);
+    }
+  }
+
+  /**
+   * Queue component updates during theme transitions
+   */
+  static queueComponentUpdate(updateFn: () => void): void {
+    if (this.isTransitioning) {
+      this.componentUpdateQueue.add(updateFn);
+    } else {
+      updateFn();
+    }
+  }
+
+  /**
+   * Flush queued component updates
+   */
+  private static flushComponentUpdates(): void {
+    this.componentUpdateQueue.forEach(updateFn => updateFn());
+    this.componentUpdateQueue.clear();
+  }
+
+  /**
+   * Preload critical styles for a theme
+   */
+  private static preloadCriticalStylesForTheme(theme: Theme): void {
+    // Define critical style factories that should be preloaded
+    const criticalStyles = [
+      // Button styles
+      (t: Theme) => ({
+        primaryButton: {
+          backgroundColor: t.colors.primary[500],
+          color: t.colors.text.inverse,
+        },
+        secondaryButton: {
+          backgroundColor: t.colors.secondary[500],
+          color: t.colors.text.primary,
+        },
+      }),
+      // Text styles
+      (t: Theme) => ({
+        heading: {
+          fontSize: t.typography.fontSize.h1,
+          fontWeight: t.typography.fontWeight.bold,
+          color: t.colors.text.primary,
+        },
+        body: {
+          fontSize: t.typography.fontSize.body,
+          color: t.colors.text.primary,
+        },
+      }),
+      // Card styles
+      (t: Theme) => ({
+        card: {
+          backgroundColor: t.colors.surface.primary,
+          borderRadius: t.borderRadius.md,
+          shadowColor: t.shadows.md.shadowColor,
+        },
+      }),
+    ];
+
+    criticalStyles.forEach((styleFactory, index) => {
+      StyleSheetCache.createThemed(styleFactory, theme, `critical-${index}`);
+    });
+  }
+
+  /**
+   * Clear theme transition cache
+   */
+  static clearTransitionCache(): void {
+    this.themeTransitionCache.clear();
+  }
+
+  /**
+   * Get theme switching statistics
+   */
+  static getThemeSwitchingStats(): {
+    cachedTransitions: number;
+    isTransitioning: boolean;
+    queuedUpdates: number;
+  } {
+    return {
+      cachedTransitions: this.themeTransitionCache.size,
+      isTransitioning: this.isTransitioning,
+      queuedUpdates: this.componentUpdateQueue.size,
+    };
+  }
+}
+
+/**
+ * Performance debugging and monitoring tools
+ */
+export class StylePerformanceDebugger {
+  private static isEnabled = __DEV__;
+  private static debugLog: Array<{
+    timestamp: number;
+    type: string;
+    message: string;
+    data?: any;
+  }> = [];
+
+  /**
+   * Enable/disable performance debugging
+   */
+  static setEnabled(enabled: boolean): void {
+    this.isEnabled = enabled;
+  }
+
+  /**
+   * Log performance debug information
+   */
+  static log(type: string, message: string, data?: any): void {
+    if (!this.isEnabled) return;
+
+    const logEntry = {
+      timestamp: Date.now(),
+      type,
+      message,
+      data,
+    };
+
+    this.debugLog.push(logEntry);
+    
+    // Keep log size manageable
+    if (this.debugLog.length > 1000) {
+      this.debugLog = this.debugLog.slice(-500);
+    }
+
+    console.log(`[StylePerf:${type}] ${message}`, data);
+  }
+
+  /**
+   * Analyze style performance and provide recommendations
+   */
+  static analyzePerformance(): {
+    recommendations: string[];
+    warnings: string[];
+    stats: any;
+  } {
+    const cacheStats = StyleSheetCache.getStats();
+    const memoStats = StyleMemoization.getMemoStats();
+    const recommendations: string[] = [];
+    const warnings: string[] = [];
+
+    // Analyze cache hit rate
+    if (cacheStats.hitRate < 0.7) {
+      recommendations.push(
+        `Low cache hit rate (${(cacheStats.hitRate * 100).toFixed(1)}%). Consider using more consistent cache keys.`
+      );
+    }
+
+    // Analyze memory usage
+    if (cacheStats.totalMemoryUsage > 1000000) { // 1MB
+      warnings.push(
+        `High memory usage (${(cacheStats.totalMemoryUsage / 1000000).toFixed(2)}MB). Consider clearing cache more frequently.`
+      );
+    }
+
+    // Analyze creation times
+    if (cacheStats.averageCreationTime > 5) {
+      warnings.push(
+        `Slow style creation (${cacheStats.averageCreationTime.toFixed(2)}ms average). Consider optimizing style factories.`
+      );
+    }
+
+    // Analyze memoization
+    if (memoStats.size > 500) {
+      recommendations.push(
+        `Large memoization cache (${memoStats.size} entries). Consider clearing periodically.`
+      );
+    }
+
+    return {
+      recommendations,
+      warnings,
+      stats: {
+        cache: cacheStats,
+        memoization: memoStats,
+        themeSwitching: ThemeSwitchingOptimizer.getThemeSwitchingStats(),
+      },
+    };
+  }
+
+  /**
+   * Generate performance report
+   */
+  static generateReport(): string {
+    const analysis = this.analyzePerformance();
+    const timestamp = new Date().toISOString();
+
+    let report = `Style Performance Report - ${timestamp}\n`;
+    report += '='.repeat(50) + '\n\n';
+
+    // Cache Statistics
+    report += 'Cache Statistics:\n';
+    report += `- Size: ${analysis.stats.cache.size}/${analysis.stats.cache.maxSize}\n`;
+    report += `- Hit Rate: ${(analysis.stats.cache.hitRate * 100).toFixed(1)}%\n`;
+    report += `- Memory Usage: ${(analysis.stats.cache.totalMemoryUsage / 1000).toFixed(1)}KB\n`;
+    report += `- Average Creation Time: ${analysis.stats.cache.averageCreationTime.toFixed(2)}ms\n\n`;
+
+    // Memoization Statistics
+    report += 'Memoization Statistics:\n';
+    report += `- Cache Size: ${analysis.stats.memoization.size}\n\n`;
+
+    // Theme Switching Statistics
+    report += 'Theme Switching Statistics:\n';
+    report += `- Cached Transitions: ${analysis.stats.themeSwitching.cachedTransitions}\n`;
+    report += `- Currently Transitioning: ${analysis.stats.themeSwitching.isTransitioning}\n`;
+    report += `- Queued Updates: ${analysis.stats.themeSwitching.queuedUpdates}\n\n`;
+
+    // Recommendations
+    if (analysis.recommendations.length > 0) {
+      report += 'Recommendations:\n';
+      analysis.recommendations.forEach((rec, index) => {
+        report += `${index + 1}. ${rec}\n`;
+      });
+      report += '\n';
+    }
+
+    // Warnings
+    if (analysis.warnings.length > 0) {
+      report += 'Warnings:\n';
+      analysis.warnings.forEach((warning, index) => {
+        report += `${index + 1}. ${warning}\n`;
+      });
+      report += '\n';
+    }
+
+    return report;
+  }
+
+  /**
+   * Clear debug log
+   */
+  static clearLog(): void {
+    this.debugLog = [];
+  }
+
+  /**
+   * Get debug log entries
+   */
+  static getLog(): typeof StylePerformanceDebugger.debugLog {
+    return [...this.debugLog];
+  }
+}
+
+/**
  * Main performance utilities class
  */
 export class PerformanceStyleUtils {
@@ -398,6 +789,8 @@ export class PerformanceStyleUtils {
   static memoization = StyleMemoization;
   static optimizer = StyleOptimizer;
   static monitor = StylePerformanceMonitor;
+  static themeSwitching = ThemeSwitchingOptimizer;
+  static debugger = StylePerformanceDebugger;
 
   /**
    * Create high-performance themed styles

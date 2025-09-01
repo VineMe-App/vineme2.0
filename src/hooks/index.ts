@@ -102,3 +102,16 @@ export {
   useGroupReferralOperations,
   referralKeys,
 } from './useReferrals';
+
+// Style Performance Hooks
+export {
+  useOptimizedStyles,
+  useMemoizedStyleCalculation,
+  useStylePerformanceMonitor,
+  useOptimizedThemeSwitch,
+  useBatchedStyleOperations,
+  useStylePerformanceDebug,
+  withStylePerformanceMonitoring,
+  useCriticalStylePreloader,
+  useStyleCacheManagement,
+} from './useStylePerformance';
