@@ -59,18 +59,18 @@ export const darkTheme: ThemeConfig = {
 
     // Background colors (dark theme)
     background: {
-      primary: '#0f172a',
-      secondary: '#1e293b',
-      tertiary: '#334155',
+      primary: '#0f172a', // Keep dark primary for dark theme
+      secondary: '#1e293b', // Keep dark secondary
+      tertiary: '#334155', // Keep dark tertiary
       inverse: '#ffffff',
     },
 
     // Text colors (dark theme)
     text: {
-      primary: '#f8fafc',
+      primary: '#ffffff', // Keep white for dark theme readability
       secondary: '#cbd5e1',
       tertiary: '#94a3b8',
-      inverse: '#0f172a',
+      inverse: '#000000', // Updated to use black as requested
       disabled: '#64748b',
     },
 
@@ -84,9 +84,9 @@ export const darkTheme: ThemeConfig = {
 
     // Surface colors (dark theme)
     surface: {
-      primary: '#1e293b',
-      secondary: '#334155',
-      tertiary: '#475569',
+      primary: '#1e293b', // Keep dark primary
+      secondary: '#334155', // Keep dark secondary
+      tertiary: '#475569', // Keep dark tertiary
       overlay: 'rgba(0, 0, 0, 0.7)',
     },
   },

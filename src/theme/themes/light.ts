@@ -46,15 +46,15 @@ export const lightTheme: ThemeConfig = {
 
     // Background colors
     background: {
-      primary: '#ffffff',
-      secondary: '#f8fafc',
-      tertiary: '#f1f5f9',
+      primary: secondaryColors[100], // Changed from '#ffffff' to secondary light blue
+      secondary: '#ffffff', // Changed from '#f8fafc' to white
+      tertiary: '#f8fafc', // Changed from '#f1f5f9' to previous secondary
       inverse: '#0f172a',
     },
 
     // Text colors
     text: {
-      primary: '#0f172a',
+      primary: '#000000', // Updated to use black as requested
       secondary: '#475569',
       tertiary: '#64748b',
       inverse: '#ffffff',
@@ -71,9 +71,9 @@ export const lightTheme: ThemeConfig = {
 
     // Surface colors
     surface: {
-      primary: '#ffffff',
-      secondary: '#f8fafc',
-      tertiary: '#f1f5f9',
+      primary: '#ffffff', // Keep white for cards/surfaces
+      secondary: secondaryColors[50], // Use very light secondary for subtle surfaces
+      tertiary: '#f8fafc', // Use previous secondary
       overlay: 'rgba(15, 23, 42, 0.5)',
     },
   },

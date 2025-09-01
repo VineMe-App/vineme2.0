@@ -61,32 +61,32 @@ export interface ThemeColors extends SemanticColors {
   };
 }
 
-// Primary color palette
+// Primary color palette - Updated to use #f10078
 export const primaryColors: ColorToken = {
-  50: '#f0f9ff',
-  100: '#e0f2fe',
-  200: '#bae6fd',
-  300: '#7dd3fc',
-  400: '#38bdf8',
-  500: '#0ea5e9', // Base primary
-  600: '#0284c7',
-  700: '#0369a1',
-  800: '#075985',
-  900: '#0c4a6e',
+  50: '#fdf2f8',
+  100: '#fce7f3',
+  200: '#fbcfe8',
+  300: '#f9a8d4',
+  400: '#f472b6',
+  500: '#f10078', // Base primary - the requested color
+  600: '#db2777',
+  700: '#be185d',
+  800: '#9d174d',
+  900: '#831843',
 };
 
-// Secondary color palette
+// Secondary color palette - Updated to use #e3ffd1
 export const secondaryColors: ColorToken = {
-  50: '#fafaf9',
-  100: '#f5f5f4',
-  200: '#e7e5e4',
-  300: '#d6d3d1',
-  400: '#a8a29e',
-  500: '#78716c', // Base secondary
-  600: '#57534e',
-  700: '#44403c',
-  800: '#292524',
-  900: '#1c1917',
+  50: '#f7fef4',
+  100: '#e3ffd1', // Base secondary - the requested color
+  200: '#c7ffa3',
+  300: '#abff75',
+  400: '#8fff47',
+  500: '#73ff19',
+  600: '#5ce600',
+  700: '#45b300',
+  800: '#2e8000',
+  900: '#174d00',
 };
 
 // Success color palette

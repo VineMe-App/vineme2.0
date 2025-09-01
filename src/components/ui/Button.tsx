@@ -93,7 +93,7 @@ export interface ButtonProps {
 export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
-  variant = 'primary',
+  variant = 'secondary', // Changed from 'primary' to 'secondary'
   size = 'medium',
   disabled = false,
   loading = false,
@@ -204,7 +204,7 @@ export const Button: React.FC<ButtonProps> = ({
     <Animated.View
       style={[
         { transform: [{ scale: scaleValue }] },
-        fullWidth && styles.fullWidth,
+        fullWidth ? styles.fullWidth : undefined,
       ]}
     >
       <TouchableOpacity
@@ -214,12 +214,12 @@ export const Button: React.FC<ButtonProps> = ({
             borderColor: focusValue.interpolate({
               inputRange: [0, 1],
               outputRange: [buttonStyles.borderColor || 'transparent', theme.colors.primary[500]],
-            }),
+            }) as any,
             shadowOpacity: focusValue.interpolate({
               inputRange: [0, 1],
               outputRange: [0, 0.2],
-            }),
-          },
+            }) as any,
+          } as any,
           style,
         ]}
         onPress={onPress}
@@ -255,8 +255,18 @@ const getButtonStyles = (
   fullWidth: boolean,
   isDisabled: boolean
 ): ViewStyle => {
+  // Calculate border radius for pill-shaped buttons (half the height)
+  const getPillBorderRadius = (size: string): number => {
+    const sizeStyles: Record<string, number> = {
+      small: 32,
+      medium: 44,
+      large: 52,
+    };
+    return sizeStyles[size] / 2;
+  };
+
   const baseStyles: ViewStyle = {
-    borderRadius: theme.borderRadius.md,
+    borderRadius: getPillBorderRadius(size), // Dynamic border radius for pill shape
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -286,12 +296,12 @@ const getButtonStyles = (
   // Variant styles
   const variantStyles: Record<string, ViewStyle> = {
     primary: {
-      backgroundColor: theme.colors.primary[500],
-      borderColor: theme.colors.primary[500],
+      backgroundColor: theme.colors.secondary[100], // Changed to use secondary color (light blue)
+      borderColor: theme.colors.secondary[100],
     },
     secondary: {
-      backgroundColor: theme.colors.neutral[100],
-      borderColor: theme.colors.neutral[300],
+      backgroundColor: theme.colors.primary[500], // Changed to use primary color (pink)
+      borderColor: theme.colors.primary[500],
     },
     success: {
       backgroundColor: theme.colors.success[500],

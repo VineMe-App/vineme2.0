@@ -3,7 +3,7 @@ import { ConfigContext, ExpoConfig } from 'expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'VineMe',
-  owner: "tonaeko",
+  owner: 'tonaeko',
   slug: 'vineme-mobile-app',
   version: '1.0.0',
   orientation: 'portrait',
@@ -14,7 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     resizeMode: 'contain',
     backgroundColor: '#ffffff',
   },
-  assetBundlePatterns: ['**/*'],
+  assetBundlePatterns: ['**/*', 'assets/fonts/*.ttf'],
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.vineme.app',
@@ -48,9 +48,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-    "eas": {
-        "projectId": "d4bf96e9-a94f-464d-ad98-a1265703c652"
-      }
+    eas: {
+      projectId: 'd4bf969-a94f-464d-ad98-a1265703c652',
+    },
   },
   plugins: [
     'expo-router',

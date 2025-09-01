@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 9, // Updated to pill shape (half of paddingVertical: 6 * 2 + text height)
     minWidth: 60,
     alignItems: 'center',
   },

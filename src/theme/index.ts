@@ -12,6 +12,9 @@ export * from './themes';
 // Export theme provider and hooks
 export * from './provider';
 
+// Export font components
+export * from './components';
+
 // Export examples
 export * from './examples';
 

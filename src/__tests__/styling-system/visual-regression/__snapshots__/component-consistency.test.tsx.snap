@@ -1,0 +1,1443 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Visual Regression - Component Consistency Theme Consistency should render all components consistently in dark theme: dark-theme-components 1`] = `
+[
+  <Text
+    accessibilityLabel="Heading Text"
+    accessibilityRole="header"
+    accessible={true}
+    allowFontScaling={true}
+    maxFontSizeMultiplier={1.5}
+    selectable={false}
+    style={
+      [
+        {
+          "color": "#ffffff",
+          "fontFamily": "System",
+          "fontSize": 60,
+          "fontWeight": "700",
+          "letterSpacing": -0.25,
+          "lineHeight": 60,
+          "textAlign": "left",
+        },
+      ]
+    }
+    testID="heading"
+  >
+    Heading Text
+  </Text>,
+  <Text
+    accessibilityLabel="Body text content"
+    accessibilityRole="text"
+    accessible={true}
+    allowFontScaling={true}
+    maxFontSizeMultiplier={1.5}
+    selectable={false}
+    style={
+      [
+        {
+          "color": "#ffffff",
+          "fontFamily": "System",
+          "fontSize": 16,
+          "fontWeight": "400",
+          "letterSpacing": 0,
+          "lineHeight": 24,
+          "textAlign": "left",
+        },
+      ]
+    }
+    testID="body"
+  >
+    Body text content
+  </Text>,
+  <AnimatedView
+    style={
+      [
+        {
+          "transform": [
+            {
+              "scale": {
+                "interpolate": [MockFunction],
+                "setValue": [MockFunction],
+              },
+            },
+          ],
+        },
+        false,
+      ]
+    }
+  >
+    <TouchableOpacity
+      accessibilityLabel="Primary"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": false,
+          "disabled": false,
+        }
+      }
+      accessible={true}
+      activeOpacity={0.8}
+      disabled={false}
+      onBlur={[Function]}
+      onFocus={[Function]}
+      onPressIn={[Function]}
+      onPressOut={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#f472b6",
+            "borderColor": "#f472b6",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "justifyContent": "center",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+            "paddingVertical": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+          undefined,
+        ]
+      }
+      testID="primary-btn"
+    >
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            },
+            undefined,
+          ]
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "color": "#000000",
+                "fontFamily": "System",
+                "fontSize": 16,
+                "includeFontPadding": false,
+                "lineHeight": 24,
+                "textAlign": "center",
+              },
+              undefined,
+            ]
+          }
+        >
+          Primary
+        </Text>
+      </View>
+    </TouchableOpacity>
+  </AnimatedView>,
+  <AnimatedView
+    style={
+      [
+        {
+          "transform": [
+            {
+              "scale": {
+                "interpolate": [MockFunction],
+                "setValue": [MockFunction],
+              },
+            },
+          ],
+        },
+        false,
+      ]
+    }
+  >
+    <TouchableOpacity
+      accessibilityLabel="Secondary"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": false,
+          "disabled": false,
+        }
+      }
+      accessible={true}
+      activeOpacity={0.8}
+      disabled={false}
+      onBlur={[Function]}
+      onFocus={[Function]}
+      onPressIn={[Function]}
+      onPressOut={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#f4f4f5",
+            "borderColor": "#d4d4d8",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "justifyContent": "center",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+            "paddingVertical": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+          undefined,
+        ]
+      }
+      testID="secondary-btn"
+    >
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            },
+            undefined,
+          ]
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "color": "#ffffff",
+                "fontFamily": "System",
+                "fontSize": 16,
+                "includeFontPadding": false,
+                "lineHeight": 24,
+                "textAlign": "center",
+              },
+              undefined,
+            ]
+          }
+        >
+          Secondary
+        </Text>
+      </View>
+    </TouchableOpacity>
+  </AnimatedView>,
+  <AnimatedView
+    style={
+      [
+        {
+          "transform": [
+            {
+              "scale": {
+                "interpolate": [MockFunction],
+                "setValue": [MockFunction],
+              },
+            },
+          ],
+        },
+        false,
+      ]
+    }
+  >
+    <TouchableOpacity
+      accessibilityLabel="Outline"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": false,
+          "disabled": false,
+        }
+      }
+      accessible={true}
+      activeOpacity={0.8}
+      disabled={false}
+      onBlur={[Function]}
+      onFocus={[Function]}
+      onPressIn={[Function]}
+      onPressOut={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "transparent",
+            "borderColor": "#f472b6",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "justifyContent": "center",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+            "paddingVertical": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+          undefined,
+        ]
+      }
+      testID="outline-btn"
+    >
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            },
+            undefined,
+          ]
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "color": "#f472b6",
+                "fontFamily": "System",
+                "fontSize": 16,
+                "includeFontPadding": false,
+                "lineHeight": 24,
+                "textAlign": "center",
+              },
+              undefined,
+            ]
+          }
+        >
+          Outline
+        </Text>
+      </View>
+    </TouchableOpacity>
+  </AnimatedView>,
+  <View
+    accessibilityRole="none"
+    accessibilityState={
+      {
+        "disabled": false,
+      }
+    }
+    accessible={true}
+    style={
+      [
+        {
+          "borderRadius": 8,
+        },
+        {
+          "padding": 16,
+        },
+        {
+          "backgroundColor": "#1e293b",
+        },
+        {
+          "elevation": 2,
+          "shadowColor": "#000000",
+          "shadowOffset": {
+            "height": 1,
+            "width": 0,
+          },
+          "shadowOpacity": 0.3,
+          "shadowRadius": 3,
+        },
+        {},
+        {},
+        undefined,
+      ]
+    }
+    testID="default-card"
+  >
+    <Text
+      accessibilityLabel="Default Card"
+      accessibilityRole="text"
+      accessible={true}
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.5}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#ffffff",
+            "fontFamily": "System",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+        ]
+      }
+    >
+      Default Card
+    </Text>
+  </View>,
+  <View
+    accessibilityRole="none"
+    accessibilityState={
+      {
+        "disabled": false,
+      }
+    }
+    accessible={true}
+    style={
+      [
+        {
+          "borderRadius": 8,
+        },
+        {
+          "padding": 16,
+        },
+        {
+          "backgroundColor": "#1e293b",
+        },
+        {
+          "elevation": 4,
+          "shadowColor": "#000000",
+          "shadowOffset": {
+            "height": 4,
+            "width": 0,
+          },
+          "shadowOpacity": 0.4,
+          "shadowRadius": 6,
+        },
+        {},
+        {},
+        undefined,
+      ]
+    }
+    testID="elevated-card"
+  >
+    <Text
+      accessibilityLabel="Elevated Card"
+      accessibilityRole="text"
+      accessible={true}
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.5}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#ffffff",
+            "fontFamily": "System",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+        ]
+      }
+    >
+      Elevated Card
+    </Text>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "marginBottom": undefined,
+          "width": "100%",
+        },
+        undefined,
+      ]
+    }
+    testID="default-input"
+  >
+    <AnimatedView
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#1e293b",
+            "borderColor": "#334155",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+        ]
+      }
+    >
+      <TextInput
+        accessibilityInvalid={false}
+        accessibilityRequired={false}
+        onBlur={[Function]}
+        onChangeText={[Function]}
+        onFocus={[Function]}
+        placeholder="Default input"
+        placeholderTextColor="#94a3b8"
+        style={
+          [
+            {
+              "color": "#ffffff",
+              "flex": 1,
+              "fontFamily": "System",
+              "fontSize": 16,
+              "includeFontPadding": false,
+              "lineHeight": 24,
+              "paddingVertical": undefined,
+            },
+            undefined,
+          ]
+        }
+      />
+    </AnimatedView>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "marginBottom": undefined,
+          "width": "100%",
+        },
+        undefined,
+      ]
+    }
+    testID="error-input"
+  >
+    <AnimatedView
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#1e293b",
+            "borderColor": "#ef4444",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+        ]
+      }
+    >
+      <TextInput
+        accessibilityDescribedBy="error-input-message"
+        accessibilityInvalid={true}
+        accessibilityRequired={false}
+        onBlur={[Function]}
+        onChangeText={[Function]}
+        onFocus={[Function]}
+        placeholder="Error input"
+        placeholderTextColor="#94a3b8"
+        style={
+          [
+            {
+              "color": "#ffffff",
+              "flex": 1,
+              "fontFamily": "System",
+              "fontSize": 16,
+              "includeFontPadding": false,
+              "lineHeight": 24,
+              "paddingVertical": undefined,
+            },
+            undefined,
+          ]
+        }
+      />
+    </AnimatedView>
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginTop": 4,
+        }
+      }
+      testID="error-input-message"
+    >
+      <Text
+        accessibilityLiveRegion="polite"
+        style={
+          [
+            {
+              "color": "#ef4444",
+              "fontFamily": "System",
+              "fontSize": 14,
+              "lineHeight": 20,
+            },
+            {
+              "flex": 1,
+            },
+          ]
+        }
+        testID="error-input-message-text"
+      >
+        Error message
+      </Text>
+    </View>
+  </View>,
+  <View
+    accessibilityLabel="undefined positive status"
+    accessibilityRole="text"
+    accessible={true}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "alignSelf": "flex-start",
+          "borderRadius": 9999,
+          "justifyContent": "center",
+        },
+        {
+          "backgroundColor": "#34C759",
+        },
+        {
+          "minHeight": 20,
+          "paddingHorizontal": 8,
+          "paddingVertical": 4,
+        },
+        undefined,
+      ]
+    }
+    testID="success-badge"
+  >
+    <Text
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
+      style={
+        [
+          {
+            "fontWeight": "500",
+            "textAlign": "center",
+          },
+          {
+            "color": "#FFFFFF",
+          },
+          {
+            "fontSize": 14,
+          },
+          undefined,
+        ]
+      }
+    />
+  </View>,
+  <View
+    accessibilityLabel="undefined warning status"
+    accessibilityRole="text"
+    accessible={true}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "alignSelf": "flex-start",
+          "borderRadius": 9999,
+          "justifyContent": "center",
+        },
+        {
+          "backgroundColor": "#FF9500",
+        },
+        {
+          "minHeight": 20,
+          "paddingHorizontal": 8,
+          "paddingVertical": 4,
+        },
+        undefined,
+      ]
+    }
+    testID="warning-badge"
+  >
+    <Text
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
+      style={
+        [
+          {
+            "fontWeight": "500",
+            "textAlign": "center",
+          },
+          {
+            "color": "#FFFFFF",
+          },
+          {
+            "fontSize": 14,
+          },
+          undefined,
+        ]
+      }
+    />
+  </View>,
+  <View
+    accessibilityLabel="undefined error status"
+    accessibilityRole="text"
+    accessible={true}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "alignSelf": "flex-start",
+          "borderRadius": 9999,
+          "justifyContent": "center",
+        },
+        {
+          "backgroundColor": "#FF3B30",
+        },
+        {
+          "minHeight": 20,
+          "paddingHorizontal": 8,
+          "paddingVertical": 4,
+        },
+        undefined,
+      ]
+    }
+    testID="error-badge"
+  >
+    <Text
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
+      style={
+        [
+          {
+            "fontWeight": "500",
+            "textAlign": "center",
+          },
+          {
+            "color": "#FFFFFF",
+          },
+          {
+            "fontSize": 14,
+          },
+          undefined,
+        ]
+      }
+    />
+  </View>,
+]
+`;
+
+exports[`Visual Regression - Component Consistency Theme Consistency should render all components consistently in light theme: light-theme-components 1`] = `
+[
+  <Text
+    accessibilityLabel="Heading Text"
+    accessibilityRole="header"
+    accessible={true}
+    allowFontScaling={true}
+    maxFontSizeMultiplier={1.5}
+    selectable={false}
+    style={
+      [
+        {
+          "color": "#000000",
+          "fontFamily": "System",
+          "fontSize": 60,
+          "fontWeight": "700",
+          "letterSpacing": -0.25,
+          "lineHeight": 60,
+          "textAlign": "left",
+        },
+      ]
+    }
+    testID="heading"
+  >
+    Heading Text
+  </Text>,
+  <Text
+    accessibilityLabel="Body text content"
+    accessibilityRole="text"
+    accessible={true}
+    allowFontScaling={true}
+    maxFontSizeMultiplier={1.5}
+    selectable={false}
+    style={
+      [
+        {
+          "color": "#000000",
+          "fontFamily": "System",
+          "fontSize": 16,
+          "fontWeight": "400",
+          "letterSpacing": 0,
+          "lineHeight": 24,
+          "textAlign": "left",
+        },
+      ]
+    }
+    testID="body"
+  >
+    Body text content
+  </Text>,
+  <AnimatedView
+    style={
+      [
+        {
+          "transform": [
+            {
+              "scale": {
+                "interpolate": [MockFunction],
+                "setValue": [MockFunction],
+              },
+            },
+          ],
+        },
+        false,
+      ]
+    }
+  >
+    <TouchableOpacity
+      accessibilityLabel="Primary"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": false,
+          "disabled": false,
+        }
+      }
+      accessible={true}
+      activeOpacity={0.8}
+      disabled={false}
+      onBlur={[Function]}
+      onFocus={[Function]}
+      onPressIn={[Function]}
+      onPressOut={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#f10078",
+            "borderColor": "#f10078",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "justifyContent": "center",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+            "paddingVertical": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+          undefined,
+        ]
+      }
+      testID="primary-btn"
+    >
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            },
+            undefined,
+          ]
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "color": "#ffffff",
+                "fontFamily": "System",
+                "fontSize": 16,
+                "includeFontPadding": false,
+                "lineHeight": 24,
+                "textAlign": "center",
+              },
+              undefined,
+            ]
+          }
+        >
+          Primary
+        </Text>
+      </View>
+    </TouchableOpacity>
+  </AnimatedView>,
+  <AnimatedView
+    style={
+      [
+        {
+          "transform": [
+            {
+              "scale": {
+                "interpolate": [MockFunction],
+                "setValue": [MockFunction],
+              },
+            },
+          ],
+        },
+        false,
+      ]
+    }
+  >
+    <TouchableOpacity
+      accessibilityLabel="Secondary"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": false,
+          "disabled": false,
+        }
+      }
+      accessible={true}
+      activeOpacity={0.8}
+      disabled={false}
+      onBlur={[Function]}
+      onFocus={[Function]}
+      onPressIn={[Function]}
+      onPressOut={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#f4f4f5",
+            "borderColor": "#d4d4d8",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "justifyContent": "center",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+            "paddingVertical": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+          undefined,
+        ]
+      }
+      testID="secondary-btn"
+    >
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            },
+            undefined,
+          ]
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "color": "#000000",
+                "fontFamily": "System",
+                "fontSize": 16,
+                "includeFontPadding": false,
+                "lineHeight": 24,
+                "textAlign": "center",
+              },
+              undefined,
+            ]
+          }
+        >
+          Secondary
+        </Text>
+      </View>
+    </TouchableOpacity>
+  </AnimatedView>,
+  <AnimatedView
+    style={
+      [
+        {
+          "transform": [
+            {
+              "scale": {
+                "interpolate": [MockFunction],
+                "setValue": [MockFunction],
+              },
+            },
+          ],
+        },
+        false,
+      ]
+    }
+  >
+    <TouchableOpacity
+      accessibilityLabel="Outline"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": false,
+          "disabled": false,
+        }
+      }
+      accessible={true}
+      activeOpacity={0.8}
+      disabled={false}
+      onBlur={[Function]}
+      onFocus={[Function]}
+      onPressIn={[Function]}
+      onPressOut={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "transparent",
+            "borderColor": "#f10078",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "justifyContent": "center",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+            "paddingVertical": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+          undefined,
+        ]
+      }
+      testID="outline-btn"
+    >
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            },
+            undefined,
+          ]
+        }
+      >
+        <Text
+          numberOfLines={1}
+          style={
+            [
+              {
+                "color": "#f10078",
+                "fontFamily": "System",
+                "fontSize": 16,
+                "includeFontPadding": false,
+                "lineHeight": 24,
+                "textAlign": "center",
+              },
+              undefined,
+            ]
+          }
+        >
+          Outline
+        </Text>
+      </View>
+    </TouchableOpacity>
+  </AnimatedView>,
+  <View
+    accessibilityRole="none"
+    accessibilityState={
+      {
+        "disabled": false,
+      }
+    }
+    accessible={true}
+    style={
+      [
+        {
+          "borderRadius": 8,
+        },
+        {
+          "padding": 16,
+        },
+        {
+          "backgroundColor": "#ffffff",
+        },
+        {
+          "elevation": 2,
+          "shadowColor": "#000000",
+          "shadowOffset": {
+            "height": 1,
+            "width": 0,
+          },
+          "shadowOpacity": 0.1,
+          "shadowRadius": 3,
+        },
+        {},
+        {},
+        undefined,
+      ]
+    }
+    testID="default-card"
+  >
+    <Text
+      accessibilityLabel="Default Card"
+      accessibilityRole="text"
+      accessible={true}
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.5}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#000000",
+            "fontFamily": "System",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+        ]
+      }
+    >
+      Default Card
+    </Text>
+  </View>,
+  <View
+    accessibilityRole="none"
+    accessibilityState={
+      {
+        "disabled": false,
+      }
+    }
+    accessible={true}
+    style={
+      [
+        {
+          "borderRadius": 8,
+        },
+        {
+          "padding": 16,
+        },
+        {
+          "backgroundColor": "#ffffff",
+        },
+        {
+          "elevation": 4,
+          "shadowColor": "#000000",
+          "shadowOffset": {
+            "height": 4,
+            "width": 0,
+          },
+          "shadowOpacity": 0.15,
+          "shadowRadius": 6,
+        },
+        {},
+        {},
+        undefined,
+      ]
+    }
+    testID="elevated-card"
+  >
+    <Text
+      accessibilityLabel="Elevated Card"
+      accessibilityRole="text"
+      accessible={true}
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.5}
+      selectable={false}
+      style={
+        [
+          {
+            "color": "#000000",
+            "fontFamily": "System",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+        ]
+      }
+    >
+      Elevated Card
+    </Text>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "marginBottom": undefined,
+          "width": "100%",
+        },
+        undefined,
+      ]
+    }
+    testID="default-input"
+  >
+    <AnimatedView
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#e2e8f0",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+        ]
+      }
+    >
+      <TextInput
+        accessibilityInvalid={false}
+        accessibilityRequired={false}
+        onBlur={[Function]}
+        onChangeText={[Function]}
+        onFocus={[Function]}
+        placeholder="Default input"
+        placeholderTextColor="#64748b"
+        style={
+          [
+            {
+              "color": "#000000",
+              "flex": 1,
+              "fontFamily": "System",
+              "fontSize": 16,
+              "includeFontPadding": false,
+              "lineHeight": 24,
+              "paddingVertical": undefined,
+            },
+            undefined,
+          ]
+        }
+      />
+    </AnimatedView>
+  </View>,
+  <View
+    style={
+      [
+        {
+          "marginBottom": undefined,
+          "width": "100%",
+        },
+        undefined,
+      ]
+    }
+    testID="error-input"
+  >
+    <AnimatedView
+      style={
+        [
+          {
+            "alignItems": "center",
+            "backgroundColor": "#ffffff",
+            "borderColor": "#ef4444",
+            "borderRadius": 6,
+            "borderWidth": 1,
+            "flexDirection": "row",
+            "minHeight": 44,
+            "paddingHorizontal": undefined,
+          },
+          {
+            "borderColor": 1,
+            "shadowOpacity": 1,
+          },
+        ]
+      }
+    >
+      <TextInput
+        accessibilityDescribedBy="error-input-message"
+        accessibilityInvalid={true}
+        accessibilityRequired={false}
+        onBlur={[Function]}
+        onChangeText={[Function]}
+        onFocus={[Function]}
+        placeholder="Error input"
+        placeholderTextColor="#64748b"
+        style={
+          [
+            {
+              "color": "#000000",
+              "flex": 1,
+              "fontFamily": "System",
+              "fontSize": 16,
+              "includeFontPadding": false,
+              "lineHeight": 24,
+              "paddingVertical": undefined,
+            },
+            undefined,
+          ]
+        }
+      />
+    </AnimatedView>
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+          "marginTop": 4,
+        }
+      }
+      testID="error-input-message"
+    >
+      <Text
+        accessibilityLiveRegion="polite"
+        style={
+          [
+            {
+              "color": "#ef4444",
+              "fontFamily": "System",
+              "fontSize": 14,
+              "lineHeight": 20,
+            },
+            {
+              "flex": 1,
+            },
+          ]
+        }
+        testID="error-input-message-text"
+      >
+        Error message
+      </Text>
+    </View>
+  </View>,
+  <View
+    accessibilityLabel="undefined positive status"
+    accessibilityRole="text"
+    accessible={true}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "alignSelf": "flex-start",
+          "borderRadius": 9999,
+          "justifyContent": "center",
+        },
+        {
+          "backgroundColor": "#34C759",
+        },
+        {
+          "minHeight": 20,
+          "paddingHorizontal": 8,
+          "paddingVertical": 4,
+        },
+        undefined,
+      ]
+    }
+    testID="success-badge"
+  >
+    <Text
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
+      style={
+        [
+          {
+            "fontWeight": "500",
+            "textAlign": "center",
+          },
+          {
+            "color": "#FFFFFF",
+          },
+          {
+            "fontSize": 14,
+          },
+          undefined,
+        ]
+      }
+    />
+  </View>,
+  <View
+    accessibilityLabel="undefined warning status"
+    accessibilityRole="text"
+    accessible={true}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "alignSelf": "flex-start",
+          "borderRadius": 9999,
+          "justifyContent": "center",
+        },
+        {
+          "backgroundColor": "#FF9500",
+        },
+        {
+          "minHeight": 20,
+          "paddingHorizontal": 8,
+          "paddingVertical": 4,
+        },
+        undefined,
+      ]
+    }
+    testID="warning-badge"
+  >
+    <Text
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
+      style={
+        [
+          {
+            "fontWeight": "500",
+            "textAlign": "center",
+          },
+          {
+            "color": "#FFFFFF",
+          },
+          {
+            "fontSize": 14,
+          },
+          undefined,
+        ]
+      }
+    />
+  </View>,
+  <View
+    accessibilityLabel="undefined error status"
+    accessibilityRole="text"
+    accessible={true}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "alignSelf": "flex-start",
+          "borderRadius": 9999,
+          "justifyContent": "center",
+        },
+        {
+          "backgroundColor": "#FF3B30",
+        },
+        {
+          "minHeight": 20,
+          "paddingHorizontal": 8,
+          "paddingVertical": 4,
+        },
+        undefined,
+      ]
+    }
+    testID="error-badge"
+  >
+    <Text
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
+      style={
+        [
+          {
+            "fontWeight": "500",
+            "textAlign": "center",
+          },
+          {
+            "color": "#FFFFFF",
+          },
+          {
+            "fontSize": 14,
+          },
+          undefined,
+        ]
+      }
+    />
+  </View>,
+]
+`;

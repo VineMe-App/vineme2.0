@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, router, useSegments } from 'expo-router';
 import * as Linking from 'expo-linking';
+import * as Font from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
@@ -133,7 +134,10 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="referral-landing" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="referral-landing"
+          options={{ headerShown: false }}
+        />
       </Stack>
       {__DEV__ && <DevToolsOverlay />}
     </>
@@ -141,6 +145,32 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          'Manrope-Regular': require('../../assets/fonts/Manrope-Regular.ttf'),
+          'Manrope-Medium': require('../../assets/fonts/Manrope-Medium.ttf'),
+          'Manrope-SemiBold': require('../../assets/fonts/Manrope-SemiBold.ttf'),
+          'Manrope-Bold': require('../../assets/fonts/Manrope-Bold.ttf'),
+        });
+        setFontsLoaded(true);
+      } catch (error) {
+        console.error('Error loading fonts:', error);
+        // Continue without custom fonts if loading fails
+        setFontsLoaded(true);
+      }
+    }
+
+    loadFonts();
+  }, []);
+
+  if (!fontsLoaded) {
+    return null; // Or a simple loading screen if you prefer
+  }
+
   return (
     <ErrorBoundary>
       <ThemeProvider initialTheme="system">

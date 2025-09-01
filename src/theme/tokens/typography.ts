@@ -18,10 +18,10 @@ export interface ThemeTypography {
 
 // Font family definitions
 export const fontFamily = {
-  regular: 'System',
-  medium: 'System',
-  semiBold: 'System',
-  bold: 'System',
+  regular: 'Manrope-Regular',
+  medium: 'Manrope-Medium',
+  semiBold: 'Manrope-SemiBold',
+  bold: 'Manrope-Bold',
 };
 
 // Font size scale (in pixels)
