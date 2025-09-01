@@ -43,7 +43,7 @@
   - Write comprehensive unit tests for enhanced Button component
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 7. Enhance existing Card component
+- [x] 7. Enhance existing Card component
   - Refactor Card component to use new theme system
   - Add more card variants and styling options
   - Implement proper shadow and border handling
@@ -51,7 +51,7 @@
   - Write unit tests for enhanced Card component
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 8. Create Input component with validation states
+- [x] 8. Create Input component with validation states
   - Implement Input component with theme integration
   - Add validation states (error, success, focus) with proper styling
   - Include label, helper text, and error message support
@@ -59,7 +59,7 @@
   - Write unit tests for Input component and validation states
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 9. Create Modal and overlay components
+- [x] 9. Create Modal and overlay components
   - Implement Modal component with theme-aware styling
   - Add overlay and backdrop components with proper z-index management
   - Include animation support for modal transitions
@@ -67,7 +67,7 @@
   - Write unit tests for Modal and overlay components
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 10. Implement Text component with typography variants
+- [x] 10. Implement Text component with typography variants
   - Create Text component with predefined typography variants
   - Add support for semantic text styling (headings, body, captions)
   - Include color and weight variations

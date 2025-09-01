@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   Modal as RNModal,
   View,
@@ -9,24 +9,40 @@ import {
   ModalProps as RNModalProps,
   SafeAreaView,
   ScrollView,
+  Dimensions,
+  BackHandler,
 } from 'react-native';
 import { KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../../utils/theme';
+import { useTheme } from '../../theme/provider/useTheme';
 
-interface ModalProps extends Omit<RNModalProps, 'children'> {
+export interface ModalProps extends Omit<RNModalProps, 'children'> {
   children: React.ReactNode;
   isVisible: boolean;
   onClose: () => void;
   title?: string;
   size?: 'small' | 'medium' | 'large' | 'fullscreen';
+  variant?: 'default' | 'centered' | 'bottom-sheet' | 'fullscreen';
   showCloseButton?: boolean;
   closeOnOverlayPress?: boolean;
+  closeOnBackPress?: boolean;
   scrollable?: boolean;
   avoidKeyboard?: boolean;
   keyboardVerticalOffset?: number;
+  animationType?: 'fade' | 'slide' | 'scale' | 'none';
+  animationDuration?: number;
+  overlayOpacity?: number;
+  trapFocus?: boolean;
+  autoFocus?: boolean;
   style?: ViewStyle;
+  overlayStyle?: ViewStyle;
+  contentStyle?: ViewStyle;
+  headerStyle?: ViewStyle;
+  bodyStyle?: ViewStyle;
   testID?: string;
+  onShow?: () => void;
+  onHide?: () => void;
+  onAnimationEnd?: () => void;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -35,38 +51,126 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   size = 'medium',
+  variant = 'default',
   showCloseButton = true,
   closeOnOverlayPress = true,
+  closeOnBackPress = true,
   scrollable = false,
   avoidKeyboard = true,
   keyboardVerticalOffset = 0,
+  animationType = 'fade',
+  animationDuration,
+  overlayOpacity = 0.5,
+  trapFocus = true,
+  autoFocus = true,
   style,
+  overlayStyle,
+  contentStyle,
+  headerStyle,
+  bodyStyle,
   testID,
+  onShow,
+  onHide,
+  onAnimationEnd,
   ...modalProps
 }) => {
-  const handleOverlayPress = () => {
+  const { colors, spacing, typography, shadows, borderRadius } = useTheme();
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+  // Handle back button press
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isVisible && closeOnBackPress) {
+        onClose();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [isVisible, closeOnBackPress, onClose]);
+
+  // Handle lifecycle callbacks
+  useEffect(() => {
+    if (isVisible) {
+      onShow?.();
+    } else {
+      onHide?.();
+    }
+  }, [isVisible, onShow, onHide]);
+
+  const handleOverlayPress = useCallback(() => {
     if (closeOnOverlayPress) {
       onClose();
     }
+  }, [closeOnOverlayPress, onClose]);
+
+  const handleEscapeKey = useCallback((event: any) => {
+    if (event.nativeEvent.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  const getContentPosition = () => {
+    if (variant === 'bottom-sheet') {
+      return {
+        justifyContent: 'flex-end' as const,
+        alignItems: 'stretch' as const,
+      };
+    } else if (variant === 'fullscreen') {
+      return {
+        justifyContent: 'center' as const,
+        alignItems: 'center' as const,
+      };
+    } else {
+      return {
+        justifyContent: 'center' as const,
+        alignItems: 'center' as const,
+      };
+    }
   };
 
+  const styles = createStyles(colors, spacing, typography, shadows, borderRadius, screenWidth, screenHeight, overlayOpacity);
+
   const renderContent = () => {
+    const contentStyles = [
+      styles.content,
+      styles[size],
+      variant === 'bottom-sheet' && styles.bottomSheet,
+      variant === 'fullscreen' && styles.fullscreenContent,
+      contentStyle,
+      style,
+    ];
+
     return (
-      <View style={[styles.content, styles[size], style]}>
+      <View
+        style={contentStyles}
+        accessible={true}
+        accessibilityRole="dialog"
+        accessibilityModal={true}
+        accessibilityLabel={title || 'Modal dialog'}
+        onKeyPress={handleEscapeKey}
+      >
         {(title || showCloseButton) && (
-          <View style={styles.header}>
-            {title && <Text style={styles.title}>{title}</Text>}
+          <View style={[styles.header, headerStyle]}>
+            {title && (
+              <Text style={styles.title} accessibilityRole="header">
+                {title}
+              </Text>
+            )}
             {showCloseButton && (
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={onClose}
                 accessibilityRole="button"
                 accessibilityLabel="Close modal"
+                accessibilityHint="Closes the modal dialog"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons
                   name="close"
-                  size={20}
-                  color={Theme.colors.textSecondary}
+                  size={24}
+                  color={colors.text.secondary}
                 />
               </TouchableOpacity>
             )}
@@ -74,125 +178,174 @@ export const Modal: React.FC<ModalProps> = ({
         )}
         {scrollable ? (
           <ScrollView
-            style={styles.bodyScroll}
+            style={[styles.bodyScroll, bodyStyle]}
             contentContainerStyle={styles.bodyScrollContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             <View style={styles.body}>{children}</View>
           </ScrollView>
         ) : (
-          <View style={styles.body}>{children}</View>
+          <View style={[styles.body, bodyStyle]}>{children}</View>
         )}
       </View>
     );
   };
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <RNModal
       visible={isVisible}
       transparent
-      animationType="fade"
+      animationType={animationType === 'none' ? 'none' : 'fade'}
       onRequestClose={onClose}
       testID={testID}
+      statusBarTranslucent
       {...modalProps}
     >
-      <SafeAreaView style={styles.overlay}>
-        <TouchableOpacity
-          style={styles.overlayTouchable}
-          activeOpacity={1}
-          onPress={handleOverlayPress}
+      <SafeAreaView style={styles.safeArea}>
+        <View
+          style={[
+            styles.overlay,
+            getContentPosition(),
+            overlayStyle,
+          ]}
         >
-          <KeyboardAvoidingView
-            enabled={avoidKeyboard}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={keyboardVerticalOffset}
-            style={styles.kav}
+          <TouchableOpacity
+            style={styles.overlayTouchable}
+            activeOpacity={1}
+            onPress={handleOverlayPress}
+            accessible={false}
           >
-            <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-              {renderContent()}
-            </TouchableOpacity>
-          </KeyboardAvoidingView>
-        </TouchableOpacity>
+            <KeyboardAvoidingView
+              enabled={avoidKeyboard}
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={keyboardVerticalOffset}
+              style={[styles.keyboardAvoidingView, getContentPosition()]}
+            >
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => {}} // Prevent overlay press when touching content
+                style={variant === 'bottom-sheet' ? styles.bottomSheetContainer : styles.contentContainer}
+              >
+                {renderContent()}
+              </TouchableOpacity>
+            </KeyboardAvoidingView>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     </RNModal>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, spacing: any, typography: any, shadows: any, borderRadius: any, screenWidth: number, screenHeight: number, overlayOpacity: number) => StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
-    backgroundColor: Theme.colors.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: colors.surface.overlay,
+    opacity: overlayOpacity,
   },
   overlayTouchable: {
     flex: 1,
     width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Theme.spacing.base,
+    padding: spacing.md,
   },
-  kav: {
+  keyboardAvoidingView: {
+    flex: 1,
     width: '100%',
-    alignItems: 'center',
+  },
+  contentContainer: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomSheetContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'stretch',
   },
   content: {
-    backgroundColor: Theme.colors.surface,
-    borderRadius: Theme.borderRadius.lg,
-    ...Theme.shadows.lg,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.lg,
+    ...shadows.lg,
     maxHeight: '90%',
     overflow: 'hidden',
+    elevation: 10, // Android shadow
   },
   small: {
-    width: '80%',
-    maxWidth: 300,
+    width: Math.min(screenWidth * 0.8, 320),
+    maxWidth: 320,
   },
   medium: {
-    width: '90%',
-    maxWidth: 400,
+    width: Math.min(screenWidth * 0.9, 480),
+    maxWidth: 480,
   },
   large: {
-    width: '95%',
-    maxWidth: 600,
+    width: Math.min(screenWidth * 0.95, 640),
+    maxWidth: 640,
   },
   fullscreen: {
     width: '100%',
     height: '100%',
     borderRadius: 0,
+    maxHeight: '100%',
+  },
+  bottomSheet: {
+    width: '100%',
+    maxHeight: '80%',
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  fullscreenContent: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 0,
+    maxHeight: '100%',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.xl,
-    paddingTop: Theme.spacing.xl,
-    paddingBottom: Theme.spacing.base,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.borderLight,
+    borderBottomColor: colors.border.primary,
+    minHeight: 56, // Minimum touch target
   },
   title: {
     flex: 1,
-    fontSize: Theme.typography.fontSize.lg,
-    fontWeight: Theme.typography.fontWeight.semiBold,
-    color: Theme.colors.textPrimary,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semiBold,
+    color: colors.text.primary,
+    fontFamily: typography.fontFamily.semiBold,
+    lineHeight: typography.lineHeight.lg,
   },
   closeButton: {
-    padding: Theme.spacing.xs,
-    marginLeft: Theme.spacing.base,
-  },
-  closeButtonText: {
-    fontSize: Theme.typography.fontSize.lg,
-    color: Theme.colors.textSecondary,
-    fontWeight: Theme.typography.fontWeight.bold,
+    padding: spacing.sm,
+    marginLeft: spacing.md,
+    borderRadius: borderRadius.sm,
+    minWidth: 44, // Minimum touch target
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   body: {
-    padding: Theme.spacing.xl,
+    padding: spacing.lg,
+    flex: 1,
   },
   bodyScroll: {
-    alignSelf: 'stretch',
+    flex: 1,
   },
   bodyScrollContent: {
-    paddingBottom: Theme.spacing.xl,
+    paddingBottom: spacing.lg,
+    flexGrow: 1,
   },
 });

@@ -38,8 +38,34 @@ export type {
   StaggeredAnimationProps,
 } from './Loading';
 export { Modal } from './Modal';
+export { Overlay } from './Overlay';
+export { Backdrop } from './Backdrop';
+export { Portal, PortalHost } from './Portal';
+export type { ModalProps } from './Modal';
+export type { OverlayProps } from './Overlay';
+export type { BackdropProps } from './Backdrop';
+export type { PortalProps, PortalHostProps } from './Portal';
 export { Select } from './Select';
 export { ErrorMessage } from './ErrorMessage';
+
+// Text components
+export { 
+  Text,
+  Heading1,
+  Heading2,
+  Heading3,
+  Heading4,
+  Heading5,
+  Heading6,
+  BodyText,
+  BodyLarge,
+  BodySmall,
+  Caption,
+  Label,
+  LabelLarge,
+  LabelSmall,
+} from './Text';
+export type { TextProps } from './Text';
 export { EmptyState } from './EmptyState';
 export { OfflineBanner } from './OfflineBanner';
 export { OptimizedImage, preloadImages, useImageCache } from './OptimizedImage';
