@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { ThemeProvider } from '@/theme/provider';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { ErrorBoundary, OfflineBanner } from '@/components';
@@ -137,11 +138,13 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <ErrorBoundary>
-      <QueryProvider>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
-      </QueryProvider>
+      <ThemeProvider initialTheme="system">
+        <QueryProvider>
+          <AuthProvider>
+            <RootLayoutNav />
+          </AuthProvider>
+        </QueryProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
