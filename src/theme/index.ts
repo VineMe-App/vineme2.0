@@ -23,5 +23,8 @@ export {
   borderRadiusUtils,
 } from './tokens';
 
+// Export asset management
+export * from '../assets';
+
 // Export default theme for easy access
 export { defaultTheme, themes } from './themes';

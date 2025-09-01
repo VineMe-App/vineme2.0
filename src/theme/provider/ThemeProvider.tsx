@@ -14,6 +14,7 @@ import {
   ThemeConfig,
   ThemeContextValue 
 } from '../themes/types';
+import { assetManager, AssetConfig } from '../../assets';
 
 /**
  * ThemeProvider component that manages theme state and provides context
@@ -99,6 +100,18 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
   }, [themeMode, systemColorScheme]);
 
+  // Asset management functions
+  const updateAssets = useCallback((newAssets: Partial<AssetConfig>) => {
+    try {
+      assetManager.updateAssets(newAssets);
+      // Force re-render by updating a state value
+      // In a production app, you might want to use a more sophisticated approach
+      setThemeMode(current => current);
+    } catch (error) {
+      console.warn('Error updating assets:', error);
+    }
+  }, []);
+
   // Create context value
   const contextValue: ThemeContextValue = useMemo(() => ({
     theme,
@@ -112,6 +125,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     typography: theme.typography,
     shadows: theme.shadows,
     borderRadius: theme.borderRadius,
+    assets: theme.assets,
+    updateAssets,
   }), [
     theme,
     setTheme,
@@ -119,6 +134,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     setThemeMode,
     isDark,
     toggleTheme,
+    updateAssets,
   ]);
 
   return (

@@ -10,6 +10,7 @@ import {
   ThemeShadows,
   ThemeBorderRadius,
 } from '../tokens';
+import { AssetConfig } from '../../assets';
 
 export interface AnimationConfig {
   duration: {
@@ -25,16 +26,7 @@ export interface AnimationConfig {
   };
 }
 
-export interface AssetConfig {
-  logos: {
-    full: any; // ImageSourcePropType
-    icon: any; // ImageSourcePropType
-    light: any; // ImageSourcePropType
-    dark: any; // ImageSourcePropType
-  };
-  icons: Record<string, any>; // Record<string, ImageSourcePropType>
-  animations: Record<string, any>; // Lottie animations
-}
+// AssetConfig is now imported from assets module
 
 export interface ThemeConfig {
   name: string;
@@ -65,6 +57,8 @@ export interface ThemeContextValue {
   typography: ThemeTypography;
   shadows: ThemeShadows;
   borderRadius: ThemeBorderRadius;
+  assets: AssetConfig;
+  updateAssets: (assets: Partial<AssetConfig>) => void;
 }
 
 export interface ThemeProviderProps {

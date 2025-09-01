@@ -17,6 +17,7 @@ import {
   borderRadius,
 } from '../tokens';
 import { ThemeConfig } from './types';
+import { defaultAssets } from '../../assets';
 
 export const lightTheme: ThemeConfig = {
   name: 'light',
@@ -83,14 +84,5 @@ export const lightTheme: ThemeConfig = {
     },
   },
 
-  assets: {
-    logos: {
-      full: null, // Will be populated with actual image sources
-      icon: null,
-      light: null,
-      dark: null,
-    },
-    icons: {},
-    animations: {},
-  },
+  assets: defaultAssets,
 };

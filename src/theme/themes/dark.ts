@@ -17,6 +17,7 @@ import {
   borderRadius,
 } from '../tokens';
 import { ThemeConfig } from './types';
+import { defaultAssets } from '../../assets';
 
 export const darkTheme: ThemeConfig = {
   name: 'dark',
@@ -106,14 +107,5 @@ export const darkTheme: ThemeConfig = {
     },
   },
 
-  assets: {
-    logos: {
-      full: null, // Will be populated with actual image sources
-      icon: null,
-      light: null,
-      dark: null,
-    },
-    icons: {},
-    animations: {},
-  },
+  assets: defaultAssets,
 };

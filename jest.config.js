@@ -25,6 +25,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^react-native$': '<rootDir>/node_modules/react-native',
     '^react-native/(.*)$': '<rootDir>/node_modules/react-native/$1',
+    '\\.(png|jpg|jpeg|gif|svg)$': '<rootDir>/src/__mocks__/imageMock.js',
   },
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
