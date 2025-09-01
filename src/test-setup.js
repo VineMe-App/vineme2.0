@@ -31,6 +31,10 @@ jest.mock('react-native', () => ({
   Dimensions: {
     get: jest.fn(() => ({ width: 375, height: 812 })),
   },
+  Appearance: {
+    getColorScheme: jest.fn(() => 'light'),
+    addChangeListener: jest.fn(() => ({ remove: jest.fn() })),
+  },
 }));
 
 // Mock Expo modules

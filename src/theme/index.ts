@@ -9,6 +9,12 @@ export * from './tokens';
 // Export all theme configurations
 export * from './themes';
 
+// Export theme provider and hooks
+export * from './provider';
+
+// Export examples
+export * from './examples';
+
 // Export utilities
 export {
   colorUtils,
