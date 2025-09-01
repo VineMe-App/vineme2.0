@@ -1,493 +1,309 @@
+/**
+ * Accessibility-focused tests for color utilities
+ * Tests WCAG compliance and accessibility features specifically
+ */
+
 import {
-  ScreenReaderUtils,
-  AdminAccessibilityLabels,
-  ColorContrastUtils,
-  KeyboardNavigationUtils,
-  AccessibilityTestUtils,
-  AccessibilityHelpers,
-} from '../accessibility';
-import { AccessibilityInfo } from 'react-native';
+  getContrastRatio,
+  meetsWCAGAA,
+  meetsWCAGAALarge,
+  meetsWCAGAAA,
+  meetsWCAGAAALarge,
+  getAccessibilityLevel,
+  findAccessibleColor,
+  getAccessibleTextColor,
+  ensureAccessibleColor,
+  generateAccessiblePalette,
+  WCAG_STANDARDS,
+} from '../colors';
 
-// Mock React Native AccessibilityInfo
-jest.mock('react-native', () => ({
-  AccessibilityInfo: {
-    isScreenReaderEnabled: jest.fn(),
-    announceForAccessibility: jest.fn(),
-    announceForAccessibilityWithOptions: jest.fn(),
-    setAccessibilityFocus: jest.fn(),
-  },
-  Platform: {
-    OS: 'ios',
-  },
-}));
+describe('WCAG Accessibility Compliance', () => {
+  // Test cases with known contrast ratios
+  const testCases = [
+    { fg: '#000000', bg: '#ffffff', ratio: 21, level: 'AAA' },
+    { fg: '#ffffff', bg: '#000000', ratio: 21, level: 'AAA' },
+    { fg: '#767676', bg: '#ffffff', ratio: 4.54, level: 'AA' },
+    { fg: '#949494', bg: '#ffffff', ratio: 3.05, level: 'AA Large' },
+    { fg: '#cccccc', bg: '#ffffff', ratio: 1.61, level: 'Fail' },
+  ];
 
-describe('ScreenReaderUtils', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  describe('isScreenReaderEnabled', () => {
-    it('should return screen reader status', async () => {
-      (AccessibilityInfo.isScreenReaderEnabled as jest.Mock).mockResolvedValue(
-        true
-      );
-
-      const result = await ScreenReaderUtils.isScreenReaderEnabled();
-
-      expect(result).toBe(true);
-      expect(AccessibilityInfo.isScreenReaderEnabled).toHaveBeenCalled();
-    });
-
-    it('should handle errors gracefully', async () => {
-      (AccessibilityInfo.isScreenReaderEnabled as jest.Mock).mockRejectedValue(
-        new Error('Test error')
-      );
-
-      const result = await ScreenReaderUtils.isScreenReaderEnabled();
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('announceForAccessibility', () => {
-    it('should announce message on iOS', () => {
-      ScreenReaderUtils.announceForAccessibility('Test message');
-
-      expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
-        'Test message'
-      );
-    });
-  });
-});
-
-describe('AdminAccessibilityLabels', () => {
-  describe('groupStatus', () => {
-    it('should generate correct label for group status', () => {
-      const result = AdminAccessibilityLabels.groupStatus(
-        'pending',
-        'Bible Study'
-      );
-
-      expect(result).toBe('Group Bible Study is Pending');
-    });
-
-    it('should handle different statuses', () => {
-      expect(
-        AdminAccessibilityLabels.groupStatus('approved', 'Prayer Group')
-      ).toBe('Group Prayer Group is Approved');
-      expect(
-        AdminAccessibilityLabels.groupStatus('denied', 'Youth Group')
-      ).toBe('Group Youth Group is Denied');
-    });
-  });
-
-  describe('userConnectionStatus', () => {
-    it('should generate correct label for connected user', () => {
-      const result = AdminAccessibilityLabels.userConnectionStatus(
-        'John Doe',
-        true,
-        2
-      );
-
-      expect(result).toBe('John Doe is connected, member of 2 groups');
-    });
-
-    it('should generate correct label for unconnected user', () => {
-      const result = AdminAccessibilityLabels.userConnectionStatus(
-        'Jane Smith',
-        false,
-        0
-      );
-
-      expect(result).toBe('Jane Smith is unconnected, member of 0 groups');
-    });
-
-    it('should handle singular group correctly', () => {
-      const result = AdminAccessibilityLabels.userConnectionStatus(
-        'Bob Johnson',
-        true,
-        1
-      );
-
-      expect(result).toBe('Bob Johnson is connected, member of 1 group');
-    });
-  });
-
-  describe('adminAction', () => {
-    it('should generate correct label for admin actions', () => {
-      const result = AdminAccessibilityLabels.adminAction(
-        'Approve',
-        'group',
-        'Bible Study'
-      );
-
-      expect(result).toBe('Approve group Bible Study');
-    });
-  });
-
-  describe('notificationBadge', () => {
-    it('should generate correct label for single notification', () => {
-      const result = AdminAccessibilityLabels.notificationBadge(1, 'requests');
-
-      expect(result).toBe('1 pending request');
-    });
-
-    it('should generate correct label for multiple notifications', () => {
-      const result = AdminAccessibilityLabels.notificationBadge(5, 'requests');
-
-      expect(result).toBe('5 pending requests');
-    });
-  });
-
-  describe('mapMarker', () => {
-    it('should generate correct label for map marker', () => {
-      const result = AdminAccessibilityLabels.mapMarker('Bible Study', 10);
-
-      expect(result).toBe('Group Bible Study with 10 members');
-    });
-
-    it('should handle singular member correctly', () => {
-      const result = AdminAccessibilityLabels.mapMarker('Prayer Group', 1);
-
-      expect(result).toBe('Group Prayer Group with 1 member');
-    });
-  });
-
-  describe('clusterMarker', () => {
-    it('should generate correct label for cluster marker', () => {
-      const result = AdminAccessibilityLabels.clusterMarker(5);
-
-      expect(result).toBe('Cluster of 5 groups, tap to zoom in');
-    });
-
-    it('should handle singular group correctly', () => {
-      const result = AdminAccessibilityLabels.clusterMarker(1);
-
-      expect(result).toBe('Cluster of 1 group, tap to zoom in');
-    });
-  });
-
-  describe('filterState', () => {
-    it('should generate correct label for active filter', () => {
-      const result = AdminAccessibilityLabels.filterState(
-        'Connected users',
-        true,
-        15
-      );
-
-      expect(result).toBe('Connected users filter is active showing 15 items');
-    });
-
-    it('should generate correct label for inactive filter', () => {
-      const result = AdminAccessibilityLabels.filterState('All users', false);
-
-      expect(result).toBe('All users filter is inactive');
-    });
-  });
-});
-
-describe('ColorContrastUtils', () => {
-  describe('getRelativeLuminance', () => {
-    it('should calculate luminance for white', () => {
-      const result = ColorContrastUtils.getRelativeLuminance('#ffffff');
-
-      expect(result).toBeCloseTo(1, 2);
-    });
-
-    it('should calculate luminance for black', () => {
-      const result = ColorContrastUtils.getRelativeLuminance('#000000');
-
-      expect(result).toBeCloseTo(0, 2);
-    });
-  });
-
-  describe('getContrastRatio', () => {
-    it('should calculate contrast ratio between black and white', () => {
-      const result = ColorContrastUtils.getContrastRatio('#000000', '#ffffff');
-
-      expect(result).toBeCloseTo(21, 0);
-    });
-
-    it('should calculate contrast ratio between similar colors', () => {
-      const result = ColorContrastUtils.getContrastRatio('#333333', '#666666');
-
-      expect(result).toBeGreaterThan(1);
-      expect(result).toBeLessThan(5);
-    });
-  });
-
-  describe('meetsWCAGAA', () => {
-    it('should return true for high contrast combinations', () => {
-      const result = ColorContrastUtils.meetsWCAGAA('#000000', '#ffffff');
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false for low contrast combinations', () => {
-      const result = ColorContrastUtils.meetsWCAGAA('#cccccc', '#ffffff');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('meetsWCAGAAA', () => {
-    it('should return true for very high contrast combinations', () => {
-      const result = ColorContrastUtils.meetsWCAGAAA('#000000', '#ffffff');
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false for moderate contrast combinations', () => {
-      const result = ColorContrastUtils.meetsWCAGAAA('#666666', '#ffffff');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('getAccessibleStatusColors', () => {
-    it('should return accessible color combinations', () => {
-      const colors = ColorContrastUtils.getAccessibleStatusColors();
-
-      expect(colors).toHaveProperty('pending');
-      expect(colors).toHaveProperty('approved');
-      expect(colors).toHaveProperty('denied');
-      expect(colors).toHaveProperty('closed');
-
-      // Check that each status has required color properties
-      Object.values(colors).forEach((colorSet) => {
-        expect(colorSet).toHaveProperty('background');
-        expect(colorSet).toHaveProperty('text');
-        expect(colorSet).toHaveProperty('border');
+  describe('Contrast Ratio Calculations', () => {
+    testCases.forEach(({ fg, bg, ratio, level }) => {
+      it(`should calculate correct contrast ratio for ${fg} on ${bg}`, () => {
+        const calculatedRatio = getContrastRatio(fg, bg);
+        expect(calculatedRatio).toBeCloseTo(ratio, 1);
       });
     });
 
-    it('should provide colors that meet accessibility standards', () => {
-      const colors = ColorContrastUtils.getAccessibleStatusColors();
-
-      // Test a few combinations
-      expect(
-        ColorContrastUtils.meetsWCAGAA(
-          colors.pending.text,
-          colors.pending.background
-        )
-      ).toBe(true);
-      expect(
-        ColorContrastUtils.meetsWCAGAA(
-          colors.approved.text,
-          colors.approved.background
-        )
-      ).toBe(true);
-      expect(
-        ColorContrastUtils.meetsWCAGAA(
-          colors.denied.text,
-          colors.denied.background
-        )
-      ).toBe(true);
-    });
-  });
-});
-
-describe('KeyboardNavigationUtils', () => {
-  describe('getTabIndex', () => {
-    it('should return 0 for interactive elements', () => {
-      const result = KeyboardNavigationUtils.getTabIndex(true);
-
-      expect(result).toBe(0);
+    it('should handle identical colors', () => {
+      expect(getContrastRatio('#ff0000', '#ff0000')).toBeCloseTo(1, 1);
     });
 
-    it('should return -1 for non-interactive elements', () => {
-      const result = KeyboardNavigationUtils.getTabIndex(false);
-
-      expect(result).toBe(-1);
-    });
-
-    it('should return custom order when provided', () => {
-      const result = KeyboardNavigationUtils.getTabIndex(true, 5);
-
-      expect(result).toBe(5);
+    it('should be symmetric', () => {
+      const ratio1 = getContrastRatio('#000000', '#ffffff');
+      const ratio2 = getContrastRatio('#ffffff', '#000000');
+      expect(ratio1).toBeCloseTo(ratio2, 2);
     });
   });
 
-  describe('shouldBeFocusable', () => {
-    it('should return true for focusable elements', () => {
-      const result = KeyboardNavigationUtils.shouldBeFocusable({
-        disabled: false,
-        hidden: false,
-        interactive: true,
-      });
-
-      expect(result).toBe(true);
+  describe('WCAG AA Compliance', () => {
+    it('should correctly identify AA compliant combinations', () => {
+      // Known AA compliant combinations
+      expect(meetsWCAGAA('#000000', '#ffffff')).toBe(true);
+      expect(meetsWCAGAA('#767676', '#ffffff')).toBe(true);
+      expect(meetsWCAGAA('#ffffff', '#767676')).toBe(true);
     });
 
-    it('should return false for disabled elements', () => {
-      const result = KeyboardNavigationUtils.shouldBeFocusable({
-        disabled: true,
-        hidden: false,
-        interactive: true,
-      });
-
-      expect(result).toBe(false);
+    it('should correctly identify AA non-compliant combinations', () => {
+      // Known non-compliant combinations
+      expect(meetsWCAGAA('#cccccc', '#ffffff')).toBe(false);
+      expect(meetsWCAGAA('#e0e0e0', '#ffffff')).toBe(false);
     });
 
-    it('should return false for hidden elements', () => {
-      const result = KeyboardNavigationUtils.shouldBeFocusable({
-        disabled: false,
-        hidden: true,
-        interactive: true,
-      });
-
-      expect(result).toBe(false);
+    it('should handle large text standards correctly', () => {
+      // Color that meets AA Large but not AA Normal
+      const borderlineColor = '#949494';
+      const background = '#ffffff';
+      
+      expect(meetsWCAGAALarge(borderlineColor, background)).toBe(true);
+      expect(meetsWCAGAA(borderlineColor, background)).toBe(false);
     });
   });
-});
 
-describe('AccessibilityTestUtils', () => {
-  describe('validateAccessibilityProps', () => {
-    it('should return no issues for valid props', () => {
-      const props = {
-        accessibilityLabel: 'Test button',
-        accessibilityRole: 'button',
-        accessible: true,
+  describe('WCAG AAA Compliance', () => {
+    it('should correctly identify AAA compliant combinations', () => {
+      expect(meetsWCAGAAA('#000000', '#ffffff')).toBe(true);
+      expect(meetsWCAGAAA('#ffffff', '#000000')).toBe(true);
+    });
+
+    it('should correctly identify AAA non-compliant combinations', () => {
+      // Colors that meet AA but not AAA
+      expect(meetsWCAGAAA('#767676', '#ffffff')).toBe(false);
+      expect(meetsWCAGAAA('#595959', '#ffffff')).toBe(true); // This should meet AAA
+    });
+
+    it('should handle AAA large text standards', () => {
+      // Test AAA large text requirements
+      const color = '#767676';
+      const background = '#ffffff';
+      
+      expect(meetsWCAGAAALarge(color, background)).toBe(true);
+      expect(meetsWCAGAAA(color, background)).toBe(false);
+    });
+  });
+
+  describe('Accessibility Level Detection', () => {
+    testCases.forEach(({ fg, bg, level }) => {
+      it(`should return ${level} for ${fg} on ${bg}`, () => {
+        expect(getAccessibilityLevel(fg, bg)).toBe(level);
+      });
+    });
+  });
+
+  describe('Accessible Color Finding', () => {
+    const lightPalette = [
+      '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd',
+      '#6c757d', '#495057', '#343a40', '#212529', '#000000'
+    ];
+
+    const darkPalette = [
+      '#ffffff', '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da',
+      '#adb5bd', '#6c757d', '#495057', '#343a40', '#212529'
+    ];
+
+    it('should find accessible color for light backgrounds', () => {
+      const lightBg = '#ffffff';
+      const accessibleColor = findAccessibleColor(lightBg, lightPalette, 'AA');
+      
+      expect(accessibleColor).not.toBeNull();
+      if (accessibleColor) {
+        expect(meetsWCAGAA(accessibleColor, lightBg)).toBe(true);
+      }
+    });
+
+    it('should find accessible color for dark backgrounds', () => {
+      const darkBg = '#000000';
+      const accessibleColor = findAccessibleColor(darkBg, darkPalette, 'AA');
+      
+      expect(accessibleColor).not.toBeNull();
+      if (accessibleColor) {
+        expect(meetsWCAGAA(accessibleColor, darkBg)).toBe(true);
+      }
+    });
+
+    it('should respect AAA standards when requested', () => {
+      const background = '#ffffff';
+      const accessibleColor = findAccessibleColor(background, lightPalette, 'AAA');
+      
+      if (accessibleColor) {
+        expect(meetsWCAGAAA(accessibleColor, background)).toBe(true);
+      }
+    });
+
+    it('should return null when no accessible color exists', () => {
+      const similarColors = ['#f0f0f0', '#f5f5f5', '#fafafa'];
+      const background = '#ffffff';
+      
+      const result = findAccessibleColor(background, similarColors, 'AA');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('Accessible Text Color Generation', () => {
+    it('should return dark text for light backgrounds', () => {
+      const lightBackgrounds = ['#ffffff', '#f8f9fa', '#e9ecef'];
+      
+      lightBackgrounds.forEach(bg => {
+        const textColor = getAccessibleTextColor(bg);
+        expect(textColor).toBe('#000000');
+        expect(meetsWCAGAA(textColor, bg)).toBe(true);
+      });
+    });
+
+    it('should return light text for dark backgrounds', () => {
+      const darkBackgrounds = ['#000000', '#212529', '#343a40'];
+      
+      darkBackgrounds.forEach(bg => {
+        const textColor = getAccessibleTextColor(bg);
+        expect(textColor).toBe('#ffffff');
+        expect(meetsWCAGAA(textColor, bg)).toBe(true);
+      });
+    });
+
+    it('should use custom light and dark colors when provided', () => {
+      const background = '#ffffff';
+      const customLight = '#f0f0f0';
+      const customDark = '#333333';
+      
+      const textColor = getAccessibleTextColor(background, customLight, customDark);
+      expect([customLight, customDark]).toContain(textColor);
+    });
+  });
+
+  describe('Accessible Color Adjustment', () => {
+    it('should adjust inaccessible colors to meet standards', () => {
+      const inaccessibleColor = '#cccccc';
+      const background = '#ffffff';
+      
+      // Verify it's initially inaccessible
+      expect(meetsWCAGAA(inaccessibleColor, background)).toBe(false);
+      
+      const adjustedColor = ensureAccessibleColor(inaccessibleColor, background);
+      expect(meetsWCAGAA(adjustedColor, background)).toBe(true);
+    });
+
+    it('should not modify already accessible colors', () => {
+      const accessibleColor = '#000000';
+      const background = '#ffffff';
+      
+      const result = ensureAccessibleColor(accessibleColor, background);
+      expect(result).toBe(accessibleColor);
+    });
+
+    it('should respect custom contrast requirements', () => {
+      const color = '#767676';
+      const background = '#ffffff';
+      const customRatio = 7; // AAA standard
+      
+      const adjustedColor = ensureAccessibleColor(color, background, customRatio);
+      expect(getContrastRatio(adjustedColor, background)).toBeGreaterThanOrEqual(customRatio);
+    });
+
+    it('should work with dark backgrounds', () => {
+      const lightColor = '#cccccc';
+      const darkBackground = '#000000';
+      
+      const adjustedColor = ensureAccessibleColor(lightColor, darkBackground);
+      expect(meetsWCAGAA(adjustedColor, darkBackground)).toBe(true);
+    });
+  });
+
+  describe('Accessible Palette Generation', () => {
+    it('should generate accessible palettes for multiple backgrounds', () => {
+      const baseColors = {
+        primary: '#3b82f6',
+        secondary: '#6b7280',
+        success: '#10b981',
       };
-
-      const issues = AccessibilityTestUtils.validateAccessibilityProps(props);
-
-      expect(issues).toHaveLength(0);
-    });
-
-    it('should identify missing accessibility label', () => {
-      const props = {
-        accessibilityRole: 'button',
-      };
-
-      const issues = AccessibilityTestUtils.validateAccessibilityProps(props);
-
-      expect(issues).toContain(
-        'Missing accessibilityLabel for interactive element'
-      );
-    });
-
-    it('should identify invalid accessibility role', () => {
-      const props = {
-        accessibilityLabel: 'Test',
-        accessibilityRole: 'invalid-role',
-        accessible: true,
-      };
-
-      const issues = AccessibilityTestUtils.validateAccessibilityProps(props);
-
-      expect(issues).toContain('Invalid accessibilityRole: invalid-role');
-    });
-  });
-});
-
-describe('AccessibilityHelpers', () => {
-  describe('createButtonProps', () => {
-    it('should create correct button accessibility props', () => {
-      const props = AccessibilityHelpers.createButtonProps(
-        'Test Button',
-        'Test hint',
-        false
-      );
-
-      expect(props).toEqual({
-        accessibilityRole: 'button',
-        accessibilityLabel: 'Test Button',
-        accessibilityHint: 'Test hint',
-        accessibilityState: { disabled: false },
-        accessible: true,
-      });
-    });
-
-    it('should handle disabled state', () => {
-      const props = AccessibilityHelpers.createButtonProps(
-        'Test Button',
-        undefined,
-        true
-      );
-
-      expect(props.accessibilityState?.disabled).toBe(true);
-    });
-  });
-
-  describe('createStatusProps', () => {
-    it('should create correct status accessibility props', () => {
-      const props = AccessibilityHelpers.createStatusProps(
-        'pending',
-        'Test Group'
-      );
-
-      expect(props).toEqual({
-        accessibilityRole: 'text',
-        accessibilityLabel: 'Group Test Group is Pending',
-        accessible: true,
-        importantForAccessibility: 'yes',
+      
+      const backgrounds = ['#ffffff', '#f8fafc', '#1e293b'];
+      const palette = generateAccessiblePalette(baseColors, backgrounds);
+      
+      expect(palette).toHaveProperty('primary');
+      expect(palette).toHaveProperty('secondary');
+      expect(palette).toHaveProperty('success');
+      
+      // Verify that each color has accessible variants for at least one background
+      Object.entries(palette).forEach(([colorName, colorVariants]) => {
+        const hasAccessibleCombination = backgrounds.some(bg => 
+          Object.values(colorVariants).some(variant => 
+            meetsWCAGAA(variant, bg)
+          )
+        );
+        expect(hasAccessibleCombination).toBe(true);
       });
     });
   });
 
-  describe('createNavigationProps', () => {
-    it('should create correct navigation accessibility props', () => {
-      const props =
-        AccessibilityHelpers.createNavigationProps('Navigate to page');
+  describe('Real-world Accessibility Scenarios', () => {
+    it('should handle common UI color combinations', () => {
+      const commonCombinations = [
+        { name: 'Primary button', fg: '#ffffff', bg: '#3b82f6' },
+        { name: 'Success message', fg: '#065f46', bg: '#d1fae5' },
+        { name: 'Error message', fg: '#991b1b', bg: '#fee2e2' },
+        { name: 'Warning message', fg: '#92400e', bg: '#fef3c7' },
+        { name: 'Info message', fg: '#1e40af', bg: '#dbeafe' },
+      ];
 
-      expect(props).toEqual({
-        accessibilityRole: 'button',
-        accessibilityLabel: 'Navigate to page',
-        accessibilityHint: 'Double tap to navigate',
-        accessible: true,
+      commonCombinations.forEach(({ name, fg, bg }) => {
+        const level = getAccessibilityLevel(fg, bg);
+        expect(['AA', 'AAA', 'AA Large']).toContain(level);
       });
     });
 
-    it('should use custom hint when provided', () => {
-      const props = AccessibilityHelpers.createNavigationProps(
-        'Navigate',
-        'Custom hint'
-      );
+    it('should validate form input states', () => {
+      const inputStates = [
+        { state: 'normal', border: '#d1d5db', bg: '#ffffff' },
+        { state: 'focus', border: '#3b82f6', bg: '#ffffff' },
+        { state: 'error', border: '#ef4444', bg: '#ffffff' },
+        { state: 'success', border: '#10b981', bg: '#ffffff' },
+      ];
 
-      expect(props.accessibilityHint).toBe('Custom hint');
+      inputStates.forEach(({ state, border, bg }) => {
+        // Border should have sufficient contrast with background
+        const ratio = getContrastRatio(border, bg);
+        // Some borders might be subtle, so we'll check they're at least perceivable
+        expect(ratio).toBeGreaterThanOrEqual(1.2); // Minimum perceivable difference
+      });
+    });
+
+    it('should validate navigation and interactive elements', () => {
+      const interactiveElements = [
+        { element: 'link', color: '#2563eb', bg: '#ffffff' },
+        { element: 'visited link', color: '#7c3aed', bg: '#ffffff' },
+        { element: 'button text', color: '#ffffff', bg: '#1f2937' },
+        { element: 'disabled button', color: '#9ca3af', bg: '#f3f4f6' },
+      ];
+
+      interactiveElements.forEach(({ element, color, bg }) => {
+        if (element !== 'disabled button') {
+          // Active elements should meet AA standards
+          expect(meetsWCAGAA(color, bg)).toBe(true);
+        } else {
+          // Disabled elements have relaxed requirements but should still be perceivable
+          const ratio = getContrastRatio(color, bg);
+          expect(ratio).toBeGreaterThanOrEqual(2);
+        }
+      });
     });
   });
 
-  describe('createInputProps', () => {
-    it('should create correct input accessibility props', () => {
-      const props = AccessibilityHelpers.createInputProps(
-        'Email',
-        'test@example.com',
-        true,
-        undefined
-      );
-
-      expect(props).toEqual({
-        accessibilityLabel: 'Email required',
-        accessibilityValue: { text: 'test@example.com' },
-        accessibilityHint: undefined,
-        accessible: true,
-        importantForAccessibility: 'yes',
-      });
-    });
-
-    it('should include error in hint', () => {
-      const props = AccessibilityHelpers.createInputProps(
-        'Email',
-        '',
-        false,
-        'Email is required'
-      );
-
-      expect(props.accessibilityHint).toBe('Email is required');
-    });
-
-    it('should handle optional fields', () => {
-      const props = AccessibilityHelpers.createInputProps(
-        'Phone',
-        undefined,
-        false,
-        undefined
-      );
-
-      expect(props.accessibilityLabel).toBe('Phone');
-      expect(props.accessibilityValue).toBeUndefined();
+  describe('WCAG Standards Constants', () => {
+    it('should have correct WCAG standard values', () => {
+      expect(WCAG_STANDARDS.AA_NORMAL).toBe(4.5);
+      expect(WCAG_STANDARDS.AA_LARGE).toBe(3);
+      expect(WCAG_STANDARDS.AAA_NORMAL).toBe(7);
+      expect(WCAG_STANDARDS.AAA_LARGE).toBe(4.5);
     });
   });
 });

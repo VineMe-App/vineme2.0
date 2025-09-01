@@ -152,55 +152,5 @@ export const neutralColors: ColorToken = {
   900: '#18181b',
 };
 
-// Color utility functions for accessibility
-export const colorUtils = {
-  /**
-   * Get contrast ratio between two colors
-   */
-  getContrastRatio: (color1: string, color2: string): number => {
-    // Simplified contrast ratio calculation
-    // In a real implementation, you'd use a proper color library
-    const getLuminance = (color: string): number => {
-      // This is a simplified version - use a proper color library in production
-      const hex = color.replace('#', '');
-      const r = parseInt(hex.substr(0, 2), 16) / 255;
-      const g = parseInt(hex.substr(2, 2), 16) / 255;
-      const b = parseInt(hex.substr(4, 2), 16) / 255;
-      
-      const sRGB = [r, g, b].map(c => {
-        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-      });
-      
-      return 0.2126 * sRGB[0] + 0.7152 * sRGB[1] + 0.0722 * sRGB[2];
-    };
-
-    const lum1 = getLuminance(color1);
-    const lum2 = getLuminance(color2);
-    const brightest = Math.max(lum1, lum2);
-    const darkest = Math.min(lum1, lum2);
-    
-    return (brightest + 0.05) / (darkest + 0.05);
-  },
-
-  /**
-   * Check if color combination meets WCAG AA standards
-   */
-  meetsWCAGAA: (foreground: string, background: string): boolean => {
-    return colorUtils.getContrastRatio(foreground, background) >= 4.5;
-  },
-
-  /**
-   * Check if color combination meets WCAG AAA standards
-   */
-  meetsWCAGAAA: (foreground: string, background: string): boolean => {
-    return colorUtils.getContrastRatio(foreground, background) >= 7;
-  },
-
-  /**
-   * Add opacity to a hex color
-   */
-  withOpacity: (color: string, opacity: number): string => {
-    const alpha = Math.round(opacity * 255).toString(16).padStart(2, '0');
-    return `${color}${alpha}`;
-  },
-};
+// Re-export color utilities from the main utils file
+export { colorUtils } from '../../utils/colors';
