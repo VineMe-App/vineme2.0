@@ -11,6 +11,11 @@ import {
   errorColors,
   infoColors,
   neutralColors,
+  blueColors,
+  greenColors,
+  orangeColors,
+  redColors,
+  purpleColors,
   defaultTypography,
   spacing,
   shadows,
@@ -31,6 +36,13 @@ export const lightTheme: ThemeConfig = {
     error: errorColors,
     info: infoColors,
     neutral: neutralColors,
+
+    // Individual color palettes
+    blue: blueColors,
+    green: greenColors,
+    orange: orangeColors,
+    red: redColors,
+    purple: purpleColors,
 
     // Background colors
     background: {

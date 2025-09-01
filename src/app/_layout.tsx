@@ -83,7 +83,12 @@ function RootLayoutNav() {
       segments[0] === 'admin' ||
       segments[0] === 'user' ||
       // Allow referral landing screen outside of tabs
-      segments[0] === 'referral-landing';
+      segments[0] === 'referral-landing' ||
+      // Allow styling system pages (for development/debugging)
+      segments[0] === 'styling-system-example' ||
+      segments[0] === 'styling-system-example-simple' ||
+      segments[0] === 'styling-system-demo' ||
+      segments[0] === 'styling-system-performance-demo';
 
     // Onboarding is done when profile exists and onboarding_complete === true on server.
     // If there is no profile yet, we must force onboarding regardless of any persisted flag.

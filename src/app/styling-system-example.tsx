@@ -32,88 +32,21 @@ import {
   Divider,
   EmptyState,
   LoadingButton,
+  Heading1,
+  Heading2,
+  Heading3,
+  BodyText,
+  BodyLarge,
+  BodySmall,
+  Caption,
 } from '../components/ui';
 import { Logo } from '../components/brand/Logo/Logo';
 
-// Simple text components for demo
+// Simple themed text component for demo
 const ThemedText = ({ children, style, ...props }: any) => {
   const { colors } = useTheme();
   return (
     <RNText style={[{ color: colors.text.primary }, style]} {...props}>
-      {children}
-    </RNText>
-  );
-};
-
-const Heading1 = ({ children, style, ...props }: any) => {
-  const { colors, typography } = useTheme();
-  return (
-    <RNText 
-      style={[
-        { 
-          color: colors.text.primary, 
-          fontSize: typography.fontSize.xl,
-          fontWeight: typography.fontWeight.bold,
-        }, 
-        style
-      ]} 
-      {...props}
-    >
-      {children}
-    </RNText>
-  );
-};
-
-const Heading2 = ({ children, style, ...props }: any) => {
-  const { colors, typography } = useTheme();
-  return (
-    <RNText 
-      style={[
-        { 
-          color: colors.text.primary, 
-          fontSize: typography.fontSize.lg,
-          fontWeight: typography.fontWeight.semiBold,
-        }, 
-        style
-      ]} 
-      {...props}
-    >
-      {children}
-    </RNText>
-  );
-};
-
-const BodyText = ({ children, style, ...props }: any) => {
-  const { colors, typography } = useTheme();
-  return (
-    <RNText 
-      style={[
-        { 
-          color: colors.text.primary, 
-          fontSize: typography.fontSize.base,
-        }, 
-        style
-      ]} 
-      {...props}
-    >
-      {children}
-    </RNText>
-  );
-};
-
-const Caption = ({ children, style, ...props }: any) => {
-  const { colors, typography } = useTheme();
-  return (
-    <RNText 
-      style={[
-        { 
-          color: colors.text.secondary, 
-          fontSize: typography.fontSize.sm,
-        }, 
-        style
-      ]} 
-      {...props}
-    >
       {children}
     </RNText>
   );
@@ -216,8 +149,8 @@ export default function StylingSystemExample() {
               <Heading2>Heading 2</Heading2>
               <Heading3>Heading 3</Heading3>
               <BodyText>Body Text - Regular content</BodyText>
-              <BodyText variant="large">Body Large - Emphasized content</BodyText>
-              <BodyText variant="small">Body Small - Secondary content</BodyText>
+              <BodyLarge>Body Large - Emphasized content</BodyLarge>
+              <BodySmall>Body Small - Secondary content</BodySmall>
               <Caption>Caption - Metadata and hints</Caption>
             </View>
           </SlideIn>
@@ -249,9 +182,9 @@ export default function StylingSystemExample() {
                 onPress={() => Alert.alert('Ghost', 'Ghost button pressed')}
               />
               <Button
-                title="Danger"
-                variant="danger"
-                onPress={() => Alert.alert('Danger', 'Danger button pressed')}
+                title="Error"
+                variant="error"
+                onPress={() => Alert.alert('Error', 'Error button pressed')}
               />
               <Button
                 title="Disabled"
@@ -331,7 +264,7 @@ export default function StylingSystemExample() {
             <Input
               label="Success State"
               placeholder="This input shows success state"
-              success
+              validationState="success"
               value={inputStates.success}
               onChangeText={(text) => setInputStates(prev => ({ ...prev, success: text }))}
             />
@@ -339,7 +272,7 @@ export default function StylingSystemExample() {
             <Input
               label="Disabled Input"
               placeholder="This input is disabled"
-              disabled
+              editable={false}
               value={inputStates.disabled}
               onChangeText={() => {}}
             />
@@ -418,6 +351,66 @@ export default function StylingSystemExample() {
             onAction={() => Alert.alert('Action', 'Empty state action triggered')}
           />
         </Card>
+
+        {/* Color System */}
+        <Card style={styles.section}>
+          <Heading2>Color System</Heading2>
+          <BodyText>Theme-aware color system with hex values</BodyText>
+          
+          <View style={styles.colorGrid}>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.primary[500] }]}>
+              <ThemedText style={styles.colorLabel}>Primary</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.primary[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.secondary[500] }]}>
+              <ThemedText style={styles.colorLabel}>Secondary</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.secondary[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.blue[500] }]}>
+              <ThemedText style={styles.colorLabel}>Blue</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.blue[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.green[500] }]}>
+              <ThemedText style={styles.colorLabel}>Green</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.green[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.orange[500] }]}>
+              <ThemedText style={styles.colorLabel}>Orange</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.orange[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.red[500] }]}>
+              <ThemedText style={styles.colorLabel}>Red</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.red[500]}</ThemedText>
+            </View>
+          </View>
+        </Card>
+
+        {/* Spacing System */}
+        <Card style={styles.section}>
+          <Heading2>Spacing System</Heading2>
+          <BodyText>Consistent spacing scale with pixel measurements</BodyText>
+          
+          <View style={styles.spacingGrid}>
+            <View style={[styles.spacingExample, { padding: spacing[1] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[1] = {spacing[1]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[2] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[2] = {spacing[2]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[4] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[4] = {spacing[4]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[6] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[6] = {spacing[6]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[8] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[8] = {spacing[8]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[12] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[12] = {spacing[12]}px</ThemedText>
+            </View>
+          </View>
+        </Card>
       </ScrollView>
 
       {/* Modal Example */}
@@ -468,7 +461,7 @@ export default function StylingSystemExample() {
             />
             <Button
               title="Yes, Continue"
-              variant="danger"
+              variant="error"
               onPress={() => {
                 setConfirmDialogVisible(false);
                 Alert.alert('Confirmed', 'Action was confirmed!');
@@ -572,5 +565,50 @@ const createStyles = (colors: any, spacing: any, isDark: boolean) =>
       flexDirection: 'row',
       justifyContent: 'flex-end',
       gap: spacing.sm,
+    },
+    colorGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    colorSwatch: {
+      width: 80,
+      height: 80,
+      borderRadius: spacing.sm,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.xs,
+    },
+    colorLabel: {
+      fontSize: 10,
+      fontWeight: 'bold',
+      color: '#fff',
+      textAlign: 'center',
+      marginBottom: 2,
+    },
+    colorHex: {
+      fontSize: 8,
+      color: '#fff',
+      textAlign: 'center',
+      opacity: 0.9,
+    },
+    spacingGrid: {
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    spacingExample: {
+      backgroundColor: colors.primary[100],
+      borderRadius: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.primary[300],
+      borderStyle: 'dashed',
+      marginBottom: spacing.sm,
+    },
+    spacingLabel: {
+      fontSize: 12,
+      color: colors.primary[700],
+      textAlign: 'center',
+      fontWeight: '600',
     },
   });

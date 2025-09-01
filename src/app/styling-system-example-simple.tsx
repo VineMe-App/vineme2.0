@@ -180,9 +180,9 @@ export default function StylingSystemExampleSimple() {
               onPress={() => Alert.alert('Ghost', 'Ghost button pressed')}
             />
             <Button
-              title="Danger"
-              variant="danger"
-              onPress={() => Alert.alert('Danger', 'Danger button pressed')}
+              title="Error"
+              variant="error"
+              onPress={() => Alert.alert('Error', 'Error button pressed')}
             />
             <Button
               title="Disabled"
@@ -214,13 +214,13 @@ export default function StylingSystemExampleSimple() {
             <Input
               label="Success State"
               placeholder="This input shows success state"
-              success
+              validationState="success"
             />
 
             <Input
               label="Disabled Input"
               placeholder="This input is disabled"
-              disabled
+              editable={false}
             />
 
             <View style={styles.switchRow}>
@@ -284,23 +284,67 @@ export default function StylingSystemExampleSimple() {
         {/* Color Showcase */}
         <Card style={styles.section}>
           <Heading2>Color System</Heading2>
-          <BodyText>Theme-aware color system with semantic naming</BodyText>
+          <BodyText>Theme-aware color system with semantic naming and hex values</BodyText>
           
           <View style={styles.colorGrid}>
             <View style={[styles.colorSwatch, { backgroundColor: colors.primary[500] }]}>
               <ThemedText style={styles.colorLabel}>Primary</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.primary[500]}</ThemedText>
             </View>
             <View style={[styles.colorSwatch, { backgroundColor: colors.secondary[500] }]}>
               <ThemedText style={styles.colorLabel}>Secondary</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.secondary[500]}</ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.success[500] }]}>
-              <ThemedText style={styles.colorLabel}>Success</ThemedText>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.blue[500] }]}>
+              <ThemedText style={styles.colorLabel}>Blue</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.blue[500]}</ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.warning[500] }]}>
-              <ThemedText style={styles.colorLabel}>Warning</ThemedText>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.green[500] }]}>
+              <ThemedText style={styles.colorLabel}>Green</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.green[500]}</ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.error[500] }]}>
-              <ThemedText style={styles.colorLabel}>Error</ThemedText>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.orange[500] }]}>
+              <ThemedText style={styles.colorLabel}>Orange</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.orange[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.red[500] }]}>
+              <ThemedText style={styles.colorLabel}>Red</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.red[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.purple[500] }]}>
+              <ThemedText style={styles.colorLabel}>Purple</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.purple[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.neutral[500] }]}>
+              <ThemedText style={styles.colorLabel}>Neutral</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.neutral[500]}</ThemedText>
+            </View>
+          </View>
+        </Card>
+
+        {/* Spacing System */}
+        <Card style={styles.section}>
+          <Heading2>Spacing System</Heading2>
+          <BodyText>Consistent spacing scale with pixel measurements</BodyText>
+          
+          <View style={styles.spacingGrid}>
+            <View style={[styles.spacingExample, { padding: spacing[1] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[1] = {spacing[1]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[2] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[2] = {spacing[2]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[4] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[4] = {spacing[4]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[6] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[6] = {spacing[6]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[8] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[8] = {spacing[8]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[12] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[12] = {spacing[12]}px</ThemedText>
             </View>
           </View>
         </Card>
@@ -378,16 +422,42 @@ const createStyles = (colors: any, spacing: any, isDark: boolean) =>
       marginTop: spacing.md,
     },
     colorSwatch: {
-      width: 60,
-      height: 60,
+      width: 80,
+      height: 80,
       borderRadius: spacing.sm,
       justifyContent: 'center',
       alignItems: 'center',
+      padding: spacing.xs,
     },
     colorLabel: {
       fontSize: 10,
       fontWeight: 'bold',
       color: '#fff',
       textAlign: 'center',
+      marginBottom: 2,
+    },
+    colorHex: {
+      fontSize: 8,
+      color: '#fff',
+      textAlign: 'center',
+      opacity: 0.9,
+    },
+    spacingGrid: {
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    spacingExample: {
+      backgroundColor: colors.primary[100],
+      borderRadius: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.primary[300],
+      borderStyle: 'dashed',
+      marginBottom: spacing.sm,
+    },
+    spacingLabel: {
+      fontSize: 12,
+      color: colors.primary[700],
+      textAlign: 'center',
+      fontWeight: '600',
     },
   });

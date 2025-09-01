@@ -399,23 +399,59 @@ export default function StylingSystemDemo() {
         {/* Color Showcase */}
         <ThemedCard>
           <ThemedText variant="h2">Color System</ThemedText>
-          <ThemedText>Theme-aware color system with semantic naming</ThemedText>
+          <ThemedText>Theme-aware color system with hex values</ThemedText>
           
           <View style={styles.colorGrid}>
             <View style={[styles.colorSwatch, { backgroundColor: colors.primary[500] }]}>
-              <RNText style={styles.colorLabel}>Primary</RNText>
+              <ThemedText style={styles.colorLabel}>Primary</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.primary[500]}</ThemedText>
             </View>
             <View style={[styles.colorSwatch, { backgroundColor: colors.secondary[500] }]}>
-              <RNText style={styles.colorLabel}>Secondary</RNText>
+              <ThemedText style={styles.colorLabel}>Secondary</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.secondary[500]}</ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.success[500] }]}>
-              <RNText style={styles.colorLabel}>Success</RNText>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.blue[500] }]}>
+              <ThemedText style={styles.colorLabel}>Blue</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.blue[500]}</ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.warning[500] }]}>
-              <RNText style={styles.colorLabel}>Warning</RNText>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.green[500] }]}>
+              <ThemedText style={styles.colorLabel}>Green</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.green[500]}</ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.error[500] }]}>
-              <RNText style={styles.colorLabel}>Error</RNText>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.orange[500] }]}>
+              <ThemedText style={styles.colorLabel}>Orange</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.orange[500]}</ThemedText>
+            </View>
+            <View style={[styles.colorSwatch, { backgroundColor: colors.red[500] }]}>
+              <ThemedText style={styles.colorLabel}>Red</ThemedText>
+              <ThemedText style={styles.colorHex}>{colors.red[500]}</ThemedText>
+            </View>
+          </View>
+        </ThemedCard>
+
+        {/* Spacing System */}
+        <ThemedCard>
+          <ThemedText variant="h2">Spacing System</ThemedText>
+          <ThemedText>Consistent spacing scale with pixel measurements</ThemedText>
+          
+          <View style={styles.spacingGrid}>
+            <View style={[styles.spacingExample, { padding: spacing[1] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[1] = {spacing[1]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[2] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[2] = {spacing[2]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[4] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[4] = {spacing[4]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[6] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[6] = {spacing[6]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[8] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[8] = {spacing[8]}px</ThemedText>
+            </View>
+            <View style={[styles.spacingExample, { padding: spacing[12] }]}>
+              <ThemedText style={styles.spacingLabel}>spacing[12] = {spacing[12]}px</ThemedText>
             </View>
           </View>
         </ThemedCard>
@@ -501,16 +537,42 @@ const createStyles = (colors: any, spacing: any) =>
       marginTop: spacing.md,
     },
     colorSwatch: {
-      width: 60,
-      height: 60,
+      width: 80,
+      height: 80,
       borderRadius: spacing.sm,
       justifyContent: 'center',
       alignItems: 'center',
+      padding: spacing.xs,
     },
     colorLabel: {
       fontSize: 10,
       fontWeight: 'bold',
       color: '#fff',
       textAlign: 'center',
+      marginBottom: 2,
+    },
+    colorHex: {
+      fontSize: 8,
+      color: '#fff',
+      textAlign: 'center',
+      opacity: 0.9,
+    },
+    spacingGrid: {
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    spacingExample: {
+      backgroundColor: colors.primary[100],
+      borderRadius: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.primary[300],
+      borderStyle: 'dashed',
+      marginBottom: spacing.sm,
+    },
+    spacingLabel: {
+      fontSize: 12,
+      color: colors.primary[700],
+      textAlign: 'center',
+      fontWeight: '600',
     },
   });

@@ -12,7 +12,7 @@ import { devLogger } from '../../utils/devLogger';
 import { globalErrorHandler } from '../../utils/globalErrorHandler';
 import { useAuthStore } from '../../stores';
 import { STORAGE_KEYS } from '../../utils/constants';
-import { useSegments } from 'expo-router';
+import { useSegments, useRouter } from 'expo-router';
 import { QueryClient } from '@tanstack/react-query';
 
 // QueryClient is created in QueryProvider; re-import where it is exported
@@ -29,10 +29,11 @@ import {
 export function DevToolsOverlay() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<
-    'state' | 'logs' | 'errors' | 'queries' | 'notifs'
+    'state' | 'logs' | 'errors' | 'queries' | 'notifs' | 'styles'
   >('state');
   const [tick, setTick] = useState(0);
   const segments = useSegments();
+  const router = useRouter();
   const { user, userProfile, signOut } = useAuthStore();
 
   useEffect(() => {
@@ -82,7 +83,7 @@ export function DevToolsOverlay() {
         <View style={styles.header}>
           <Text style={styles.title}>DevTools</Text>
           <View style={styles.tabs}>
-            {(['state', 'logs', 'errors', 'queries', 'notifs'] as const).map(
+            {(['state', 'logs', 'errors', 'queries', 'notifs', 'styles'] as const).map(
               (t) => (
                 <TouchableOpacity
                   key={t}
@@ -147,6 +148,7 @@ export function DevToolsOverlay() {
             </View>
           )}
           {tab === 'notifs' && <NotificationsPanel />}
+          {tab === 'styles' && <StyleGuidePanel router={router} onClose={() => setOpen(false)} />}
         </ScrollView>
       </Modal>
     </>
@@ -262,7 +264,194 @@ const styles = StyleSheet.create({
   },
   queryKey: { fontFamily: 'monospace', fontSize: 12, marginBottom: 4 },
   queryMeta: { color: '#111827', fontSize: 12 },
+  styleGuideCard: {
+    backgroundColor: '#fff',
+    borderColor: '#e5e7eb',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  styleGuideCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  styleGuideIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  styleGuideTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    flex: 1,
+  },
+  styleGuideDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  styleGuidePath: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: '#2563eb',
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  quickActionsSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    paddingTop: 16,
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quickActionBtn: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    minWidth: 80,
+    flex: 1,
+  },
+  quickActionIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  quickActionText: {
+    fontSize: 12,
+    color: '#374151',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
 });
+
+function StyleGuidePanel({ router, onClose }: { router: any; onClose: () => void }) {
+  const navigateToStyleGuide = (path: string) => {
+    onClose();
+    router.push(path);
+  };
+
+  const styleGuidePages = [
+    {
+      title: 'Complete Style Guide',
+      description: 'Full component showcase with all variants and states',
+      path: '/styling-system-example',
+      icon: '🎨',
+    },
+    {
+      title: 'Simple Style Guide',
+      description: 'Basic component examples and usage patterns',
+      path: '/styling-system-example-simple',
+      icon: '📝',
+    },
+    {
+      title: 'Interactive Demo',
+      description: 'Interactive theme switching and component testing',
+      path: '/styling-system-demo',
+      icon: '🔧',
+    },
+    {
+      title: 'Performance Demo',
+      description: 'Performance monitoring and optimization tools',
+      path: '/styling-system-performance-demo',
+      icon: '⚡',
+    },
+  ];
+
+  return (
+    <View>
+      <Text style={styles.sectionTitle}>Style Guide & Design System</Text>
+      <Text style={{ marginBottom: 16, color: '#6b7280', fontSize: 14 }}>
+        Navigate to different style guide pages to test and develop components
+      </Text>
+      
+      {styleGuidePages.map((page, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.styleGuideCard}
+          onPress={() => navigateToStyleGuide(page.path)}
+        >
+          <View style={styles.styleGuideCardHeader}>
+            <Text style={styles.styleGuideIcon}>{page.icon}</Text>
+            <Text style={styles.styleGuideTitle}>{page.title}</Text>
+          </View>
+          <Text style={styles.styleGuideDescription}>{page.description}</Text>
+          <Text style={styles.styleGuidePath}>{page.path}</Text>
+        </TouchableOpacity>
+      ))}
+
+      <View style={styles.quickActionsSection}>
+        <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>
+          Quick Actions
+        </Text>
+        
+        <View style={styles.quickActionsGrid}>
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => {
+              // Open the styling system README
+              console.log('📖 Styling System Guide: src/theme/README.md');
+              console.log('📖 Quick Reference: src/theme/QUICK_REFERENCE.md');
+              console.log('📖 Component Examples: src/components/ui/__examples__/');
+            }}
+          >
+            <Text style={styles.quickActionIcon}>📖</Text>
+            <Text style={styles.quickActionText}>Docs</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => {
+              // Log current theme info
+              console.log('🎨 Theme tokens location: src/theme/tokens/');
+              console.log('🎨 Theme configuration: src/theme/themes/');
+            }}
+          >
+            <Text style={styles.quickActionIcon}>🎨</Text>
+            <Text style={styles.quickActionText}>Theme Info</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => {
+              // Log component locations
+              console.log('🧩 UI Components: src/components/ui/');
+              console.log('🧩 Component examples: src/components/ui/__examples__/');
+            }}
+          >
+            <Text style={styles.quickActionIcon}>🧩</Text>
+            <Text style={styles.quickActionText}>Components</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => {
+              // Log testing info
+              console.log('🧪 Style tests: src/__tests__/styling-system/');
+              console.log('🧪 Run tests: npm run test:styling-system');
+            }}
+          >
+            <Text style={styles.quickActionIcon}>🧪</Text>
+            <Text style={styles.quickActionText}>Tests</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 function NotificationsPanel() {
   const [permission, setPermission] = useState<

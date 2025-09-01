@@ -10,6 +10,15 @@ export * from './shadows';
 export * from './borderRadius';
 export * from './animations';
 
+// Export individual color palettes
+export {
+  blueColors,
+  greenColors,
+  orangeColors,
+  redColors,
+  purpleColors,
+} from './colors';
+
 // Re-export commonly used types and utilities
 export type {
   ColorToken,
