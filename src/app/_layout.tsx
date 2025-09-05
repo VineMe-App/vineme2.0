@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, router, useSegments } from 'expo-router';
 import * as Linking from 'expo-linking';
+import * as Font from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { ThemeProvider } from '@/theme/provider';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { ErrorBoundary, OfflineBanner } from '@/components';
@@ -82,7 +84,12 @@ function RootLayoutNav() {
       segments[0] === 'admin' ||
       segments[0] === 'user' ||
       // Allow referral landing screen outside of tabs
-      segments[0] === 'referral-landing';
+      segments[0] === 'referral-landing' ||
+      // Allow styling system pages (for development/debugging)
+      segments[0] === 'styling-system-example' ||
+      segments[0] === 'styling-system-example-simple' ||
+      segments[0] === 'styling-system-demo' ||
+      segments[0] === 'styling-system-performance-demo';
 
     // Onboarding is done when profile exists and onboarding_complete === true on server.
     // If there is no profile yet, we must force onboarding regardless of any persisted flag.
@@ -127,7 +134,10 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="referral-landing" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="referral-landing"
+          options={{ headerShown: false }}
+        />
       </Stack>
       {__DEV__ && <DevToolsOverlay />}
     </>
@@ -135,13 +145,41 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          'Manrope-Regular': require('../../assets/fonts/Manrope-Regular.ttf'),
+          'Manrope-Medium': require('../../assets/fonts/Manrope-Medium.ttf'),
+          'Manrope-SemiBold': require('../../assets/fonts/Manrope-SemiBold.ttf'),
+          'Manrope-Bold': require('../../assets/fonts/Manrope-Bold.ttf'),
+        });
+        setFontsLoaded(true);
+      } catch (error) {
+        console.error('Error loading fonts:', error);
+        // Continue without custom fonts if loading fails
+        setFontsLoaded(true);
+      }
+    }
+
+    loadFonts();
+  }, []);
+
+  if (!fontsLoaded) {
+    return null; // Or a simple loading screen if you prefer
+  }
+
   return (
     <ErrorBoundary>
-      <QueryProvider>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
-      </QueryProvider>
+      <ThemeProvider initialTheme="light">
+        <QueryProvider>
+          <AuthProvider>
+            <RootLayoutNav />
+          </AuthProvider>
+        </QueryProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

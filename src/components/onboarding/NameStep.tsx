@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#007AFF',
-    borderRadius: 12,
+    borderRadius: 24, // Updated to pill shape (half of padding: 16 * 2 + text height)
     padding: 16,
     alignItems: 'center',
     marginBottom: 24,

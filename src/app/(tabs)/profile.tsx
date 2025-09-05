@@ -23,10 +23,12 @@ import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { EditProfileModal, PrivacySettingsModal } from '@/components/profile';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
+import { useTheme } from '@/theme/provider/useTheme';
 // Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
+  const { theme } = useTheme();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -107,7 +109,12 @@ export default function ProfileScreen() {
 
   if (profileError) {
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load profile</Text>
           <Button title="Retry" onPress={handleRefresh} />
@@ -118,7 +125,12 @@ export default function ProfileScreen() {
 
   if (!userProfile && !isLoading) {
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Profile not found</Text>
           <Button title="Refresh" onPress={handleRefresh} />
@@ -128,7 +140,12 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
@@ -212,7 +229,13 @@ export default function ProfileScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>My Groups</Text>
                 {groupMemberships.map((membership: any) => (
-                  <View key={membership.id} style={styles.membershipItem}>
+                  <View
+                    key={membership.id}
+                    style={[
+                      styles.membershipItem,
+                      { backgroundColor: theme.colors.surface.secondary },
+                    ]}
+                  >
                     <View style={styles.membershipInfo}>
                       <Text style={styles.membershipTitle}>
                         {membership.group?.title || 'Unknown Group'}
@@ -282,7 +305,12 @@ export default function ProfileScreen() {
                   )}
                 </>
               ) : (
-                <View style={styles.emptyFriendsContainer}>
+                <View
+                  style={[
+                    styles.emptyFriendsContainer,
+                    { backgroundColor: theme.colors.surface.secondary },
+                  ]}
+                >
                   <Text style={styles.emptyFriendsText}>No friends yet</Text>
                   <Text style={styles.emptyFriendsSubtext}>
                     Start connecting with other church members
@@ -367,7 +395,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   content: {
     flex: 1,
@@ -454,7 +481,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   membershipItem: {
-    backgroundColor: '#f8f9fa',
     borderRadius: 8,
     padding: 16,
     marginBottom: 8,
@@ -522,7 +548,6 @@ const styles = StyleSheet.create({
   emptyFriendsContainer: {
     alignItems: 'center',
     paddingVertical: 24,
-    backgroundColor: '#f8f9fa',
     borderRadius: 8,
   },
   emptyFriendsText: {

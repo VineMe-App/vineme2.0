@@ -25,9 +25,11 @@ import { FriendRequestNotifications } from '../../components/friends/FriendReque
 import { ConnectSomeoneSection } from '../../components/referrals/ConnectSomeoneSection';
 import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
+import { useTheme } from '@/theme/provider/useTheme';
 
 export default function HomeScreen() {
   const { user, userProfile } = useAuthStore();
+  const { theme } = useTheme();
 
   // Get user's church ID for filtering data
   const churchId = userProfile?.church_id;
@@ -85,13 +87,21 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
       refreshControl={
         <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
       }
     >
       {/* Header with user info */}
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: theme.colors.surface.primary },
+        ]}
+      >
         <View style={styles.userSection}>
           <Avatar
             uri={userProfile?.avatar_url}
@@ -118,7 +128,12 @@ export default function HomeScreen() {
         {/* Church + Service + (optional) Manage Church CTA in one cohesive card */}
         <ChurchAdminOnly
           fallback={
-            <View style={styles.orgCard}>
+            <View
+              style={[
+                styles.orgCard,
+                { backgroundColor: theme.colors.surface.primary },
+              ]}
+            >
               <View style={styles.orgLeft}>
                 {userProfile?.church?.name && (
                   <View style={styles.orgRow}>
@@ -186,7 +201,11 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My Groups</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/groups')}>
-            <Text style={styles.seeAllText}>See All</Text>
+            <Text
+              style={[styles.seeAllText, { color: theme.colors.primary[500] }]}
+            >
+              See All
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -214,7 +233,10 @@ export default function HomeScreen() {
             icon={null}
             action={
               <TouchableOpacity
-                style={styles.actionButton}
+                style={[
+                  styles.actionButton,
+                  { backgroundColor: theme.colors.primary[500] },
+                ]}
                 onPress={() => router.push('/(tabs)/groups')}
               >
                 <Text style={styles.actionButtonText}>Browse Groups</Text>
@@ -232,7 +254,14 @@ export default function HomeScreen() {
         onPress={() => router.push('/(tabs)/events')}
         activeOpacity={0.8}
       >
-        <Card style={styles.eventsBanner}>
+        <Card
+          style={
+            [
+              styles.eventsBanner,
+              { backgroundColor: theme.colors.surface.secondary },
+            ] as any
+          }
+        >
           <View style={styles.eventsBannerRow}>
             <Ionicons
               name="information-circle-outline"
@@ -260,10 +289,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   header: {
-    backgroundColor: '#fff',
     paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
@@ -285,7 +312,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 12,
@@ -294,7 +320,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   orgCardClickable: {
-    backgroundColor: '#f9fafb',
+    // Background color will be set inline with theme
   },
   orgLeft: {
     flex: 1,
@@ -346,12 +372,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 16,
-    backgroundColor: '#fff',
   },
   statNumber: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#007AFF',
     marginBottom: 4,
   },
   statLabel: {
@@ -395,7 +419,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
@@ -411,7 +434,6 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     fontSize: 16,
-    color: '#007AFF',
     fontWeight: '500',
   },
   horizontalScroll: {
@@ -423,7 +445,6 @@ const styles = StyleSheet.create({
   },
   emptyIcon: {},
   actionButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 8,
     paddingHorizontal: 24,
     paddingVertical: 12,
