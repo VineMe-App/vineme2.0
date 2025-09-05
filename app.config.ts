@@ -49,7 +49,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     eas: {
-      projectId: 'd4bf969-a94f-464d-ad98-a1265703c652',
+      projectId: 'd4bf96e9-a94f-464d-ad98-a1265703c652',
     },
   },
   plugins: [
