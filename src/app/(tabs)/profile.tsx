@@ -261,12 +261,12 @@ export default function ProfileScreen() {
                 <Text variant="h4" style={styles.sectionTitle}>
                   Friends ({friendsQuery.data?.length || 0})
                 </Text>
-                <TouchableOpacity
-                  style={styles.manageFriendsButton}
+                <Button
+                  title="Manage"
                   onPress={() => setShowFriendsModal(true)}
-                >
-                  <Text variant="body" weight="semiBold" style={styles.manageFriendsText}>Manage</Text>
-                </TouchableOpacity>
+                  variant="secondary"
+                  size="small"
+                />
               </View>
 
               {friendsQuery.data && friendsQuery.data.length > 0 ? (
@@ -366,6 +366,9 @@ export default function ProfileScreen() {
             style={styles.signOutButton}
           />
         </View>
+        
+        {/* Bottom spacing to ensure content is visible above navbar */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
 
       {userProfile && (
@@ -449,17 +452,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  manageFriendsButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#8b5cf6',
-    borderRadius: 6,
-  },
-  manageFriendsText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
   },
   infoItem: {
     flexDirection: 'row',
@@ -574,5 +566,9 @@ const styles = StyleSheet.create({
   adminButton: {
     flex: 1,
     minWidth: 120,
+  },
+  bottomSpacing: {
+    height: 100, // Generous bottom spacing for navbar clearance
+    paddingBottom: 20, // Additional padding for extra safety
   },
 });

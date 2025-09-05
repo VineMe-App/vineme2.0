@@ -46,9 +46,9 @@ export const lightTheme: ThemeConfig = {
 
     // Background colors
     background: {
-      primary: secondaryColors[100], // Changed from '#ffffff' to secondary light blue
-      secondary: '#ffffff', // Changed from '#f8fafc' to white
-      tertiary: '#f8fafc', // Changed from '#f1f5f9' to previous secondary
+      primary: '#ffffff', // Reverted back to white
+      secondary: '#f8fafc', // Reverted back to light gray
+      tertiary: '#f1f5f9', // Reverted back to previous tertiary
       inverse: '#0f172a',
     },
 
@@ -71,9 +71,9 @@ export const lightTheme: ThemeConfig = {
 
     // Surface colors
     surface: {
-      primary: '#ffffff', // Keep white for cards/surfaces
-      secondary: secondaryColors[50], // Use very light secondary for subtle surfaces
-      tertiary: '#f8fafc', // Use previous secondary
+      primary: '#ffffff', // White for cards/surfaces
+      secondary: '#f8fafc', // Light gray for subtle surfaces
+      tertiary: '#f1f5f9', // Slightly darker gray
       overlay: 'rgba(15, 23, 42, 0.5)',
     },
   },
