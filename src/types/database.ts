@@ -235,151 +235,37 @@ export interface GeneralReferralWithDetails extends GeneralReferral {
   referred_user?: User;
 }
 
-// Enhanced Notifications System Types
-export type NotificationType = 
-  | 'friend_request_received'
-  | 'friend_request_accepted'
-  | 'group_request_submitted'
-  | 'group_request_approved'
-  | 'group_request_denied'
-  | 'join_request_received'
-  | 'join_request_approved'
-  | 'join_request_denied'
-  | 'group_member_added'
-  | 'referral_accepted'
-  | 'referral_joined_group'
-  | 'event_reminder';
-
-export interface Notification {
-  id: string;
-  user_id: string;
-  type: NotificationType;
-  title: string;
-  body: string;
-  data: Record<string, any>;
-  read: boolean;
-  read_at?: string;
-  action_url?: string;
-  expires_at?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface NotificationSettings {
-  user_id: string;
-  friend_requests: boolean;
-  friend_request_accepted: boolean;
-  group_requests: boolean;
-  group_request_responses: boolean;
-  join_requests: boolean;
-  join_request_responses: boolean;
-  referral_updates: boolean;
-  event_reminders: boolean;
-  push_notifications: boolean;
-  email_notifications: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-// Notification trigger data interfaces
-export interface NotificationTriggerData {
-  // Friend request notifications
-  friendRequest: {
-    fromUserId: string;
-    toUserId: string;
-    fromUserName: string;
-  };
-  
-  friendRequestAccepted: {
-    acceptedByUserId: string;
-    acceptedByUserName: string;
-    originalRequesterId: string;
-  };
-  
-  // Group request notifications
-  groupRequestSubmitted: {
-    groupId: string;
-    groupTitle: string;
-    creatorId: string;
-    creatorName: string;
-    churchId: string;
-  };
-  
-  groupRequestApproved: {
-    groupId: string;
-    groupTitle: string;
-    leaderId: string;
-    approvedByName: string;
-  };
-  
-  groupRequestDenied: {
-    groupId: string;
-    groupTitle: string;
-    leaderId: string;
-    deniedByName: string;
-    reason?: string;
-  };
-  
-  // Join request notifications
-  joinRequestReceived: {
-    groupId: string;
-    groupTitle: string;
-    requesterId: string;
-    requesterName: string;
-    leaderIds: string[];
-  };
-  
-  joinRequestApproved: {
-    groupId: string;
-    groupTitle: string;
-    requesterId: string;
-    approvedByName: string;
-  };
-  
-  joinRequestDenied: {
-    groupId: string;
-    groupTitle: string;
-    requesterId: string;
-    deniedByName: string;
-  };
-  
-  // Referral notifications
-  referralAccepted: {
-    referrerId: string;
-    referredUserId: string;
-    referredUserName: string;
-  };
-  
-  referralJoinedGroup: {
-    referrerId: string;
-    referredUserId: string;
-    referredUserName: string;
-    groupId: string;
-    groupTitle: string;
-  };
-}
-
-// Notification aggregation and summary types
-export interface NotificationGroup {
-  type: NotificationType;
-  count: number;
-  latestNotification: Notification;
-  notifications: Notification[];
-}
-
-export interface NotificationSummary {
-  totalUnread: number;
-  unreadByType: Record<NotificationType, number>;
-  recentNotifications: Notification[];
-  groupedNotifications: NotificationGroup[];
-}
-
-// Extended notification types with relationships
-export interface NotificationWithDetails extends Notification {
-  user?: User;
-  related_user?: User;
-  related_group?: Group;
-}
+// Enhanced Notifications System Types - Re-exported from dedicated notifications types file
+export type {
+  NotificationType,
+  Notification,
+  NotificationSettings,
+  NotificationTriggerData,
+  NotificationGroup,
+  NotificationSummary,
+  NotificationWithDetails,
+  CreateNotificationInput,
+  BatchCreateNotificationInput,
+  NotificationQueryOptions,
+  NotificationFilterOptions,
+  NotificationAction,
+  NotificationInteraction,
+  NotificationSubscription,
+  NotificationSubscriptionManager,
+  NotificationMetrics,
+  NotificationAnalytics,
+  NotificationError,
+  NotificationResult,
+  BatchNotificationResult,
+  QueuedNotification,
+  NotificationQueue,
+  PushNotificationPayload,
+  PushNotificationToken,
+  NotificationTemplate,
+  NotificationTemplateData,
+  NotificationValidationRule,
+  NotificationValidationSchema,
+} from './notifications';
 
 // Database response types
 export type DatabaseUser = User;
