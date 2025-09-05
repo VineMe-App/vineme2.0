@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../utils/constants';
+import type { NotificationType, Notification, NotificationSettings, NotificationTriggerData } from '../types/database';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -35,16 +36,22 @@ const ensureAndroidNotificationChannel = async () => {
 };
 
 export interface NotificationData {
-  type:
-    | 'friend_request'
-    | 'event_reminder'
-    | 'group_update'
-    | 'group_request'
-    | 'join_request';
+  type: NotificationType | 'friend_request' | 'event_reminder' | 'group_update' | 'group_request' | 'join_request'; // Legacy types for backward compatibility
   id: string;
   title: string;
   body: string;
   data?: Record<string, any>;
+}
+
+// Enhanced notification creation input
+export interface CreateNotificationInput {
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  action_url?: string;
+  expires_at?: string;
 }
 
 /**
@@ -656,7 +663,7 @@ export const sendJoinRequestNotification = async (
     // Create notification record in database for each leader
     const notifications = leaders.map((leader) => ({
       user_id: leader.user_id,
-      type: 'join_request' as const,
+      type: 'join_request_received' as const,
       title: 'New Join Request',
       body: `${requesterName} wants to join "${groupTitle}"`,
       data: {
@@ -664,8 +671,8 @@ export const sendJoinRequestNotification = async (
         groupTitle,
         requesterName,
         requesterId,
-        action_url: `/group/${groupId}`,
       },
+      action_url: `/group/${groupId}`,
       read: false,
       created_at: new Date().toISOString(),
     }));
@@ -698,5 +705,1481 @@ export const sendJoinRequestNotification = async (
     );
   } catch (error) {
     console.error('Error sending join request notification:', error);
+  }
+};
+
+/**
+ * Enhanced notification service methods
+ */
+
+// Enhanced notification trigger methods
+
+/**
+ * Trigger friend request notification
+ */
+export const triggerFriendRequestNotification = async (
+  data: NotificationTriggerData['friendRequest']
+): Promise<void> => {
+  try {
+    // Check if recipient has friend request notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.toUserId);
+    if (settings && !settings.friend_requests) {
+      return; // User has disabled friend request notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.toUserId,
+      type: 'friend_request_received',
+      title: 'New Friend Request',
+      body: `${data.fromUserName} wants to be your friend`,
+      data: {
+        fromUserId: data.fromUserId,
+        fromUserName: data.fromUserName,
+      },
+      action_url: `/profile/${data.fromUserId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'friend_request_received',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering friend request notification:', error);
+  }
+};
+
+/**
+ * Trigger friend request accepted notification
+ */
+export const triggerFriendRequestAcceptedNotification = async (
+  data: NotificationTriggerData['friendRequestAccepted']
+): Promise<void> => {
+  try {
+    // Check if user has friend request accepted notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.originalRequesterId);
+    if (settings && !settings.friend_request_accepted) {
+      return; // User has disabled friend request accepted notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.originalRequesterId,
+      type: 'friend_request_accepted',
+      title: 'Friend Request Accepted',
+      body: `${data.acceptedByUserName} accepted your friend request`,
+      data: {
+        acceptedByUserId: data.acceptedByUserId,
+        acceptedByUserName: data.acceptedByUserName,
+      },
+      action_url: `/profile/${data.acceptedByUserId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'friend_request_accepted',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering friend request accepted notification:', error);
+  }
+};
+
+/**
+ * Trigger group request submitted notification (to church admins)
+ */
+export const triggerGroupRequestSubmittedNotification = async (
+  data: NotificationTriggerData['groupRequestSubmitted']
+): Promise<void> => {
+  try {
+    // Get all church admins
+    const { data: admins, error } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('church_id', data.churchId)
+      .contains('roles', ['church_admin']);
+
+    if (error) {
+      console.error('Error fetching church admins:', error);
+      return;
+    }
+
+    if (!admins || admins.length === 0) {
+      console.warn('No church admins found for group request notification');
+      return;
+    }
+
+    // Create notifications for each admin
+    const notifications = await Promise.all(
+      admins.map(async (admin) => {
+        // Check if admin has group request notifications enabled
+        const settings = await getEnhancedNotificationSettings(admin.id);
+        if (settings && !settings.group_requests) {
+          return null; // Admin has disabled group request notifications
+        }
+
+        return createNotification({
+          user_id: admin.id,
+          type: 'group_request_submitted',
+          title: 'New Group Request',
+          body: `${data.creatorName} has requested to create "${data.groupTitle}"`,
+          data: {
+            groupId: data.groupId,
+            groupTitle: data.groupTitle,
+            creatorId: data.creatorId,
+            creatorName: data.creatorName,
+            churchId: data.churchId,
+          },
+          action_url: `/admin/groups/${data.groupId}`,
+        });
+      })
+    );
+
+    // Schedule local notifications for admins with notifications enabled
+    const validNotifications = notifications.filter(n => n !== null);
+    for (const notification of validNotifications) {
+      if (notification) {
+        await scheduleLocalNotification({
+          type: 'group_request_submitted',
+          id: notification.id,
+          title: notification.title,
+          body: notification.body,
+          data: notification.data,
+        });
+      }
+    }
+
+    console.log(`Group request notifications sent to ${validNotifications.length} admins`);
+  } catch (error) {
+    console.error('Error triggering group request submitted notification:', error);
+  }
+};
+
+/**
+ * Trigger group request approved notification
+ */
+export const triggerGroupRequestApprovedNotification = async (
+  data: NotificationTriggerData['groupRequestApproved']
+): Promise<void> => {
+  try {
+    // Check if leader has group request response notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.leaderId);
+    if (settings && !settings.group_request_responses) {
+      return; // User has disabled group request response notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.leaderId,
+      type: 'group_request_approved',
+      title: 'Group Request Approved',
+      body: `Your group "${data.groupTitle}" has been approved by ${data.approvedByName}`,
+      data: {
+        groupId: data.groupId,
+        groupTitle: data.groupTitle,
+        approvedByName: data.approvedByName,
+      },
+      action_url: `/group/${data.groupId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'group_request_approved',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering group request approved notification:', error);
+  }
+};
+
+/**
+ * Trigger group request denied notification
+ */
+export const triggerGroupRequestDeniedNotification = async (
+  data: NotificationTriggerData['groupRequestDenied']
+): Promise<void> => {
+  try {
+    // Check if leader has group request response notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.leaderId);
+    if (settings && !settings.group_request_responses) {
+      return; // User has disabled group request response notifications
+    }
+
+    const bodyText = data.reason 
+      ? `Your group "${data.groupTitle}" was declined by ${data.deniedByName}. Reason: ${data.reason}`
+      : `Your group "${data.groupTitle}" was declined by ${data.deniedByName}`;
+
+    const notification = await createNotification({
+      user_id: data.leaderId,
+      type: 'group_request_denied',
+      title: 'Group Request Declined',
+      body: bodyText,
+      data: {
+        groupId: data.groupId,
+        groupTitle: data.groupTitle,
+        deniedByName: data.deniedByName,
+        reason: data.reason,
+      },
+      action_url: `/group/${data.groupId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'group_request_denied',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering group request denied notification:', error);
+  }
+};
+
+/**
+ * Trigger join request received notification (to group leaders)
+ */
+export const triggerJoinRequestReceivedNotification = async (
+  data: NotificationTriggerData['joinRequestReceived']
+): Promise<void> => {
+  try {
+    // Create notifications for each leader
+    const notifications = await Promise.all(
+      data.leaderIds.map(async (leaderId) => {
+        // Check if leader has join request notifications enabled
+        const settings = await getEnhancedNotificationSettings(leaderId);
+        if (settings && !settings.join_requests) {
+          return null; // Leader has disabled join request notifications
+        }
+
+        return createNotification({
+          user_id: leaderId,
+          type: 'join_request_received',
+          title: 'New Join Request',
+          body: `${data.requesterName} wants to join "${data.groupTitle}"`,
+          data: {
+            groupId: data.groupId,
+            groupTitle: data.groupTitle,
+            requesterId: data.requesterId,
+            requesterName: data.requesterName,
+          },
+          action_url: `/group/${data.groupId}/requests`,
+        });
+      })
+    );
+
+    // Schedule local notifications for leaders with notifications enabled
+    const validNotifications = notifications.filter(n => n !== null);
+    for (const notification of validNotifications) {
+      if (notification) {
+        await scheduleLocalNotification({
+          type: 'join_request_received',
+          id: notification.id,
+          title: notification.title,
+          body: notification.body,
+          data: notification.data,
+        });
+      }
+    }
+
+    console.log(`Join request notifications sent to ${validNotifications.length} leaders`);
+  } catch (error) {
+    console.error('Error triggering join request received notification:', error);
+  }
+};
+
+/**
+ * Trigger join request approved notification
+ */
+export const triggerJoinRequestApprovedNotification = async (
+  data: NotificationTriggerData['joinRequestApproved']
+): Promise<void> => {
+  try {
+    // Check if requester has join request response notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.requesterId);
+    if (settings && !settings.join_request_responses) {
+      return; // User has disabled join request response notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.requesterId,
+      type: 'join_request_approved',
+      title: 'Join Request Approved',
+      body: `${data.approvedByName} approved your request to join "${data.groupTitle}"`,
+      data: {
+        groupId: data.groupId,
+        groupTitle: data.groupTitle,
+        approvedByName: data.approvedByName,
+      },
+      action_url: `/group/${data.groupId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'join_request_approved',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering join request approved notification:', error);
+  }
+};
+
+/**
+ * Trigger join request denied notification
+ */
+export const triggerJoinRequestDeniedNotification = async (
+  data: NotificationTriggerData['joinRequestDenied']
+): Promise<void> => {
+  try {
+    // Check if requester has join request response notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.requesterId);
+    if (settings && !settings.join_request_responses) {
+      return; // User has disabled join request response notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.requesterId,
+      type: 'join_request_denied',
+      title: 'Join Request Declined',
+      body: `${data.deniedByName} declined your request to join "${data.groupTitle}"`,
+      data: {
+        groupId: data.groupId,
+        groupTitle: data.groupTitle,
+        deniedByName: data.deniedByName,
+      },
+      action_url: `/group/${data.groupId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'join_request_denied',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering join request denied notification:', error);
+  }
+};
+
+/**
+ * Trigger referral accepted notification
+ */
+export const triggerReferralAcceptedNotification = async (
+  data: NotificationTriggerData['referralAccepted']
+): Promise<void> => {
+  try {
+    // Check if referrer has referral update notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.referrerId);
+    if (settings && !settings.referral_updates) {
+      return; // User has disabled referral update notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.referrerId,
+      type: 'referral_accepted',
+      title: 'Referral Accepted',
+      body: `${data.referredUserName} has joined the community through your referral!`,
+      data: {
+        referredUserId: data.referredUserId,
+        referredUserName: data.referredUserName,
+      },
+      action_url: `/profile/${data.referredUserId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'referral_accepted',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering referral accepted notification:', error);
+  }
+};
+
+/**
+ * Trigger referral joined group notification
+ */
+export const triggerReferralJoinedGroupNotification = async (
+  data: NotificationTriggerData['referralJoinedGroup']
+): Promise<void> => {
+  try {
+    // Check if referrer has referral update notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.referrerId);
+    if (settings && !settings.referral_updates) {
+      return; // User has disabled referral update notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.referrerId,
+      type: 'referral_joined_group',
+      title: 'Referral Joined Group',
+      body: `${data.referredUserName} joined "${data.groupTitle}" through your referral!`,
+      data: {
+        referredUserId: data.referredUserId,
+        referredUserName: data.referredUserName,
+        groupId: data.groupId,
+        groupTitle: data.groupTitle,
+      },
+      action_url: `/group/${data.groupId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'referral_joined_group',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering referral joined group notification:', error);
+  }
+};
+
+/**
+ * Create a notification in the database
+ */
+export const createNotification = async (
+  input: CreateNotificationInput
+): Promise<Notification | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: input.user_id,
+        type: input.type,
+        title: input.title,
+        body: input.body,
+        data: input.data || {},
+        action_url: input.action_url,
+        expires_at: input.expires_at,
+        read: false,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating notification:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    return null;
+  }
+};
+
+/**
+ * Create multiple notifications in batch
+ */
+export const createNotifications = async (
+  inputs: CreateNotificationInput[]
+): Promise<Notification[]> => {
+  try {
+    const notifications = inputs.map(input => ({
+      user_id: input.user_id,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      data: input.data || {},
+      action_url: input.action_url,
+      expires_at: input.expires_at,
+      read: false,
+      created_at: new Date().toISOString(),
+    }));
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert(notifications)
+      .select();
+
+    if (error) {
+      console.error('Error creating notifications:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error creating notifications:', error);
+    return [];
+  }
+};
+
+/**
+ * Mark multiple notifications as read
+ */
+export const markNotificationsAsRead = async (
+  notificationIds: string[]
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ 
+        read: true, 
+        read_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .in('id', notificationIds);
+
+    if (error) {
+      console.error('Error marking notifications as read:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error marking notifications as read:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete multiple notifications
+ */
+export const deleteNotifications = async (
+  notificationIds: string[]
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .in('id', notificationIds);
+
+    if (error) {
+      console.error('Error deleting notifications:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting notifications:', error);
+    return false;
+  }
+};
+
+/**
+ * Get notifications with pagination
+ */
+export const getNotificationsWithPagination = async (
+  userId: string,
+  limit: number = 20,
+  offset: number = 0,
+  unreadOnly: boolean = false
+): Promise<{ notifications: Notification[]; totalCount: number }> => {
+  try {
+    let query = supabase
+      .from('notifications')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (unreadOnly) {
+      query = query.eq('read', false);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      return { notifications: [], totalCount: 0 };
+    }
+
+    return {
+      notifications: data || [],
+      totalCount: count || 0,
+    };
+  } catch (error) {
+    console.error('Error getting notifications:', error);
+    return { notifications: [], totalCount: 0 };
+  }
+};
+
+/**
+ * Get unread notification count
+ */
+export const getUnreadNotificationCount = async (
+  userId: string
+): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('read', false);
+
+    if (error) {
+      console.error('Error getting unread count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error getting unread count:', error);
+    return 0;
+  }
+};
+
+/**
+ * Get notification settings for a user (enhanced version)
+ */
+export const getEnhancedNotificationSettings = async (
+  userId: string
+): Promise<NotificationSettings | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching notification settings:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error getting notification settings:', error);
+    return null;
+  }
+};
+
+/**
+ * Update notification settings for a user (enhanced version)
+ */
+export const updateEnhancedNotificationSettings = async (
+  userId: string,
+  settings: Partial<Omit<NotificationSettings, 'user_id' | 'created_at' | 'updated_at'>>
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('user_notification_settings')
+      .upsert(
+        {
+          user_id: userId,
+          ...settings,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id',
+        }
+      );
+
+    if (error) {
+      console.error('Error updating notification settings:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error updating notification settings:', error);
+    return false;
+  }
+};
+
+/**
+ * Enhanced Real-time Notification Subscriptions
+ */
+
+export interface NotificationSubscriptionOptions {
+  userId: string;
+  onNotificationReceived?: (notification: Notification) => void;
+  onNotificationUpdated?: (notification: Notification) => void;
+  onNotificationDeleted?: (notificationId: string) => void;
+  onConnectionStateChange?: (state: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR') => void;
+  onError?: (error: Error) => void;
+  autoReconnect?: boolean;
+  reconnectDelay?: number;
+  maxReconnectAttempts?: number;
+}
+
+export interface NotificationSubscription {
+  unsubscribe: () => void;
+  reconnect: () => Promise<void>;
+  getConnectionState: () => string;
+  isConnected: () => boolean;
+}
+
+/**
+ * Subscribe to real-time notifications with enhanced features
+ */
+export const subscribeToUserNotifications = (
+  options: NotificationSubscriptionOptions
+): NotificationSubscription => {
+  const {
+    userId,
+    onNotificationReceived,
+    onNotificationUpdated,
+    onNotificationDeleted,
+    onConnectionStateChange,
+    onError,
+    autoReconnect = true,
+    reconnectDelay = 5000,
+    maxReconnectAttempts = 5
+  } = options;
+
+  let subscription: any = null;
+  let reconnectAttempts = 0;
+  let reconnectTimer: NodeJS.Timeout | null = null;
+  let isManuallyDisconnected = false;
+
+  const createSubscription = () => {
+    try {
+      subscription = supabase
+        .channel(`notifications:${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            try {
+              onNotificationReceived?.(payload.new as Notification);
+            } catch (error) {
+              console.error('Error in notification received callback:', error);
+              onError?.(error as Error);
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            try {
+              onNotificationUpdated?.(payload.new as Notification);
+            } catch (error) {
+              console.error('Error in notification updated callback:', error);
+              onError?.(error as Error);
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            try {
+              onNotificationDeleted?.(payload.old?.id);
+            } catch (error) {
+              console.error('Error in notification deleted callback:', error);
+              onError?.(error as Error);
+            }
+          }
+        )
+        .subscribe((status) => {
+          onConnectionStateChange?.(status);
+          
+          if (status === 'SUBSCRIBED') {
+            reconnectAttempts = 0; // Reset on successful connection
+            if (reconnectTimer) {
+              clearTimeout(reconnectTimer);
+              reconnectTimer = null;
+            }
+          } else if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+            if (autoReconnect && !isManuallyDisconnected && reconnectAttempts < maxReconnectAttempts) {
+              scheduleReconnect();
+            }
+          }
+        });
+
+      return subscription;
+    } catch (error) {
+      console.error('Error creating notification subscription:', error);
+      onError?.(error as Error);
+      return null;
+    }
+  };
+
+  const scheduleReconnect = () => {
+    if (reconnectTimer || isManuallyDisconnected) return;
+
+    reconnectAttempts++;
+    const delay = reconnectDelay * Math.pow(2, Math.min(reconnectAttempts - 1, 4)); // Exponential backoff
+
+    console.log(`Scheduling notification subscription reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${delay}ms`);
+
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      if (!isManuallyDisconnected) {
+        reconnect();
+      }
+    }, delay);
+  };
+
+  const reconnect = async (): Promise<void> => {
+    try {
+      if (subscription) {
+        await supabase.removeChannel(subscription);
+      }
+      subscription = createSubscription();
+    } catch (error) {
+      console.error('Error reconnecting notification subscription:', error);
+      onError?.(error as Error);
+      
+      if (autoReconnect && reconnectAttempts < maxReconnectAttempts) {
+        scheduleReconnect();
+      }
+    }
+  };
+
+  const unsubscribe = () => {
+    isManuallyDisconnected = true;
+    
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+
+    if (subscription) {
+      supabase.removeChannel(subscription);
+      subscription = null;
+    }
+  };
+
+  const getConnectionState = (): string => {
+    return subscription?.state || 'CLOSED';
+  };
+
+  const isConnected = (): boolean => {
+    return subscription?.state === 'SUBSCRIBED';
+  };
+
+  // Create initial subscription
+  subscription = createSubscription();
+
+  return {
+    unsubscribe,
+    reconnect,
+    getConnectionState,
+    isConnected,
+  };
+};
+
+/**
+ * Subscribe to notification count changes for a user
+ */
+export const subscribeToNotificationCount = (
+  userId: string,
+  callback: (count: number) => void
+): (() => void) => {
+  let currentCount = 0;
+
+  const updateCount = async () => {
+    try {
+      const count = await getUnreadNotificationCount(userId);
+      if (count !== currentCount) {
+        currentCount = count;
+        callback(count);
+      }
+    } catch (error) {
+      console.error('Error updating notification count:', error);
+    }
+  };
+
+  // Initial count
+  updateCount();
+
+  // Subscribe to changes
+  const subscription = subscribeToUserNotifications({
+    userId,
+    onNotificationReceived: () => updateCount(),
+    onNotificationUpdated: () => updateCount(),
+    onNotificationDeleted: () => updateCount(),
+    onError: (error) => console.error('Notification count subscription error:', error),
+  });
+
+  return () => {
+    subscription.unsubscribe();
+  };
+};
+
+/**
+ * Subscription manager for handling multiple notification subscriptions
+ */
+export class NotificationSubscriptionManager {
+  private subscriptions: Map<string, NotificationSubscription> = new Map();
+  private countSubscriptions: Map<string, () => void> = new Map();
+
+  /**
+   * Subscribe to notifications for a user
+   */
+  subscribe(userId: string, options: Omit<NotificationSubscriptionOptions, 'userId'>): string {
+    const subscriptionId = `notifications_${userId}_${Date.now()}`;
+    
+    const subscription = subscribeToUserNotifications({
+      userId,
+      ...options,
+    });
+
+    this.subscriptions.set(subscriptionId, subscription);
+    return subscriptionId;
+  }
+
+  /**
+   * Subscribe to notification count for a user
+   */
+  subscribeToCount(userId: string, callback: (count: number) => void): string {
+    const subscriptionId = `count_${userId}_${Date.now()}`;
+    
+    const unsubscribe = subscribeToNotificationCount(userId, callback);
+    this.countSubscriptions.set(subscriptionId, unsubscribe);
+    
+    return subscriptionId;
+  }
+
+  /**
+   * Unsubscribe from a specific subscription
+   */
+  unsubscribe(subscriptionId: string): boolean {
+    const subscription = this.subscriptions.get(subscriptionId);
+    if (subscription) {
+      subscription.unsubscribe();
+      this.subscriptions.delete(subscriptionId);
+      return true;
+    }
+
+    const countSubscription = this.countSubscriptions.get(subscriptionId);
+    if (countSubscription) {
+      countSubscription();
+      this.countSubscriptions.delete(subscriptionId);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Unsubscribe from all subscriptions for a user
+   */
+  unsubscribeUser(userId: string): number {
+    let unsubscribed = 0;
+
+    // Unsubscribe notification subscriptions
+    Array.from(this.subscriptions.entries()).forEach(([id, subscription]) => {
+      if (id.includes(`_${userId}_`)) {
+        subscription.unsubscribe();
+        this.subscriptions.delete(id);
+        unsubscribed++;
+      }
+    });
+
+    // Unsubscribe count subscriptions
+    Array.from(this.countSubscriptions.entries()).forEach(([id, unsubscribe]) => {
+      if (id.includes(`_${userId}_`)) {
+        unsubscribe();
+        this.countSubscriptions.delete(id);
+        unsubscribed++;
+      }
+    });
+
+    return unsubscribed;
+  }
+
+  /**
+   * Unsubscribe from all subscriptions
+   */
+  unsubscribeAll(): number {
+    let unsubscribed = 0;
+
+    // Unsubscribe all notification subscriptions
+    Array.from(this.subscriptions.values()).forEach(subscription => {
+      subscription.unsubscribe();
+      unsubscribed++;
+    });
+    this.subscriptions.clear();
+
+    // Unsubscribe all count subscriptions
+    Array.from(this.countSubscriptions.values()).forEach(unsubscribe => {
+      unsubscribe();
+      unsubscribed++;
+    });
+    this.countSubscriptions.clear();
+
+    return unsubscribed;
+  }
+
+  /**
+   * Get connection status for all subscriptions
+   */
+  getConnectionStatus(): Record<string, string> {
+    const status: Record<string, string> = {};
+    
+    Array.from(this.subscriptions.entries()).forEach(([id, subscription]) => {
+      status[id] = subscription.getConnectionState();
+    });
+
+    return status;
+  }
+
+  /**
+   * Reconnect all subscriptions
+   */
+  async reconnectAll(): Promise<void> {
+    const reconnectPromises = Array.from(this.subscriptions.values()).map(
+      subscription => subscription.reconnect()
+    );
+
+    await Promise.allSettled(reconnectPromises);
+  }
+
+  /**
+   * Get subscription count
+   */
+  getSubscriptionCount(): { notifications: number; counts: number; total: number } {
+    return {
+      notifications: this.subscriptions.size,
+      counts: this.countSubscriptions.size,
+      total: this.subscriptions.size + this.countSubscriptions.size,
+    };
+  }
+}
+
+// Global subscription manager instance
+export const notificationSubscriptionManager = new NotificationSubscriptionManager();
+
+/**
+ * Cleanup function for component unmount
+ */
+export const cleanupNotificationSubscriptions = (userId?: string): number => {
+  if (userId) {
+    return notificationSubscriptionManager.unsubscribeUser(userId);
+  } else {
+    return notificationSubscriptionManager.unsubscribeAll();
+  }
+};
+
+/**
+ * Clean up expired notifications
+ */
+export const cleanupExpiredNotifications = async (): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .delete()
+      .lt('expires_at', new Date().toISOString())
+      .select('id');
+
+    if (error) {
+      console.error('Error cleaning up expired notifications:', error);
+      return 0;
+    }
+
+    return data?.length || 0;
+  } catch (error) {
+    console.error('Error cleaning up expired notifications:', error);
+    return 0;
+  }
+};
+
+/**
+ * Enhanced CRUD Operations for Notifications
+ */
+
+/**
+ * Create multiple notifications in batch with error handling
+ */
+export const createNotificationsBatch = async (
+  inputs: CreateNotificationInput[]
+): Promise<{ success: Notification[]; failed: CreateNotificationInput[] }> => {
+  const success: Notification[] = [];
+  const failed: CreateNotificationInput[] = [];
+
+  try {
+    // Process in batches to avoid overwhelming the database
+    const batchSize = 50;
+    for (let i = 0; i < inputs.length; i += batchSize) {
+      const batch = inputs.slice(i, i + batchSize);
+      
+      const notifications = batch.map(input => ({
+        user_id: input.user_id,
+        type: input.type,
+        title: input.title,
+        body: input.body,
+        data: input.data || {},
+        action_url: input.action_url,
+        expires_at: input.expires_at,
+        read: false,
+        created_at: new Date().toISOString(),
+      }));
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert(notifications)
+        .select();
+
+      if (error) {
+        console.error('Error creating notification batch:', error);
+        failed.push(...batch);
+      } else {
+        success.push(...(data || []));
+      }
+    }
+
+    return { success, failed };
+  } catch (error) {
+    console.error('Error in batch notification creation:', error);
+    return { success, failed: inputs };
+  }
+};
+
+/**
+ * Mark multiple notifications as read with retry logic
+ */
+export const markNotificationsAsReadBatch = async (
+  notificationIds: string[],
+  maxRetries: number = 3
+): Promise<{ success: string[]; failed: string[] }> => {
+  const success: string[] = [];
+  const failed: string[] = [];
+
+  try {
+    // Process in batches to avoid query size limits
+    const batchSize = 100;
+    for (let i = 0; i < notificationIds.length; i += batchSize) {
+      const batch = notificationIds.slice(i, i + batchSize);
+      let retries = 0;
+      let batchSuccess = false;
+
+      while (retries < maxRetries && !batchSuccess) {
+        try {
+          const { error } = await supabase
+            .from('notifications')
+            .update({ 
+              read: true, 
+              read_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .in('id', batch);
+
+          if (error) {
+            throw error;
+          }
+
+          success.push(...batch);
+          batchSuccess = true;
+        } catch (error) {
+          retries++;
+          if (retries >= maxRetries) {
+            console.error(`Failed to mark notifications as read after ${maxRetries} retries:`, error);
+            failed.push(...batch);
+          } else {
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
+          }
+        }
+      }
+    }
+
+    return { success, failed };
+  } catch (error) {
+    console.error('Error in batch mark as read operation:', error);
+    return { success, failed: notificationIds };
+  }
+};
+
+/**
+ * Delete multiple notifications with soft delete option
+ */
+export const deleteNotificationsBatch = async (
+  notificationIds: string[],
+  softDelete: boolean = false
+): Promise<{ success: string[]; failed: string[] }> => {
+  const success: string[] = [];
+  const failed: string[] = [];
+
+  try {
+    // Process in batches to avoid query size limits
+    const batchSize = 100;
+    for (let i = 0; i < notificationIds.length; i += batchSize) {
+      const batch = notificationIds.slice(i, i + batchSize);
+
+      try {
+        if (softDelete) {
+          // Soft delete by setting expires_at to current time
+          const { error } = await supabase
+            .from('notifications')
+            .update({ 
+              expires_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .in('id', batch);
+
+          if (error) {
+            throw error;
+          }
+        } else {
+          // Hard delete
+          const { error } = await supabase
+            .from('notifications')
+            .delete()
+            .in('id', batch);
+
+          if (error) {
+            throw error;
+          }
+        }
+
+        success.push(...batch);
+      } catch (error) {
+        console.error('Error deleting notification batch:', error);
+        failed.push(...batch);
+      }
+    }
+
+    return { success, failed };
+  } catch (error) {
+    console.error('Error in batch delete operation:', error);
+    return { success, failed: notificationIds };
+  }
+};
+
+/**
+ * Advanced notification query with filtering and pagination
+ */
+export interface NotificationQueryOptions {
+  userId: string;
+  limit?: number;
+  offset?: number;
+  unreadOnly?: boolean;
+  types?: NotificationType[];
+  startDate?: string;
+  endDate?: string;
+  searchTerm?: string;
+  sortBy?: 'created_at' | 'updated_at' | 'read_at';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export const queryNotifications = async (
+  options: NotificationQueryOptions
+): Promise<{ notifications: Notification[]; totalCount: number; hasMore: boolean }> => {
+  try {
+    const {
+      userId,
+      limit = 20,
+      offset = 0,
+      unreadOnly = false,
+      types,
+      startDate,
+      endDate,
+      searchTerm,
+      sortBy = 'created_at',
+      sortOrder = 'desc'
+    } = options;
+
+    let query = supabase
+      .from('notifications')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId);
+
+    // Apply filters
+    if (unreadOnly) {
+      query = query.eq('read', false);
+    }
+
+    if (types && types.length > 0) {
+      query = query.in('type', types);
+    }
+
+    if (startDate) {
+      query = query.gte('created_at', startDate);
+    }
+
+    if (endDate) {
+      query = query.lte('created_at', endDate);
+    }
+
+    if (searchTerm) {
+      query = query.or(`title.ilike.%${searchTerm}%,body.ilike.%${searchTerm}%`);
+    }
+
+    // Apply sorting and pagination
+    query = query
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error querying notifications:', error);
+      return { notifications: [], totalCount: 0, hasMore: false };
+    }
+
+    const totalCount = count || 0;
+    const hasMore = offset + limit < totalCount;
+
+    return {
+      notifications: data || [],
+      totalCount,
+      hasMore,
+    };
+  } catch (error) {
+    console.error('Error in notification query:', error);
+    return { notifications: [], totalCount: 0, hasMore: false };
+  }
+};
+
+/**
+ * Get notification statistics for a user
+ */
+export interface NotificationStats {
+  totalNotifications: number;
+  unreadCount: number;
+  readCount: number;
+  countsByType: Record<NotificationType, number>;
+  recentActivity: {
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+  };
+}
+
+export const getNotificationStats = async (userId: string): Promise<NotificationStats> => {
+  try {
+    // Get all notifications for the user
+    const { data: allNotifications, error } = await supabase
+      .from('notifications')
+      .select('type, read, created_at')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching notification stats:', error);
+      return {
+        totalNotifications: 0,
+        unreadCount: 0,
+        readCount: 0,
+        countsByType: {} as Record<NotificationType, number>,
+        recentActivity: { today: 0, thisWeek: 0, thisMonth: 0 },
+      };
+    }
+
+    const notifications = allNotifications || [];
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Calculate statistics
+    const stats: NotificationStats = {
+      totalNotifications: notifications.length,
+      unreadCount: notifications.filter(n => !n.read).length,
+      readCount: notifications.filter(n => n.read).length,
+      countsByType: {} as Record<NotificationType, number>,
+      recentActivity: {
+        today: 0,
+        thisWeek: 0,
+        thisMonth: 0,
+      },
+    };
+
+    // Count by type and recent activity
+    notifications.forEach(notification => {
+      // Count by type
+      stats.countsByType[notification.type] = (stats.countsByType[notification.type] || 0) + 1;
+
+      // Count recent activity
+      const createdAt = new Date(notification.created_at);
+      if (createdAt >= today) {
+        stats.recentActivity.today++;
+      }
+      if (createdAt >= thisWeek) {
+        stats.recentActivity.thisWeek++;
+      }
+      if (createdAt >= thisMonth) {
+        stats.recentActivity.thisMonth++;
+      }
+    });
+
+    return stats;
+  } catch (error) {
+    console.error('Error calculating notification stats:', error);
+    return {
+      totalNotifications: 0,
+      unreadCount: 0,
+      readCount: 0,
+      countsByType: {} as Record<NotificationType, number>,
+      recentActivity: { today: 0, thisWeek: 0, thisMonth: 0 },
+    };
+  }
+};
+
+/**
+ * Archive old notifications (move to archive table or mark as archived)
+ */
+export const archiveOldNotifications = async (
+  userId: string,
+  olderThanDays: number = 30
+): Promise<{ archived: number; errors: number }> => {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+
+    // For now, we'll use soft delete by setting expires_at
+    // In a production system, you might move to an archive table
+    const { data, error } = await supabase
+      .from('notifications')
+      .update({ 
+        expires_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .lt('created_at', cutoffDate.toISOString())
+      .eq('read', true) // Only archive read notifications
+      .select('id');
+
+    if (error) {
+      console.error('Error archiving old notifications:', error);
+      return { archived: 0, errors: 1 };
+    }
+
+    return { archived: data?.length || 0, errors: 0 };
+  } catch (error) {
+    console.error('Error in archive operation:', error);
+    return { archived: 0, errors: 1 };
   }
 };
