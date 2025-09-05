@@ -94,6 +94,8 @@ export {
 export { AnimatedCard } from './AnimatedCard';
 export { NotificationBadge } from './NotificationBadge';
 export { NotificationIconWithBadge } from './NotificationIconWithBadge';
+export { NotificationsPanel } from './NotificationsPanel';
+export { NotificationItem } from './NotificationItem';
 export { AccessibleStatusIndicator } from './AccessibleStatusIndicator';
 export { ConfirmationDialog, AdminConfirmations } from './ConfirmationDialog';
 
