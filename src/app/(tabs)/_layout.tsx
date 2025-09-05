@@ -2,16 +2,39 @@ import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useTheme } from '@/theme/provider/useTheme';
+import { Text } from '@/components/ui/Text';
+
+// Custom header components for each tab
+const HomeHeader = () => (
+  <Text variant="h4" weight="semiBold">
+    VineMe
+  </Text>
+);
+
+const GroupsHeader = () => (
+  <Text variant="h4" weight="semiBold">
+    Bible Study Groups
+  </Text>
+);
+
+const ProfileHeader = () => (
+  <Text variant="h4" weight="semiBold">
+    My Profile
+  </Text>
+);
 
 export default function TabLayout() {
+  const { theme } = useTheme();
+  
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
+        tabBarActiveTintColor: theme.colors.primary[500],
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
           backgroundColor:
-            Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.95)' : '#fff',
+            Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.95)' : theme.colors.surface.primary,
           borderTopWidth: 1,
           borderTopColor: '#E5E5EA',
           paddingBottom: Platform.OS === 'ios' ? 20 : 5,
@@ -24,16 +47,16 @@ export default function TabLayout() {
           ) : null,
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '500',
+          fontFamily: theme.typography.fontFamily.medium,
         },
         headerStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: theme.colors.surface.primary,
           borderBottomWidth: 1,
           borderBottomColor: '#E5E5EA',
         },
         headerTitleStyle: {
           fontSize: 18,
-          fontWeight: '600',
+          fontFamily: theme.typography.fontFamily.semiBold,
           color: '#1a1a1a',
         },
       }}
@@ -43,7 +66,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarLabel: 'Home',
-          headerTitle: 'VineMe',
+          headerTitle: () => <HomeHeader />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -54,7 +77,7 @@ export default function TabLayout() {
         options={{
           title: 'Groups',
           tabBarLabel: 'Groups',
-          headerTitle: 'Bible Study Groups',
+          headerTitle: () => <GroupsHeader />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people" size={size} color={color} />
           ),
@@ -79,7 +102,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
-          headerTitle: 'My Profile',
+          headerTitle: () => <ProfileHeader />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),

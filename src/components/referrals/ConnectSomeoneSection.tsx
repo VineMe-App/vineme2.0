@@ -1,23 +1,35 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
+import { Text } from '../ui/Text';
+import { useTheme } from '../../theme/provider/useTheme';
 
 interface ConnectSomeoneSectionProps {
   onPress: () => void;
 }
 
 export function ConnectSomeoneSection({ onPress }: ConnectSomeoneSectionProps) {
+  const { theme } = useTheme();
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <Card style={styles.container}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <Ionicons name="person-add-outline" size={24} color="#007AFF" />
+            <Ionicons
+              name="person-add-outline"
+              size={24}
+              color={theme.colors.primary[500]}
+            />
           </View>
           <View style={styles.textContainer}>
-            <Text style={styles.title}>Connect someone else in</Text>
-            <Text style={styles.subtitle}>Help someone join our community</Text>
+            <Text variant="bodyLarge" weight="semiBold" style={styles.title}>
+              Connect someone else in
+            </Text>
+            <Text variant="body" color="secondary" style={styles.subtitle}>
+              Help someone join our community
+            </Text>
           </View>
           <View style={styles.chevronContainer}>
             <Ionicons
@@ -59,14 +71,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 2,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#666',
+    // Typography handled by Text component variant
   },
   chevronContainer: {
     marginLeft: 8,
