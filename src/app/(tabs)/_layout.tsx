@@ -5,22 +5,10 @@ import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Text } from '@/components/ui/Text';
 
-// Custom header components for each tab
+// Custom header component for home tab only
 const HomeHeader = () => (
   <Text variant="h4" weight="semiBold">
     VineMe
-  </Text>
-);
-
-const GroupsHeader = () => (
-  <Text variant="h4" weight="semiBold">
-    Bible Study Groups
-  </Text>
-);
-
-const ProfileHeader = () => (
-  <Text variant="h4" weight="semiBold">
-    My Profile
   </Text>
 );
 
@@ -77,7 +65,7 @@ export default function TabLayout() {
         options={{
           title: 'Groups',
           tabBarLabel: 'Groups',
-          headerTitle: () => <GroupsHeader />,
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people" size={size} color={color} />
           ),
@@ -102,7 +90,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
-          headerTitle: () => <ProfileHeader />,
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),

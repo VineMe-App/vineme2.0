@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
+  SafeAreaView,
 } from 'react-native';
 import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '../../stores/auth';
@@ -79,22 +80,23 @@ export default function HomeScreen() {
 
   if (isLoading && !userGroupMemberships) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <LoadingSpinner message="Loading your dashboard..." />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={[
-        styles.container,
-        { backgroundColor: theme.colors.background.primary },
-      ]}
-      refreshControl={
-        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
-      }
-    >
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={[
+          styles.scrollView,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+        }
+      >
       {/* Header with user info */}
       <View
         style={[
@@ -313,12 +315,16 @@ export default function HomeScreen() {
 
       {/* Bottom spacing */}
       <View style={styles.bottomSpacing} />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   header: {

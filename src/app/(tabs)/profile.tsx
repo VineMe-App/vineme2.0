@@ -7,6 +7,7 @@ import {
   Alert,
   TouchableOpacity,
   Platform,
+  SafeAreaView,
 } from 'react-native';
 import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '@/stores/auth';
@@ -109,7 +110,7 @@ export default function ProfileScreen() {
 
   if (profileError) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
@@ -119,13 +120,13 @@ export default function ProfileScreen() {
           <Text variant="body" color="error" style={styles.errorText}>Failed to load profile</Text>
           <Button title="Retry" onPress={handleRefresh} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!userProfile && !isLoading) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
@@ -135,12 +136,12 @@ export default function ProfileScreen() {
           <Text variant="body" color="error" style={styles.errorText}>Profile not found</Text>
           <Button title="Refresh" onPress={handleRefresh} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: theme.colors.background.primary },
@@ -388,7 +389,7 @@ export default function ProfileScreen() {
           userId={user.id}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, router, useSegments } from 'expo-router';
+import { StatusBar } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as Font from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -173,6 +174,7 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
+      <StatusBar barStyle="dark-content" backgroundColor="white" translucent={false} />
       <ThemeProvider initialTheme="light">
         <QueryProvider>
           <AuthProvider>

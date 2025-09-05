@@ -5,6 +5,7 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
+  SafeAreaView,
 } from 'react-native';
 import { Text } from '../../components/ui/Text';
 import { useRouter } from 'expo-router';
@@ -207,53 +208,37 @@ export default function GroupsScreen() {
 
   if (isLoading && !allGroups) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
         ]}
       >
-        <View style={styles.header}>
-          <Text variant="h4" style={styles.title}>
-            Bible Study Groups
-          </Text>
-          <Text variant="body" color="secondary" style={styles.subtitle}>
-            Discover and join Bible study groups in your church community
-          </Text>
-        </View>
         <View style={styles.loadingContainer}>
           <LoadingSpinner size="large" />
           <Text variant="body" color="secondary" style={styles.loadingText}>
             Loading groups...
           </Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error && !allGroups) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
         ]}
       >
-        <View style={styles.header}>
-          <Text variant="h4" style={styles.title}>
-            Bible Study Groups
-          </Text>
-          <Text variant="body" color="secondary" style={styles.subtitle}>
-            Discover and join Bible study groups in your church community
-          </Text>
-        </View>
         {renderErrorState()}
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: theme.colors.background.primary },
@@ -335,12 +320,12 @@ export default function GroupsScreen() {
         {currentView === 'list' ? renderListView() : renderMapView()}
       </View>
 
-      <FilterPanel
-        isVisible={showFilterPanel}
-        onClose={() => setShowFilterPanel(false)}
-      />
-    </View>
-  );
+              <FilterPanel
+          isVisible={showFilterPanel}
+          onClose={() => setShowFilterPanel(false)}
+        />
+      </SafeAreaView>
+    );
 }
 
 // Component to handle membership status for each group
@@ -391,15 +376,6 @@ const GroupItemWithMembership: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  subtitle: {
-    textAlign: 'center',
-    marginTop: 8,
   },
   compactHeader: {
     paddingHorizontal: 12,
