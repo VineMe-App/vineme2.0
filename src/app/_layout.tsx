@@ -84,6 +84,8 @@ function RootLayoutNav() {
       segments[0] === 'event' ||
       segments[0] === 'admin' ||
       segments[0] === 'user' ||
+      // Allow notifications page outside of tabs
+      segments[0] === 'notifications' ||
       // Allow referral landing screen outside of tabs
       segments[0] === 'referral-landing' ||
       // Allow styling system pages (for development/debugging)
@@ -135,6 +137,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: true }} />
         <Stack.Screen
           name="referral-landing"
           options={{ headerShown: false }}

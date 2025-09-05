@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import { Share, Alert } from 'react-native';
 
 export interface DeepLinkData {
-  type: 'group' | 'event' | 'auth' | 'referral';
+  type: 'group' | 'event' | 'auth' | 'referral' | 'notifications';
   id: string;
   title?: string;
   params?: Record<string, any>;
@@ -21,6 +21,8 @@ export const generateDeepLink = (data: DeepLinkData): string => {
       return `${baseUrl}event/${data.id}`;
     case 'referral':
       return `${baseUrl}referral/${data.id}`;
+    case 'notifications':
+      return `${baseUrl}notifications`;
     default:
       return baseUrl;
   }
@@ -113,6 +115,11 @@ export const parseDeepLink = (url: string): DeepLinkData | null => {
       };
     }
 
+    // Handle notifications
+    if (segments.length >= 1 && segments[0] === 'notifications') {
+      return { type: 'notifications', id: 'inbox' };
+    }
+
     // Handle group and event links
     if (segments.length >= 2) {
       const [type, id] = segments;
@@ -159,6 +166,9 @@ export const handleDeepLink = (url: string, router: any) => {
           return true;
         }
         return false;
+      case 'notifications':
+        router.push('/notifications');
+        return true;
       case 'referral':
         if (linkData.id === 'landing') {
           router.push('/referral-landing');

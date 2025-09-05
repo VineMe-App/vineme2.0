@@ -119,7 +119,7 @@ export {
 // Enhanced Notification Hooks
 export {
   useNotifications,
-  useNotificationSettings as useLegacyNotificationSettings,
+  useLegacyNotificationSettings,
   useEventReminders,
   useNotificationPermissions,
   useAdminNotifications,

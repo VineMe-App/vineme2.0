@@ -107,7 +107,7 @@ export const useNotifications = () => {
 /**
  * Hook for managing notification settings
  */
-export const useNotificationSettings = (userId?: string) => {
+export const useLegacyNotificationSettings = (userId?: string) => {
   const queryClient = useQueryClient();
 
   const {
@@ -209,29 +209,30 @@ export const useEnhancedNotifications = (userId?: string) => {
   useEffect(() => {
     if (!userId) return;
 
-    const unsubscribe = subscribeToUserNotifications(userId, (notification) => {
-      // Update notification queries when new notifications arrive
-      queryClient.setQueryData(
-        ['notifications', 'count', userId, { read: false }],
-        (oldCount: number = 0) => oldCount + 1
-      );
+    const subscription = subscribeToUserNotifications({
+      userId,
+      onNotificationReceived: (notification) => {
+        // Update notification queries when new notifications arrive
+        queryClient.setQueryData(
+          ['notifications', 'count', userId, { read: false }],
+          (oldCount: number = 0) => oldCount + 1
+        );
 
-      // Invalidate notification lists to refresh them
-      queryClient.invalidateQueries({
-        queryKey: ['notifications', 'list', userId],
-      });
+        // Invalidate notification lists to refresh them
+        queryClient.invalidateQueries({
+          queryKey: ['notifications', 'list', userId],
+        });
 
-      queryClient.invalidateQueries({
-        queryKey: ['notifications', 'unread', userId],
-      });
+        queryClient.invalidateQueries({
+          queryKey: ['notifications', 'unread', userId],
+        });
+      },
     });
 
-    setRealtimeSubscription(() => unsubscribe);
+    setRealtimeSubscription(() => subscription.unsubscribe);
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      subscription.unsubscribe();
     };
   }, [userId, queryClient]);
 

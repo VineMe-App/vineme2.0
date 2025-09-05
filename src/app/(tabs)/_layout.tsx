@@ -8,18 +8,19 @@ import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithB
 import { useNotificationBadge } from '@/hooks/useNotifications';
 import { useAuthStore } from '@/stores/auth';
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 
 // Custom header component for home tab with notification icon
 const HomeHeader = () => {
   const { theme } = useTheme();
+  const router = useRouter();
   const { user } = useAuthStore();
   const { count: unreadCount } = useNotificationBadge(user?.id);
   const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
 
   const handleNotificationPress = () => {
-    setNotificationPanelVisible(true);
-    // TODO: In the next task, we'll implement the actual notifications panel
-    console.log('Notification icon pressed - panel will be implemented in next task');
+    // Navigate to the notifications page
+    router.push('/notifications');
   };
 
   return (
