@@ -277,7 +277,7 @@ const getButtonStyles = (
   // Size styles
   const sizeStyles: Record<string, ViewStyle> = {
     small: {
-      paddingHorizontal: theme.spacing.md,
+      paddingHorizontal: 20, // Good balance - 20px padding for comfortable spacing
       paddingVertical: theme.spacing.xs,
       minHeight: 32,
     },
@@ -375,7 +375,7 @@ const getTextStyles = (theme: any, variant: string, size: string): TextStyle => 
   // Variant text colors
   const variantTextColors: Record<string, string> = {
     primary: theme.colors.text.inverse,
-    secondary: theme.colors.text.primary,
+    secondary: theme.colors.secondary[100], // Light green text for pink buttons
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,
     error: theme.colors.text.inverse,
