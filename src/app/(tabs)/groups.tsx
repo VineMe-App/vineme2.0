@@ -255,16 +255,16 @@ export default function GroupsScreen() {
         </Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={styles.iconButton}
+            style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
             onPress={() => setShowSearch((s) => !s)}
           >
-            <Ionicons name="search-outline" size={20} color="#374151" />
+            <Ionicons name="search-outline" size={20} color={theme.colors.primary[500]} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.iconButton}
+            style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
             onPress={() => setShowFilterPanel(true)}
           >
-            <Ionicons name="funnel-outline" size={20} color="#374151" />
+            <Ionicons name="funnel-outline" size={20} color={theme.colors.primary[500]} />
             {getActiveFiltersCount(filters) > 0 && (
               <View style={styles.badge}>
                 <Text
@@ -280,10 +280,10 @@ export default function GroupsScreen() {
           <TouchableOpacity
             style={[
               styles.iconButton,
-              sortByDistance && {
-                backgroundColor: '#e5e7eb',
-                borderWidth: 1,
-                borderColor: '#d1d5db',
+              {
+                backgroundColor: sortByDistance 
+                  ? theme.colors.primary[500] // Pink when toggled
+                  : theme.colors.secondary[100], // Green when not toggled
               },
             ]}
             onPress={async () => {
@@ -296,15 +296,21 @@ export default function GroupsScreen() {
             }}
             accessibilityLabel="Sort by distance"
           >
-            <Ionicons name="navigate-outline" size={20} color="#374151" />
+            <Ionicons 
+              name="navigate-outline" 
+              size={20} 
+              color={sortByDistance 
+                ? theme.colors.secondary[100] // Green when toggled
+                : theme.colors.primary[500]} // Pink when not toggled
+            />
           </TouchableOpacity>
           {userProfile?.church_id && (
             <TouchableOpacity
-              style={styles.iconButton}
+              style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
               onPress={handleCreateGroup}
               accessibilityLabel="Create group"
             >
-              <Ionicons name="add-outline" size={22} color="#374151" />
+              <Ionicons name="add-outline" size={22} color={theme.colors.primary[500]} />
             </TouchableOpacity>
           )}
         </View>

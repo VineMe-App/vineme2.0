@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../theme/provider/useTheme';
 
 export type ViewMode = 'list' | 'map';
 
@@ -13,13 +14,17 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
   currentView,
   onViewChange,
 }) => {
+  const { theme } = useTheme();
+  
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={[
           styles.toggleButton,
           styles.leftButton,
-          currentView === 'list' && styles.activeButton,
+          currentView === 'list' 
+            ? { backgroundColor: theme.colors.primary[500] } // Pink when selected
+            : { backgroundColor: theme.colors.secondary[100] }, // Green when not selected
         ]}
         onPress={() => onViewChange('list')}
         activeOpacity={0.7}
@@ -28,12 +33,16 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
           <Ionicons
             name="list-outline"
             size={16}
-            color={currentView === 'list' ? '#fff' : '#666'}
+            color={currentView === 'list' 
+              ? theme.colors.secondary[100] // Green when selected
+              : theme.colors.primary[500]} // Pink when not selected
           />
           <Text
             style={[
               styles.toggleText,
-              currentView === 'list' && styles.activeText,
+              currentView === 'list' 
+                ? { color: theme.colors.secondary[100] } // Green when selected
+                : { color: theme.colors.primary[500] }, // Pink when not selected
             ]}
           >
             List
@@ -45,7 +54,9 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
         style={[
           styles.toggleButton,
           styles.rightButton,
-          currentView === 'map' && styles.activeButton,
+          currentView === 'map' 
+            ? { backgroundColor: theme.colors.primary[500] } // Pink when selected
+            : { backgroundColor: theme.colors.secondary[100] }, // Green when not selected
         ]}
         onPress={() => onViewChange('map')}
         activeOpacity={0.7}
@@ -54,12 +65,16 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
           <Ionicons
             name="map-outline"
             size={16}
-            color={currentView === 'map' ? '#fff' : '#666'}
+            color={currentView === 'map' 
+              ? theme.colors.secondary[100] // Green when selected
+              : theme.colors.primary[500]} // Pink when not selected
           />
           <Text
             style={[
               styles.toggleText,
-              currentView === 'map' && styles.activeText,
+              currentView === 'map' 
+                ? { color: theme.colors.secondary[100] } // Green when selected
+                : { color: theme.colors.primary[500] }, // Pink when not selected
             ]}
           >
             Map
@@ -74,44 +89,30 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 2,
+    borderRadius: 25, // More rounded like buttons
+    padding: 3,
     marginHorizontal: 16,
     marginBottom: 16,
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   leftButton: {
-    borderTopLeftRadius: 6,
-    borderBottomLeftRadius: 6,
+    borderTopLeftRadius: 22, // More rounded
+    borderBottomLeftRadius: 22,
   },
   rightButton: {
-    borderTopRightRadius: 6,
-    borderBottomRightRadius: 6,
-  },
-  activeButton: {
-    backgroundColor: '#007AFF',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
+    borderTopRightRadius: 22, // More rounded
+    borderBottomRightRadius: 22,
   },
   toggleText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    // Color handled dynamically based on state
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  activeText: {
-    color: '#fff',
-  },
 });
