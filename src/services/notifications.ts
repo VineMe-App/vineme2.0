@@ -1092,6 +1092,478 @@ export const triggerReferralAcceptedNotification = async (
   data: NotificationTriggerData['referralAccepted']
 ): Promise<void> => {
   try {
+    // Check if referrer has referral notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.referrerId);
+    if (settings && !settings.referral_updates) {
+      return; // User has disabled referral notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.referrerId,
+      type: 'referral_accepted',
+      title: 'Referral Accepted',
+      body: `${data.referredUserName} joined VineMe through your referral!`,
+      data: {
+        referredUserId: data.referredUserId,
+        referredUserName: data.referredUserName,
+      },
+      action_url: `/profile/${data.referredUserId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'referral_accepted',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering referral accepted notification:', error);
+  }
+};
+
+/**
+ * Trigger referral joined group notification
+ */
+export const triggerReferralJoinedGroupNotification = async (
+  data: NotificationTriggerData['referralJoinedGroup']
+): Promise<void> => {
+  try {
+    // Check if referrer has referral notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.referrerId);
+    if (settings && !settings.referral_updates) {
+      return; // User has disabled referral notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.referrerId,
+      type: 'referral_joined_group',
+      title: 'Referral Joined Group',
+      body: `${data.referredUserName} joined "${data.groupTitle}" through your referral!`,
+      data: {
+        referredUserId: data.referredUserId,
+        referredUserName: data.referredUserName,
+        groupId: data.groupId,
+        groupTitle: data.groupTitle,
+      },
+      action_url: `/group/${data.groupId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'referral_joined_group',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering referral joined group notification:', error);
+  }
+};
+
+/**
+ * Enhanced notification service methods for hooks
+ */
+
+/**
+ * Create a single notification
+ */
+export const createNotification = async (
+  input: CreateNotificationInput
+): Promise<Notification | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        ...input,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating notification:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    return null;
+  }
+};
+
+/**
+ * Create multiple notifications in batch
+ */
+export const createNotifications = async (
+  notifications: CreateNotificationInput[]
+): Promise<Notification[]> => {
+  try {
+    const notificationsWithTimestamps = notifications.map(notification => ({
+      ...notification,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert(notificationsWithTimestamps)
+      .select();
+
+    if (error) {
+      console.error('Error creating notifications:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error creating notifications:', error);
+    return [];
+  }
+};
+
+/**
+ * Get user notifications with pagination
+ */
+export const getUserNotificationsPaginated = async (
+  options: NotificationQueryOptions
+): Promise<{ notifications: Notification[]; hasMore: boolean; total: number }> => {
+  try {
+    const {
+      userId,
+      limit = 20,
+      offset = 0,
+      types,
+      read,
+      startDate,
+      endDate,
+      sortBy = 'created_at',
+      sortOrder = 'desc'
+    } = options;
+
+    let query = supabase
+      .from('notifications')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId);
+
+    // Apply filters
+    if (types && types.length > 0) {
+      query = query.in('type', types);
+    }
+
+    if (read !== undefined) {
+      query = query.eq('read', read);
+    }
+
+    if (startDate) {
+      query = query.gte('created_at', startDate);
+    }
+
+    if (endDate) {
+      query = query.lte('created_at', endDate);
+    }
+
+    // Apply sorting and pagination
+    query = query
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching paginated notifications:', error);
+      return { notifications: [], hasMore: false, total: 0 };
+    }
+
+    const notifications = data || [];
+    const total = count || 0;
+    const hasMore = offset + limit < total;
+
+    return { notifications, hasMore, total };
+  } catch (error) {
+    console.error('Error fetching paginated notifications:', error);
+    return { notifications: [], hasMore: false, total: 0 };
+  }
+};
+
+/**
+ * Get notification count for a user
+ */
+export const getNotificationCount = async (
+  userId: string,
+  options?: { types?: NotificationType[]; read?: boolean }
+): Promise<number> => {
+  try {
+    let query = supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (options?.types && options.types.length > 0) {
+      query = query.in('type', options.types);
+    }
+
+    if (options?.read !== undefined) {
+      query = query.eq('read', options.read);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error('Error getting notification count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error getting notification count:', error);
+    return 0;
+  }
+};
+
+/**
+ * Mark multiple notifications as read
+ */
+export const markNotificationsAsRead = async (
+  notificationIds: string[]
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ 
+        read: true, 
+        read_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .in('id', notificationIds);
+
+    if (error) {
+      console.error('Error marking notifications as read:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error marking notifications as read:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete a single notification
+ */
+export const deleteNotification = async (notificationId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', notificationId);
+
+    if (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete multiple notifications
+ */
+export const deleteMultipleNotifications = async (
+  notificationIds: string[]
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .in('id', notificationIds);
+
+    if (error) {
+      console.error('Error deleting notifications:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting notifications:', error);
+    return false;
+  }
+};
+
+/**
+ * Subscribe to real-time notification updates for a user
+ */
+export const subscribeToUserNotifications = (
+  userId: string,
+  callback: (notification: Notification) => void
+): (() => void) => {
+  const subscription = supabase
+    .channel(`notifications:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        if (payload.new) {
+          callback(payload.new as Notification);
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        if (payload.new) {
+          callback(payload.new as Notification);
+        }
+      }
+    )
+    .subscribe();
+
+  // Return unsubscribe function
+  return () => {
+    supabase.removeChannel(subscription);
+  };
+};
+
+/**
+ * Get enhanced notification settings for a user
+ */
+export const getEnhancedNotificationSettings = async (
+  userId: string
+): Promise<NotificationSettings | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      // Not found error
+      console.error('Error fetching enhanced notification settings:', error);
+      return null;
+    }
+
+    // Return default settings if none exist
+    return data || {
+      id: '',
+      user_id: userId,
+      friend_requests: true,
+      friend_request_accepted: true,
+      group_requests: true,
+      group_request_responses: true,
+      join_requests: true,
+      join_request_responses: true,
+      referral_updates: true,
+      event_reminders: true,
+      push_notifications: true,
+      email_notifications: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('Error getting enhanced notification settings:', error);
+    return null;
+  }
+};
+
+/**
+ * Update enhanced notification settings for a user
+ */
+export const updateEnhancedNotificationSettings = async (
+  userId: string,
+  settings: Partial<Omit<NotificationSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('user_notification_settings')
+      .upsert(
+        {
+          user_id: userId,
+          ...settings,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id',
+        }
+      );
+
+    if (error) {
+      console.error('Error updating enhanced notification settings:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error updating enhanced notification settings:', error);
+    return false;
+  }
+};mise<void> => {
+  try {
+    // Check if requester has join request response notifications enabled
+    const settings = await getEnhancedNotificationSettings(data.requesterId);
+    if (settings && !settings.join_request_responses) {
+      return; // User has disabled join request response notifications
+    }
+
+    const notification = await createNotification({
+      user_id: data.requesterId,
+      type: 'join_request_denied',
+      title: 'Join Request Declined',
+      body: `${data.deniedByName} declined your request to join "${data.groupTitle}"`,
+      data: {
+        groupId: data.groupId,
+        groupTitle: data.groupTitle,
+        deniedByName: data.deniedByName,
+      },
+      action_url: `/group/${data.groupId}`,
+    });
+
+    if (notification) {
+      // Schedule local notification for immediate display
+      await scheduleLocalNotification({
+        type: 'join_request_denied',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering join request denied notification:', error);
+  }
+};
+
+/**
+ * Trigger referral accepted notification
+ */
+export const triggerReferralAcceptedNotification = async (
+  data: NotificationTriggerData['referralAccepted']
+): Promise<void> => {
+  try {
     // Check if referrer has referral update notifications enabled
     const settings = await getEnhancedNotificationSettings(data.referrerId);
     if (settings && !settings.referral_updates) {
