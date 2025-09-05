@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
-  Text,
   StyleSheet,
   ViewStyle,
   TextStyle,
@@ -10,6 +9,7 @@ import {
   AccessibilityInfo,
   Platform,
 } from 'react-native';
+import Text from './Text';
 import { useTheme } from '../../theme/provider/useTheme';
 import { Spinner } from './Loading/Spinner';
 
@@ -173,7 +173,7 @@ export const Button: React.FC<ButtonProps> = ({
             accessibilityLabel={`Loading ${title}`}
           />
           {Platform.OS === 'ios' && (
-            <Text style={[textStyles, styles.loadingText, textStyle]}>
+            <Text weight="medium" style={[textStyles, styles.loadingText, textStyle]}>
               {title}
             </Text>
           )}
@@ -188,7 +188,7 @@ export const Button: React.FC<ButtonProps> = ({
             {icon}
           </View>
         )}
-        <Text style={[textStyles, textStyle]} numberOfLines={1}>
+        <Text weight="medium" style={[textStyles, textStyle]} numberOfLines={1}>
           {title}
         </Text>
         {iconRight && (
@@ -351,7 +351,6 @@ const getButtonStyles = (
  */
 const getTextStyles = (theme: any, variant: string, size: string): TextStyle => {
   const baseStyles: TextStyle = {
-    fontFamily: theme.typography.fontFamily.medium,
     textAlign: 'center',
     includeFontPadding: false,
   };

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import Text from './Text';
 import { AdminAccessibilityLabels } from '@/utils/accessibility';
 
 interface NotificationBadgeProps {
@@ -73,6 +74,7 @@ export function NotificationBadge({
       importantForAccessibility="yes"
     >
       <Text
+        weight="bold"
         style={[
           styles.badgeText,
           { color: textColor, fontSize: textSizes[size] },
@@ -96,7 +98,6 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   badgeText: {
-    fontWeight: 'bold',
     textAlign: 'center',
   },
 });

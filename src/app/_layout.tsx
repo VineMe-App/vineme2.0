@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, router, useSegments } from 'expo-router';
-import { StatusBar } from 'react-native';
+import { StatusBar, Text as RNText } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as Font from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -156,7 +156,13 @@ export default function RootLayout() {
           'Manrope-Medium': require('../../assets/fonts/Manrope-Medium.ttf'),
           'Manrope-SemiBold': require('../../assets/fonts/Manrope-SemiBold.ttf'),
           'Manrope-Bold': require('../../assets/fonts/Manrope-Bold.ttf'),
+          'Manrope-ExtraBold': require('../../assets/fonts/Manrope-ExtraBold.ttf'),
         });
+        (RNText as any).defaultProps = (RNText as any).defaultProps || {};
+        (RNText as any).defaultProps.style = {
+          ...(RNText as any).defaultProps.style,
+          fontFamily: 'Manrope-Regular',
+        };
         setFontsLoaded(true);
       } catch (error) {
         console.error('Error loading fonts:', error);

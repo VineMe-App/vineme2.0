@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   View, 
-  Text, 
   StyleSheet, 
   TextInput, 
   Alert, 
@@ -11,6 +10,7 @@ import {
   ScrollView
 } from 'react-native';
 import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
 import { useRouter, Link } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';

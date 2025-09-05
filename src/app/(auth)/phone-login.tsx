@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   View, 
-  Text, 
   StyleSheet, 
   TextInput, 
   Alert, 
@@ -11,6 +10,7 @@ import {
   ScrollView
 } from 'react-native';
 import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
 import { useRouter, Link } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
@@ -65,8 +65,8 @@ export default function PhoneLoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Sign in with Phone</Text>
-          <Text style={styles.subtitle}>
+          <Text variant="h2" weight="bold" style={styles.title}>Sign in with Phone</Text>
+          <Text variant="body" color="secondary" style={styles.subtitle}>
             {step === 'enter-phone' 
               ? 'Enter your phone number to receive a verification code'
               : 'Enter the 4-digit code sent to your phone'
@@ -82,7 +82,7 @@ export default function PhoneLoginScreen() {
                 onChange={setCountryCode} 
                 label="Country" 
               />
-              <Text style={[styles.label, { marginTop: 16 }]}>Phone Number</Text>
+              <Text variant="label" style={[styles.label, { marginTop: 16 }]}>Phone Number</Text>
               <TextInput
                 value={localNumber}
                 onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
@@ -101,8 +101,8 @@ export default function PhoneLoginScreen() {
             </>
           ) : (
             <>
-              <Text style={styles.label}>Enter 4-digit code</Text>
-              <Text style={styles.phoneDisplay}>Sent to {fullPhone}</Text>
+              <Text variant="label" style={styles.label}>Enter 4-digit code</Text>
+              <Text variant="body" color="secondary" style={styles.phoneDisplay}>Sent to {fullPhone}</Text>
               <OtpInput 
                 value={code} 
                 onChange={(text) => setCode(text.replace(/\D/g, '').slice(0, 4))} 
@@ -116,26 +116,26 @@ export default function PhoneLoginScreen() {
               />
               <View style={styles.resendContainer}>
                 <TouchableOpacity onPress={handleResendCode} disabled={isLoading}>
-                  <Text style={styles.resendText}>Didn't receive code? Resend</Text>
+                  <Text variant="body" color="primary" style={styles.resendText}>Didn't receive code? Resend</Text>
                 </TouchableOpacity>
               </View>
             </>
           )}
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Prefer email? </Text>
+            <Text variant="body" color="secondary" style={styles.footerText}>Prefer email? </Text>
             <Link href="/(auth)/email-login" asChild>
               <TouchableOpacity>
-                <Text style={styles.linkText}>Sign in with email</Text>
+                <Text variant="body" color="primary" style={styles.linkText}>Sign in with email</Text>
               </TouchableOpacity>
             </Link>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text variant="body" color="secondary" style={styles.footerText}>Don't have an account? </Text>
             <Link href="/(auth)/phone-signup" asChild>
               <TouchableOpacity>
-                <Text style={styles.linkText}>Sign up with phone</Text>
+                <Text variant="body" color="primary" style={styles.linkText}>Sign up with phone</Text>
               </TouchableOpacity>
             </Link>
           </View>

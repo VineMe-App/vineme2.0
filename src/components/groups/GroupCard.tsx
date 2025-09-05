@@ -47,7 +47,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <TouchableOpacity
       style={[
         styles.card,
-        { backgroundColor: theme.colors.primary[50] }, // Faded pink background
+        { backgroundColor: theme.colors.neutral[100] }, // Faded pink background
         style,
       ]}
       onPress={onPress}
@@ -69,7 +69,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         <View style={styles.info}>
           <View style={styles.header}>
             <Text
-              variant="h5"
+              variant="h6"
               style={styles.title}
               numberOfLines={2}
               ellipsizeMode="tail"

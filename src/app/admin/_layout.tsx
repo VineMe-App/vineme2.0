@@ -24,6 +24,9 @@ export default function AdminLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Manrope-Bold',
+            },
           }}
         >
           <Stack.Screen name="index" />

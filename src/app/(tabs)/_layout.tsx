@@ -44,7 +44,7 @@ export default function TabLayout() {
         },
         headerTitleStyle: {
           fontSize: 18,
-          fontFamily: theme.typography.fontFamily.semiBold,
+          fontFamily: theme.typography.fontFamily.bold,
           color: '#1a1a1a',
         },
       }}

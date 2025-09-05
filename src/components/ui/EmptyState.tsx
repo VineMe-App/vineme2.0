@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';
+import { useTheme } from '../../theme/provider/useTheme';
 
 interface EmptyStateProps {
   title: string;
@@ -17,8 +18,16 @@ export function EmptyState({
   action,
   testID,
 }: EmptyStateProps) {
+  const { theme } = useTheme();
+
   return (
-    <View style={styles.container} testID={testID}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.secondary },
+      ]}
+      testID={testID}
+    >
       {icon && <View style={styles.iconContainer}>{icon}</View>}
       <Text variant="h5" style={styles.title}>
         {title}

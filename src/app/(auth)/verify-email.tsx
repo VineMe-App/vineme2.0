@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ActivityIndicator,
   Alert,
@@ -11,6 +10,7 @@ import { authService } from '../../services/auth';
 import { useAuthStore } from '../../stores/auth';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Text } from '../../components/ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function VerifyEmailScreen() {

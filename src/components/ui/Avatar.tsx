@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import Text from './Text';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/provider/useTheme';
 
@@ -35,8 +36,6 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   const textStyle = {
     fontSize: size * 0.4,
-    fontFamily: theme.typography.fontFamily.bold,
-    fontWeight: '900', // Extra bold
   };
 
   const content = (
@@ -45,7 +44,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         <Image source={{ uri: imageUrl }} style={[styles.image, avatarStyle]} />
       ) : (
         <View style={[styles.placeholder, avatarStyle, { backgroundColor: theme.colors.secondary[100] }]}>
-          <Text style={[styles.initials, textStyle, { color: theme.colors.primary[500] }]}>{initials || '?'}</Text>
+          <Text weight="black" style={[styles.initials, textStyle, { color: theme.colors.primary[500] }]}>{initials || '?'}</Text>
         </View>
       )}
       {showEditIcon && (
