@@ -1,16 +1,45 @@
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Text } from '@/components/ui/Text';
+import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithBadge';
+import { useNotificationBadge } from '@/hooks/useNotifications';
+import { useAuthStore } from '@/stores/auth';
+import { useState } from 'react';
 
-// Custom header component for home tab only
-const HomeHeader = () => (
-  <Text variant="h4" weight="semiBold">
-    VineMe
-  </Text>
-);
+// Custom header component for home tab with notification icon
+const HomeHeader = () => {
+  const { theme } = useTheme();
+  const { user } = useAuthStore();
+  const { count: unreadCount } = useNotificationBadge(user?.id);
+  const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
+
+  const handleNotificationPress = () => {
+    setNotificationPanelVisible(true);
+    // TODO: In the next task, we'll implement the actual notifications panel
+    console.log('Notification icon pressed - panel will be implemented in next task');
+  };
+
+  return (
+    <View style={styles.headerContainer}>
+      <Text variant="h4" weight="semiBold">
+        VineMe
+      </Text>
+      <NotificationIconWithBadge
+        onPress={handleNotificationPress}
+        unreadCount={unreadCount}
+        size={24}
+        color={theme.colors.text.primary}
+        badgeColor={theme.colors.error[500]}
+        testID="home-notification-icon"
+        accessibilityLabel={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ', no unread notifications'}`}
+        accessibilityHint="Double tap to open notifications panel"
+      />
+    </View>
+  );
+};
 
 export default function TabLayout() {
   const { theme } = useTheme();
@@ -55,6 +84,11 @@ export default function TabLayout() {
           title: 'Home',
           tabBarLabel: 'Home',
           headerTitle: () => <HomeHeader />,
+          headerTitleAlign: 'left',
+          headerTitleContainerStyle: {
+            left: 0,
+            right: 0,
+          },
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -106,3 +140,13 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+});
