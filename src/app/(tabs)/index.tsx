@@ -281,16 +281,9 @@ export default function HomeScreen() {
       {/* Small disclaimer about upcoming events (near bottom) */}
       <TouchableOpacity
         onPress={() => router.push('/(tabs)/events')}
-        activeOpacity={0.8}
+        activeOpacity={0.7}
       >
-        <Card
-          style={
-            [
-              styles.eventsBanner,
-              { backgroundColor: theme.colors.surface.secondary },
-            ] as any
-          }
-        >
+        <Card variant="filled" style={styles.eventsBanner}>
           <View style={styles.eventsBannerRow}>
             <Ionicons
               name="information-circle-outline"
@@ -331,8 +324,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
   },
   userSection: {
     flexDirection: 'row',
@@ -442,12 +433,11 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
   },
   eventsBanner: {
+    borderRadius: 12,
     marginHorizontal: 16,
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    marginVertical: 8,
+    overflow: 'hidden',
+    padding: 16,
   },
   eventsBannerRow: {
     flexDirection: 'row',
@@ -479,6 +469,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   bottomSpacing: {
-    height: 20,
+    height: 100,
   },
 });

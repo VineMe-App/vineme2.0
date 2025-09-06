@@ -373,8 +373,8 @@ const getTextStyles = (theme: any, variant: string, size: string): TextStyle => 
 
   // Variant text colors
   const variantTextColors: Record<string, string> = {
-    primary: theme.colors.text.inverse,
-    secondary: theme.colors.secondary[100], // Light green text for pink buttons
+    primary: theme.colors.primary[500], // Brand pink text
+    secondary: theme.colors.text.inverse, // Light green text for pink buttons
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,
     error: theme.colors.text.inverse,
@@ -395,7 +395,7 @@ const getTextStyles = (theme: any, variant: string, size: string): TextStyle => 
  */
 const getLoadingColor = (theme: any, variant: string): string => {
   const colorMap: Record<string, string> = {
-    primary: theme.colors.text.inverse,
+    primary: theme.colors.primary[500], // Brand pink for loading spinner
     secondary: theme.colors.text.primary,
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,

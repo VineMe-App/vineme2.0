@@ -13,8 +13,8 @@ export function ConnectSomeoneSection({ onPress }: ConnectSomeoneSectionProps) {
   const { theme } = useTheme();
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Card style={styles.container}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+      <Card variant="filled" style={styles.container}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
             <Ionicons
@@ -46,17 +46,15 @@ export function ConnectSomeoneSection({ onPress }: ConnectSomeoneSectionProps) {
 
 const styles = StyleSheet.create({
   container: {
+    borderRadius: 12,
     marginHorizontal: 16,
     marginVertical: 8,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    overflow: 'hidden',
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    padding: 16,
   },
   iconContainer: {
     width: 40,

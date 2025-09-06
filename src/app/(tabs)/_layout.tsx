@@ -14,38 +14,80 @@ const HomeHeader = () => (
 
 export default function TabLayout() {
   const { theme } = useTheme();
-  
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary[500],
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
-          backgroundColor:
-            Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.95)' : theme.colors.surface.primary,
-          borderTopWidth: 1,
-          borderTopColor: '#E5E5EA',
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
           paddingBottom: Platform.OS === 'ios' ? 20 : 5,
           height: Platform.OS === 'ios' ? 85 : 60,
           justifyContent: 'space-around',
+          position: 'absolute',
+          elevation: Platform.OS === 'android' ? 8 : 0,
+          shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
+          shadowOffset: {
+            width: 0,
+            height: -2,
+          },
+          shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
+          shadowRadius: 4,
         },
-        tabBarBackground: () =>
-          Platform.OS === 'ios' ? (
-            <BlurView intensity={20} tint="light" style={{ flex: 1 }} />
-          ) : null,
+        tabBarBackground: () => (
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 80 : 100}
+            tint={theme.name === 'dark' ? 'dark' : 'light'}
+            experimentalBlurMethod={
+              Platform.OS === 'android' ? 'dimezisBlurView' : undefined
+            }
+            style={{
+              flex: 1,
+              backgroundColor:
+                theme.name === 'dark'
+                  ? 'rgba(30, 41, 59, 0.3)'
+                  : 'rgba(255, 255, 255, 0.3)',
+            }}
+          />
+        ),
         tabBarLabelStyle: {
           fontSize: 12,
           fontFamily: theme.typography.fontFamily.medium,
         },
         headerStyle: {
-          backgroundColor: theme.colors.surface.primary,
-          borderBottomWidth: 1,
-          borderBottomColor: '#E5E5EA',
+          backgroundColor: 'transparent',
+          borderBottomWidth: 0,
+          elevation: Platform.OS === 'android' ? 8 : 0,
+          shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
+          shadowRadius: 4,
         },
+        headerBackground: () => (
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 80 : 100}
+            tint={theme.name === 'dark' ? 'dark' : 'light'}
+            experimentalBlurMethod={
+              Platform.OS === 'android' ? 'dimezisBlurView' : undefined
+            }
+            style={{
+              flex: 1,
+              backgroundColor:
+                theme.name === 'dark'
+                  ? 'rgba(30, 41, 59, 0.3)'
+                  : 'rgba(255, 255, 255, 0.3)',
+            }}
+          />
+        ),
         headerTitleStyle: {
           fontSize: 18,
           fontFamily: theme.typography.fontFamily.bold,
-          color: '#1a1a1a',
+          color: theme.colors.text.primary,
         },
       }}
     >
