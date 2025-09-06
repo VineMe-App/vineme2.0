@@ -9,9 +9,15 @@ import {
   Animated,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { FriendsList } from './FriendsList';
 import { FriendSearch } from './FriendSearch';
 import { useTheme } from '../../theme/provider/useTheme';
+import {
+  useFriends,
+  useSentFriendRequests,
+  useReceivedFriendRequests,
+} from '../../hooks/useFriendships';
 
 interface FriendManagementModalProps {
   visible: boolean;
@@ -32,6 +38,23 @@ export function FriendManagementModal({
     new Animated.Value(activeTab === 'friends' ? 0 : 1)
   ).current;
   const [containerWidth, setContainerWidth] = React.useState(0);
+
+  // Queries for refresh functionality
+  const friendsQuery = useFriends(userId);
+  const sentRequestsQuery = useSentFriendRequests(userId);
+  const receivedRequestsQuery = useReceivedFriendRequests(userId);
+
+  const handleRefresh = async () => {
+    try {
+      await Promise.all([
+        friendsQuery.refetch(),
+        sentRequestsQuery.refetch(),
+        receivedRequestsQuery.refetch(),
+      ]);
+    } catch (error) {
+      console.error('Error refreshing friends data:', error);
+    }
+  };
 
   useEffect(() => {
     Animated.timing(slideAnimation, {
@@ -76,25 +99,42 @@ export function FriendManagementModal({
           >
             Friends
           </Text>
-          <TouchableOpacity
-            onPress={onClose}
-            style={[
-              styles.closeButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
-          >
-            <Text
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              onPress={handleRefresh}
               style={[
-                styles.closeButtonText,
-                {
-                  fontFamily: theme.typography.fontFamily.medium,
-                  color: theme.colors.primary[500],
-                },
+                styles.refreshButton,
+                { backgroundColor: theme.colors.secondary[100] },
+              ]}
+              accessibilityLabel="Refresh friends data"
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="refresh"
+                size={20}
+                color={theme.colors.primary[500]}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onClose}
+              style={[
+                styles.closeButton,
+                { backgroundColor: theme.colors.secondary[100] },
               ]}
             >
-              Done
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.closeButtonText,
+                  {
+                    fontFamily: theme.typography.fontFamily.medium,
+                    color: theme.colors.primary[500],
+                  },
+                ]}
+              >
+                Done
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.tabContainer}>
@@ -192,6 +232,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '600',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  refreshButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButton: {
     paddingHorizontal: 12,

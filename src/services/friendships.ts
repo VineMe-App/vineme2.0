@@ -1,6 +1,10 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import type { DatabaseFriendship, User } from '../types/database';
+import {
+  triggerFriendRequestNotification,
+  triggerFriendRequestAcceptedNotification,
+} from './notifications';
 
 export interface FriendshipWithUser extends DatabaseFriendship {
   friend?: Partial<User>;
@@ -65,7 +69,23 @@ export class FriendshipService {
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
-
+      // Fire enhanced notification to recipient
+      try {
+        const { data: fromUser } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', userId)
+          .single();
+        if (fromUser?.name) {
+          await triggerFriendRequestNotification({
+            fromUserId: userId,
+            toUserId: friendId,
+            fromUserName: fromUser.name,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Friend request notification failed', e);
+      }
       return { data, error: null };
     } catch (error) {
       return {
@@ -101,7 +121,24 @@ export class FriendshipService {
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
-
+      // Notify the original requester that their request was accepted
+      try {
+        // data.user_id is the requester; userId is the accepter
+        const { data: acceptor } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', userId)
+          .single();
+        if (acceptor?.name) {
+          await triggerFriendRequestAcceptedNotification({
+            originalRequesterId: data.user_id,
+            acceptedByUserId: userId,
+            acceptedByUserName: acceptor.name,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Friend request accepted notification failed', e);
+      }
       return { data, error: null };
     } catch (error) {
       return {

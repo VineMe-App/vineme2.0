@@ -43,6 +43,27 @@ export interface NotificationData {
   data?: Record<string, any>;
 }
 
+// Server-side push delivery via Supabase Edge Function
+// Invokes the `push-notify` function with recipient and payload.
+const sendPushToUser = async (
+  userId: string,
+  payload: { title: string; body: string; data?: Record<string, any> }
+) => {
+  try {
+    // Skip on web or if Functions unavailable
+    const fn = (supabase as any)?.functions?.invoke;
+    if (!fn) return;
+    const { data, error } = await supabase.functions.invoke('push-notify', {
+      body: { userId, ...payload },
+    });
+    if (__DEV__) {
+      console.log('[Push] invoke result:', { data, error });
+    }
+  } catch (e) {
+    if (__DEV__) console.warn('[Notifications] push-notify failed', e);
+  }
+};
+
 // Enhanced notification creation input
 export interface CreateNotificationInput {
   user_id: string;
@@ -740,13 +761,26 @@ export const triggerFriendRequestNotification = async (
     });
 
     if (notification) {
-      // Schedule local notification for immediate display
-      await scheduleLocalNotification({
-        type: 'friend_request_received',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
+      // Only schedule a local notification on this device if the
+      // current authenticated user is the recipient of the notification.
+      try {
+        const { data: authUser } = await supabase.auth.getUser();
+        if (authUser?.user?.id === data.toUserId) {
+          await scheduleLocalNotification({
+            type: 'friend_request_received',
+            id: notification.id,
+            title: notification.title,
+            body: notification.body,
+            data: notification.data,
+          });
+        }
+      } catch {}
+
+      // Remote push to recipient device(s)
+      await sendPushToUser(data.toUserId, {
+        title: 'New Friend Request',
+        body: `${data.fromUserName} wants to be your friend`,
+        data: { type: 'friend_request_received', id: notification.id, ...notification.data },
       });
     }
   } catch (error) {
@@ -780,13 +814,25 @@ export const triggerFriendRequestAcceptedNotification = async (
     });
 
     if (notification) {
-      // Schedule local notification for immediate display
-      await scheduleLocalNotification({
-        type: 'friend_request_accepted',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
+      // Only schedule locally if the current user is the original requester
+      try {
+        const { data: authUser } = await supabase.auth.getUser();
+        if (authUser?.user?.id === data.originalRequesterId) {
+          await scheduleLocalNotification({
+            type: 'friend_request_accepted',
+            id: notification.id,
+            title: notification.title,
+            body: notification.body,
+            data: notification.data,
+          });
+        }
+      } catch {}
+
+      // Remote push to original requester device(s)
+      await sendPushToUser(data.originalRequesterId, {
+        title: 'Friend Request Accepted',
+        body: `${data.acceptedByUserName} accepted your friend request`,
+        data: { type: 'friend_request_accepted', id: notification.id, ...notification.data },
       });
     }
   } catch (error) {
@@ -1178,24 +1224,24 @@ export const createNotification = async (
   input: CreateNotificationInput
 ): Promise<Notification | null> => {
   try {
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert({
-        ...input,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('app_create_notification', {
+      p_user_id: input.user_id,
+      p_type: input.type,
+      p_title: input.title,
+      p_body: input.body,
+      p_data: input.data || {},
+      p_action_url: input.action_url || null,
+      p_expires_at: input.expires_at || null,
+    });
 
     if (error) {
-      console.error('Error creating notification:', error);
+      console.error('Error creating notification (RPC):', error);
       return null;
     }
 
-    return data;
+    return data as unknown as Notification;
   } catch (error) {
-    console.error('Error creating notification:', error);
+    console.error('Error creating notification (RPC):', error);
     return null;
   }
 };
@@ -1207,25 +1253,14 @@ export const createNotifications = async (
   notifications: CreateNotificationInput[]
 ): Promise<Notification[]> => {
   try {
-    const notificationsWithTimestamps = notifications.map(notification => ({
-      ...notification,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
-
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert(notificationsWithTimestamps)
-      .select();
-
-    if (error) {
-      console.error('Error creating notifications:', error);
-      return [];
+    const results: Notification[] = [];
+    for (const n of notifications) {
+      const created = await createNotification(n);
+      if (created) results.push(created);
     }
-
-    return data || [];
+    return results;
   } catch (error) {
-    console.error('Error creating notifications:', error);
+    console.error('Error creating notifications (batch RPC):', error);
     return [];
   }
 };

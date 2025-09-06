@@ -180,6 +180,24 @@ export class ReferralService {
       // Create general referral record
       await this.createGeneralReferralRecord(userId, data);
 
+      // Trigger referral accepted notification to referrer
+      try {
+        // Try to obtain referred user's name
+        const { data: referredUser } = await supabase
+          .from('users')
+          .select('id, name')
+          .eq('id', userId)
+          .single();
+        const { triggerReferralAcceptedNotification } = await import('./notifications');
+        await triggerReferralAcceptedNotification({
+          referrerId: data.referrerId,
+          referredUserId: userId,
+          referredUserName: referredUser?.name || data.firstName || data.email.split('@')[0],
+        });
+      } catch (e) {
+        if (__DEV__) console.warn('Referral accepted notification failed', e);
+      }
+
       return { success: true, userId };
     } catch (error) {
       const appError = handleSupabaseError(error as Error);
@@ -218,6 +236,23 @@ export class ReferralService {
 
       // Create group referral record
       await this.createGroupReferralRecord(userId, data);
+
+      // Trigger referral accepted notification to referrer
+      try {
+        const { data: referredUser } = await supabase
+          .from('users')
+          .select('id, name')
+          .eq('id', userId)
+          .single();
+        const { triggerReferralAcceptedNotification } = await import('./notifications');
+        await triggerReferralAcceptedNotification({
+          referrerId: data.referrerId,
+          referredUserId: userId,
+          referredUserName: referredUser?.name || data.firstName || data.email.split('@')[0],
+        });
+      } catch (e) {
+        if (__DEV__) console.warn('Referral accepted notification failed', e);
+      }
 
       return { success: true, userId };
     } catch (error) {

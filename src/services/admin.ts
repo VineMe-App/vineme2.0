@@ -1,6 +1,13 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import {
+  triggerGroupRequestApprovedNotification,
+  triggerGroupRequestDeniedNotification,
+  triggerJoinRequestApprovedNotification,
+  triggerJoinRequestDeniedNotification,
+  triggerReferralJoinedGroupNotification,
+} from './notifications';
+import {
   createPaginationParams,
   createPaginatedResponse,
   type PaginationParams,
@@ -284,6 +291,24 @@ export class GroupAdminService {
       // Log the approval action
       await this.logGroupAction(groupId, adminId, 'approved', reason);
 
+      // Notify group creator/leader of approval
+      try {
+        const [{ data: group }, { data: admin }] = await Promise.all([
+          supabase.from('groups').select('id, title, created_by').eq('id', groupId).single(),
+          supabase.from('users').select('name').eq('id', adminId).single(),
+        ]);
+        if (group && admin) {
+          await triggerGroupRequestApprovedNotification({
+            groupId: group.id,
+            groupTitle: (group as any).title,
+            leaderId: (group as any).created_by,
+            approvedByName: (admin as any).name,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Group approved notification failed', e);
+      }
+
       return { data, error: null };
     } catch (error) {
       return {
@@ -364,6 +389,25 @@ export class GroupAdminService {
 
       // Log the decline action
       await this.logGroupAction(groupId, adminId, 'declined', reason);
+
+      // Notify group creator/leader of denial
+      try {
+        const [{ data: group }, { data: admin }] = await Promise.all([
+          supabase.from('groups').select('id, title, created_by').eq('id', groupId).single(),
+          supabase.from('users').select('name').eq('id', adminId).single(),
+        ]);
+        if (group && admin) {
+          await triggerGroupRequestDeniedNotification({
+            groupId: group.id,
+            groupTitle: (group as any).title,
+            leaderId: (group as any).created_by,
+            deniedByName: (admin as any).name,
+            reason,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Group denied notification failed', e);
+      }
 
       return { data, error: null };
     } catch (error) {
@@ -567,6 +611,52 @@ export class GroupAdminService {
         return { data: null, error: new Error(error.message) };
       }
 
+      // Notify requester of approval and fire referral-joined-group if applicable
+      try {
+        const [groupRes, userRes, approverRes] = await Promise.all([
+          supabase.from('groups').select('id, title').eq('id', request.group_id).single(),
+          supabase.from('users').select('id, name').eq('id', request.user_id).single(),
+          supabase.auth.getUser(),
+        ]);
+        const approverId = approverRes?.data?.user?.id;
+        let approverName: string | undefined;
+        if (approverId) {
+          const { data: approverUser } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', approverId)
+            .single();
+          approverName = approverUser?.name;
+        }
+        if (groupRes.data && userRes.data && approverName) {
+          await triggerJoinRequestApprovedNotification({
+            groupId: groupRes.data.id,
+            groupTitle: groupRes.data.title,
+            requesterId: userRes.data.id,
+            approvedByName: approverName,
+          });
+
+          // Check for referral linking this user and group
+          const { data: groupReferral } = await supabase
+            .from('group_referrals')
+            .select('referrer_id')
+            .eq('referred_user_id', userRes.data.id)
+            .eq('group_id', groupRes.data.id)
+            .maybeSingle();
+          if (groupReferral?.referrer_id) {
+            await triggerReferralJoinedGroupNotification({
+              referrerId: groupReferral.referrer_id,
+              referredUserId: userRes.data.id,
+              referredUserName: userRes.data.name,
+              groupId: groupRes.data.id,
+              groupTitle: groupRes.data.title,
+            });
+          }
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Join approval notification failed', e);
+      }
+
       return { data: true, error: null };
     } catch (error) {
       return {
@@ -622,6 +712,35 @@ export class GroupAdminService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Notify requester of denial
+      try {
+        const [groupRes, userRes, approverRes] = await Promise.all([
+          supabase.from('groups').select('id, title').eq('id', request.group_id).single(),
+          supabase.from('users').select('id, name').eq('id', request.user_id).single(),
+          supabase.auth.getUser(),
+        ]);
+        const approverId = approverRes?.data?.user?.id;
+        let approverName: string | undefined;
+        if (approverId) {
+          const { data: approverUser } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', approverId)
+            .single();
+          approverName = approverUser?.name;
+        }
+        if (groupRes.data && userRes.data && approverName) {
+          await triggerJoinRequestDeniedNotification({
+            groupId: groupRes.data.id,
+            groupTitle: groupRes.data.title,
+            requesterId: userRes.data.id,
+            deniedByName: approverName,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Join denial notification failed', e);
       }
 
       return { data: true, error: null };
