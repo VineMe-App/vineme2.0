@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
+import { triggerJoinRequestReceivedNotification } from './notifications';
 import type {
   Group,
   GroupWithDetails,
@@ -245,6 +246,36 @@ export class GroupService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Trigger leader notifications for the join request
+      try {
+        const [requesterRes, groupRes] = await Promise.all([
+          supabase.from('users').select('name').eq('id', userId).single(),
+          supabase.from('groups').select('title').eq('id', groupId).single(),
+        ]);
+
+        if (requesterRes.data && groupRes.data) {
+          const { data: leaders } = await supabase
+            .from('group_memberships')
+            .select('user_id')
+            .eq('group_id', groupId)
+            .eq('role', 'leader')
+            .eq('status', 'active');
+
+          const leaderIds = (leaders || []).map((l) => l.user_id);
+          if (leaderIds.length > 0) {
+            await triggerJoinRequestReceivedNotification({
+              groupId,
+              groupTitle: groupRes.data.title,
+              requesterId: userId,
+              requesterName: requesterRes.data.name,
+              leaderIds,
+            });
+          }
+        }
+      } catch (notifyErr) {
+        console.error('Failed to trigger join request notifications:', notifyErr);
       }
 
       return { data, error: null };
