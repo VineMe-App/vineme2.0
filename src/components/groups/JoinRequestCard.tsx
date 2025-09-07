@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  Linking,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
+import { Text } from '../ui/Text';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
