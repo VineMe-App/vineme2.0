@@ -60,7 +60,7 @@ export class JoinRequestService {
           user_id: requestData.user_id,
           role: 'member',
           status: 'pending',
-          joined_at: new Date().toISOString(),
+          // joined_at is set when request is approved
         })
         .select()
         .single();

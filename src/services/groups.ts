@@ -448,7 +448,7 @@ export class GroupService {
         )
         .eq('group_id', groupId)
         .eq('status', 'active')
-        .in('role', ['leader', 'admin'])
+        .in('role', ['leader'])
         .order('joined_at');
 
       if (error) {
