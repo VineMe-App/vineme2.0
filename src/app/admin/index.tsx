@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text } from '@/components/ui/Text';
 import { AdminDashboardSummary } from '@/components/admin/AdminDashboardSummary';
 import { Button } from '@/components/ui/Button';
 import { PermissionGate } from '@/components/ui/RoleBasedRender';
