@@ -1029,18 +1029,24 @@ export const triggerJoinRequestReceivedNotification = async (
       })
     );
 
-    // Schedule local notifications for leaders with notifications enabled
+    // Schedule local notifications and send remote push for leaders with notifications enabled
     const validNotifications = notifications.filter(n => n !== null);
     for (const notification of validNotifications) {
-      if (notification) {
-        await scheduleLocalNotification({
-          type: 'join_request_received',
-          id: notification.id,
-          title: notification.title,
-          body: notification.body,
-          data: notification.data,
-        });
-      }
+      if (!notification) continue;
+      // Local (only shows if current device belongs to leader)
+      await scheduleLocalNotification({
+        type: 'join_request_received',
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+      });
+      // Remote push
+      await sendPushToUser(notification.user_id, {
+        title: notification.title,
+        body: notification.body,
+        data: { type: 'join_request_received', id: notification.id, ...notification.data },
+      });
     }
 
     console.log(`Join request notifications sent to ${validNotifications.length} leaders`);
@@ -1076,13 +1082,19 @@ export const triggerJoinRequestApprovedNotification = async (
     });
 
     if (notification) {
-      // Schedule local notification for immediate display
+      // Local for requester if on this device
       await scheduleLocalNotification({
         type: 'join_request_approved',
         id: notification.id,
         title: notification.title,
         body: notification.body,
         data: notification.data,
+      });
+      // Remote push to requester
+      await sendPushToUser(data.requesterId, {
+        title: notification.title,
+        body: notification.body,
+        data: { type: 'join_request_approved', id: notification.id, ...notification.data },
       });
     }
   } catch (error) {
@@ -1117,13 +1129,19 @@ export const triggerJoinRequestDeniedNotification = async (
     });
 
     if (notification) {
-      // Schedule local notification for immediate display
+      // Local for requester if on this device
       await scheduleLocalNotification({
         type: 'join_request_denied',
         id: notification.id,
         title: notification.title,
         body: notification.body,
         data: notification.data,
+      });
+      // Remote push to requester
+      await sendPushToUser(data.requesterId, {
+        title: notification.title,
+        body: notification.body,
+        data: { type: 'join_request_denied', id: notification.id, ...notification.data },
       });
     }
   } catch (error) {

@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import { contactAuditService } from './contactAudit';
-import { triggerJoinRequestApprovedNotification } from './notifications';
+import { triggerJoinRequestApprovedNotification, triggerJoinRequestDeniedNotification } from './notifications';
 import { triggerJoinRequestReceivedNotification } from './notifications';
 import type {
   GroupJoinRequest,
@@ -359,7 +359,7 @@ export class JoinRequestService {
         };
       }
 
-      // Update the join request status
+      // Update the join request status (delete pending membership)
       const { error: updateError } = await supabase
         .from('group_memberships')
         .delete()
@@ -367,6 +367,38 @@ export class JoinRequestService {
 
       if (updateError) {
         return { data: null, error: new Error(updateError.message) };
+      }
+
+      // Notify requester of denial
+      try {
+        const [groupRes, userRes, declinerRes] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('id, title')
+            .eq('id', membershipRecord.group_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('id, name')
+            .eq('id', membershipRecord.user_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('name')
+            .eq('id', declinerId)
+            .single(),
+        ]);
+        const deniedByName = declinerRes?.data?.name || 'A group leader';
+        if (groupRes.data && userRes.data) {
+          await triggerJoinRequestDeniedNotification({
+            groupId: groupRes.data.id,
+            groupTitle: groupRes.data.title,
+            requesterId: userRes.data.id,
+            deniedByName,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Failed to trigger denial notification', e);
       }
 
       return { data: true, error: null };
