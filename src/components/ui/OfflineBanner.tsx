@@ -5,11 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
+import { useTheme } from '../../theme/provider/useTheme';
 
 export function OfflineBanner() {
   const { isConnected, isInternetReachable, type } = useNetworkStatus();
+  const { theme } = useTheme();
   const [showReconnected, setShowReconnected] = useState(false);
   const [slideAnim] = useState(new Animated.Value(-50));
 
@@ -67,9 +71,13 @@ export function OfflineBanner() {
 
   const getBackgroundColor = () => {
     if (showReconnected) {
-      return '#48bb78'; // Green for reconnected
+      return theme.name === 'dark' 
+        ? 'rgba(72, 187, 120, 0.3)' // Green for reconnected (dark theme)
+        : 'rgba(72, 187, 120, 0.3)'; // Green for reconnected (light theme)
     }
-    return '#f56565'; // Red for offline
+    return theme.name === 'dark'
+      ? 'rgba(245, 101, 101, 0.3)' // Red for offline (dark theme)
+      : 'rgba(245, 101, 101, 0.3)'; // Red for offline (light theme)
   };
 
   const handleRetry = async () => {
@@ -87,32 +95,60 @@ export function OfflineBanner() {
       style={[
         styles.banner,
         {
-          backgroundColor: getBackgroundColor(),
           transform: [{ translateY: slideAnim }],
+          elevation: Platform.OS === 'android' ? 8 : 0,
+          shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
+          shadowRadius: 4,
         },
       ]}
     >
-      <View style={styles.content}>
-        <Text style={styles.text}>{getMessage()}</Text>
-        {isOffline && (
-          <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <BlurView
+        intensity={Platform.OS === 'ios' ? 80 : 100}
+        tint={theme.name === 'dark' ? 'dark' : 'light'}
+        experimentalBlurMethod={
+          Platform.OS === 'android' ? 'dimezisBlurView' : undefined
+        }
+        style={[
+          styles.blurContainer,
+          {
+            backgroundColor: getBackgroundColor(),
+          },
+        ]}
+      >
+        <View style={styles.content}>
+          <Text style={[styles.text, { color: theme.colors.text.primary }]}>
+            {getMessage()}
+          </Text>
+          {isOffline && (
+            <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
+              <Text style={[styles.retryText, { color: theme.colors.text.primary }]}>
+                Retry
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </BlurView>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   banner: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 1000,
+  },
+  blurContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    flex: 1,
   },
   content: {
     flexDirection: 'row',
@@ -120,7 +156,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    color: 'white',
     fontSize: 14,
     fontWeight: '600',
     flex: 1,
@@ -132,10 +167,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   retryText: {
-    color: 'white',
     fontSize: 12,
     fontWeight: '600',
   },

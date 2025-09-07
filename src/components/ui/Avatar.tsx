@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import Text from './Text';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../theme/provider/useTheme';
 
 interface AvatarProps {
   size?: number;
@@ -17,6 +19,8 @@ export const Avatar: React.FC<AvatarProps> = ({
   onPress,
   showEditIcon = false,
 }) => {
+  const { theme } = useTheme();
+  
   const initials = name
     .split(' ')
     .map((word) => word.charAt(0))
@@ -39,8 +43,8 @@ export const Avatar: React.FC<AvatarProps> = ({
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={[styles.image, avatarStyle]} />
       ) : (
-        <View style={[styles.placeholder, avatarStyle]}>
-          <Text style={[styles.initials, textStyle]}>{initials || '?'}</Text>
+        <View style={[styles.placeholder, avatarStyle, { backgroundColor: theme.colors.secondary[100] }]}>
+          <Text weight="black" style={[styles.initials, textStyle, { color: theme.colors.primary[500] }]}>{initials || '?'}</Text>
         </View>
       )}
       {showEditIcon && (
@@ -72,13 +76,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   placeholder: {
-    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   initials: {
-    color: '#fff',
-    fontWeight: 'bold',
+    // Color and font weight now handled by theme and inline styles
   },
   editIcon: {
     position: 'absolute',

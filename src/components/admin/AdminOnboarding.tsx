@@ -4,14 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { Text } from '@/components/ui/Text';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';

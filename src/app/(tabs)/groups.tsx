@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
   RefreshControl,
-  Platform,
   TouchableOpacity,
+  SafeAreaView,
 } from 'react-native';
+import { Text } from '../../components/ui/Text';
 import { useRouter } from 'expo-router';
 import {
   GroupCard,
@@ -208,47 +208,37 @@ export default function GroupsScreen() {
 
   if (isLoading && !allGroups) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
         ]}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Bible Study Groups</Text>
-          <Text style={styles.subtitle}>
-            Discover and join Bible study groups in your church community
-          </Text>
-        </View>
         <View style={styles.loadingContainer}>
           <LoadingSpinner size="large" />
-          <Text style={styles.loadingText}>Loading groups...</Text>
+          <Text variant="body" color="secondary" style={styles.loadingText}>
+            Loading groups...
+          </Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error && !allGroups) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
         ]}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Bible Study Groups</Text>
-          <Text style={styles.subtitle}>
-            Discover and join Bible study groups in your church community
-          </Text>
-        </View>
         {renderErrorState()}
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: theme.colors.background.primary },
@@ -260,22 +250,28 @@ export default function GroupsScreen() {
           { backgroundColor: theme.colors.surface.primary },
         ]}
       >
-        <Text style={styles.title}>Groups</Text>
+        <Text variant="h4" style={styles.title}>
+          Groups
+        </Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={styles.iconButton}
+            style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
             onPress={() => setShowSearch((s) => !s)}
           >
-            <Ionicons name="search-outline" size={20} color="#374151" />
+            <Ionicons name="search-outline" size={20} color={theme.colors.primary[500]} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.iconButton}
+            style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
             onPress={() => setShowFilterPanel(true)}
           >
-            <Ionicons name="funnel-outline" size={20} color="#374151" />
+            <Ionicons name="funnel-outline" size={20} color={theme.colors.primary[500]} />
             {getActiveFiltersCount(filters) > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>
+                <Text
+                  variant="caption"
+                  color="inverse"
+                  style={styles.badgeText}
+                >
                   {getActiveFiltersCount(filters)}
                 </Text>
               </View>
@@ -284,10 +280,10 @@ export default function GroupsScreen() {
           <TouchableOpacity
             style={[
               styles.iconButton,
-              sortByDistance && {
-                backgroundColor: '#e5e7eb',
-                borderWidth: 1,
-                borderColor: '#d1d5db',
+              {
+                backgroundColor: sortByDistance 
+                  ? theme.colors.primary[500] // Pink when toggled
+                  : theme.colors.secondary[100], // Green when not toggled
               },
             ]}
             onPress={async () => {
@@ -300,15 +296,21 @@ export default function GroupsScreen() {
             }}
             accessibilityLabel="Sort by distance"
           >
-            <Ionicons name="navigate-outline" size={20} color="#374151" />
+            <Ionicons 
+              name="navigate-outline" 
+              size={20} 
+              color={sortByDistance 
+                ? theme.colors.secondary[100] // Green when toggled
+                : theme.colors.primary[500]} // Pink when not toggled
+            />
           </TouchableOpacity>
           {userProfile?.church_id && (
             <TouchableOpacity
-              style={styles.iconButton}
+              style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
               onPress={handleCreateGroup}
               accessibilityLabel="Create group"
             >
-              <Ionicons name="add-outline" size={22} color="#374151" />
+              <Ionicons name="add-outline" size={22} color={theme.colors.primary[500]} />
             </TouchableOpacity>
           )}
         </View>
@@ -324,12 +326,12 @@ export default function GroupsScreen() {
         {currentView === 'list' ? renderListView() : renderMapView()}
       </View>
 
-      <FilterPanel
-        isVisible={showFilterPanel}
-        onClose={() => setShowFilterPanel(false)}
-      />
-    </View>
-  );
+              <FilterPanel
+          isVisible={showFilterPanel}
+          onClose={() => setShowFilterPanel(false)}
+        />
+      </SafeAreaView>
+    );
 }
 
 // Component to handle membership status for each group
@@ -371,7 +373,6 @@ const GroupItemWithMembership: React.FC<{
       friendsCount={friendsCount}
       onPressFriends={() => {
         // Navigate to group detail and open friends modal
-        const router = useRouter();
         router.push(`/group/${group.id}?friends=1`);
       }}
     />
@@ -390,8 +391,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
     color: '#1f2937',
   },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -416,7 +415,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  badgeText: { color: '#fff' },
   controlsRow: { paddingHorizontal: 12, paddingTop: 8 },
   contentContainer: {
     flex: 1,
@@ -432,8 +431,6 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   loadingText: {
-    fontSize: 16,
-    color: '#666',
     marginTop: 16,
   },
   errorContainer: {

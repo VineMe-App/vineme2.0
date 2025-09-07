@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import Text from './Text';
 import { Theme } from '../../utils/theme';
 
 interface BadgeProps {
@@ -61,6 +62,7 @@ export const Badge: React.FC<BadgeProps> = ({
       accessible={true}
     >
       <Text
+        weight="medium"
         style={[
           styles.text,
           styles[`${variant}Text`],
@@ -117,7 +119,6 @@ const styles = StyleSheet.create({
     minHeight: 24,
   },
   text: {
-    fontWeight: Theme.typography.fontWeight.medium,
     textAlign: 'center',
   },
   defaultText: {

@@ -9,6 +9,7 @@ export interface ThemeTypography {
     medium: string;
     semiBold: string;
     bold: string;
+    extraBold: string;
   };
   fontSize: Record<string, number>;
   lineHeight: Record<string, number>;
@@ -22,6 +23,7 @@ export const fontFamily = {
   medium: 'Manrope-Medium',
   semiBold: 'Manrope-SemiBold',
   bold: 'Manrope-Bold',
+  extraBold: 'Manrope-ExtraBold',
 };
 
 // Font size scale (in pixels)
@@ -132,19 +134,19 @@ export const typographyVariants: Record<string, TypographyVariant> = {
   h4: {
     fontSize: fontSize['3xl'],
     lineHeight: lineHeight['3xl'],
-    fontWeight: fontWeight.semiBold,
+    fontWeight: fontWeight.bold,
     letterSpacing: letterSpacing.normal,
   },
   h5: {
     fontSize: fontSize['2xl'],
     lineHeight: lineHeight['2xl'],
-    fontWeight: fontWeight.semiBold,
+    fontWeight: fontWeight.bold,
     letterSpacing: letterSpacing.normal,
   },
   h6: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.lg,
     lineHeight: lineHeight.xl,
-    fontWeight: fontWeight.semiBold,
+    fontWeight: fontWeight.extraBold,
     letterSpacing: letterSpacing.normal,
   },
 

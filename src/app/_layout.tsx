@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, router, useSegments } from 'expo-router';
+import { StatusBar, Text as RNText } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as Font from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -130,7 +131,13 @@ function RootLayoutNav() {
   return (
     <>
       <OfflineBanner />
-      <Stack>
+      <Stack
+        screenOptions={{
+          headerTitleStyle: {
+            fontFamily: 'Manrope-Bold',
+          },
+        }}
+      >
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -155,7 +162,13 @@ export default function RootLayout() {
           'Manrope-Medium': require('../../assets/fonts/Manrope-Medium.ttf'),
           'Manrope-SemiBold': require('../../assets/fonts/Manrope-SemiBold.ttf'),
           'Manrope-Bold': require('../../assets/fonts/Manrope-Bold.ttf'),
+          'Manrope-ExtraBold': require('../../assets/fonts/Manrope-ExtraBold.ttf'),
         });
+        (RNText as any).defaultProps = (RNText as any).defaultProps || {};
+        (RNText as any).defaultProps.style = {
+          ...(RNText as any).defaultProps.style,
+          fontFamily: 'Manrope-Regular',
+        };
         setFontsLoaded(true);
       } catch (error) {
         console.error('Error loading fonts:', error);
@@ -173,6 +186,7 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
+      <StatusBar barStyle="dark-content" backgroundColor="white" translucent={false} />
       <ThemeProvider initialTheme="light">
         <QueryProvider>
           <AuthProvider>

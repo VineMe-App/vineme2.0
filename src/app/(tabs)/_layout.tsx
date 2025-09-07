@@ -2,39 +2,92 @@ import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useTheme } from '@/theme/provider/useTheme';
+import { Text } from '@/components/ui/Text';
+
+// Custom header component for home tab only
+const HomeHeader = () => (
+  <Text variant="h4" weight="semiBold">
+    VineMe
+  </Text>
+);
 
 export default function TabLayout() {
+  const { theme } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
+        tabBarActiveTintColor: theme.colors.primary[500],
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
-          backgroundColor:
-            Platform.OS === 'ios' ? 'rgba(255, 255, 255, 0.95)' : '#fff',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E5EA',
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
           paddingBottom: Platform.OS === 'ios' ? 20 : 5,
           height: Platform.OS === 'ios' ? 85 : 60,
           justifyContent: 'space-around',
+          position: 'absolute',
+          elevation: Platform.OS === 'android' ? 8 : 0,
+          shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
+          shadowOffset: {
+            width: 0,
+            height: -2,
+          },
+          shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
+          shadowRadius: 4,
         },
-        tabBarBackground: () =>
-          Platform.OS === 'ios' ? (
-            <BlurView intensity={20} tint="light" style={{ flex: 1 }} />
-          ) : null,
+        tabBarBackground: () => (
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 80 : 100}
+            tint={theme.name === 'dark' ? 'dark' : 'light'}
+            experimentalBlurMethod={
+              Platform.OS === 'android' ? 'dimezisBlurView' : undefined
+            }
+            style={{
+              flex: 1,
+              backgroundColor:
+                theme.name === 'dark'
+                  ? 'rgba(30, 41, 59, 0.3)'
+                  : 'rgba(255, 255, 255, 0.3)',
+            }}
+          />
+        ),
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '500',
+          fontFamily: theme.typography.fontFamily.medium,
         },
         headerStyle: {
-          backgroundColor: '#fff',
-          borderBottomWidth: 1,
-          borderBottomColor: '#E5E5EA',
+          backgroundColor: 'transparent',
+          borderBottomWidth: 0,
+          elevation: Platform.OS === 'android' ? 8 : 0,
+          shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
+          shadowRadius: 4,
         },
+        headerBackground: () => (
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 80 : 100}
+            tint={theme.name === 'dark' ? 'dark' : 'light'}
+            experimentalBlurMethod={
+              Platform.OS === 'android' ? 'dimezisBlurView' : undefined
+            }
+            style={{
+              flex: 1,
+              backgroundColor:
+                theme.name === 'dark'
+                  ? 'rgba(30, 41, 59, 0.3)'
+                  : 'rgba(255, 255, 255, 0.3)',
+            }}
+          />
+        ),
         headerTitleStyle: {
           fontSize: 18,
-          fontWeight: '600',
-          color: '#1a1a1a',
+          fontFamily: theme.typography.fontFamily.bold,
+          color: theme.colors.text.primary,
         },
       }}
     >
@@ -43,7 +96,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarLabel: 'Home',
-          headerTitle: 'VineMe',
+          headerTitle: () => <HomeHeader />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -54,7 +107,7 @@ export default function TabLayout() {
         options={{
           title: 'Groups',
           tabBarLabel: 'Groups',
-          headerTitle: 'Bible Study Groups',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people" size={size} color={color} />
           ),
@@ -79,7 +132,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
-          headerTitle: 'My Profile',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),

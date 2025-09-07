@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import Text from './Text';
 import { AppError, getErrorMessage } from '../../utils/errorHandling';
 
 interface ErrorMessageProps {
@@ -44,7 +45,7 @@ export function ErrorMessage({
       <Text style={styles.message}>{getMessage()}</Text>
       {showRetry && canRetry() && onRetry && (
         <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-          <Text style={styles.retryText}>Try Again</Text>
+          <Text weight="semiBold" style={styles.retryText}>Try Again</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -76,6 +77,5 @@ const styles = StyleSheet.create({
   retryText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '600',
   },
 });

@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
-  Text,
   StyleSheet,
   ViewStyle,
   TextStyle,
@@ -10,6 +9,7 @@ import {
   AccessibilityInfo,
   Platform,
 } from 'react-native';
+import Text from './Text';
 import { useTheme } from '../../theme/provider/useTheme';
 import { Spinner } from './Loading/Spinner';
 
@@ -173,7 +173,7 @@ export const Button: React.FC<ButtonProps> = ({
             accessibilityLabel={`Loading ${title}`}
           />
           {Platform.OS === 'ios' && (
-            <Text style={[textStyles, styles.loadingText, textStyle]}>
+            <Text weight="medium" style={[textStyles, styles.loadingText, textStyle]}>
               {title}
             </Text>
           )}
@@ -188,7 +188,7 @@ export const Button: React.FC<ButtonProps> = ({
             {icon}
           </View>
         )}
-        <Text style={[textStyles, textStyle]} numberOfLines={1}>
+        <Text weight="medium" style={[textStyles, textStyle]} numberOfLines={1}>
           {title}
         </Text>
         {iconRight && (
@@ -277,7 +277,7 @@ const getButtonStyles = (
   // Size styles
   const sizeStyles: Record<string, ViewStyle> = {
     small: {
-      paddingHorizontal: theme.spacing.md,
+      paddingHorizontal: 20, // Good balance - 20px padding for comfortable spacing
       paddingVertical: theme.spacing.xs,
       minHeight: 32,
     },
@@ -351,7 +351,6 @@ const getButtonStyles = (
  */
 const getTextStyles = (theme: any, variant: string, size: string): TextStyle => {
   const baseStyles: TextStyle = {
-    fontFamily: theme.typography.fontFamily.medium,
     textAlign: 'center',
     includeFontPadding: false,
   };
@@ -374,8 +373,8 @@ const getTextStyles = (theme: any, variant: string, size: string): TextStyle => 
 
   // Variant text colors
   const variantTextColors: Record<string, string> = {
-    primary: theme.colors.text.inverse,
-    secondary: theme.colors.text.primary,
+    primary: theme.colors.primary[500], // Brand pink text
+    secondary: theme.colors.text.inverse, // Light green text for pink buttons
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,
     error: theme.colors.text.inverse,
@@ -396,7 +395,7 @@ const getTextStyles = (theme: any, variant: string, size: string): TextStyle => 
  */
 const getLoadingColor = (theme: any, variant: string): string => {
   const colorMap: Record<string, string> = {
-    primary: theme.colors.text.inverse,
+    primary: theme.colors.primary[500], // Brand pink for loading spinner
     secondary: theme.colors.text.primary,
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,

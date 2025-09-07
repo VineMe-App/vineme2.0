@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useTheme } from '../../theme/provider/useTheme';
 import { FriendCard } from './FriendCard';
 import { FriendRequestCard } from './FriendRequestCard';
 import {
@@ -27,6 +28,7 @@ interface FriendsListProps {
 }
 
 export function FriendsList({ userId }: FriendsListProps) {
+  const { theme } = useTheme();
   const [activeFilter, setActiveFilter] = useState<FilterType>('friends');
 
   // Queries
@@ -157,21 +159,50 @@ export function FriendsList({ userId }: FriendsListProps) {
 
     return (
       <TouchableOpacity
-        style={[styles.filterButton, isActive && styles.activeFilterButton]}
+        style={[
+          styles.filterButton,
+          {
+            backgroundColor: isActive
+              ? theme.colors.primary[500] // Pink when active
+              : theme.colors.secondary[100], // Green when not active
+          },
+        ]}
         onPress={() => setActiveFilter(filter)}
       >
         <Text
           style={[
             styles.filterButtonText,
-            isActive && styles.activeFilterButtonText,
+            {
+              fontFamily: theme.typography.fontFamily.medium,
+              color: isActive
+                ? theme.colors.secondary[100] // Green when active
+                : theme.colors.primary[500], // Pink when not active
+            },
           ]}
         >
           {label}
         </Text>
         {count > 0 && (
-          <View style={[styles.badge, isActive && styles.activeBadge]}>
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor: isActive
+                  ? theme.colors.secondary[100] // Green when active
+                  : theme.colors.primary[500], // Pink when not active
+              },
+            ]}
+          >
             <Text
-              style={[styles.badgeText, isActive && styles.activeBadgeText]}
+              style={[
+                styles.badgeText,
+                {
+                  fontFamily: theme.typography.fontFamily.medium,
+                  color: isActive
+                    ? theme.colors.primary[500] // Pink when active
+                    : theme.colors.secondary[100], // Green when not active
+                },
+              ]}
             >
               {count}
             </Text>
@@ -215,8 +246,28 @@ export function FriendsList({ userId }: FriendsListProps) {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Failed to load friends</Text>
-        <Text style={styles.errorSubtext}>{error.message}</Text>
+        <Text
+          style={[
+            styles.errorText,
+            {
+              fontFamily: theme.typography.fontFamily.medium,
+              color: theme.colors.text.primary,
+            },
+          ]}
+        >
+          Failed to load friends
+        </Text>
+        <Text
+          style={[
+            styles.errorSubtext,
+            {
+              fontFamily: theme.typography.fontFamily.regular,
+              color: theme.colors.text.secondary,
+            },
+          ]}
+        >
+          {error.message}
+        </Text>
       </View>
     );
   }
@@ -245,12 +296,28 @@ export function FriendsList({ userId }: FriendsListProps) {
         }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
+            <Text
+              style={[
+                styles.emptyText,
+                {
+                  fontFamily: theme.typography.fontFamily.medium,
+                  color: theme.colors.text.primary,
+                },
+              ]}
+            >
               {activeFilter === 'friends' && 'No friends yet'}
               {activeFilter === 'received' && 'No pending requests'}
               {activeFilter === 'sent' && 'No sent requests'}
             </Text>
-            <Text style={styles.emptySubtext}>
+            <Text
+              style={[
+                styles.emptySubtext,
+                {
+                  fontFamily: theme.typography.fontFamily.regular,
+                  color: theme.colors.text.secondary,
+                },
+              ]}
+            >
               {activeFilter === 'friends' &&
                 'Start connecting with other church members'}
               {activeFilter === 'received' &&
@@ -284,38 +351,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 8,
     borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-  },
-  activeFilterButton: {
-    backgroundColor: '#8b5cf6',
+    // Background color now set dynamically with theme
   },
   filterButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6b7280',
-  },
-  activeFilterButtonText: {
-    color: '#fff',
+    // Color and fontFamily now set dynamically with theme
   },
   badge: {
     marginLeft: 6,
-    backgroundColor: '#6b7280',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  activeBadge: {
-    backgroundColor: '#fff',
+    // Background color now set dynamically with theme
   },
   badgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
-  },
-  activeBadgeText: {
-    color: '#8b5cf6',
+    // Color and fontFamily now set dynamically with theme
   },
   listContainer: {
     padding: 16,
@@ -328,13 +383,13 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#374151',
     marginBottom: 8,
+    // Color and fontFamily now set dynamically with theme
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#6b7280',
     textAlign: 'center',
+    // Color and fontFamily now set dynamically with theme
   },
   errorContainer: {
     flex: 1,
@@ -345,12 +400,12 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#dc2626',
     marginBottom: 8,
+    // Color and fontFamily now set dynamically with theme
   },
   errorSubtext: {
     fontSize: 14,
-    color: '#6b7280',
     textAlign: 'center',
+    // Color and fontFamily now set dynamically with theme
   },
 });

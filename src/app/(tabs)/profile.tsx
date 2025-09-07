@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
   Alert,
   TouchableOpacity,
   Platform,
+  SafeAreaView,
 } from 'react-native';
+import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '@/stores/auth';
 import {
   useUserProfile,
@@ -109,38 +110,38 @@ export default function ProfileScreen() {
 
   if (profileError) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
         ]}
       >
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Failed to load profile</Text>
+          <Text variant="body" color="error" style={styles.errorText}>Failed to load profile</Text>
           <Button title="Retry" onPress={handleRefresh} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!userProfile && !isLoading) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: theme.colors.background.primary },
         ]}
       >
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Profile not found</Text>
+          <Text variant="body" color="error" style={styles.errorText}>Profile not found</Text>
           <Button title="Refresh" onPress={handleRefresh} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         { backgroundColor: theme.colors.background.primary },
@@ -162,9 +163,9 @@ export default function ProfileScreen() {
                 name={userProfile.name}
               />
 
-              <Text style={styles.name}>{userProfile.name}</Text>
+              <Text variant="h3" style={styles.name}>{userProfile.name}</Text>
               {user?.email ? (
-                <Text style={styles.email}>{user.email}</Text>
+                <Text variant="body" color="secondary" style={styles.email}>{user.email}</Text>
               ) : null}
 
               <Button
@@ -183,19 +184,19 @@ export default function ProfileScreen() {
             />
 
             <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>Profile Information</Text>
+              <Text variant="h4" style={styles.sectionTitle}>Profile Information</Text>
 
               {user?.email ? (
                 <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Email</Text>
-                  <Text style={styles.infoValue}>{user.email}</Text>
+                  <Text variant="label" style={styles.infoLabel}>Email</Text>
+                  <Text variant="body" style={styles.infoValue}>{user.email}</Text>
                 </View>
               ) : null}
 
               {userProfile.church && (
                 <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Church</Text>
-                  <Text style={styles.infoValue}>
+                  <Text variant="label" style={styles.infoLabel}>Church</Text>
+                  <Text variant="body" style={styles.infoValue}>
                     {userProfile.church.name}
                   </Text>
                 </View>
@@ -203,23 +204,23 @@ export default function ProfileScreen() {
 
               {userProfile.service && (
                 <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Service</Text>
-                  <Text style={styles.infoValue}>
+                  <Text variant="label" style={styles.infoLabel}>Service</Text>
+                  <Text variant="body" style={styles.infoValue}>
                     {userProfile.service.name}
                   </Text>
                 </View>
               )}
 
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Role</Text>
-                <Text style={styles.infoValue}>
+                <Text variant="label" style={styles.infoLabel}>Role</Text>
+                <Text variant="body" style={styles.infoValue}>
                   {userProfile.roles?.join(', ') || 'Member'}
                 </Text>
               </View>
 
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Member Since</Text>
-                <Text style={styles.infoValue}>
+                <Text variant="label" style={styles.infoLabel}>Member Since</Text>
+                <Text variant="body" style={styles.infoValue}>
                   {new Date(userProfile.created_at).toLocaleDateString()}
                 </Text>
               </View>
@@ -227,7 +228,7 @@ export default function ProfileScreen() {
 
             {groupMemberships && groupMemberships.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>My Groups</Text>
+                <Text variant="h4" style={styles.sectionTitle}>My Groups</Text>
                 {groupMemberships.map((membership: any) => (
                   <View
                     key={membership.id}
@@ -237,15 +238,15 @@ export default function ProfileScreen() {
                     ]}
                   >
                     <View style={styles.membershipInfo}>
-                      <Text style={styles.membershipTitle}>
+                      <Text variant="bodyLarge" weight="semiBold" style={styles.membershipTitle}>
                         {membership.group?.title || 'Unknown Group'}
                       </Text>
-                      <Text style={styles.membershipRole}>
+                      <Text variant="caption" weight="semiBold" style={styles.membershipRole}>
                         {membership.role.charAt(0).toUpperCase() +
                           membership.role.slice(1)}
                       </Text>
                     </View>
-                    <Text style={styles.membershipDate}>
+                    <Text variant="caption" color="secondary" style={styles.membershipDate}>
                       Joined{' '}
                       {new Date(membership.joined_at).toLocaleDateString()}
                     </Text>
@@ -257,15 +258,15 @@ export default function ProfileScreen() {
             {/* Friends Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
+                <Text variant="h4" style={styles.sectionTitle}>
                   Friends ({friendsQuery.data?.length || 0})
                 </Text>
-                <TouchableOpacity
-                  style={styles.manageFriendsButton}
+                <Button
+                  title="Manage"
                   onPress={() => setShowFriendsModal(true)}
-                >
-                  <Text style={styles.manageFriendsText}>Manage</Text>
-                </TouchableOpacity>
+                  variant="secondary"
+                  size="small"
+                />
               </View>
 
               {friendsQuery.data && friendsQuery.data.length > 0 ? (
@@ -287,10 +288,10 @@ export default function ProfileScreen() {
                         name={friendship.friend?.name}
                       />
                       <View style={styles.friendInfo}>
-                        <Text style={styles.friendName}>
+                        <Text variant="body" weight="semiBold" style={styles.friendName}>
                           {friendship.friend?.name || 'Unknown User'}
                         </Text>
-                        <Text style={styles.friendEmail}>
+                        <Text variant="bodySmall" color="secondary" style={styles.friendEmail}>
                           {friendship.friend?.email}
                         </Text>
                       </View>
@@ -298,7 +299,7 @@ export default function ProfileScreen() {
                   ))}
                   {friendsQuery.data.length > 5 && (
                     <TouchableOpacity onPress={() => setShowFriendsModal(true)}>
-                      <Text style={styles.moreText}>
+                      <Text variant="body" color="primary" style={styles.moreText}>
                         and {friendsQuery.data.length - 5} more friends
                       </Text>
                     </TouchableOpacity>
@@ -311,8 +312,8 @@ export default function ProfileScreen() {
                     { backgroundColor: theme.colors.surface.secondary },
                   ]}
                 >
-                  <Text style={styles.emptyFriendsText}>No friends yet</Text>
-                  <Text style={styles.emptyFriendsSubtext}>
+                  <Text variant="h5" style={styles.emptyFriendsText}>No friends yet</Text>
+                  <Text variant="body" color="secondary" style={styles.emptyFriendsSubtext}>
                     Start connecting with other church members
                   </Text>
                   <Button
@@ -331,7 +332,7 @@ export default function ProfileScreen() {
         {/* Admin Features */}
         <ChurchAdminOnly>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Admin</Text>
+            <Text variant="h4" style={styles.sectionTitle}>Admin</Text>
             <Button
               title="Open Admin Dashboard"
               onPress={() => router.push('/admin')}
@@ -355,16 +356,19 @@ export default function ProfileScreen() {
           <Button
             title="Sign Out"
             onPress={handleSignOut}
-            variant="danger"
+            variant="outline"
             style={styles.signOutButton}
           />
           <Button
             title="Delete Account"
             onPress={handleDeleteAccount}
-            variant="danger"
+            variant="outline"
             style={styles.signOutButton}
           />
         </View>
+        
+        {/* Bottom spacing to ensure content is visible above navbar */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
 
       {userProfile && (
@@ -388,7 +392,7 @@ export default function ProfileScreen() {
           userId={user.id}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -448,17 +452,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  manageFriendsButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#8b5cf6',
-    borderRadius: 6,
-  },
-  manageFriendsText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
   },
   infoItem: {
     flexDirection: 'row',
@@ -573,5 +566,9 @@ const styles = StyleSheet.create({
   adminButton: {
     flex: 1,
     minWidth: 120,
+  },
+  bottomSpacing: {
+    height: 100, // Generous bottom spacing for navbar clearance
+    paddingBottom: 20, // Additional padding for extra safety
   },
 });

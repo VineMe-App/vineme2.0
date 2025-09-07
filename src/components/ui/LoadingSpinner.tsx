@@ -1,12 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-  Animated,
-} from 'react-native';
-import { Theme } from '../../utils/theme';
+import { ActivityIndicator, StyleSheet, Animated } from 'react-native';
+import { Text } from './Text';
+import { useTheme } from '../../theme/provider/useTheme';
 import { fadeIn, pulse } from '../../utils/animations';
 
 interface LoadingSpinnerProps {
@@ -20,12 +15,14 @@ interface LoadingSpinnerProps {
 
 export function LoadingSpinner({
   size = 'large',
-  color = Theme.colors.primary,
+  color,
   message,
   overlay = false,
   testID,
   animated = true,
 }: LoadingSpinnerProps) {
+  const { theme } = useTheme();
+  const spinnerColor = color || theme.colors.primary[500];
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -59,15 +56,15 @@ export function LoadingSpinner({
     >
       <ActivityIndicator
         size={size}
-        color={color}
+        color={spinnerColor}
         style={size === 'large' ? styles.indicatorLarge : styles.indicatorSmall}
       />
       {message && (
-        <Animated.Text
-          style={[styles.message, animated && { opacity: fadeAnim }]}
-        >
-          {message}
-        </Animated.Text>
+        <Animated.View style={animated && { opacity: fadeAnim }}>
+          <Text variant="body" color="secondary" style={styles.message}>
+            {message}
+          </Text>
+        </Animated.View>
       )}
     </Animated.View>
   );
@@ -77,7 +74,7 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Theme.spacing.lg,
+    padding: 18, // lg spacing
   },
   indicatorSmall: {
     width: 20,
@@ -93,13 +90,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Theme.colors.overlayLight,
-    zIndex: Theme.layout.zIndex.overlay,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    zIndex: 1000,
   },
   message: {
-    marginTop: Theme.spacing.md,
-    fontSize: Theme.typography.fontSize.base,
-    color: Theme.colors.textSecondary,
+    marginTop: 12, // md spacing
     textAlign: 'center',
   },
 });

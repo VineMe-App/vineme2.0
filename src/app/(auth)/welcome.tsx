@@ -1,13 +1,13 @@
 import React from 'react';
 import { 
   View, 
-  Text, 
   StyleSheet, 
   TouchableOpacity,
   SafeAreaView,
   Image
 } from 'react-native';
 import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
 import { useRouter, Link } from 'expo-router';
 
 export default function WelcomeScreen() {
@@ -17,8 +17,8 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Welcome to VineMe</Text>
-          <Text style={styles.subtitle}>
+          <Text variant="h1" weight="bold" style={styles.title}>Welcome to VineMe</Text>
+          <Text variant="bodyLarge" color="secondary" style={styles.subtitle}>
             Connect with your church community and grow together in faith
           </Text>
         </View>
@@ -32,7 +32,7 @@ export default function WelcomeScreen() {
           
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text variant="body" color="secondary" style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -52,7 +52,7 @@ export default function WelcomeScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
+          <Text variant="caption" color="secondary" style={styles.footerText}>
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Text>
         </View>

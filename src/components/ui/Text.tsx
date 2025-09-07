@@ -4,48 +4,65 @@ import {
   TextProps as RNTextProps,
   StyleSheet,
   TextStyle,
-  AccessibilityInfo,
   Platform,
 } from 'react-native';
 import { useTheme } from '../../theme/provider/useTheme';
-import { typographyVariants, TypographyVariant } from '../../theme/tokens/typography';
+import { typographyVariants } from '../../theme/tokens/typography';
 
 export interface TextProps extends Omit<RNTextProps, 'style'> {
   /**
    * Typography variant to apply
    */
   variant?: keyof typeof typographyVariants;
-  
+
   /**
    * Text color variant
    */
-  color?: 'primary' | 'secondary' | 'tertiary' | 'inverse' | 'disabled' | 'success' | 'warning' | 'error' | 'info';
-  
+  color?:
+    | 'primary'
+    | 'secondary'
+    | 'tertiary'
+    | 'inverse'
+    | 'disabled'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'info';
+
   /**
    * Font weight override
    */
-  weight?: 'thin' | 'extraLight' | 'light' | 'normal' | 'medium' | 'semiBold' | 'bold' | 'extraBold' | 'black';
-  
+  weight?:
+    | 'thin'
+    | 'extraLight'
+    | 'light'
+    | 'normal'
+    | 'medium'
+    | 'semiBold'
+    | 'bold'
+    | 'extraBold'
+    | 'black';
+
   /**
    * Text alignment
    */
   align?: 'left' | 'center' | 'right' | 'justify';
-  
+
   /**
    * Whether text should be selectable
    */
   selectable?: boolean;
-  
+
   /**
    * Custom style overrides
    */
   style?: TextStyle | TextStyle[];
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Children content
    */
@@ -54,7 +71,7 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
 
 /**
  * Text component with predefined typography variants and theme integration
- * 
+ *
  * Features:
  * - Semantic typography variants (headings, body, captions)
  * - Theme-aware color system
@@ -74,10 +91,49 @@ export const Text: React.FC<TextProps> = ({
   ...props
 }) => {
   const { theme } = useTheme();
-  
+
   // Get typography variant configuration
   const typographyConfig = typographyVariants[variant];
-  
+
+  // Normalize any incoming fontWeight value to a key we can map
+  const normalizeWeightKey = (
+    w?: string | number
+  ): TextProps['weight'] | undefined => {
+    if (w == null) return undefined;
+    const v = String(w);
+    switch (v) {
+      case '100':
+        return 'thin';
+      case '200':
+        return 'extraLight';
+      case '300':
+        return 'light';
+      case '400':
+      case 'normal':
+        return 'normal';
+      case '500':
+        return 'medium';
+      case '600':
+        return 'semiBold';
+      case '700':
+      case 'bold':
+        return 'bold';
+      case '800':
+        return 'extraBold';
+      case '900':
+        return 'black';
+      default:
+        return undefined;
+    }
+  };
+
+  // Determine the effective weight: prop > style > variant
+  // We only need this to pick the correct fontFamily
+  const incomingStyle = StyleSheet.flatten(style as any) as TextStyle | undefined;
+  const styleWeightKey = normalizeWeightKey(incomingStyle?.fontWeight as any);
+  const variantWeightKey = normalizeWeightKey(typographyConfig.fontWeight);
+  const effectiveWeight: TextProps['weight'] = weight || styleWeightKey || variantWeightKey || 'normal';
+
   // Get text color from theme
   const getTextColor = (): string => {
     switch (color) {
@@ -103,18 +159,51 @@ export const Text: React.FC<TextProps> = ({
         return theme.colors.text.primary;
     }
   };
-  
+
+  // Get appropriate font family based on weight
+  const getFontFamily = (): string => {
+    const w = effectiveWeight;
+    if (w) {
+      switch (w) {
+        case 'thin':
+        case 'extraLight':
+        case 'light':
+        case 'normal':
+          return theme.typography.fontFamily.regular;
+        case 'medium':
+          return theme.typography.fontFamily.medium;
+        case 'semiBold':
+          return theme.typography.fontFamily.semiBold;
+        case 'bold':
+          return theme.typography.fontFamily.bold;
+        case 'extraBold':
+          return theme.typography.fontFamily.extraBold || theme.typography.fontFamily.bold;
+        case 'black':
+          // Manrope may not include Black; fall back to ExtraBold, then Bold
+          return (
+            (theme.typography.fontFamily as any).black ||
+            theme.typography.fontFamily.extraBold ||
+            theme.typography.fontFamily.bold
+          );
+        default:
+          return theme.typography.fontFamily.regular;
+      }
+    }
+    return theme.typography.fontFamily.regular;
+  };
+
   // Create base text style
   const baseStyle: TextStyle = {
     fontSize: typographyConfig.fontSize,
     lineHeight: typographyConfig.lineHeight,
-    fontWeight: weight ? theme.typography.fontWeight[weight] : typographyConfig.fontWeight,
+    // We select fontFamily explicitly based on the intended weight
+    // and intentionally avoid setting fontWeight to prevent fallbacks.
     letterSpacing: typographyConfig.letterSpacing,
     color: getTextColor(),
     textAlign: align,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: getFontFamily(),
   };
-  
+
   // Combine styles - handle both single style and array of styles
   const stylesToCombine = [baseStyle];
   if (style) {
@@ -124,9 +213,16 @@ export const Text: React.FC<TextProps> = ({
       stylesToCombine.push(style);
     }
   }
-  
-  const combinedStyle = StyleSheet.flatten(stylesToCombine);
-  
+
+  let combinedStyle = StyleSheet.flatten(stylesToCombine) as TextStyle;
+
+  // Remove fontWeight on all platforms to ensure custom font is used
+  // and avoid the system trying to synthesize weights or fallback.
+  if ((combinedStyle as any).fontWeight) {
+    delete (combinedStyle as any).fontWeight;
+  }
+  combinedStyle.fontFamily = getFontFamily();
+
   // Accessibility props
   const accessibilityProps = {
     accessible: true,
@@ -134,7 +230,7 @@ export const Text: React.FC<TextProps> = ({
     accessibilityLabel: typeof children === 'string' ? children : undefined,
     ...props,
   };
-  
+
   return (
     <RNText
       style={combinedStyle}
@@ -152,8 +248,20 @@ export const Text: React.FC<TextProps> = ({
 /**
  * Get appropriate accessibility role based on typography variant
  */
-function getAccessibilityRole(variant: keyof typeof typographyVariants): 'text' | 'header' {
-  const headingVariants = ['display1', 'display2', 'display3', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+function getAccessibilityRole(
+  variant: keyof typeof typographyVariants
+): 'text' | 'header' {
+  const headingVariants = [
+    'display1',
+    'display2',
+    'display3',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+  ];
   return headingVariants.includes(variant) ? 'header' : 'text';
 }
 

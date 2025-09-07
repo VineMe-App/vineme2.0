@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,12 @@ import {
   Modal,
   TouchableOpacity,
   SafeAreaView,
+  Animated,
+  Platform,
 } from 'react-native';
 import { FriendsList } from './FriendsList';
 import { FriendSearch } from './FriendSearch';
+import { useTheme } from '../../theme/provider/useTheme';
 
 interface FriendManagementModalProps {
   visible: boolean;
@@ -23,24 +26,25 @@ export function FriendManagementModal({
   onClose,
   userId,
 }: FriendManagementModalProps) {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('friends');
+  const slideAnimation = useRef(
+    new Animated.Value(activeTab === 'friends' ? 0 : 1)
+  ).current;
+  const [containerWidth, setContainerWidth] = React.useState(0);
 
-  const renderTabButton = (tab: TabType, label: string) => {
-    const isActive = activeTab === tab;
+  useEffect(() => {
+    Animated.timing(slideAnimation, {
+      toValue: activeTab === 'friends' ? 0 : 1,
+      duration: 250,
+      useNativeDriver: false,
+    }).start();
+  }, [activeTab, slideAnimation]);
 
-    return (
-      <TouchableOpacity
-        style={[styles.tabButton, isActive && styles.activeTabButton]}
-        onPress={() => setActiveTab(tab)}
-      >
-        <Text
-          style={[styles.tabButtonText, isActive && styles.activeTabButtonText]}
-        >
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  const translateX = slideAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, Math.max(0, containerWidth / 2)],
+  });
 
   return (
     <Modal
@@ -49,17 +53,116 @@ export function FriendManagementModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Friends</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Done</Text>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
+        <View
+          style={[
+            styles.header,
+            { borderBottomColor: theme.colors.border.primary },
+          ]}
+        >
+          <Text
+            style={[
+              styles.title,
+              {
+                fontFamily: theme.typography.fontFamily.semiBold,
+                color: theme.colors.text.primary,
+              },
+            ]}
+          >
+            Friends
+          </Text>
+          <TouchableOpacity
+            onPress={onClose}
+            style={[
+              styles.closeButton,
+              { backgroundColor: theme.colors.secondary[100] },
+            ]}
+          >
+            <Text
+              style={[
+                styles.closeButtonText,
+                {
+                  fontFamily: theme.typography.fontFamily.medium,
+                  color: theme.colors.primary[500],
+                },
+              ]}
+            >
+              Done
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.tabContainer}>
-          {renderTabButton('friends', 'My Friends')}
-          {renderTabButton('search', 'Find Friends')}
+          <View
+            style={[
+              styles.toggleContainer,
+              {
+                borderColor: theme.colors.secondary[100],
+                backgroundColor: theme.colors.secondary[100],
+              },
+            ]}
+            onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+          >
+            {/* Animated sliding background */}
+            <Animated.View
+              style={[
+                styles.slidingBackground,
+                {
+                  backgroundColor: theme.colors.primary[500],
+                  transform: [{ translateX }],
+                },
+              ]}
+            />
+
+            {/* My Friends button */}
+            <TouchableOpacity
+              style={styles.toggleButton}
+              onPress={() => setActiveTab('friends')}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.toggleText,
+                  {
+                    fontFamily: theme.typography.fontFamily.medium,
+                    color:
+                      activeTab === 'friends'
+                        ? theme.colors.secondary[100] // Green when selected
+                        : theme.colors.primary[500], // Pink when not selected
+                  },
+                ]}
+              >
+                My Friends
+              </Text>
+            </TouchableOpacity>
+
+            {/* Find Friends button */}
+            <TouchableOpacity
+              style={styles.toggleButton}
+              onPress={() => setActiveTab('search')}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.toggleText,
+                  {
+                    fontFamily: theme.typography.fontFamily.medium,
+                    color:
+                      activeTab === 'search'
+                        ? theme.colors.secondary[100] // Green when selected
+                        : theme.colors.primary[500], // Pink when not selected
+                  },
+                ]}
+              >
+                Find Friends
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.content}>
@@ -77,7 +180,6 @@ export function FriendManagementModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
@@ -86,48 +188,65 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1a1a1a',
   },
   closeButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
+    borderRadius: 8,
   },
   closeButtonText: {
     fontSize: 16,
-    color: '#8b5cf6',
     fontWeight: '500',
   },
   tabContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  toggleContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#f9fafb',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderRadius: 25,
+    padding: 3,
+    borderWidth: 2,
+    position: 'relative',
+    height: 50,
   },
-  tabButton: {
+  slidingBackground: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    width: '50%',
+    height: 46,
+    borderRadius: 23,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+    zIndex: 10,
+  },
+  toggleButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 4,
+    justifyContent: 'center',
+    zIndex: 20,
   },
-  activeTabButton: {
-    backgroundColor: '#8b5cf6',
-  },
-  tabButtonText: {
-    fontSize: 16,
+  toggleText: {
+    fontSize: 14,
     fontWeight: '500',
-    color: '#6b7280',
-  },
-  activeTabButtonText: {
-    color: '#fff',
+    zIndex: 25,
+    includeFontPadding: false,
+    textAlignVertical: Platform.OS === 'android' ? 'center' : undefined,
+    lineHeight: Platform.OS === 'android' ? 18 : 16,
+    paddingBottom: Platform.OS === 'android' ? 1 : 0,
   },
   content: {
     flex: 1,

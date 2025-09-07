@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { AdminErrorBoundary } from '@/components/ui/AdminErrorBoundary';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/components/ui/Text';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { router } from 'expo-router';
 
@@ -24,6 +25,9 @@ export default function AdminLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Manrope-Bold',
+            },
           }}
         >
           <Stack.Screen name="index" />

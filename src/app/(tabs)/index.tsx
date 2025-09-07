@@ -1,12 +1,13 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
   RefreshControl,
+  SafeAreaView,
 } from 'react-native';
+import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '../../stores/auth';
 import { router } from 'expo-router';
 import { useUpcomingEvents } from '../../hooks/useEvents';
@@ -79,22 +80,23 @@ export default function HomeScreen() {
 
   if (isLoading && !userGroupMemberships) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <LoadingSpinner message="Loading your dashboard..." />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={[
-        styles.container,
-        { backgroundColor: theme.colors.background.primary },
-      ]}
-      refreshControl={
-        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
-      }
-    >
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={[
+          styles.scrollView,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+        }
+      >
       {/* Header with user info */}
       <View
         style={[
@@ -109,10 +111,12 @@ export default function HomeScreen() {
             size={60}
           />
           <View style={styles.userInfo}>
-            <Text style={styles.greeting}>
+            <Text variant="h3" style={styles.greeting}>
               Hello, {userProfile?.name || 'there'}!
             </Text>
-            <Text style={styles.subtitle}>Welcome back to VineMe</Text>
+            <Text variant="bodyLarge" color="secondary" style={styles.subtitle}>
+              Welcome back to VineMe
+            </Text>
           </View>
         </View>
 
@@ -138,7 +142,11 @@ export default function HomeScreen() {
                 {userProfile?.church?.name && (
                   <View style={styles.orgRow}>
                     <Ionicons name="home-outline" size={16} color="#374151" />
-                    <Text style={styles.orgText} numberOfLines={1}>
+                    <Text
+                      variant="label"
+                      style={styles.orgText}
+                      numberOfLines={1}
+                    >
                       {userProfile.church.name}
                     </Text>
                   </View>
@@ -150,7 +158,11 @@ export default function HomeScreen() {
                       size={16}
                       color="#374151"
                     />
-                    <Text style={styles.orgText} numberOfLines={1}>
+                    <Text
+                      variant="label"
+                      style={styles.orgText}
+                      numberOfLines={1}
+                    >
                       {userProfile.service.name}
                     </Text>
                   </View>
@@ -167,7 +179,11 @@ export default function HomeScreen() {
               {userProfile?.church?.name && (
                 <View style={styles.orgRow}>
                   <Ionicons name="home-outline" size={16} color="#374151" />
-                  <Text style={styles.orgText} numberOfLines={1}>
+                  <Text
+                    variant="label"
+                    style={styles.orgText}
+                    numberOfLines={1}
+                  >
                     {userProfile.church.name}
                   </Text>
                 </View>
@@ -175,7 +191,11 @@ export default function HomeScreen() {
               {userProfile?.service?.name && (
                 <View style={styles.orgRow}>
                   <Ionicons name="calendar-outline" size={16} color="#374151" />
-                  <Text style={styles.orgText} numberOfLines={1}>
+                  <Text
+                    variant="label"
+                    style={styles.orgText}
+                    numberOfLines={1}
+                  >
                     {userProfile.service.name}
                   </Text>
                 </View>
@@ -183,7 +203,9 @@ export default function HomeScreen() {
             </View>
             <View style={styles.orgRight}>
               <Ionicons name="settings-outline" size={16} color="#111827" />
-              <Text style={styles.orgCta}>Manage Church</Text>
+              <Text variant="label" weight="semiBold" style={styles.orgCta}>
+                Manage Church
+              </Text>
               <Ionicons
                 name="chevron-forward-outline"
                 size={16}
@@ -199,11 +221,11 @@ export default function HomeScreen() {
       {/* My Groups Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Groups</Text>
+          <Text variant="h4" style={styles.sectionTitle}>
+            My Groups
+          </Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/groups')}>
-            <Text
-              style={[styles.seeAllText, { color: theme.colors.primary[500] }]}
-            >
+            <Text variant="bodyLarge" color="primary" style={styles.seeAllText}>
               See All
             </Text>
           </TouchableOpacity>
@@ -239,7 +261,14 @@ export default function HomeScreen() {
                 ]}
                 onPress={() => router.push('/(tabs)/groups')}
               >
-                <Text style={styles.actionButtonText}>Browse Groups</Text>
+                <Text
+                  variant="bodyLarge"
+                  weight="semiBold"
+                  color="inverse"
+                  style={styles.actionButtonText}
+                >
+                  Browse Groups
+                </Text>
               </TouchableOpacity>
             }
           />
@@ -252,23 +281,20 @@ export default function HomeScreen() {
       {/* Small disclaimer about upcoming events (near bottom) */}
       <TouchableOpacity
         onPress={() => router.push('/(tabs)/events')}
-        activeOpacity={0.8}
+        activeOpacity={0.7}
       >
-        <Card
-          style={
-            [
-              styles.eventsBanner,
-              { backgroundColor: theme.colors.surface.secondary },
-            ] as any
-          }
-        >
+        <Card variant="filled" style={styles.eventsBanner}>
           <View style={styles.eventsBannerRow}>
             <Ionicons
               name="information-circle-outline"
               size={18}
               color="#6b7280"
             />
-            <Text style={styles.eventsBannerText}>
+            <Text
+              variant="body"
+              color="secondary"
+              style={styles.eventsBannerText}
+            >
               Events are coming soon. Tap to learn more.
             </Text>
             <Ionicons
@@ -282,7 +308,8 @@ export default function HomeScreen() {
 
       {/* Bottom spacing */}
       <View style={styles.bottomSpacing} />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -290,12 +317,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   header: {
     paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
   },
   userSection: {
     flexDirection: 'row',
@@ -333,8 +361,6 @@ const styles = StyleSheet.create({
   },
   orgText: {
     color: '#374151',
-    fontSize: 14,
-    fontWeight: '500',
     flexShrink: 1,
   },
   orgRight: {
@@ -345,22 +371,16 @@ const styles = StyleSheet.create({
   },
   orgCta: {
     color: '#111827',
-    fontSize: 14,
-    fontWeight: '600',
   },
   userInfo: {
     marginLeft: 16,
     flex: 1,
   },
   greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    // Typography handled by Text component variant
   },
   statsSection: {
     flexDirection: 'row',
@@ -410,17 +430,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
     color: '#1a1a1a',
   },
   eventsBanner: {
+    borderRadius: 12,
     marginHorizontal: 16,
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    marginVertical: 8,
+    overflow: 'hidden',
+    padding: 16,
   },
   eventsBannerRow: {
     flexDirection: 'row',
@@ -429,12 +446,10 @@ const styles = StyleSheet.create({
   },
   eventsBannerText: {
     color: '#374151',
-    fontSize: 14,
     flex: 1,
   },
   seeAllText: {
-    fontSize: 16,
-    fontWeight: '500',
+    // Typography handled by Text component variant
   },
   horizontalScroll: {
     paddingLeft: 16,
@@ -445,17 +460,15 @@ const styles = StyleSheet.create({
   },
   emptyIcon: {},
   actionButton: {
-    borderRadius: 8,
+    borderRadius: 9999, // Fully rounded corners
     paddingHorizontal: 24,
     paddingVertical: 12,
     alignItems: 'center',
   },
   actionButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   bottomSpacing: {
-    height: 20,
+    height: 100,
   },
 });

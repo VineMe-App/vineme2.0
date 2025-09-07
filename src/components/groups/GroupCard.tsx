@@ -1,15 +1,11 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ViewStyle,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { Text } from '../ui/Text';
 import type { GroupWithDetails } from '../../types/database';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
+import { useTheme } from '../../theme/provider/useTheme';
 
 interface GroupCardProps {
   group: GroupWithDetails;
@@ -30,6 +26,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   style,
   distanceKm,
 }) => {
+  const { theme } = useTheme();
+
   if (!group) return null;
   const formatMeetingTime = (day: string, time: string) => {
     return `${day}s at ${time}`;
@@ -47,7 +45,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.card, style]}
+      style={[
+        styles.card,
+        { backgroundColor: theme.colors.surface.secondary }, // Faded pink background
+        style,
+      ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -66,7 +68,12 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
         <View style={styles.info}>
           <View style={styles.header}>
-            <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+            <Text
+              variant="h6"
+              style={styles.title}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {group.title}
             </Text>
             {membershipStatus && (
@@ -74,6 +81,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 style={[styles.statusBadge, styles[`${membershipStatus}Badge`]]}
               >
                 <Text
+                  variant="caption"
+                  weight="semiBold"
                   style={[styles.statusText, styles[`${membershipStatus}Text`]]}
                 >
                   {membershipStatus === 'member'
@@ -87,6 +96,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </View>
 
           <Text
+            variant="body"
+            color="secondary"
             style={styles.description}
             numberOfLines={2}
             ellipsizeMode="tail"
@@ -98,7 +109,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {typeof distanceKm === 'number' && (
               <View style={styles.detailRow}>
                 <Ionicons name="navigate-outline" size={16} color="#6b7280" />
-                <Text style={styles.detailText} numberOfLines={1}>
+                <Text
+                  variant="bodySmall"
+                  style={styles.detailText}
+                  numberOfLines={1}
+                >
                   {distanceKm.toFixed(1)} km away
                 </Text>
               </View>
@@ -106,21 +121,33 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {group.meeting_day && group.meeting_time && (
               <View style={styles.detailRow}>
                 <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-                <Text style={styles.detailText} numberOfLines={1}>
+                <Text
+                  variant="bodySmall"
+                  style={styles.detailText}
+                  numberOfLines={1}
+                >
                   {formatMeetingTime(group.meeting_day, group.meeting_time)}
                 </Text>
               </View>
             )}
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={16} color="#6b7280" />
-              <Text style={styles.detailText} numberOfLines={1}>
+              <Text
+                variant="bodySmall"
+                style={styles.detailText}
+                numberOfLines={1}
+              >
                 {formatLocation(group.location)}
               </Text>
             </View>
             {group.member_count !== undefined && (
               <View style={styles.detailRow}>
                 <Ionicons name="people-outline" size={16} color="#6b7280" />
-                <Text style={styles.detailText} numberOfLines={1}>
+                <Text
+                  variant="bodySmall"
+                  style={styles.detailText}
+                  numberOfLines={1}
+                >
                   {group.member_count} member
                   {group.member_count !== 1 ? 's' : ''}
                 </Text>
@@ -139,6 +166,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   color="#2563eb"
                 />
                 <Text
+                  variant="bodySmall"
+                  weight="semiBold"
                   style={[styles.detailText, styles.friendsText]}
                   numberOfLines={1}
                 >
@@ -150,7 +179,13 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </View>
 
           {group.service?.name && (
-            <Text style={styles.service} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              variant="caption"
+              color="tertiary"
+              style={styles.service}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               Service: {group.service.name}
             </Text>
           )}
@@ -162,19 +197,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     marginHorizontal: 16,
     marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
     overflow: 'hidden',
+    // Background color now set dynamically with theme
   },
   content: {
     padding: 16,
@@ -196,8 +223,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
     color: '#1a1a1a',
     flex: 1,
     marginRight: 8,
@@ -219,8 +244,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fce4ec',
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '600',
+    // Typography handled by Text component variant
   },
   memberText: {
     color: '#1976d2',
@@ -232,9 +256,6 @@ const styles = StyleSheet.create({
     color: '#c2185b',
   },
   description: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
     marginBottom: 12,
   },
   details: {
@@ -247,7 +268,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   detailText: {
-    fontSize: 14,
     color: '#333',
     flex: 1,
   },
@@ -260,10 +280,8 @@ const styles = StyleSheet.create({
   },
   friendsText: {
     color: '#1d4ed8',
-    fontWeight: '600',
   },
   service: {
-    fontSize: 12,
     color: '#888',
     fontStyle: 'italic',
   },

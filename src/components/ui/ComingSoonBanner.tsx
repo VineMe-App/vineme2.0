@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import Text from './Text';
 import { Ionicons } from '@expo/vector-icons';
 import { AccessibilityHelpers } from '@/utils/accessibility';
 
@@ -53,6 +54,7 @@ export function ComingSoonBanner({
         </View>
         <View style={styles.textContainer}>
           <Text
+            weight="semiBold"
             style={styles.title}
             accessibilityRole="header"
             accessibilityLevel={3}
@@ -108,7 +110,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
     color: '#92400e',
     marginBottom: 2,
   },

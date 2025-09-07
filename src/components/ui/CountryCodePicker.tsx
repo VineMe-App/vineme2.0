@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   Modal,
   StyleSheet,
   TextInput,
   FlatList,
 } from 'react-native';
+import Text from './Text';
 
 type Country = {
   name: string;
@@ -75,13 +75,13 @@ export function CountryCodePicker({
         accessibilityRole="button"
       >
         <Text style={styles.flag}>{selected.flag}</Text>
-        <Text style={styles.codeText}>{selected.code}</Text>
+        <Text weight="semiBold" style={styles.codeText}>{selected.code}</Text>
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Select country</Text>
+            <Text weight="bold" style={styles.modalTitle}>Select country</Text>
             <TextInput
               value={query}
               onChangeText={setQuery}
@@ -110,7 +110,7 @@ export function CountryCodePicker({
               )}
             />
             <TouchableOpacity style={styles.closeBtn} onPress={() => setVisible(false)}>
-              <Text style={styles.closeText}>Close</Text>
+              <Text weight="semiBold" style={styles.closeText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -141,7 +141,6 @@ const styles = StyleSheet.create({
   },
   codeText: {
     fontSize: 16,
-    fontWeight: '600',
   },
   overlay: {
     flex: 1,
@@ -160,7 +159,6 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: '700',
     marginBottom: 8,
   },
   search: {
@@ -196,7 +194,6 @@ const styles = StyleSheet.create({
   },
   closeText: {
     color: '#fff',
-    fontWeight: '600',
   },
 });
 
