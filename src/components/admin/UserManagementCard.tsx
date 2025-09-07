@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Text } from '@/components/ui/Text';
 import {
   AccessibilityHelpers,
   AdminAccessibilityLabels,

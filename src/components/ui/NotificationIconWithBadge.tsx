@@ -2,7 +2,6 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/provider/useTheme';
-import { NotificationBadge } from './NotificationBadge';
 
 interface NotificationIconWithBadgeProps {
   onPress: () => void;
@@ -93,14 +92,11 @@ export const NotificationIconWithBadge: React.FC<NotificationIconWithBadgeProps>
             color={disabled ? theme.colors.text.disabled : iconColor}
           />
           {unreadCount > 0 && (
-            <NotificationBadge
-              count={unreadCount}
-              size="small"
-              color={notificationBadgeColor}
-              textColor={theme.colors.text.inverse}
-              style={styles.badge}
-              maxCount={99}
-              type="notifications"
+            <View
+              style={[
+                styles.notificationDot,
+                { backgroundColor: notificationBadgeColor },
+              ]}
               accessibilityLabel={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
             />
           )}
@@ -123,10 +119,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  badge: {
+  notificationDot: {
     position: 'absolute',
-    top: -6,
-    right: -6,
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     zIndex: 1,
   },
 });

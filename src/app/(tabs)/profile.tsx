@@ -356,13 +356,13 @@ export default function ProfileScreen() {
           <Button
             title="Sign Out"
             onPress={handleSignOut}
-            variant="danger"
+            variant="outline"
             style={styles.signOutButton}
           />
           <Button
             title="Delete Account"
             onPress={handleDeleteAccount}
-            variant="danger"
+            variant="outline"
             style={styles.signOutButton}
           />
         </View>

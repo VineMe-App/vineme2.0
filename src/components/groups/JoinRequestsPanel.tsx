@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { JoinRequestCard } from './JoinRequestCard';
 import { EmptyState } from '../ui/EmptyState';

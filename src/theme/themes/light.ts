@@ -72,7 +72,7 @@ export const lightTheme: ThemeConfig = {
     // Surface colors
     surface: {
       primary: '#ffffff', // White for cards/surfaces
-      secondary: '#f8fafc', // Light gray for subtle surfaces
+      secondary: '#f5f3f5', // Light gray for subtle surfaces
       tertiary: '#f1f5f9', // Slightly darker gray
       overlay: 'rgba(15, 23, 42, 0.5)',
     },

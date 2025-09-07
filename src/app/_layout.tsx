@@ -134,7 +134,13 @@ function RootLayoutNav() {
   return (
     <>
       <OfflineBanner />
-      <Stack>
+      <Stack
+        screenOptions={{
+          headerTitleStyle: {
+            fontFamily: 'Manrope-Bold',
+          },
+        }}
+      >
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />

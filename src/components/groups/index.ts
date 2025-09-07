@@ -4,7 +4,6 @@ export { CreateGroupModal } from './CreateGroupModal';
 export { GroupLeaderPanel } from './GroupLeaderPanel';
 export { EditGroupModal } from './EditGroupModal';
 export { MemberManagementModal } from './MemberManagementModal';
-export { JoinRequestModal } from './JoinRequestModal';
 export { JoinRequestCard } from './JoinRequestCard';
 export { JoinRequestsPanel } from './JoinRequestsPanel';
 export { JoinRequestNotifications } from './JoinRequestNotifications';

@@ -47,7 +47,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <TouchableOpacity
       style={[
         styles.card,
-        { backgroundColor: theme.colors.neutral[100] }, // Faded pink background
+        { backgroundColor: theme.colors.surface.secondary }, // Faded pink background
         style,
       ]}
       onPress={onPress}

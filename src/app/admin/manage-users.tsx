@@ -1,14 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  Alert,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, Alert, TouchableOpacity, Platform } from 'react-native';
+import { Text } from '@/components/ui/Text';
 import {
   AccessibilityHelpers,
   AdminAccessibilityLabels,

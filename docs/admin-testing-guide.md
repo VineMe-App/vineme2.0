@@ -66,7 +66,7 @@ Tests React Native components:
 - **UserManagementCard.test.tsx**: User management UI
 - **GroupLeaderPanel.test.tsx**: Group leader interface
 - **CreateGroupModal.test.tsx**: Group creation UI
-- **JoinRequestModal.test.tsx**: Join request UI
+  (Removed) Join request modal tests were deleted as the flow now uses a native alert.
 - **AdminErrorBoundary.test.tsx**: Error boundary component
 - **AdminLoadingStates.test.tsx**: Loading state components
 

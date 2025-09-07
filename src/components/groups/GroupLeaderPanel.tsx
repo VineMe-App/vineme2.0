@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../ui/Avatar';
