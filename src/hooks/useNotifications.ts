@@ -12,14 +12,14 @@ import {
   updateNotificationSettings,
   sendEventReminderNotification,
   cancelNotification,
-  getUnreadNotifications,
+  getUnreadNotificationsWithSettings,
   getUserNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   getAdminNotificationCounts,
   // Enhanced notification service methods
-  getUserNotificationsPaginated,
-  getNotificationCount,
+  getUserNotificationsPaginatedWithSettings,
+  getNotificationCountWithSettings,
   deleteNotification,
   deleteMultipleNotifications,
   subscribeToUserNotifications,
@@ -243,7 +243,7 @@ export const useEnhancedNotifications = (userId?: string) => {
     error: countError,
   } = useQuery({
     queryKey: ['notifications', 'count', userId, { read: false }],
-    queryFn: () => getNotificationCount(userId!, { read: false }),
+    queryFn: () => getNotificationCountWithSettings(userId!, { read: false }),
     enabled: !!userId,
     refetchInterval: 30000, // Fallback polling every 30 seconds
   });
@@ -260,7 +260,7 @@ export const useEnhancedNotifications = (userId?: string) => {
   } = useInfiniteQuery({
     queryKey: ['notifications', 'list', userId],
     queryFn: ({ pageParam = 0 }) =>
-      getUserNotificationsPaginated({
+      getUserNotificationsPaginatedWithSettings({
         userId: userId!,
         limit: 20,
         offset: pageParam * 20,
@@ -278,7 +278,7 @@ export const useEnhancedNotifications = (userId?: string) => {
     error: unreadError,
   } = useQuery({
     queryKey: ['notifications', 'unread', userId],
-    queryFn: () => getUnreadNotifications(userId!),
+    queryFn: () => getUnreadNotificationsWithSettings(userId!),
     enabled: !!userId,
   });
 

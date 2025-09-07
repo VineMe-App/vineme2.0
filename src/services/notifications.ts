@@ -469,6 +469,29 @@ export const getUnreadNotifications = async (userId: string) => {
   }
 };
 
+export const getUnreadNotificationsWithSettings = async (userId: string) => {
+  try {
+    const types = await getAllowedNotificationTypesForUser(userId);
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('read', false)
+      .in('type', types)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching unread notifications:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting unread notifications:', error);
+    return [];
+  }
+};
+
 /**
  * Get all notifications for a user
  */
@@ -1345,6 +1368,69 @@ export const getUserNotificationsPaginated = async (
     console.error('Error fetching paginated notifications:', error);
     return { notifications: [], hasMore: false, total: 0 };
   }
+};
+
+/**
+ * Map notification settings to allowed notification types
+ */
+export const getAllowedNotificationTypesForUser = async (
+  userId: string
+): Promise<NotificationType[]> => {
+  const settings = await getEnhancedNotificationSettings(userId);
+  const allowed: NotificationType[] = [];
+  if (!settings) {
+    // Default: allow all known types when settings missing
+    return [
+      'friend_request_received',
+      'friend_request_accepted',
+      'group_request_submitted',
+      'group_request_approved',
+      'group_request_denied',
+      'join_request_received',
+      'join_request_approved',
+      'join_request_denied',
+      'referral_accepted',
+      'referral_joined_group',
+      'event_reminder',
+    ];
+  }
+
+  if (settings.friend_requests) allowed.push('friend_request_received');
+  if (settings.friend_request_accepted) allowed.push('friend_request_accepted');
+  if (settings.group_requests) allowed.push('group_request_submitted');
+  if (settings.group_request_responses) {
+    allowed.push('group_request_approved', 'group_request_denied');
+  }
+  if (settings.join_requests) allowed.push('join_request_received');
+  if (settings.join_request_responses) {
+    allowed.push('join_request_approved', 'join_request_denied');
+  }
+  if (settings.referral_updates) {
+    allowed.push('referral_accepted', 'referral_joined_group');
+  }
+  if (settings.event_reminders) allowed.push('event_reminder');
+  return allowed;
+};
+
+/**
+ * Settings-aware notifications pagination
+ */
+export const getUserNotificationsPaginatedWithSettings = async (
+  options: NotificationQueryOptions
+): Promise<{ notifications: Notification[]; hasMore: boolean; total: number }> => {
+  const types = await getAllowedNotificationTypesForUser(options.userId);
+  return getUserNotificationsPaginated({ ...options, types });
+};
+
+/**
+ * Settings-aware notification count
+ */
+export const getNotificationCountWithSettings = async (
+  userId: string,
+  options?: { read?: boolean }
+): Promise<number> => {
+  const types = await getAllowedNotificationTypesForUser(userId);
+  return getNotificationCount(userId, { types, read: options?.read });
 };
 
 /**

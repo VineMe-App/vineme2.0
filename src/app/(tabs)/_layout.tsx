@@ -180,6 +180,12 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="profile/communication"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
