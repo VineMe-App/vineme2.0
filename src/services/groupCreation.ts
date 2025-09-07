@@ -1,8 +1,8 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import {
-  sendGroupRequestNotification,
-  sendJoinRequestNotification,
+  triggerGroupRequestSubmittedNotification,
+  triggerJoinRequestReceivedNotification,
 } from './notifications';
 import type { Group, GroupMembership } from '../types/database';
 import type {
@@ -129,13 +129,15 @@ export class GroupCreationService {
         .eq('id', creatorId)
         .single();
 
-      // Send notification to church admins
+      // Send enhanced notification to church admins
       if (creator) {
-        await sendGroupRequestNotification(
-          groupData.church_id,
-          group.title,
-          creator.name
-        );
+        await triggerGroupRequestSubmittedNotification({
+          groupId: group.id,
+          groupTitle: group.title,
+          creatorId: creatorId,
+          creatorName: creator.name,
+          churchId: groupData.church_id,
+        });
       }
 
       return { data: group, error: null };
@@ -619,13 +621,23 @@ export class GroupCreationService {
         supabase.from('groups').select('title').eq('id', groupId).single(),
       ]);
 
-      // Send notification to group leaders
+      // Send enhanced notification to group leaders
       if (requesterResult.data && groupResult.data) {
-        await sendJoinRequestNotification(
+        // Collect leaderIds for the trigger
+        const { data: leaders } = await supabase
+          .from('group_memberships')
+          .select('user_id')
+          .eq('group_id', groupId)
+          .eq('role', 'leader')
+          .eq('status', 'active');
+        const leaderIds = (leaders || []).map((l) => l.user_id);
+        await triggerJoinRequestReceivedNotification({
           groupId,
-          groupResult.data.title,
-          requesterResult.data.name
-        );
+          groupTitle: groupResult.data.title,
+          requesterId: userId,
+          requesterName: requesterResult.data.name,
+          leaderIds,
+        });
       }
 
       // TODO: Store contact consent and message in a separate table

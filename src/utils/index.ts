@@ -22,3 +22,6 @@ export {
 export * from './styleUtils';
 export * from './responsiveHelpers';
 export * from './performanceStyleUtils';
+
+// Notification utilities
+export * from './notificationFormatting';
