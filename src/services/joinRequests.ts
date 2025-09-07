@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import { contactAuditService } from './contactAudit';
+import { triggerJoinRequestApprovedNotification } from './notifications';
 import { triggerJoinRequestReceivedNotification } from './notifications';
 import type {
   GroupJoinRequest,
@@ -271,6 +272,42 @@ export class JoinRequestService {
           .eq('id', membership.id);
 
         return { data: null, error: new Error(updateError.message) };
+      }
+
+      // Notify requester of approval
+      try {
+        const [groupRes, userRes] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('id, title')
+            .eq('id', membershipRecord.group_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('id, name')
+            .eq('id', membershipRecord.user_id)
+            .single(),
+        ]);
+
+        // Get approver name
+        let approvedByName: string | undefined;
+        const { data: approver } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', approverId)
+          .single();
+        approvedByName = approver?.name;
+
+        if (groupRes.data && userRes.data && approvedByName) {
+          await triggerJoinRequestApprovedNotification({
+            groupId: groupRes.data.id,
+            groupTitle: groupRes.data.title,
+            requesterId: userRes.data.id,
+            approvedByName,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Failed to trigger approval notification', e);
       }
 
       return { data: membership, error: null };
