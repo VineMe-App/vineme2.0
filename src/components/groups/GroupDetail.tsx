@@ -7,7 +7,6 @@ import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
 import { GroupLeaderPanel } from './GroupLeaderPanel';
-import { JoinRequestModal } from './JoinRequestModal';
 import {
   useJoinGroup,
   useLeaveGroup,
@@ -15,7 +14,7 @@ import {
   useGroupLeaders,
   useFriendsInGroup,
 } from '../../hooks/useGroups';
-import { useUserJoinRequests } from '../../hooks/useJoinRequests';
+import { useCreateJoinRequest, useUserJoinRequests } from '../../hooks/useJoinRequests';
 // import type { GroupMembershipWithUser } from '../../types/database';
 import { useAuthStore } from '../../stores/auth';
 import { useFriends } from '../../hooks/useFriendships';
@@ -43,12 +42,13 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const [showAllMembers, setShowAllMembers] = useState(false);
-  const [showJoinRequestModal, setShowJoinRequestModal] = useState(false);
+  // Removed modal-based join flow in favor of native alert confirmation
   const [showFriendsModal, setShowFriendsModal] = useState(openFriendsOnMount);
   const [showReferralModal, setShowReferralModal] = useState(false);
 
   const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
+  const createJoinRequestMutation = useCreateJoinRequest();
   const [canSeeMembers, setCanSeeMembers] = useState(false);
   const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
   const friendsQuery = useFriends(userProfile?.id);
@@ -71,7 +71,35 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       return;
     }
 
-    setShowJoinRequestModal(true);
+    Alert.alert(
+      'Send Join Request?',
+      'By requesting to join this group, you consent to sharing your contact details with the leaders. Do you wish to send your join request?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Request',
+          onPress: async () => {
+            try {
+              await createJoinRequestMutation.mutateAsync({
+                group_id: group.id,
+                user_id: userProfile.id,
+                contact_consent: true,
+              });
+              onMembershipChange?.();
+              Alert.alert(
+                'Request Sent',
+                'Your request has been sent to the group leaders.'
+              );
+            } catch (error) {
+              Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Failed to send join request'
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleLeaveGroup = () => {
@@ -151,7 +179,10 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     ? regularMembers
     : regularMembers.slice(0, 6);
 
-  const isLoading = joinGroupMutation.isPending || leaveGroupMutation.isPending;
+  const isLoading =
+    joinGroupMutation.isPending ||
+    leaveGroupMutation.isPending ||
+    createJoinRequestMutation.isPending;
 
   // Check if current user is a leader of this group
   const userMembership = members?.find((m) => m.user_id === userProfile?.id);
@@ -482,15 +513,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           )}
         </View>
 
-        {/* Join Request Modal */}
-        {userProfile && (
-          <JoinRequestModal
-            visible={showJoinRequestModal}
-            onClose={() => setShowJoinRequestModal(false)}
-            group={group}
-            userId={userProfile.id}
-          />
-        )}
+        {/* Join Request Modal removed; using native alert confirmation */}
 
         {/* Friends in Group Modal */}
         <Modal

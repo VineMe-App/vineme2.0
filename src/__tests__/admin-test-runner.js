@@ -43,7 +43,6 @@ const testCategories = {
     'src/components/admin/__tests__/UserManagementCard.test.tsx',
     'src/components/groups/__tests__/GroupLeaderPanel.test.tsx',
     'src/components/groups/__tests__/CreateGroupModal.test.tsx',
-    'src/components/groups/__tests__/JoinRequestModal.test.tsx',
     'src/components/ui/__tests__/AdminErrorBoundary.test.tsx',
     'src/components/ui/__tests__/AdminLoadingStates.test.tsx',
   ],

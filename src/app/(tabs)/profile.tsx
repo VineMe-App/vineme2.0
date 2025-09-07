@@ -21,7 +21,7 @@ import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { EditProfileModal, PrivacySettingsModal } from '@/components/profile';
+import { EditProfileModal } from '@/components/profile';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
 import { useTheme } from '@/theme/provider/useTheme';
@@ -32,7 +32,7 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  
   const deleteAccountMutation = useDeleteAccount();
 
   const {
@@ -343,15 +343,10 @@ export default function ProfileScreen() {
 
         <View style={styles.actionsSection}>
           <Button
-            title="Privacy Settings"
-            onPress={() => setShowPrivacyModal(true)}
+            title="Communication & Security"
+            onPress={() => router.push('/profile/communication')}
             variant="secondary"
             style={styles.privacyButton}
-          />
-          <Button
-            title="Security"
-            onPress={() => router.push('/profile/security')}
-            variant="secondary"
           />
           <Button
             title="Sign Out"
@@ -385,13 +380,9 @@ export default function ProfileScreen() {
         userId={user?.id}
       />
 
-      {user?.id && (
-        <PrivacySettingsModal
-          visible={showPrivacyModal}
-          onClose={() => setShowPrivacyModal(false)}
-          userId={user.id}
-        />
-      )}
+      {/* Privacy settings now live in Communication & Security screen */}
+
+      {/* Notification settings moved into Communication & Security page */}
     </SafeAreaView>
   );
 }
