@@ -4,7 +4,7 @@ A cross-platform mobile application built with Expo and React Native to help chu
 
 ## Getting Started
 
-### Prerequisites
+### Prerequisites please LORD!
 
 
 - Node.js (v18 or later)
