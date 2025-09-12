@@ -1,6 +1,8 @@
 module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.js'],
   testMatch: ['**/__tests__/**/*.(ts|tsx|js)', '**/*.(test|spec).(ts|tsx|js)'],
+  // Ignore any archived tests so Jest finds none
+  testPathIgnorePatterns: ['<rootDir>/archived-tests/'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
