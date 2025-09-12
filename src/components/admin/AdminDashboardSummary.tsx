@@ -85,6 +85,26 @@ export function AdminDashboardSummary({
 
         <TouchableOpacity
           style={styles.actionItem}
+          onPress={() => router.push('/admin/notifications')}
+        >
+          <View style={styles.actionContent}>
+            <View style={styles.actionInfo}>
+              <Text style={styles.actionTitle}>Notifications</Text>
+              <Text style={styles.actionDescription}>
+                View recent admin notifications
+              </Text>
+            </View>
+            {notificationCounts.total > 0 && (
+              <NotificationBadge
+                count={notificationCounts.total}
+                size="medium"
+              />
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionItem}
           onPress={() => router.push('/admin/manage-groups')}
         >
           <View style={styles.actionContent}>

@@ -235,6 +235,38 @@ export interface GeneralReferralWithDetails extends GeneralReferral {
   referred_user?: User;
 }
 
+// Enhanced Notifications System Types - Re-exported from dedicated notifications types file
+export type {
+  NotificationType,
+  Notification,
+  NotificationSettings,
+  NotificationTriggerData,
+  NotificationGroup,
+  NotificationSummary,
+  NotificationWithDetails,
+  CreateNotificationInput,
+  BatchCreateNotificationInput,
+  NotificationQueryOptions,
+  NotificationFilterOptions,
+  NotificationAction,
+  NotificationInteraction,
+  NotificationSubscription,
+  NotificationSubscriptionManager,
+  NotificationMetrics,
+  NotificationAnalytics,
+  NotificationError,
+  NotificationResult,
+  BatchNotificationResult,
+  QueuedNotification,
+  NotificationQueue,
+  PushNotificationPayload,
+  PushNotificationToken,
+  NotificationTemplate,
+  NotificationTemplateData,
+  NotificationValidationRule,
+  NotificationValidationSchema,
+} from './notifications';
+
 // Database response types
 export type DatabaseUser = User;
 export type DatabaseChurch = Church;
@@ -245,3 +277,5 @@ export type DatabaseFriendship = Friendship;
 export type DatabaseTicket = Ticket;
 export type DatabaseGroupReferral = GroupReferral;
 export type DatabaseGeneralReferral = GeneralReferral;
+export type DatabaseNotification = Notification;
+export type DatabaseNotificationSettings = NotificationSettings;

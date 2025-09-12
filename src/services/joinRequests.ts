@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import { contactAuditService } from './contactAudit';
+import { triggerJoinRequestApprovedNotification, triggerJoinRequestDeniedNotification } from './notifications';
+import { triggerJoinRequestReceivedNotification } from './notifications';
 import type {
   GroupJoinRequest,
   GroupJoinRequestWithUser,
@@ -60,13 +62,45 @@ export class JoinRequestService {
           user_id: requestData.user_id,
           role: 'member',
           status: 'pending',
-          joined_at: new Date().toISOString(),
+          // joined_at is set when request is approved
         })
         .select()
         .single();
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Fire notifications to active leaders of this group
+      try {
+        // Fetch requester name and group title
+        const [requesterRes, groupRes] = await Promise.all([
+          supabase.from('users').select('name').eq('id', requestData.user_id).single(),
+          supabase.from('groups').select('title').eq('id', requestData.group_id).single(),
+        ]);
+
+        if (requesterRes.data && groupRes.data) {
+          const { data: leaders } = await supabase
+            .from('group_memberships')
+            .select('user_id')
+            .eq('group_id', requestData.group_id)
+            .eq('role', 'leader')
+            .eq('status', 'active');
+
+          const leaderIds = (leaders || []).map((l) => l.user_id);
+
+          if (leaderIds.length > 0) {
+            await triggerJoinRequestReceivedNotification({
+              groupId: requestData.group_id,
+              groupTitle: groupRes.data.title,
+              requesterId: requestData.user_id,
+              requesterName: requesterRes.data.name,
+              leaderIds,
+            });
+          }
+        }
+      } catch (notifyErr) {
+        console.error('Failed to trigger join request notifications:', notifyErr);
       }
 
       return { data, error: null };
@@ -240,6 +274,42 @@ export class JoinRequestService {
         return { data: null, error: new Error(updateError.message) };
       }
 
+      // Notify requester of approval
+      try {
+        const [groupRes, userRes] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('id, title')
+            .eq('id', membershipRecord.group_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('id, name')
+            .eq('id', membershipRecord.user_id)
+            .single(),
+        ]);
+
+        // Get approver name
+        let approvedByName: string | undefined;
+        const { data: approver } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', approverId)
+          .single();
+        approvedByName = approver?.name;
+
+        if (groupRes.data && userRes.data && approvedByName) {
+          await triggerJoinRequestApprovedNotification({
+            groupId: groupRes.data.id,
+            groupTitle: groupRes.data.title,
+            requesterId: userRes.data.id,
+            approvedByName,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Failed to trigger approval notification', e);
+      }
+
       return { data: membership, error: null };
     } catch (error) {
       return {
@@ -289,7 +359,7 @@ export class JoinRequestService {
         };
       }
 
-      // Update the join request status
+      // Update the join request status (delete pending membership)
       const { error: updateError } = await supabase
         .from('group_memberships')
         .delete()
@@ -297,6 +367,38 @@ export class JoinRequestService {
 
       if (updateError) {
         return { data: null, error: new Error(updateError.message) };
+      }
+
+      // Notify requester of denial
+      try {
+        const [groupRes, userRes, declinerRes] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('id, title')
+            .eq('id', membershipRecord.group_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('id, name')
+            .eq('id', membershipRecord.user_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('name')
+            .eq('id', declinerId)
+            .single(),
+        ]);
+        const deniedByName = declinerRes?.data?.name || 'A group leader';
+        if (groupRes.data && userRes.data) {
+          await triggerJoinRequestDeniedNotification({
+            groupId: groupRes.data.id,
+            groupTitle: groupRes.data.title,
+            requesterId: userRes.data.id,
+            deniedByName,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Failed to trigger denial notification', e);
       }
 
       return { data: true, error: null };

@@ -2,7 +2,9 @@
   "mcpServers": {
     "fetch": {
       "command": "uvx",
-      "args": ["mcp-server-fetch"],
+      "args": [
+        "mcp-server-fetch"
+      ],
       "env": {},
       "disabled": true,
       "autoApprove": []
@@ -16,7 +18,12 @@
       ],
       "env": {
         "SUPABASE_ACCESS_TOKEN": "sbp_32cc98f64ceb481911be92dd06a1f510f710081d"
-      }
+      },
+      "disabled": false,
+      "autoApprove": [
+        "apply_migration",
+        "execute_sql"
+      ]
     }
   }
 }

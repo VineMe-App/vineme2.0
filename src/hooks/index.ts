@@ -115,3 +115,17 @@ export {
   useCriticalStylePreloader,
   useStyleCacheManagement,
 } from './useStylePerformance';
+
+// Enhanced Notification Hooks
+export {
+  useNotifications,
+  useLegacyNotificationSettings,
+  useEventReminders,
+  useNotificationPermissions,
+  useAdminNotifications,
+  useEnhancedNotifications,
+  useNotificationPanel,
+  useNotificationBadge,
+  useNotificationSettings,
+  useNotificationNavigation,
+} from './useNotifications';

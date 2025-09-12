@@ -21,11 +21,14 @@ import { ComponentMigrator } from './migration';
 
 const migrator = new ComponentMigrator();
 
-const result = await migrator.migrateComponent('src/components/MyComponent.tsx', {
-  preserveOriginalStyles: true,
-  addCompatibilityLayer: true,
-  generateTypes: true,
-});
+const result = await migrator.migrateComponent(
+  'src/components/MyComponent.tsx',
+  {
+    preserveOriginalStyles: true,
+    addCompatibilityLayer: true,
+    generateTypes: true,
+  }
+);
 
 if (result.success) {
   console.log('Migration successful!');
@@ -71,7 +74,7 @@ function MyComponent() {
   };
 
   const themeAwareStyles = (theme) => ({
-    container: { 
+    container: {
       backgroundColor: theme.colors.background.primary,
       padding: theme.spacing.lg,
     },
@@ -129,16 +132,16 @@ After migration:
 interface MigrationConfig {
   /** Whether to preserve original styles as fallbacks */
   preserveOriginalStyles: boolean;
-  
+
   /** Whether to add theme compatibility layer */
   addCompatibilityLayer: boolean;
-  
+
   /** Whether to generate TypeScript types */
   generateTypes: boolean;
-  
+
   /** Custom style mappings */
   customMappings?: Record<string, string>;
-  
+
   /** Components to exclude from migration */
   excludeComponents?: string[];
 }
@@ -150,13 +153,13 @@ interface MigrationConfig {
 interface StyleMigrationOptions {
   /** Target theme to migrate to */
   targetTheme?: Theme;
-  
+
   /** Whether to use semantic color names */
   useSemanticColors: boolean;
-  
+
   /** Whether to convert hardcoded values to theme tokens */
   convertToTokens: boolean;
-  
+
   /** Whether to preserve original values as comments */
   preserveComments: boolean;
 }
@@ -320,10 +323,11 @@ const config = {
 Always review mappings with confidence < 0.8:
 
 ```typescript
-const lowConfidenceMappings = report.styleMappingsApplied
-  .filter(mapping => mapping.confidence < 0.8);
+const lowConfidenceMappings = report.styleMappingsApplied.filter(
+  (mapping) => mapping.confidence < 0.8
+);
 
-lowConfidenceMappings.forEach(mapping => {
+lowConfidenceMappings.forEach((mapping) => {
   console.log(`Review: ${mapping.legacyProperty} → ${mapping.themeTokenPath}`);
 });
 ```

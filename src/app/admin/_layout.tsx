@@ -33,6 +33,7 @@ export default function AdminLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="manage-groups" />
           <Stack.Screen name="manage-users" />
+          <Stack.Screen name="notifications" />
         </Stack>
       </AdminErrorBoundary>
     </ChurchAdminOnly>
