@@ -30,10 +30,34 @@ export default function AdminLayout() {
             },
           }}
         >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="manage-groups" />
-          <Stack.Screen name="manage-users" />
-          <Stack.Screen name="notifications" />
+          <Stack.Screen 
+            name="index" 
+            options={{ 
+              headerShown: false,
+              title: "Admin Dashboard"
+            }} 
+          />
+          <Stack.Screen 
+            name="manage-groups" 
+            options={{ 
+              headerShown: false,
+              title: "Manage Groups"
+            }} 
+          />
+          <Stack.Screen 
+            name="manage-users" 
+            options={{ 
+              headerShown: false,
+              title: "Manage Users"
+            }} 
+          />
+          <Stack.Screen 
+            name="notifications" 
+            options={{ 
+              headerShown: false,
+              title: "Notifications"
+            }} 
+          />
         </Stack>
       </AdminErrorBoundary>
     </ChurchAdminOnly>

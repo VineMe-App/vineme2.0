@@ -2,10 +2,9 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { router } from 'expo-router';
-import { Card } from '@/components/ui/Card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { NotificationBadge } from '@/components/ui/NotificationBadge';
-import { useAdminNotifications } from '@/hooks/useNotifications';
+import { useEnhancedNotifications } from '@/hooks/useNotifications';
 import { useQuery } from '@tanstack/react-query';
 import { userAdminService } from '@/services/admin';
 import { useAuthStore } from '@/stores/auth';
@@ -19,9 +18,19 @@ export function AdminDashboardSummary({
 }: AdminDashboardSummaryProps) {
   const { user, userProfile } = useAuthStore();
 
-  // Get notification counts
-  const { notificationCounts, isLoading: isLoadingNotifications } =
-    useAdminNotifications(user?.id);
+  // Get enhanced unread notifications and derive counts needed for admin
+  const { unreadNotifications = [], isLoading: isLoadingNotifications } =
+    useEnhancedNotifications(user?.id);
+
+  const notificationCounts = {
+    group_requests: unreadNotifications.filter(
+      (n: any) => n.type === 'group_request_submitted'
+    ).length,
+    join_requests: unreadNotifications.filter(
+      (n: any) => n.type === 'join_request_received'
+    ).length,
+    total: unreadNotifications.length,
+  };
 
   // Get church summary
   const { data: churchSummary, isLoading: isLoadingSummary } = useQuery({
@@ -42,132 +51,101 @@ export function AdminDashboardSummary({
 
   if (isLoading) {
     return (
-      <Card style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <LoadingSpinner size="small" />
-          <Text style={styles.loadingText}>Loading dashboard...</Text>
-        </View>
-      </Card>
+      <View style={styles.loadingContainer}>
+        <LoadingSpinner size="small" />
+        <Text style={styles.loadingText}>Loading dashboard...</Text>
+      </View>
     );
   }
 
   return (
-    <Card style={styles.container}>
-      <Text style={styles.title}>Admin Dashboard</Text>
-
-      {/* Key Metrics */}
-      <View style={styles.metricsContainer}>
-        <View style={styles.metricCard}>
-          <Text style={styles.metricNumber}>
-            {churchSummary?.total_users || 0}
-          </Text>
-          <Text style={styles.metricLabel}>Total Users</Text>
-        </View>
-
-        <View style={styles.metricCard}>
-          <Text style={styles.metricNumber}>
-            {churchSummary?.active_groups || 0}
-          </Text>
-          <Text style={styles.metricLabel}>Active Groups</Text>
-        </View>
-
-        <View style={styles.metricCard}>
-          <Text style={styles.metricNumber}>
-            {churchSummary?.unconnected_users || 0}
-          </Text>
-          <Text style={styles.metricLabel}>Unconnected</Text>
+    <View style={styles.container}>
+      {/* Stats Overview */}
+      <View style={styles.statsSection}>
+        <Text style={styles.sectionTitle}>Church Overview</Text>
+        <View style={styles.metricsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {churchSummary?.total_users || 0}
+            </Text>
+            <Text style={styles.statLabel}>Total Users</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {churchSummary?.active_groups || 0}
+            </Text>
+            <Text style={styles.statLabel}>Active Groups</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {churchSummary?.unconnected_users || 0}
+            </Text>
+            <Text style={styles.statLabel}>Need Connection</Text>
+          </View>
         </View>
       </View>
 
-      {/* Action Items */}
-      <View style={styles.actionsContainer}>
-        <Text style={styles.actionsTitle}>Pending Actions</Text>
-
-        <TouchableOpacity
-          style={styles.actionItem}
-          onPress={() => router.push('/admin/notifications')}
-        >
-          <View style={styles.actionContent}>
-            <View style={styles.actionInfo}>
-              <Text style={styles.actionTitle}>Notifications</Text>
-              <Text style={styles.actionDescription}>
-                View recent admin notifications
-              </Text>
-            </View>
-            {notificationCounts.total > 0 && (
-              <NotificationBadge
-                count={notificationCounts.total}
-                size="medium"
-              />
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionItem}
-          onPress={() => router.push('/admin/manage-groups')}
-        >
-          <View style={styles.actionContent}>
-            <View style={styles.actionInfo}>
+      {/* Quick Actions */}
+      <View style={styles.actionsSection}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/admin/manage-groups')}
+          >
+            <View style={styles.actionHeader}>
               <Text style={styles.actionTitle}>Group Requests</Text>
-              <Text style={styles.actionDescription}>
-                Review pending group creation requests
-              </Text>
+              {notificationCounts.group_requests > 0 && (
+                <NotificationBadge
+                  count={notificationCounts.group_requests}
+                  size="small"
+                />
+              )}
             </View>
-            {notificationCounts.group_requests > 0 && (
-              <NotificationBadge
-                count={notificationCounts.group_requests}
-                size="medium"
-              />
-            )}
-          </View>
-        </TouchableOpacity>
+            <Text style={styles.actionDescription}>
+              Review pending group creation requests
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionItem}
-          onPress={() => router.push('/admin/manage-users')}
-        >
-          <View style={styles.actionContent}>
-            <View style={styles.actionInfo}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/admin/manage-users')}
+          >
+            <View style={styles.actionHeader}>
               <Text style={styles.actionTitle}>User Management</Text>
-              <Text style={styles.actionDescription}>
-                {churchSummary?.unconnected_users || 0} users need group
-                connections
-              </Text>
+              {(churchSummary?.unconnected_users || 0) > 0 && (
+                <NotificationBadge
+                  count={churchSummary?.unconnected_users || 0}
+                  size="small"
+                  color="#f59e0b"
+                />
+              )}
             </View>
-            {(churchSummary?.unconnected_users || 0) > 0 && (
-              <NotificationBadge
-                count={churchSummary?.unconnected_users || 0}
-                size="medium"
-                color="#f59e0b"
-              />
-            )}
-          </View>
-        </TouchableOpacity>
+            <Text style={styles.actionDescription}>
+              {churchSummary?.unconnected_users || 0} users need group
+              connections
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionItem}
-          onPress={() => {
-            // Navigate to join requests - could be in groups or separate screen
-            router.push('/(tabs)/groups');
-          }}
-        >
-          <View style={styles.actionContent}>
-            <View style={styles.actionInfo}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/(tabs)/groups')}
+          >
+            <View style={styles.actionHeader}>
               <Text style={styles.actionTitle}>Join Requests</Text>
-              <Text style={styles.actionDescription}>
-                Review pending group join requests
-              </Text>
+              {notificationCounts.join_requests > 0 && (
+                <NotificationBadge
+                  count={notificationCounts.join_requests}
+                  size="small"
+                  color="#8b5cf6"
+                />
+              )}
             </View>
-            {notificationCounts.join_requests > 0 && (
-              <NotificationBadge
-                count={notificationCounts.join_requests}
-                size="medium"
-                color="#8b5cf6"
-              />
-            )}
-          </View>
-        </TouchableOpacity>
+            <Text style={styles.actionDescription}>
+              Review pending group join requests
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Refresh Button */}
@@ -176,99 +154,125 @@ export function AdminDashboardSummary({
           <Text style={styles.refreshButtonText}>Refresh Dashboard</Text>
         </TouchableOpacity>
       )}
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    margin: 16,
-    padding: 20,
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
+    paddingVertical: 40,
   },
   loadingText: {
     marginLeft: 8,
     fontSize: 14,
     color: '#6b7280',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+
+  // Stats Section
+  statsSection: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#1f2937',
     marginBottom: 16,
   },
-  metricsContainer: {
+  metricsGrid: {
     flexDirection: 'row',
-    marginBottom: 24,
     gap: 12,
   },
-  metricCard: {
+  statCard: {
     flex: 1,
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 20,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
   },
-  metricNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  statNumber: {
+    fontSize: 28,
+    fontWeight: '700',
     color: '#1f2937',
     marginBottom: 4,
   },
-  metricLabel: {
-    fontSize: 12,
+  statLabel: {
+    fontSize: 13,
     color: '#6b7280',
     fontWeight: '500',
     textAlign: 'center',
   },
-  actionsContainer: {
-    marginBottom: 16,
+
+  // Actions Section
+  actionsSection: {
+    marginBottom: 24,
   },
-  actionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 12,
+  actionsGrid: {
+    gap: 12,
   },
-  actionItem: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 8,
+  actionCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
   },
-  actionContent: {
+  actionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  actionInfo: {
-    flex: 1,
+    marginBottom: 8,
   },
   actionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
-    marginBottom: 2,
   },
   actionDescription: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#6b7280',
+    lineHeight: 20,
   },
+
+  // Refresh Button
   refreshButton: {
-    backgroundColor: '#e5e7eb',
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 20,
   },
   refreshButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#374151',
+    color: '#475569',
   },
 });

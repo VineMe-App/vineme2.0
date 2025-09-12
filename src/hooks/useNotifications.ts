@@ -532,10 +532,10 @@ export const useAdminNotifications = (userId?: string) => {
     isLoading: isLoadingUnread,
     error: unreadError,
   } = useQuery({
-    queryKey: ['admin-notifications', 'unread', userId],
-    queryFn: () => getUnreadNotifications(userId!),
+    queryKey: ['notifications', 'unread', userId],
+    queryFn: () => getUnreadNotificationsWithSettings(userId!),
     enabled: !!userId,
-    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    refetchInterval: 30000,
   });
 
   // Get all notifications

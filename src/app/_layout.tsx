@@ -149,6 +149,10 @@ function RootLayoutNav() {
           name="referral-landing"
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="admin" options={{ headerShown: false }} />
+        <Stack.Screen name="group" options={{ headerShown: false }} />
+        <Stack.Screen name="event" options={{ headerShown: false }} />
+        <Stack.Screen name="user" options={{ headerShown: false }} />
       </Stack>
       {__DEV__ && <DevToolsOverlay />}
     </>
@@ -191,7 +195,11 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
-        <StatusBar barStyle="dark-content" backgroundColor="white" translucent={false} />
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="white"
+          translucent={false}
+        />
         <ThemeProvider initialTheme="light">
           <QueryProvider>
             <AuthProvider>
