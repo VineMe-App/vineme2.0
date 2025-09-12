@@ -6,6 +6,7 @@ A cross-platform mobile application built with Expo and React Native to help chu
 
 ### Prerequisites
 
+
 - Node.js (v18 or later)
 - npm or yarn
 - Expo CLI (`npm install -g @expo/cli`)
