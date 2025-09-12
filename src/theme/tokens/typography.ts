@@ -9,7 +9,6 @@ export interface ThemeTypography {
     medium: string;
     semiBold: string;
     bold: string;
-    extraBold: string;
   };
   fontSize: Record<string, number>;
   lineHeight: Record<string, number>;
@@ -19,11 +18,10 @@ export interface ThemeTypography {
 
 // Font family definitions
 export const fontFamily = {
-  regular: 'Manrope-Regular',
-  medium: 'Manrope-Medium',
-  semiBold: 'Manrope-SemiBold',
-  bold: 'Manrope-Bold',
-  extraBold: 'Manrope-ExtraBold',
+  regular: 'System',
+  medium: 'System',
+  semiBold: 'System',
+  bold: 'System',
 };
 
 // Font size scale (in pixels)
@@ -45,18 +43,18 @@ export const fontSize = {
 
 // Line height scale (multipliers of font size)
 export const lineHeight = {
-  xs: 16,     // 1.33x for 12px
-  sm: 20,     // 1.43x for 14px
-  base: 24,   // 1.5x for 16px
-  lg: 28,     // 1.56x for 18px
-  xl: 28,     // 1.4x for 20px
-  '2xl': 32,  // 1.33x for 24px
-  '3xl': 36,  // 1.2x for 30px
-  '4xl': 40,  // 1.11x for 36px
-  '5xl': 48,  // 1x for 48px
-  '6xl': 60,  // 1x for 60px
-  '7xl': 72,  // 1x for 72px
-  '8xl': 96,  // 1x for 96px
+  xs: 16, // 1.33x for 12px
+  sm: 20, // 1.43x for 14px
+  base: 24, // 1.5x for 16px
+  lg: 28, // 1.56x for 18px
+  xl: 28, // 1.4x for 20px
+  '2xl': 32, // 1.33x for 24px
+  '3xl': 36, // 1.2x for 30px
+  '4xl': 40, // 1.11x for 36px
+  '5xl': 48, // 1x for 48px
+  '6xl': 60, // 1x for 60px
+  '7xl': 72, // 1x for 72px
+  '8xl': 96, // 1x for 96px
   '9xl': 128, // 1x for 128px
 };
 
@@ -134,19 +132,19 @@ export const typographyVariants: Record<string, TypographyVariant> = {
   h4: {
     fontSize: fontSize['3xl'],
     lineHeight: lineHeight['3xl'],
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semiBold,
     letterSpacing: letterSpacing.normal,
   },
   h5: {
     fontSize: fontSize['2xl'],
     lineHeight: lineHeight['2xl'],
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semiBold,
     letterSpacing: letterSpacing.normal,
   },
   h6: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.xl,
     lineHeight: lineHeight.xl,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.semiBold,
     letterSpacing: letterSpacing.normal,
   },
 
