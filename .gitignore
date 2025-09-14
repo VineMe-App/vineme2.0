@@ -35,9 +35,9 @@ local.properties
 !debug.keystore
 
 # React Native / Expo
-# Generated native folders - these are created by expo run:ios/android
-ios/
-android/
+# Generated native folders - these are created by expo
+# ios/ - commented out since we have actual iOS source code
+# android/ - commented out since we have actual Android source code
 
 # node.js
 #
@@ -49,7 +49,12 @@ yarn-error.log
 *.jsbundle
 
 # CocoaPods
-/ios/Pods/
+ios/Pods/
+ios/build/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/DerivedData/
 
 # Expo
 .expo/
