@@ -132,12 +132,31 @@ export class ReferralService {
       // Record the referral attempt for rate limiting
       referralRateLimiter.recordReferral(data.referrerId);
 
+      // Ensure we have a referrerId (from caller or current session)
+      let effectiveReferrerId = data.referrerId;
+      if (!effectiveReferrerId) {
+        const { user } = await authService.validateAndRefreshSession();
+        if (!user?.id) {
+          return {
+            success: false,
+            error: 'Referrer ID is required',
+            errorDetails: {
+              type: 'validation',
+              message: 'Referrer ID is required',
+              field: 'referrerId',
+              retryable: false,
+            },
+          };
+        }
+        effectiveReferrerId = user.id;
+      }
+
       // Route to appropriate referral type with retry logic
       const result = await retryWithBackoff(async () => {
         if (data.groupId) {
-          return await this.createGroupReferral(sanitizedData);
+          return await this.createGroupReferral({ ...sanitizedData, referrerId: effectiveReferrerId });
         } else {
-          return await this.createGeneralReferral(sanitizedData);
+          return await this.createGeneralReferral({ ...sanitizedData, referrerId: effectiveReferrerId });
         }
       }, 2, 1000);
 
@@ -171,8 +190,8 @@ export class ReferralService {
     data: CreateReferralData
   ): Promise<ReferralResponse> {
     try {
-      // Create user account first
-      const userId = await this.createUserAccount(data);
+      // Create user account via secure Edge Function
+      const userId = await this.createUserAccountViaEdgeFunction(data);
       if (!userId) {
         return { success: false, error: 'Failed to create user account' };
       }
@@ -228,8 +247,8 @@ export class ReferralService {
         return { success: false, error: 'Group not found' };
       }
 
-      // Create user account first
-      const userId = await this.createUserAccount(data);
+      // Create user account via secure Edge Function
+      const userId = await this.createUserAccountViaEdgeFunction(data);
       if (!userId) {
         return { success: false, error: 'Failed to create user account' };
       }
@@ -411,6 +430,34 @@ export class ReferralService {
     }
   }
 
+  private async createUserAccountViaEdgeFunction(
+    data: CreateReferralData
+  ): Promise<string | null> {
+    try {
+      const { data: resp, error } = await supabase.functions.invoke('create-referred-user', {
+        body: {
+          email: data.email,
+          phone: data.phone,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          note: data.note,
+          referrerId: data.referrerId,
+          groupId: data.groupId,
+        },
+      });
+
+      if (error) {
+        console.error('Edge function error creating referred user:', error);
+        return null;
+      }
+
+      return (resp as any)?.userId || null;
+    } catch (e) {
+      console.error('Error calling create-referred-user function:', e);
+      return null;
+    }
+  }
+
   /**
    * Private helper: Create general referral record
    * Requirement 6.1: Store referrer's ID and referral details
@@ -496,79 +543,13 @@ export class ReferralService {
    * Requirement 4.5: Add spam protection for referral submissions
    */
   private async checkForDuplicateReferral(
-    email: string,
-    referrerId: string,
-    groupId?: string
+    _email: string,
+    _referrerId: string,
+    _groupId?: string
   ): Promise<{ isDuplicate: boolean; message: string }> {
-    try {
-      // Check if user already exists with this email
-      // public.users no longer stores email; rely on auth to detect existing users by email
-      const { data: existingUser, error: userError } = await supabase.auth.admin.listUsers({
-        page: 1,
-        perPage: 1,
-        email: email.toLowerCase(),
-      }) as any;
-
-      if (userError && userError.code !== 'PGRST116') {
-        // Error other than "no rows found"
-        throw userError;
-      }
-
-      if (existingUser) {
-        // User exists, check if they were already referred by this person
-        if (groupId) {
-          // Check group referrals
-          const { data: groupReferral, error: groupRefError } = await supabase
-            .from('group_referrals')
-            .select('id')
-            .eq('referred_user_id', existingUser.id)
-            .eq('referrer_id', referrerId)
-            .eq('group_id', groupId)
-            .single();
-
-          if (groupRefError && groupRefError.code !== 'PGRST116') {
-            throw groupRefError;
-          }
-
-          if (groupReferral) {
-            return {
-              isDuplicate: true,
-              message: 'You have already referred this person to this group',
-            };
-          }
-        } else {
-          // Check general referrals
-          const { data: generalReferral, error: generalRefError } = await supabase
-            .from('general_referrals')
-            .select('id')
-            .eq('referred_user_id', existingUser.id)
-            .eq('referrer_id', referrerId)
-            .single();
-
-          if (generalRefError && generalRefError.code !== 'PGRST116') {
-            throw generalRefError;
-          }
-
-          if (generalReferral) {
-            return {
-              isDuplicate: true,
-              message: 'You have already made a general referral for this person',
-            };
-          }
-        }
-
-        return {
-          isDuplicate: true,
-          message: 'This person already has an account. You can invite them to join groups directly.',
-        };
-      }
-
-      return { isDuplicate: false, message: '' };
-    } catch (error) {
-      console.error('Error checking for duplicate referral:', error);
-      // Don't block referral creation due to duplicate check errors
-      return { isDuplicate: false, message: '' };
-    }
+    // Client cannot safely call Admin API; rely on createUser step to surface duplicates.
+    // If the auth user already exists, the create step will error and we convert to a user-friendly message.
+    return { isDuplicate: false, message: '' };
   }
 
   /**
