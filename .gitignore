@@ -35,7 +35,7 @@ local.properties
 !debug.keystore
 
 # React Native / Expo
-# # Generated native folders - these are created by expo run:ios/android
+# Generated native folders - these are created by expo run:ios/android
 android/
 
 # node.js
