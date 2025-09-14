@@ -101,7 +101,6 @@ export default function PhoneLoginScreen() {
             </>
           ) : (
             <>
-              <Text variant="label" style={styles.label}>Enter 4-digit code</Text>
               <Text variant="body" color="secondary" style={styles.phoneDisplay}>Sent to {fullPhone}</Text>
               <OtpInput 
                 value={code} 
