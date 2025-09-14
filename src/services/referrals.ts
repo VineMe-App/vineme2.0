@@ -301,7 +301,7 @@ export class ReferralService {
           *,
           group:groups(*),
           referrer:users!group_referrals_referrer_id_fkey(id, name),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
+          referred_user:users!group_referrals_referred_by_user_id_fkey(id, name)
         `
         )
         .eq('referrer_id', userId)
@@ -318,7 +318,7 @@ export class ReferralService {
           `
           *,
           referrer:users!general_referrals_referrer_id_fkey(id, name),
-          referred_user:users!general_referrals_referred_user_id_fkey(id, name)
+          referred_user:users!general_referrals_referred_by_user_id_fkey(id, name)
         `
         )
         .eq('referrer_id', userId)
@@ -358,7 +358,7 @@ export class ReferralService {
           *,
           group:groups(*),
           referrer:users!group_referrals_referrer_id_fkey(id, name),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
+          referred_user:users!group_referrals_referred_by_user_id_fkey(id, name)
         `
         )
         .eq('group_id', groupId)
@@ -471,7 +471,7 @@ export class ReferralService {
     
     const { error } = await supabase.from('general_referrals').insert({
       referrer_id: data.referrerId,
-      referred_user_id: userId,
+      referred_by_user_id: userId,
       note: data.note || null, // Explicitly handle empty notes
       created_at: now,
       updated_at: now,
@@ -512,7 +512,7 @@ export class ReferralService {
     const { error } = await supabase.from('group_referrals').insert({
       group_id: data.groupId,
       referrer_id: data.referrerId,
-      referred_user_id: userId,
+      referred_by_user_id: userId,
       note: data.note || null, // Explicitly handle empty notes
       created_at: now,
       updated_at: now,
@@ -761,9 +761,9 @@ export class ReferralService {
           *,
           group:groups(*),
           referrer:users!group_referrals_referrer_id_fkey(id, name),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
+          referred_user:users!group_referrals_referred_by_user_id_fkey(id, name)
         `)
-        .eq('referred_user_id', userId)
+        .eq('referred_by_user_id', userId)
         .single();
 
       // Check for general referral
@@ -772,9 +772,9 @@ export class ReferralService {
         .select(`
           *,
           referrer:users!general_referrals_referrer_id_fkey(id, name),
-          referred_user:users!general_referrals_referred_user_id_fkey(id, name)
+          referred_user:users!general_referrals_referred_by_user_id_fkey(id, name)
         `)
-        .eq('referred_user_id', userId)
+        .eq('referred_by_user_id', userId)
         .single();
 
       // It's expected that one of these might not exist, so we don't treat that as an error
@@ -1014,8 +1014,8 @@ export class ReferralService {
       // Check for referrals with invalid user references (referred user)
       const { data: invalidReferredUsers, error: referredError } = await supabase
         .from('group_referrals')
-        .select('id, referred_user_id')
-        .not('referred_user_id', 'in', `(SELECT id FROM users)`);
+        .select('id, referred_by_user_id')
+        .not('referred_by_user_id', 'in', `(SELECT id FROM users)`);
 
       if (referredError) {
         return { data: null, error: new Error(referredError.message) };
@@ -1033,8 +1033,8 @@ export class ReferralService {
 
       const { data: invalidGeneralReferredUsers, error: generalReferredError } = await supabase
         .from('general_referrals')
-        .select('id, referred_user_id')
-        .not('referred_user_id', 'in', `(SELECT id FROM users)`);
+        .select('id, referred_by_user_id')
+        .not('referred_by_user_id', 'in', `(SELECT id FROM users)`);
 
       if (generalReferredError) {
         return { data: null, error: new Error(generalReferredError.message) };

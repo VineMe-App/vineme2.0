@@ -39,7 +39,7 @@ const mockGroupReferral = {
   id: 'ref-1',
   group_id: 'group-123',
   referrer_id: 'user-123',
-  referred_user_id: 'user-456',
+  referred_by_user_id: 'user-456',
   note: 'Great person for our group',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -59,7 +59,7 @@ const mockGroupReferral = {
 const mockGeneralReferral = {
   id: 'ref-2',
   referrer_id: 'user-123',
-  referred_user_id: 'user-789',
+  referred_by_user_id: 'user-789',
   note: 'Would be great in our community',
   created_at: '2024-01-02T00:00:00Z',
   updated_at: '2024-01-02T00:00:00Z',
