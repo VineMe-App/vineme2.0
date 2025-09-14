@@ -135,12 +135,15 @@ serve(async (req) => {
 
     // Create group referral record if groupId provided
     if (payload.groupId) {
+      // Per latest spec: id = referred user id (primary key), referred_by_user_id = referrer
       const { error: refError } = await supabase.from('group_referrals').insert({
+        id: userId,
         group_id: payload.groupId,
         referred_by_user_id: payload.referrerId || null,
         church_id: churchId,
         note: payload.note || null,
         created_at: now,
+        updated_at: now,
       })
       if (refError) {
         // Not fatal but report in response
