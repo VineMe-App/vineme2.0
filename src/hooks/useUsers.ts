@@ -9,6 +9,8 @@ export const userKeys = {
   profile: (userId: string) => [...userKeys.all, 'profile', userId] as const,
   groupMemberships: (userId: string) =>
     [...userKeys.all, 'groupMemberships', userId] as const,
+  pendingCreatedGroups: (userId: string) =>
+    [...userKeys.all, 'pendingCreatedGroups', userId] as const,
   friendships: (userId: string) =>
     [...userKeys.all, 'friendships', userId] as const,
   search: (query: string) => [...userKeys.all, 'search', query] as const,
@@ -46,6 +48,25 @@ export const useUserGroupMemberships = (userId: string | undefined) => {
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+/**
+ * Hook to get user's pending created groups
+ */
+export const useUserPendingCreatedGroups = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: userKeys.pendingCreatedGroups(userId || ''),
+    queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
+      const { data, error } = await userService.getUserPendingCreatedGroups(
+        userId
+      );
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: 3 * 60 * 1000,
   });
 };
 

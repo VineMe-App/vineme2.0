@@ -11,7 +11,7 @@ import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '../../stores/auth';
 import { router } from 'expo-router';
 import { useUpcomingEvents } from '../../hooks/useEvents';
-import { useUserGroupMemberships } from '../../hooks/useUsers';
+import { useUserGroupMemberships, useUserPendingCreatedGroups } from '../../hooks/useUsers';
 import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import {
   useFriends,
@@ -28,6 +28,7 @@ import { ConnectSomeoneSection } from '../../components/referrals/ConnectSomeone
 import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { useTheme } from '@/theme/provider/useTheme';
+import { useGroup, useGroupLeaders } from '@/hooks/useGroups';
 
 export default function HomeScreen() {
   const { user, userProfile } = useAuthStore();
@@ -50,6 +51,13 @@ export default function HomeScreen() {
     isLoading: groupsLoading,
     refetch: refetchGroups,
   } = useUserGroupMemberships(userId);
+
+  // Fetch groups the user created that are still pending approval
+  const {
+    data: userPendingCreatedGroups,
+    isLoading: pendingCreatedLoading,
+    refetch: refetchPendingCreated,
+  } = useUserPendingCreatedGroups(userId);
 
   // Fetch user's pending group join requests
   const {
@@ -75,7 +83,11 @@ export default function HomeScreen() {
   const pendingRequests = pendingFriendRequests || [];
 
   const isLoading =
-    groupsLoading || friendsLoading || requestsLoading || joinRequestsLoading;
+    groupsLoading ||
+    friendsLoading ||
+    requestsLoading ||
+    joinRequestsLoading ||
+    pendingCreatedLoading;
 
   // Handle refresh
   const handleRefresh = React.useCallback(async () => {
@@ -85,8 +97,15 @@ export default function HomeScreen() {
       refetchFriends(),
       refetchRequests(),
       refetchJoinRequests(),
+      refetchPendingCreated(),
     ]);
-  }, [refetchGroups, refetchFriends, refetchRequests, refetchJoinRequests]);
+  }, [
+    refetchGroups,
+    refetchFriends,
+    refetchRequests,
+    refetchJoinRequests,
+    refetchPendingCreated,
+  ]);
 
   if (isLoading && !userGroupMemberships) {
     return (
@@ -241,62 +260,86 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {userGroupMemberships && userGroupMemberships.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
-          >
-            {userGroupMemberships.map((membership) => (
-              <View key={membership.group_id} style={styles.horizontalCard}>
+        {
+          // Build a unified list of cards: active memberships first, then pending join requests
+        }
+        {(() => {
+          const membershipCards = (userGroupMemberships || []).map((membership) => (
+            <ActiveMembershipCard key={`active-${membership.group_id}`} membership={membership} />
+          ));
+
+          const pendingCards = (userJoinRequests || []).map((req) => (
+            <View key={`pending-join-${req.id}`} style={styles.horizontalCard}>
+              <PendingJoinRequestGroupCard request={{
+                id: req.id,
+                group_id: req.group_id,
+                created_at: req.created_at,
+              }} />
+            </View>
+          ));
+
+          // Add cards for pending created groups not already present via memberships
+          const createdPendingCards = (userPendingCreatedGroups || [])
+            .filter((g) => !(userGroupMemberships || []).some((m) => m.group_id === g.id))
+            .map((group) => (
+              <View key={`pending-created-${group.id}`} style={styles.horizontalCard}>
                 <GroupCard
-                  group={membership.group}
-                  membershipStatus={membership.role}
-                  onPress={() => router.push(`/group/${membership.group.id}`)}
+                  group={group}
+                  membershipStatus={'leader'}
+                  notice={`All groups on VineMe are verified before they are live. Your request to create ${group.title} has been sent to your service pastor. They will be in touch to approve or discuss.`}
+                  hideMeta={true}
+                  disabled={true}
+                  onPress={() => router.push(`/group/${group.id}`)}
                   style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
                 />
               </View>
-            ))}
-          </ScrollView>
-        ) : userJoinRequests && userJoinRequests.length > 0 ? (
-          <EmptyState
-            title={
-              userJoinRequests.length === 1
-                ? 'Join request pending'
-                : 'Join requests pending'
-            }
-            message={
-              userJoinRequests.length === 1
-                ? `You have requested to join ${userJoinRequests[0].group.title} - a leader will be in touch with more details`
-                : `You have requested to join ${userJoinRequests.length} groups - a leader will be in touch with more details`
-            }
-            icon={null}
-          />
-        ) : (
-          <EmptyState
-            title="No groups yet"
-            message="Join a Bible study group to connect with your community"
-            icon={null}
-            action={
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  { backgroundColor: theme.colors.primary[500] },
-                ]}
-                onPress={() => router.push('/(tabs)/groups')}
-              >
-                <Text
-                  variant="bodyLarge"
-                  weight="semiBold"
-                  color="inverse"
-                  style={styles.actionButtonText}
-                >
-                  Browse Groups
-                </Text>
-              </TouchableOpacity>
-            }
-          />
-        )}
+            ));
+
+          const hasAny =
+            membershipCards.length > 0 ||
+            pendingCards.length > 0 ||
+            createdPendingCards.length > 0;
+
+          if (!hasAny) {
+            return (
+              <EmptyState
+                title="No groups yet"
+                message="Join a Bible study group to connect with your community"
+                icon={null}
+                action={
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      { backgroundColor: theme.colors.primary[500] },
+                    ]}
+                    onPress={() => router.push('/(tabs)/groups')}
+                  >
+                    <Text
+                      variant="bodyLarge"
+                      weight="semiBold"
+                      color="inverse"
+                      style={styles.actionButtonText}
+                    >
+                      Browse Groups
+                    </Text>
+                  </TouchableOpacity>
+                }
+              />
+            );
+          }
+
+          return (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+            >
+              {membershipCards}
+              {pendingCards}
+              {createdPendingCards}
+            </ScrollView>
+          );
+        })()}
       </View>
 
       {/* Connect Someone Section */}
@@ -334,6 +377,104 @@ export default function HomeScreen() {
       <View style={styles.bottomSpacing} />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// Helper: card for a pending join request rendered like a group card
+function PendingJoinRequestGroupCard({
+  request,
+}: {
+  request: { id: string; group_id: string; created_at: string };
+}) {
+  const { data: group } = useGroup(request.group_id);
+  const { data: leaders } = useGroupLeaders(request.group_id);
+
+  // Format leader names: "A and B" or "A, B and C"
+  const formatLeaderNames = (names: string[]) => {
+    if (names.length === 0) return 'the group leaders';
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]} and ${names[1]}`;
+    return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  };
+
+  const leaderNames = (leaders || [])
+    .map((m) => m.user?.name)
+    .filter(Boolean) as string[];
+
+  const notice = group
+    ? `Your request to join ${group.title} has been sent to ${formatLeaderNames(leaderNames)}. They will be in touch.`
+    : 'Your request to join this group has been sent to the leaders. They will be in touch.';
+
+  // While loading group details, render a lightweight placeholder card
+  if (!group) {
+    return (
+      <Card variant="filled" style={{ width: 260, minHeight: 160 }}>
+        <View style={{ padding: 16 }}>
+          <Text variant="h6" style={{ marginBottom: 8 }}>
+            Join request pending
+          </Text>
+          <Text variant="bodySmall" color="secondary">
+            Loading group details...
+          </Text>
+        </View>
+      </Card>
+    );
+  }
+
+  return (
+    <GroupCard
+      group={group}
+      membershipStatus={null}
+      notice={notice}
+      hideMeta={true}
+      disabled={true}
+      onPress={() => router.push(`/group/${group.id}`)}
+      style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
+    />
+  );
+}
+
+// Helper: ensure we can render a card even if membership.group wasn't embedded (RLS or query limits)
+function ActiveMembershipCard({
+  membership,
+}: {
+  membership: {
+    group_id: string;
+    role: 'member' | 'leader' | 'admin';
+    group?: any;
+  };
+}) {
+  // Rely on the embedded group from the membership query.
+  // For pending-created visibility, we separately fetch via useUserPendingCreatedGroups.
+  const group = membership.group;
+
+  // If group details are not accessible (likely due to RLS for pending/closed),
+  // don't render a placeholder card here. Other data sources (e.g., pending-created list)
+  // will render the correct card when appropriate.
+  if (!group) return null;
+
+  // Do not show closed or denied groups in My Groups
+  if (group.status === 'closed' || group.status === 'denied') {
+    return null;
+  }
+
+  const creationPending = membership.role === 'leader' && group.status === 'pending';
+  const notice = creationPending
+    ? `All groups on VineMe are verified before they are live. Your request to create ${group.title} has been sent to your service pastor. They will be in touch to approve or discuss.`
+    : undefined;
+
+  return (
+    <View style={styles.horizontalCard}>
+      <GroupCard
+        group={group}
+        membershipStatus={membership.role}
+        notice={notice}
+        hideMeta={!!notice}
+        disabled={!!notice}
+        onPress={() => router.push(`/group/${group.id}`)}
+        style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
+      />
+    </View>
   );
 }
 

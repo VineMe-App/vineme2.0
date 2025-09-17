@@ -30,6 +30,7 @@ export default function GroupDetailScreen() {
   const { data: membershipData, refetch: refetchMembership } =
     useGroupMembership(id, userProfile?.id);
 
+
   const handleRefresh = async () => {
     await Promise.all([refetchGroup(), refetchMembership()]);
   };
@@ -61,6 +62,8 @@ export default function GroupDetailScreen() {
     ]);
     return null;
   }
+
+  // Do not block navigation here. Pending behavior is handled at the entry points (e.g., Home cards).
 
   const membershipStatus = membershipData?.membership?.role || null;
 

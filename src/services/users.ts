@@ -308,6 +308,42 @@ export class UserService {
       };
     }
   }
+
+  /**
+   * Get groups created by the user that are pending approval
+   */
+  async getUserPendingCreatedGroups(
+    userId: string
+  ): Promise<UserServiceResponse<any[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('groups')
+        .select(
+          `
+          *,
+          service:services(*),
+          church:churches(*)
+        `
+        )
+        .eq('created_by', userId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get pending created groups'),
+      };
+    }
+  }
 }
 
 // Export singleton instance
