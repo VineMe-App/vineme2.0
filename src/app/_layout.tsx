@@ -85,6 +85,7 @@ function RootLayoutNav() {
       segments[0] === 'event' ||
       segments[0] === 'admin' ||
       segments[0] === 'user' ||
+      segments[0] === 'group-management' ||
       // Allow notifications page outside of tabs
       segments[0] === 'notifications' ||
       // Allow referral page outside of tabs
@@ -151,10 +152,11 @@ function RootLayoutNav() {
           name="referral-landing"
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="admin" options={{ headerShown: false }} />
-        <Stack.Screen name="group" options={{ headerShown: false }} />
-        <Stack.Screen name="event" options={{ headerShown: false }} />
-        <Stack.Screen name="user" options={{ headerShown: false }} />
+      <Stack.Screen name="admin" options={{ headerShown: false }} />
+      <Stack.Screen name="group" options={{ headerShown: false }} />
+      <Stack.Screen name="event" options={{ headerShown: false }} />
+      <Stack.Screen name="user" options={{ headerShown: false }} />
+      <Stack.Screen name="group-management" options={{ headerShown: false }} />
       </Stack>
       {__DEV__ && <DevToolsOverlay />}
     </>

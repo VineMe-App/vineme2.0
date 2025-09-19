@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../ui/Avatar';
-import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
 import { EditGroupModal } from './EditGroupModal';
 import { MemberManagementModal } from './MemberManagementModal';
 import { JoinRequestsPanel } from './JoinRequestsPanel';
@@ -51,7 +55,14 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   const userMembership = members?.find((m) => m.user_id === userProfile?.id);
   const isGroupLeader = userMembership?.role === 'leader';
 
-  if (!isGroupLeader) {
+  const isChurchAdminForService = Boolean(
+    userProfile?.roles?.includes('church_admin') &&
+      userProfile?.service_id &&
+      group.service_id &&
+      userProfile.service_id === group.service_id
+  );
+
+  if (!isGroupLeader && !isChurchAdminForService) {
     return null; // Don't show panel if user is not a leader
   }
 
@@ -242,7 +253,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
               activeTab === 'requests' && styles.activeTabText,
             ]}
           >
-            Join Requests
+            Newcomers
           </Text>
           {pendingRequestsCount > 0 && (
             <View style={styles.requestsBadge}>
@@ -488,7 +499,7 @@ const styles = StyleSheet.create({
   },
   requestsBadge: {
     marginLeft: 6,
-    backgroundColor: '#ff3b30',
+    backgroundColor: '#ec4899',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -504,5 +515,6 @@ const styles = StyleSheet.create({
   requestsContainer: {
     flex: 1,
     minHeight: 200,
+    paddingTop: 8,
   },
 });

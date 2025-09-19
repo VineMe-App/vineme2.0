@@ -33,10 +33,10 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Join Requests</Text>
+        <Text style={styles.title}>Newcomers</Text>
         <View style={styles.loadingContainer}>
           <LoadingSpinner size="small" />
-          <Text style={styles.loadingText}>Loading join requests...</Text>
+          <Text style={styles.loadingText}>Loading newcomers...</Text>
         </View>
       </View>
     );
@@ -45,10 +45,10 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Join Requests</Text>
+        <Text style={styles.title}>Newcomers</Text>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            Failed to load join requests. Please try again.
+            Failed to load newcomers. Please try again.
           </Text>
         </View>
       </View>
@@ -58,21 +58,35 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   const pendingRequests =
     joinRequests?.filter((request) => request.status === 'pending') || [];
 
+  const sortedNewcomers = [...pendingRequests].sort((a, b) => {
+    const statusA = a.journey_status ?? 0;
+    const statusB = b.journey_status ?? 0;
+    if (statusA !== statusB) return statusA - statusB;
+    const dateA = a.joined_at ? new Date(a.joined_at).getTime() : 0;
+    const dateB = b.joined_at ? new Date(b.joined_at).getTime() : 0;
+    return dateB - dateA;
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Join Requests</Text>
-        {pendingRequests.length > 0 && (
+        <Text style={styles.title}>Newcomers</Text>
+        {sortedNewcomers.length > 0 && (
           <View style={styles.countBadge}>
-            <Text style={styles.countText}>{pendingRequests.length}</Text>
+            <Text style={styles.countText}>{sortedNewcomers.length}</Text>
           </View>
         )}
       </View>
 
-      {pendingRequests.length === 0 ? (
+      <Text style={styles.subtitle}>
+        Track referrals and join requests that still need follow up before you
+        add them to the group.
+      </Text>
+
+      {sortedNewcomers.length === 0 ? (
         <EmptyState
-          title="No pending requests"
-          message="There are currently no pending join requests for this group."
+          title="No newcomers"
+          message="Great job! Everyone has been followed up with."
           icon={null}
         />
       ) : (
@@ -80,7 +94,7 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
           style={styles.requestsList}
           showsVerticalScrollIndicator={false}
         >
-          {pendingRequests.map((request) => (
+          {sortedNewcomers.map((request) => (
             <JoinRequestCard
               key={request.id}
               request={request}
@@ -110,7 +124,7 @@ const styles = StyleSheet.create({
   },
   countBadge: {
     marginLeft: 8,
-    backgroundColor: '#ff3b30',
+    backgroundColor: '#ec4899',
     borderRadius: 12,
     minWidth: 24,
     height: 24,
@@ -122,6 +136,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 16,
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -145,5 +164,6 @@ const styles = StyleSheet.create({
   },
   requestsList: {
     flex: 1,
+    paddingBottom: 16,
   },
 });

@@ -77,6 +77,7 @@ export {
   useDeclineJoinRequest,
   useCancelJoinRequest,
   useGetContactInfo,
+  useUpdateMembershipJourneyStatus,
   joinRequestKeys,
 } from './useJoinRequests';
 export {

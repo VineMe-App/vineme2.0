@@ -1,12 +1,16 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import { contactAuditService } from './contactAudit';
-import { triggerJoinRequestApprovedNotification, triggerJoinRequestDeniedNotification } from './notifications';
-import { triggerJoinRequestReceivedNotification } from './notifications';
+import {
+  triggerJoinRequestApprovedNotification,
+  triggerJoinRequestDeniedNotification,
+  triggerJoinRequestReceivedNotification,
+} from './notifications';
 import type {
   GroupJoinRequest,
   GroupJoinRequestWithUser,
   GroupMembership,
+  MembershipJourneyStatus,
 } from '../types/database';
 
 export interface GroupServiceResponse<T = any> {
@@ -17,7 +21,7 @@ export interface GroupServiceResponse<T = any> {
 export interface CreateJoinRequestData {
   group_id: string;
   user_id: string;
-  contact_consent: boolean;
+  contact_consent?: boolean;
   message?: string;
 }
 
@@ -75,8 +79,16 @@ export class JoinRequestService {
       try {
         // Fetch requester name and group title
         const [requesterRes, groupRes] = await Promise.all([
-          supabase.from('users').select('name').eq('id', requestData.user_id).single(),
-          supabase.from('groups').select('title').eq('id', requestData.group_id).single(),
+          supabase
+            .from('users')
+            .select('name')
+            .eq('id', requestData.user_id)
+            .single(),
+          supabase
+            .from('groups')
+            .select('title')
+            .eq('id', requestData.group_id)
+            .single(),
         ]);
 
         if (requesterRes.data && groupRes.data) {
@@ -100,7 +112,10 @@ export class JoinRequestService {
           }
         }
       } catch (notifyErr) {
-        console.error('Failed to trigger join request notifications:', notifyErr);
+        console.error(
+          'Failed to trigger join request notifications:',
+          notifyErr
+        );
       }
 
       return { data, error: null };
@@ -145,8 +160,12 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
+          referral_id,
+          journey_status,
           joined_at,
-          user:users(id, name, avatar_url),
+          created_at,
+          user:users(id, name, avatar_url, newcomer),
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at),
           group:groups(id, title)
         `
         )
@@ -185,7 +204,10 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
+          referral_id,
+          journey_status,
           joined_at,
+          created_at,
           group:groups(id, title, description, meeting_day, meeting_time)
         `
         )
@@ -220,7 +242,7 @@ export class JoinRequestService {
       // Find pending membership by id (treat requestId as membership id)
       const { data: membershipRecord, error: requestError } = await supabase
         .from('group_memberships')
-        .select('id, group_id, user_id, status')
+        .select('id, group_id, user_id, status, journey_status')
         .eq('id', requestId)
         .eq('status', 'pending')
         .single();
@@ -247,12 +269,21 @@ export class JoinRequestService {
       }
 
       // Start a transaction to approve request and create membership
+      const updatePayload: Record<string, any> = {
+        status: 'active',
+        joined_at: new Date().toISOString(),
+      };
+
+      if (
+        !membershipRecord.journey_status ||
+        membershipRecord.journey_status < 3
+      ) {
+        updatePayload.journey_status = 3;
+      }
+
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
-        .update({
-          status: 'active',
-          joined_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', requestId)
         .select()
         .single();
@@ -323,6 +354,64 @@ export class JoinRequestService {
   }
 
   /**
+   * Update the journey status for a membership (pending or active)
+   */
+  async updateJourneyStatus(
+    membershipId: string,
+    leaderId: string,
+    journeyStatus: MembershipJourneyStatus | null
+  ): Promise<GroupServiceResponse<GroupMembership>> {
+    try {
+      const { data: membershipRecord, error: fetchError } = await supabase
+        .from('group_memberships')
+        .select('id, group_id, journey_status, status')
+        .eq('id', membershipId)
+        .single();
+
+      if (fetchError || !membershipRecord) {
+        return {
+          data: null,
+          error: new Error('Membership not found'),
+        };
+      }
+
+      const permissionCheck = await permissionService.canManageGroupMembership(
+        membershipRecord.group_id,
+        leaderId
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to update member'
+          ),
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .update({ journey_status: journeyStatus })
+        .eq('id', membershipId)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to update member status'),
+      };
+    }
+  }
+
+  /**
    * Decline a join request
    */
   async declineJoinRequest(
@@ -382,11 +471,7 @@ export class JoinRequestService {
             .select('id, name')
             .eq('id', membershipRecord.user_id)
             .single(),
-          supabase
-            .from('users')
-            .select('name')
-            .eq('id', declinerId)
-            .single(),
+          supabase.from('users').select('name').eq('id', declinerId).single(),
         ]);
         const deniedByName = declinerRes?.data?.name || 'A group leader';
         if (groupRes.data && userRes.data) {
@@ -462,7 +547,7 @@ export class JoinRequestService {
   }
 
   /**
-   * Get contact information for approved join requests (for group leaders)
+   * Get contact information for group newcomers (for group leaders)
    */
   async getContactInfo(
     requestId: string,
@@ -471,34 +556,21 @@ export class JoinRequestService {
     GroupServiceResponse<{ name: string; email?: string; phone?: string }>
   > {
     try {
-      // Get the join request with user details
-      const { data: joinRequest, error: requestError } = await supabase
+      const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
-        .select(
-          `
-          id,
-          group_id,
-          user_id,
-          status,
-          joined_at,
-          user:users(id, name, phone),
-          group:groups(id)
-        `
-        )
+        .select('id, group_id, user_id')
         .eq('id', requestId)
-        .eq('status', 'active')
         .single();
 
-      if (requestError || !joinRequest) {
+      if (membershipError || !membership) {
         return {
           data: null,
-          error: new Error('Join request not found or contact not consented'),
+          error: new Error('Membership not found'),
         };
       }
 
-      // Check if requester is a leader of this group
       const permissionCheck = await permissionService.canManageGroupMembership(
-        joinRequest.group_id,
+        membership.group_id,
         leaderId
       );
       if (!permissionCheck.hasPermission) {
@@ -511,50 +583,48 @@ export class JoinRequestService {
         };
       }
 
-      if (!joinRequest.user) {
+      if (!membership.user_id) {
         return {
           data: null,
           error: new Error('User information not available'),
         };
       }
 
-      // Check privacy settings for contact sharing
-      const emailAllowed = await contactAuditService.canShareContact(
-        joinRequest.user.id,
-        'email',
-        leaderId,
-        joinRequest.group_id
+      const { data: contact, error: contactError } = await supabase.rpc(
+        'get_user_contact_admin',
+        {
+          target_user_id: membership.user_id,
+        }
       );
 
-      const phoneAllowed = await contactAuditService.canShareContact(
-        joinRequest.user.id,
-        'phone',
-        leaderId,
-        joinRequest.group_id
-      );
+      if (contactError) {
+        return {
+          data: null,
+          error: new Error(contactError.message || 'Unable to fetch contact'),
+        };
+      }
 
-      // Determine which contact fields to include
-      const contactFields: string[] = [];
       const contactInfo: { name: string; email?: string; phone?: string } = {
-        name: joinRequest.user.name,
+        name: contact?.name || '',
       };
 
-      if (emailAllowed.data && joinRequest.user.email) {
-        contactInfo.email = joinRequest.user.email;
+      const contactFields: string[] = [];
+
+      if (contact?.email) {
+        contactInfo.email = contact.email;
         contactFields.push('email');
       }
 
-      if (phoneAllowed.data && joinRequest.user.phone) {
-        contactInfo.phone = joinRequest.user.phone;
+      if (contact?.phone) {
+        contactInfo.phone = contact.phone;
         contactFields.push('phone');
       }
 
-      // Log the contact access
       if (contactFields.length > 0) {
         await contactAuditService.logContactAccess({
-          user_id: joinRequest.user.id,
+          user_id: membership.user_id,
           accessor_id: leaderId,
-          group_id: joinRequest.group_id,
+          group_id: membership.group_id,
           join_request_id: requestId,
           access_type: 'view',
           contact_fields: contactFields,
@@ -586,31 +656,30 @@ export class JoinRequestService {
     contactValue: string
   ): Promise<GroupServiceResponse<boolean>> {
     try {
-      // Get the join request details
-      const { data: joinRequest, error: requestError } = await supabase
-        .from('group_join_requests')
+      // Fetch membership record for audit
+      const { data: membership, error: membershipError } = await supabase
+        .from('group_memberships')
         .select(
           `
-          *,
-          user:users(id, name),
-          group:groups(id)
+          id,
+          group_id,
+          user_id,
+          user:users(id, name)
         `
         )
         .eq('id', requestId)
-        .eq('status', 'approved')
-        .eq('contact_consent', true)
         .single();
 
-      if (requestError || !joinRequest) {
+      if (membershipError || !membership) {
         return {
           data: null,
-          error: new Error('Join request not found or contact not consented'),
+          error: new Error('Membership not found or contact not allowed'),
         };
       }
 
       // Check if requester is a leader of this group
       const permissionCheck = await permissionService.canManageGroupMembership(
-        joinRequest.group_id,
+        membership.group_id,
         leaderId
       );
       if (!permissionCheck.hasPermission) {
@@ -620,7 +689,7 @@ export class JoinRequestService {
         };
       }
 
-      if (!joinRequest.user) {
+      if (!membership.user) {
         return {
           data: null,
           error: new Error('User information not available'),
@@ -630,10 +699,10 @@ export class JoinRequestService {
       // Check privacy settings for the specific contact type
       const contactType = actionType === 'call' ? 'phone' : 'email';
       const canContact = await contactAuditService.canShareContact(
-        joinRequest.user.id,
+        membership.user.id,
         contactType,
         leaderId,
-        joinRequest.group_id
+        membership.group_id
       );
 
       if (!canContact.data) {
@@ -647,9 +716,9 @@ export class JoinRequestService {
 
       // Log the contact action
       await contactAuditService.logContactAccess({
-        user_id: joinRequest.user.id,
+        user_id: membership.user.id,
         accessor_id: leaderId,
-        group_id: joinRequest.group_id,
+        group_id: membership.group_id,
         join_request_id: requestId,
         access_type: actionType,
         contact_fields: [contactType],

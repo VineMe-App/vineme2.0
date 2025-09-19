@@ -143,7 +143,6 @@ serve(async (req) => {
         church_id: churchId,
         note: payload.note || null,
         created_at: now,
-        updated_at: now,
       })
       if (refError) {
         return new Response(
@@ -158,7 +157,6 @@ serve(async (req) => {
         user_id: userId,
         role: 'member',
         status: 'pending',
-        joined_at: now,
         referral_id: userId,
         journey_status: 1
       })
@@ -177,7 +175,6 @@ serve(async (req) => {
         church_id: churchId,
         note: payload.note || null,
         created_at: now,
-        updated_at: now,
       })
       if (refError) {
         return new Response(
@@ -193,5 +190,4 @@ serve(async (req) => {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 200 })
   }
 })
-
 
