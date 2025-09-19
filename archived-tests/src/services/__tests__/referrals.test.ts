@@ -172,7 +172,7 @@ describe('ReferralService', () => {
       expect(result.userId).toBe('user-123');
       expect(mockInsert).toHaveBeenCalledWith({
         referrer_id: 'referrer-123',
-        referred_user_id: 'user-123',
+        referred_by_user_id: 'user-123',
         note: 'Test referral note',
         created_at: expect.any(String),
         updated_at: expect.any(String),
@@ -280,7 +280,7 @@ describe('ReferralService', () => {
       expect(mockInsert).toHaveBeenCalledWith({
         group_id: 'group-123',
         referrer_id: 'referrer-123',
-        referred_user_id: 'user-123',
+        referred_by_user_id: 'user-123',
         note: 'Test referral note',
         created_at: expect.any(String),
         updated_at: expect.any(String),
@@ -364,7 +364,7 @@ describe('ReferralService', () => {
           id: 'ref-1',
           group_id: 'group-1',
           referrer_id: 'user-1',
-          referred_user_id: 'user-2',
+          referred_by_user_id: 'user-2',
           note: 'Test note',
           created_at: '2023-01-01T00:00:00Z',
           updated_at: '2023-01-01T00:00:00Z',
@@ -375,7 +375,7 @@ describe('ReferralService', () => {
         {
           id: 'ref-2',
           referrer_id: 'user-1',
-          referred_user_id: 'user-3',
+          referred_by_user_id: 'user-3',
           note: 'Another test note',
           created_at: '2023-01-01T00:00:00Z',
           updated_at: '2023-01-01T00:00:00Z',
@@ -428,7 +428,7 @@ describe('ReferralService', () => {
           id: 'ref-1',
           group_id: 'group-1',
           referrer_id: 'user-1',
-          referred_user_id: 'user-2',
+          referred_by_user_id: 'user-2',
           note: 'Test note',
           created_at: '2023-01-01T00:00:00Z',
           updated_at: '2023-01-01T00:00:00Z',
@@ -568,7 +568,7 @@ describe('ReferralService', () => {
         const mockReferral = {
           id: 'ref-1',
           referrer_id: 'user-1',
-          referred_user_id: 'user-2',
+          referred_by_user_id: 'user-2',
           note: 'Test note',
           created_at: '2023-01-01T00:00:00Z',
           updated_at: '2023-01-01T00:00:00Z',

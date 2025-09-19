@@ -168,7 +168,7 @@ describe('Email Verification Flow E2E Tests', () => {
             data: {
               id: 'referral-123',
               referrer_id: mockReferrer.id,
-              referred_user_id: mockUser.id,
+              referred_by_user_id: mockUser.id,
               note: 'Great person for our community',
             },
             error: null,

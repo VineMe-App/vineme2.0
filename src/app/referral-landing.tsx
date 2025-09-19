@@ -28,7 +28,8 @@ export default function ReferralLandingPage() {
       );
       return;
     }
-    setShowGeneralReferralModal(true);
+    // Navigate to referral page without group context
+    router.push('/referral');
   }, [userProfile]);
 
   const handleGroupReferral = useCallback(() => {
@@ -190,11 +191,7 @@ export default function ReferralLandingPage() {
         </View>
       </View>
 
-      <ReferralFormModal
-        visible={showGeneralReferralModal}
-        onClose={handleCloseGeneralReferralModal}
-        onSubmit={handleGeneralReferralSubmit}
-      />
+      {/* General referral now handled via dedicated page */}
     </ScrollView>
   );
 }

@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Linking,
+  Alert,
+} from 'react-native';
 import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { useRouter } from 'expo-router';
@@ -14,15 +22,18 @@ import {
   useGroupLeaders,
   useFriendsInGroup,
 } from '../../hooks/useGroups';
-import { useCreateJoinRequest, useUserJoinRequests } from '../../hooks/useJoinRequests';
+import {
+  useCreateJoinRequest,
+  useUserJoinRequests,
+} from '../../hooks/useJoinRequests';
 // import type { GroupMembershipWithUser } from '../../types/database';
 import { useAuthStore } from '../../stores/auth';
 import { useFriends } from '../../hooks/useFriendships';
 import { Modal } from '../ui/Modal';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
-import { ReferralFormModal, type ReferralFormData } from '../referrals';
-import { referralService } from '../../services/referrals';
+// Referral handled via /referral page
+// import { referralService } from '../../services/referrals';
 
 interface GroupDetailProps {
   group: GroupWithDetails;
@@ -44,7 +55,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const [showAllMembers, setShowAllMembers] = useState(false);
   // Removed modal-based join flow in favor of native alert confirmation
   const [showFriendsModal, setShowFriendsModal] = useState(openFriendsOnMount);
-  const [showReferralModal, setShowReferralModal] = useState(false);
+  // Referral modal removed in favor of navigation
 
   const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
@@ -93,7 +104,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
             } catch (error) {
               Alert.alert(
                 'Error',
-                error instanceof Error ? error.message : 'Failed to send join request'
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to send join request'
               );
             }
           },
@@ -234,41 +247,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     onMembershipChange?.();
   };
 
-  const handleReferralSubmit = async (data: ReferralFormData) => {
-    if (!userProfile) {
-      Alert.alert('Error', 'You must be signed in to refer someone');
-      return;
-    }
-
-    try {
-      const result = await referralService.createReferral({
-        ...data,
-        groupId: group.id,
-        referrerId: userProfile.id,
-      });
-
-      if (result.success) {
-        Alert.alert(
-          'Referral Sent!',
-          'Your referral has been sent successfully. They will receive an email to set up their account and join the group.',
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert(
-          'Error',
-          result.error || 'Failed to send referral. Please try again.',
-          [{ text: 'OK' }]
-        );
-      }
-    } catch (error) {
-      console.error('Error submitting referral:', error);
-      Alert.alert(
-        'Error',
-        'There was an error sending the referral. Please try again.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
+  // Referral submission handled in /referral page
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -471,13 +450,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               )}
               <Button
                 title="Refer a Friend"
-                onPress={() => setShowReferralModal(true)}
+                onPress={() =>
+                  router.push({
+                    pathname: '/referral',
+                    params: { groupId: group.id, groupName: group.title },
+                  })
+                }
                 variant="secondary"
               />
               <Button
                 title="Leave Group"
                 onPress={handleLeaveGroup}
-                variant="danger"
+                variant="error"
                 loading={isLoading}
                 disabled={isLoading}
               />
@@ -506,7 +490,12 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               />
               <Button
                 title="Refer a Friend"
-                onPress={() => setShowReferralModal(true)}
+                onPress={() =>
+                  router.push({
+                    pathname: '/referral',
+                    params: { groupId: group.id, groupName: group.title },
+                  })
+                }
                 variant="secondary"
               />
             </View>
@@ -573,14 +562,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           )}
         </Modal>
 
-        {/* Referral Form Modal */}
-        <ReferralFormModal
-          visible={showReferralModal}
-          onClose={() => setShowReferralModal(false)}
-          groupId={group.id}
-          groupName={group.title}
-          onSubmit={handleReferralSubmit}
-        />
+        {/* Referral Form handled via /referral page */}
       </View>
     </ScrollView>
   );

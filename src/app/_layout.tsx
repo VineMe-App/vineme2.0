@@ -87,6 +87,8 @@ function RootLayoutNav() {
       segments[0] === 'user' ||
       // Allow notifications page outside of tabs
       segments[0] === 'notifications' ||
+      // Allow referral page outside of tabs
+      segments[0] === 'referral' ||
       // Allow referral landing screen outside of tabs
       segments[0] === 'referral-landing' ||
       // Allow styling system pages (for development/debugging)
