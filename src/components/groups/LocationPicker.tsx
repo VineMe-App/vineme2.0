@@ -9,14 +9,18 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Platform,
 } from 'react-native';
 import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
-import { Input, Button } from '../ui';
+import { Input } from '../ui';
 import { locationService, type Coordinates } from '../../services/location';
 import { debounce } from '../../utils';
+
+const DEFAULT_COORDINATES: Coordinates = {
+  latitude: 51.4953,
+  longitude: -0.179,
+};
 
 interface LocationPickerProps {
   value?: {
@@ -35,8 +39,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 }) => {
   const [search, setSearch] = useState<string>(value?.address || '');
   const [region, setRegion] = useState<Region>({
-    latitude: value?.coordinates?.latitude || 37.7749,
-    longitude: value?.coordinates?.longitude || -122.4194,
+    latitude: value?.coordinates?.latitude || DEFAULT_COORDINATES.latitude,
+    longitude: value?.coordinates?.longitude || DEFAULT_COORDINATES.longitude,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
@@ -101,26 +105,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     geocode(text);
   };
 
-  const handleUseCurrentLocation = useCallback(async () => {
-    const coords = await locationService.getCurrentLocation();
-    if (coords) {
-      setSelectedCoords(coords);
-      setRegion((prev) => ({
-        ...prev,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-      }));
-      mapRef.current?.animateToRegion(
-        { ...region, latitude: coords.latitude, longitude: coords.longitude },
-        600
-      );
-      // Optionally reverse geocode for address
-      const addr = await locationService.reverseGeocode(coords);
-      onChange({ address: addr?.formattedAddress, coordinates: coords });
-      if (addr?.formattedAddress) setSearch(addr.formattedAddress);
-    }
-  }, [onChange, region]);
-
   const handleRegionChangeComplete = useCallback(
     async (newRegion: Region) => {
       setRegion(newRegion);
@@ -140,22 +124,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   );
 
   return (
-    <View>
-      <Input
-        label="Search for a place"
-        value={search}
-        onChangeText={handleSearchChange}
-        placeholder="Type an address, place, or area"
-        helperText={isGeocoding ? 'Finding location…' : undefined}
-      />
-      <View style={styles.mapActions}>
-        <Button
-          title="Use Current Location"
-          onPress={handleUseCurrentLocation}
-          size="small"
-          variant="secondary"
-        />
-      </View>
+    <View style={styles.container}>
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
@@ -169,34 +138,74 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         >
           {selectedCoords && <Marker coordinate={selectedCoords} />}
         </MapView>
+
+        <View pointerEvents="box-none" style={styles.searchOverlay}>
+          <View style={styles.searchBox}>
+            <Input
+              value={search}
+              onChangeText={handleSearchChange}
+              placeholder="Type an address, place, or area"
+              variant="filled"
+              containerStyle={styles.searchInputContainer}
+              inputStyle={styles.searchInput}
+              accessibilityLabel="Search for a location"
+              accessibilityHint="Enter an address or place name to move the map"
+            />
+            {isGeocoding && (
+              <Text style={styles.searchHelper}>Finding location…</Text>
+            )}
+          </View>
+        </View>
       </View>
-      <Text style={styles.hint}>
-        You can search for a location or pinch/drag the map to set the exact
-        spot.
-      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+  },
   mapContainer: {
-    height: 240,
+    height: 360,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#f2f2f2',
     marginTop: 8,
+    position: 'relative',
   },
   map: {
     width: '100%',
     height: '100%',
   },
-  mapActions: {
+  searchOverlay: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    right: 12,
     alignItems: 'flex-start',
-    marginTop: 4,
   },
-  hint: {
-    marginTop: 8,
-    fontSize: 12,
+  searchBox: {
+    width: '80%',
+    maxWidth: 320,
+    backgroundColor: '#ffffffee',
+    borderRadius: 12,
+    padding: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  searchInputContainer: {
+    marginBottom: 0,
+  },
+  searchInput: {
+    backgroundColor: '#fff',
+    fontSize: 13,
+  },
+  searchHelper: {
+    marginTop: 6,
+    fontSize: 9,
     color: '#666',
   },
 });
