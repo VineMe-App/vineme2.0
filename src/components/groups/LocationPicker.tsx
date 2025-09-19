@@ -146,6 +146,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               onChangeText={handleSearchChange}
               placeholder="Type an address, place, or area"
               variant="filled"
+              size="small"
               containerStyle={styles.searchInputContainer}
               inputStyle={styles.searchInput}
               accessibilityLabel="Search for a location"
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   mapContainer: {
-    height: 360,
+    height: 340,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#f2f2f2',
@@ -181,15 +182,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    right: 12,
-    alignItems: 'flex-start',
+    right: 12
   },
   searchBox: {
-    width: '80%',
-    maxWidth: 320,
+    width: '85%',
+    maxWidth: 330,
     backgroundColor: '#ffffffee',
     borderRadius: 12,
-    padding: 3,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
@@ -198,6 +199,7 @@ const styles = StyleSheet.create({
   },
   searchInputContainer: {
     marginBottom: 0,
+    paddingVertical: 0,
   },
   searchInput: {
     backgroundColor: '#fff',
