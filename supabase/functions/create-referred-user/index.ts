@@ -133,10 +133,10 @@ serve(async (req) => {
       // Non-fatal
     }
 
-    // Create group referral record if groupId provided
+    // Create referral record
     if (payload.groupId) {
-      // Per latest spec: id = referred user id (primary key), referred_by_user_id = referrer
-      const { error: refError } = await supabase.from('group_referrals').insert({
+      // Create referral row first per spec: id = referred user id (primary key), referred_by_user_id = referrer
+      const { error: refError } = await supabase.from('referrals').insert({
         id: userId,
         group_id: payload.groupId,
         referred_by_user_id: payload.referrerId || null,
@@ -146,7 +146,40 @@ serve(async (req) => {
         updated_at: now,
       })
       if (refError) {
-        // Not fatal but report in response
+        return new Response(
+          JSON.stringify({ ok: true, userId, referralCreated: false, warning: `Referral row not created: ${refError.message}` }),
+          { status: 200 },
+        )
+      }
+
+      // Also create a pending group_membership linked to this referral
+      const { error: memError } = await supabase.from('group_memberships').insert({
+        group_id: payload.groupId,
+        user_id: userId,
+        role: 'member',
+        status: 'pending',
+        joined_at: now,
+        referral_id: userId,
+        journey_status: 1
+      })
+      if (memError) {
+        return new Response(
+          JSON.stringify({ ok: true, userId, referralCreated: true, membershipCreated: false, warning: `Membership not created: ${memError.message}` }),
+          { status: 200 },
+        )
+      }
+    } else {
+      // General referral without group
+      const { error: refError } = await supabase.from('referrals').insert({
+        id: userId,
+        group_id: null,
+        referred_by_user_id: payload.referrerId || null,
+        church_id: churchId,
+        note: payload.note || null,
+        created_at: now,
+        updated_at: now,
+      })
+      if (refError) {
         return new Response(
           JSON.stringify({ ok: true, userId, referralCreated: false, warning: `Referral row not created: ${refError.message}` }),
           { status: 200 },
@@ -155,7 +188,7 @@ serve(async (req) => {
     }
 
     // Return created user id
-    return new Response(JSON.stringify({ ok: true, userId, referralCreated: Boolean(payload.groupId) }), { status: 200 })
+    return new Response(JSON.stringify({ ok: true, userId, referralCreated: Boolean(payload.groupId), membershipCreated: Boolean(payload.groupId) }), { status: 200 })
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 200 })
   }
