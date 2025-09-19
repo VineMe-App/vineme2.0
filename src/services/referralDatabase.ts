@@ -23,16 +23,16 @@ export const REFERRAL_SCHEMA_SQL = {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
       referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       note TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       
       -- Ensure a user can only be referred to a group once by the same referrer
-      UNIQUE(group_id, referrer_id, referred_user_id),
+      UNIQUE(group_id, referrer_id, referred_by_user_id),
       
       -- Ensure a user cannot refer themselves
-      CHECK (referrer_id != referred_user_id)
+      CHECK (referrer_id != referred_by_user_id)
     );
   `,
 
@@ -41,16 +41,16 @@ export const REFERRAL_SCHEMA_SQL = {
     CREATE TABLE IF NOT EXISTS general_referrals (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       note TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       
       -- Ensure a user can only be generally referred once by the same referrer
-      UNIQUE(referrer_id, referred_user_id),
+      UNIQUE(referrer_id, referred_by_user_id),
       
       -- Ensure a user cannot refer themselves
-      CHECK (referrer_id != referred_user_id)
+      CHECK (referrer_id != referred_by_user_id)
     );
   `,
 
@@ -59,12 +59,12 @@ export const REFERRAL_SCHEMA_SQL = {
     -- Indexes for group_referrals table
     CREATE INDEX IF NOT EXISTS idx_group_referrals_group_id ON group_referrals(group_id);
     CREATE INDEX IF NOT EXISTS idx_group_referrals_referrer_id ON group_referrals(referrer_id);
-    CREATE INDEX IF NOT EXISTS idx_group_referrals_referred_user_id ON group_referrals(referred_user_id);
+    CREATE INDEX IF NOT EXISTS idx_group_referrals_referred_by_user_id ON group_referrals(referred_by_user_id);
     CREATE INDEX IF NOT EXISTS idx_group_referrals_created_at ON group_referrals(created_at);
     
     -- Indexes for general_referrals table
     CREATE INDEX IF NOT EXISTS idx_general_referrals_referrer_id ON general_referrals(referrer_id);
-    CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_user_id ON general_referrals(referred_user_id);
+    CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_by_user_id ON general_referrals(referred_by_user_id);
     CREATE INDEX IF NOT EXISTS idx_general_referrals_created_at ON general_referrals(created_at);
     
     -- Composite indexes for common queries
@@ -87,10 +87,10 @@ export const REFERRAL_SCHEMA_SQL = {
     
     -- Policy: Users can view referrals made about them
     CREATE POLICY "Users can view referrals about them" ON group_referrals
-      FOR SELECT USING (auth.uid() = referred_user_id);
+      FOR SELECT USING (auth.uid() = referred_by_user_id);
     
     CREATE POLICY "Users can view general referrals about them" ON general_referrals
-      FOR SELECT USING (auth.uid() = referred_user_id);
+      FOR SELECT USING (auth.uid() = referred_by_user_id);
     
     -- Policy: Users can create referrals
     CREATE POLICY "Users can create group referrals" ON group_referrals
@@ -228,7 +228,7 @@ export class ReferralDatabaseUtils {
               { name: 'id', type: 'uuid', nullable: false },
               { name: 'group_id', type: 'uuid', nullable: false },
               { name: 'referrer_id', type: 'uuid', nullable: false },
-              { name: 'referred_user_id', type: 'uuid', nullable: false },
+              { name: 'referred_by_user_id', type: 'uuid', nullable: false },
               { name: 'note', type: 'text', nullable: true },
               { name: 'created_at', type: 'timestamp with time zone', nullable: false },
               { name: 'updated_at', type: 'timestamp with time zone', nullable: false },
@@ -239,7 +239,7 @@ export class ReferralDatabaseUtils {
             columns: [
               { name: 'id', type: 'uuid', nullable: false },
               { name: 'referrer_id', type: 'uuid', nullable: false },
-              { name: 'referred_user_id', type: 'uuid', nullable: false },
+              { name: 'referred_by_user_id', type: 'uuid', nullable: false },
               { name: 'note', type: 'text', nullable: true },
               { name: 'created_at', type: 'timestamp with time zone', nullable: false },
               { name: 'updated_at', type: 'timestamp with time zone', nullable: false },

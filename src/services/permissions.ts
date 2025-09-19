@@ -484,6 +484,20 @@ export class PermissionService {
             return { hasPermission: true };
           }
         }
+        if (operation === 'insert') {
+          // Users can create groups for their own service
+          if (user.service_id && filters.service_id === user.service_id) {
+            return { hasPermission: true };
+          }
+          // Church admins can create groups within their church
+          if (
+            user.roles.includes('church_admin') &&
+            user.church_id &&
+            filters.church_id === user.church_id
+          ) {
+            return { hasPermission: true };
+          }
+        }
         break;
 
       case 'events':

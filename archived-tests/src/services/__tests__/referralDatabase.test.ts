@@ -141,13 +141,13 @@ describe('REFERRAL_SCHEMA_SQL', () => {
     expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('CREATE TABLE IF NOT EXISTS group_referrals');
     expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('group_id UUID NOT NULL REFERENCES groups(id)');
     expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('referrer_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('referred_user_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('referred_by_user_id UUID NOT NULL REFERENCES users(id)');
+    expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_by_user_id)');
 
     expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CREATE TABLE IF NOT EXISTS general_referrals');
     expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('referrer_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('referred_user_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('referred_by_user_id UUID NOT NULL REFERENCES users(id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_by_user_id)');
 
     expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_group_referrals_group_id');
     expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_general_referrals_referrer_id');
@@ -166,13 +166,13 @@ describe('REFERRAL_SCHEMA_SQL', () => {
   });
 
   it('should have proper unique constraints', () => {
-    expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('UNIQUE(group_id, referrer_id, referred_user_id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('UNIQUE(referrer_id, referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('UNIQUE(group_id, referrer_id, referred_by_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('UNIQUE(referrer_id, referred_by_user_id)');
   });
 
   it('should have proper check constraints', () => {
-    expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_user_id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_by_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_by_user_id)');
   });
 
   it('should have proper timestamp fields', () => {

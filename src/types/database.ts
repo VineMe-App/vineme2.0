@@ -209,7 +209,7 @@ export interface GroupReferral {
   id: string;
   group_id: string;
   referrer_id: string;
-  referred_user_id: string;
+  referred_by_user_id: string;
   note?: string;
   created_at: string;
   updated_at: string;
@@ -218,7 +218,7 @@ export interface GroupReferral {
 export interface GeneralReferral {
   id: string;
   referrer_id: string;
-  referred_user_id: string;
+  referred_by_user_id: string;
   note?: string;
   created_at: string;
   updated_at: string;
