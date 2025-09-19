@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
@@ -179,7 +172,7 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} onClose={handleClose} title="Edit Group Details">
+    <Modal isVisible={visible} onClose={handleClose} title="Edit Group Details">
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
           <Input

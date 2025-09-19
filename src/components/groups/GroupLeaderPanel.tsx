@@ -10,9 +10,8 @@ import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../ui/Avatar';
-import { EditGroupModal } from './EditGroupModal';
-import { MemberManagementModal } from './MemberManagementModal';
 import { JoinRequestsPanel } from './JoinRequestsPanel';
+import { useRouter } from 'expo-router';
 import type {
   GroupWithDetails,
   GroupMembershipWithUser,
@@ -32,10 +31,8 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   onGroupUpdated,
 }) => {
   const { userProfile } = useAuthStore();
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showMemberModal, setShowMemberModal] = useState(false);
-  const [selectedMember, setSelectedMember] =
-    useState<GroupMembershipWithUser | null>(null);
+  const router = useRouter();
+  // Inline actions on each card
   const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
 
   const { data: members, isLoading: membersLoading } = useGroupMembers(
@@ -71,11 +68,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   const pendingRequestsCount =
     joinRequests?.filter((r) => r.status === 'pending').length || 0;
 
-  const handleMemberPress = (member: GroupMembershipWithUser) => {
-    setSelectedMember(member);
-    setShowMemberModal(true);
-  };
-
   const handlePromoteToLeader = async (member: GroupMembershipWithUser) => {
     if (!userProfile) return;
 
@@ -97,7 +89,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 'Success',
                 `${member.user?.name} has been promoted to leader`
               );
-              setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
@@ -144,7 +135,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 'Success',
                 `${member.user?.name} has been demoted to member`
               );
-              setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
@@ -191,7 +181,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 'Success',
                 `${member.user?.name} has been removed from the group`
               );
-              setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
@@ -220,7 +209,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           <Text style={styles.title}>Group Management</Text>
         </View>
         <TouchableOpacity
-          onPress={() => setShowEditModal(true)}
+          onPress={() => router.push(`/group-management/${group.id}/edit`)}
           style={styles.editButton}
         >
           <Ionicons name="pencil-outline" size={20} color="#007AFF" />
@@ -275,11 +264,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
             ) : (
               <View style={styles.membersList}>
                 {leaders.map((leader) => (
-                  <TouchableOpacity
-                    key={leader.id}
-                    style={styles.memberItem}
-                    onPress={() => handleMemberPress(leader)}
-                  >
+                  <View key={leader.id} style={styles.memberItem}>
                     <Avatar
                       size={40}
                       imageUrl={leader.user?.avatar_url}
@@ -291,8 +276,41 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                       </Text>
                       <Text style={styles.memberRole}>Leader</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#666" />
-                  </TouchableOpacity>
+                    <View style={styles.memberActionsRow}>
+                      <TouchableOpacity
+                        style={[
+                          styles.smallAction,
+                          (isLoading || leaders.length === 1) &&
+                            styles.smallActionDisabled,
+                        ]}
+                        onPress={() => handleDemoteFromLeader(leader)}
+                        disabled={isLoading || leaders.length === 1}
+                      >
+                        <Ionicons name="arrow-down" size={18} color="#666" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.smallAction,
+                          (isLoading || leaders.length === 1) &&
+                            styles.smallActionDisabled,
+                        ]}
+                        onPress={() => handleRemoveMember(leader)}
+                        disabled={isLoading || leaders.length === 1}
+                      >
+                        <Ionicons
+                          name="person-remove"
+                          size={18}
+                          color="#b91c1c"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    {leaders.length === 1 && (
+                      <Text style={styles.helperText}>
+                        Promote another member before demoting or removing the
+                        last leader.
+                      </Text>
+                    )}
+                  </View>
                 ))}
               </View>
             )}
@@ -311,11 +329,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
               >
                 <View style={styles.membersList}>
                   {regularMembers.map((member) => (
-                    <TouchableOpacity
-                      key={member.id}
-                      style={styles.memberItem}
-                      onPress={() => handleMemberPress(member)}
-                    >
+                    <View key={member.id} style={styles.memberItem}>
                       <Avatar
                         size={40}
                         imageUrl={member.user?.avatar_url}
@@ -330,8 +344,27 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                           {new Date(member.joined_at).toLocaleDateString()}
                         </Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={20} color="#666" />
-                    </TouchableOpacity>
+                      <View style={styles.memberActionsRow}>
+                        <TouchableOpacity
+                          style={styles.smallAction}
+                          onPress={() => handlePromoteToLeader(member)}
+                          disabled={isLoading}
+                        >
+                          <Ionicons name="arrow-up" size={18} color="#2563eb" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.smallAction}
+                          onPress={() => handleRemoveMember(member)}
+                          disabled={isLoading}
+                        >
+                          <Ionicons
+                            name="person-remove"
+                            size={18}
+                            color="#b91c1c"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   ))}
                 </View>
               </ScrollView>
@@ -347,38 +380,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           />
         </View>
       )}
-
-      {/* Edit Group Modal */}
-      <EditGroupModal
-        visible={showEditModal}
-        group={group}
-        onClose={() => setShowEditModal(false)}
-        onGroupUpdated={() => {
-          setShowEditModal(false);
-          onGroupUpdated?.();
-        }}
-      />
-
-      {/* Member Management Modal */}
-      <MemberManagementModal
-        visible={showMemberModal}
-        member={selectedMember}
-        isLastLeader={selectedMember?.role === 'leader' && leaders.length === 1}
-        onClose={() => {
-          setShowMemberModal(false);
-          setSelectedMember(null);
-        }}
-        onPromoteToLeader={() =>
-          selectedMember && handlePromoteToLeader(selectedMember)
-        }
-        onDemoteFromLeader={() =>
-          selectedMember && handleDemoteFromLeader(selectedMember)
-        }
-        onRemoveMember={() =>
-          selectedMember && handleRemoveMember(selectedMember)
-        }
-        loading={isLoading}
-      />
     </View>
   );
 };
@@ -461,6 +462,24 @@ const styles = StyleSheet.create({
   memberJoinDate: {
     fontSize: 14,
     color: '#666',
+  },
+  memberActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  smallAction: {
+    padding: 8,
+    backgroundColor: '#eef2f7',
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  smallActionDisabled: {
+    opacity: 0.4,
+  },
+  helperText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#b45309',
   },
   loader: {
     marginVertical: 16,

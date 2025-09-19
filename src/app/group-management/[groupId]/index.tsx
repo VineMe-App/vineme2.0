@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Text } from '../../components/ui/Text';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { Button } from '../../components/ui/Button';
-import { GroupLeaderPanel } from '../../components/groups/GroupLeaderPanel';
-import { useGroup } from '../../hooks/useGroups';
-import { useAuthStore } from '../../stores/auth';
+import { Text } from '@/components/ui/Text';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/Button';
+import { GroupLeaderPanel } from '@/components/groups/GroupLeaderPanel';
+import { useGroup } from '@/hooks/useGroups';
+import { useAuthStore } from '@/stores/auth';
 
 export default function GroupManagementScreen() {
   const router = useRouter();
