@@ -12,6 +12,7 @@ import { useAuthStore } from '../../stores/auth';
 import { router } from 'expo-router';
 import { useUpcomingEvents } from '../../hooks/useEvents';
 import { useUserGroupMemberships } from '../../hooks/useUsers';
+import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import {
   useFriends,
   useReceivedFriendRequests,
@@ -50,6 +51,13 @@ export default function HomeScreen() {
     refetch: refetchGroups,
   } = useUserGroupMemberships(userId);
 
+  // Fetch user's pending group join requests
+  const {
+    data: userJoinRequests,
+    isLoading: joinRequestsLoading,
+    refetch: refetchJoinRequests,
+  } = useUserJoinRequests(userId);
+
   const {
     data: friends,
     isLoading: friendsLoading,
@@ -66,7 +74,8 @@ export default function HomeScreen() {
   const acceptedFriends = friends || [];
   const pendingRequests = pendingFriendRequests || [];
 
-  const isLoading = groupsLoading || friendsLoading || requestsLoading;
+  const isLoading =
+    groupsLoading || friendsLoading || requestsLoading || joinRequestsLoading;
 
   // Handle refresh
   const handleRefresh = React.useCallback(async () => {
@@ -75,8 +84,9 @@ export default function HomeScreen() {
       refetchGroups(),
       refetchFriends(),
       refetchRequests(),
+      refetchJoinRequests(),
     ]);
-  }, [refetchGroups, refetchFriends, refetchRequests]);
+  }, [refetchGroups, refetchFriends, refetchRequests, refetchJoinRequests]);
 
   if (isLoading && !userGroupMemberships) {
     return (
@@ -248,6 +258,20 @@ export default function HomeScreen() {
               </View>
             ))}
           </ScrollView>
+        ) : userJoinRequests && userJoinRequests.length > 0 ? (
+          <EmptyState
+            title={
+              userJoinRequests.length === 1
+                ? 'Join request pending'
+                : 'Join requests pending'
+            }
+            message={
+              userJoinRequests.length === 1
+                ? `You have requested to join ${userJoinRequests[0].group.title} - a leader will be in touch with more details`
+                : `You have requested to join ${userJoinRequests.length} groups - a leader will be in touch with more details`
+            }
+            icon={null}
+          />
         ) : (
           <EmptyState
             title="No groups yet"

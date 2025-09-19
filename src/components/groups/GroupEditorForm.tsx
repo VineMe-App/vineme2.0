@@ -19,6 +19,7 @@ import {
   Card,
   Button,
   useFormContext,
+  Checkbox,
 } from '../ui';
 import { LocationPicker } from './LocationPicker';
 
@@ -146,6 +147,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
   const [locationValue, setLocationValue] = useState<GroupEditorLocation>(
     mergedInitials.location || {}
   );
+  const [locationSafetyConfirmed, setLocationSafetyConfirmed] = useState(false);
   const [imageState, setImageState] = useState<LocalImageState>(() =>
     mergedInitials.image_url
       ? {
@@ -168,6 +170,14 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
         : null
     );
   }, [initialValues]);
+
+  useEffect(() => {
+    setLocationSafetyConfirmed(false);
+  }, [
+    locationValue?.coordinates?.latitude,
+    locationValue?.coordinates?.longitude,
+    locationValue?.address,
+  ]);
 
   const formConfig = useMemo(
     () => ({
@@ -236,6 +246,14 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
       return;
     }
 
+    if (!locationSafetyConfirmed) {
+      Alert.alert(
+        'Safety Check Required',
+        'Please confirm that the selected location is not set to your exact home address.'
+      );
+      return;
+    }
+
     let imageUrl: string | null | undefined =
       initialValues?.image_url ?? undefined;
 
@@ -294,12 +312,13 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           <FormField name="title">
             {({ value, error, onChange, onBlur }) => (
               <Input
-                label="Group Title"
+                label="Group Name"
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
                 error={error}
-                placeholder="e.g., Young Adults Bible Study"
+                placeholder="e.g. Hammersmith Connect"
+                inputStyle={styles.textInput}
                 required
               />
             )}
@@ -312,7 +331,11 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                 onChangeText={onChange}
                 onBlur={onBlur}
                 error={error}
-                placeholder="Describe your group's purpose, target audience, and what to expect..."
+                placeholder="What can people expect from your group?"
+                inputStyle={StyleSheet.flatten([
+                  styles.textInput,
+                  styles.textAreaInput,
+                ])}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -338,14 +361,20 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           <Text style={styles.sectionTitle}>Meeting Schedule</Text>
           <FormField name="meeting_day">
             {({ value, error, onChange }) => (
-              <Select
-                label="Meeting Day"
-                options={MEETING_DAYS}
-                value={value}
-                onSelect={(opt) => onChange(opt.value)}
-                error={error}
-                placeholder="Select a day of the week"
-              />
+              <View>
+                <Text style={styles.inputLabel}>
+                  Meeting Day
+                  <Text style={styles.requiredAsterisk}> *</Text>
+                </Text>
+                <Select
+                  options={MEETING_DAYS}
+                  value={value}
+                  onSelect={(opt) => onChange(opt.value)}
+                  error={error}
+                  placeholder="Select a day of the week"
+                  variant="dropdown"
+                />
+              </View>
             )}
           </FormField>
           <FormField name="meeting_time">
@@ -391,6 +420,9 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
 
         <Card style={styles.card}>
           <Text style={styles.sectionTitle}>Meeting Location</Text>
+          <Text style={styles.sectionSubtitle}>
+            Search for a location, or pinch and drag the map to move the pin
+          </Text>
           <LocationPicker
             value={{
               address: locationValue.address,
@@ -398,6 +430,18 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
             }}
             onChange={setLocationValue}
           />
+          <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>Safety Reminder</Text>
+            <Text style={styles.warningCopy}>
+              Please avoid placing the pin directly on your home address for
+              safety.
+            </Text>
+            <Checkbox
+              checked={locationSafetyConfirmed}
+              label="I confirm this location is not my exact home address"
+              onPress={() => setLocationSafetyConfirmed((prev) => !prev)}
+            />
+          </View>
         </Card>
 
         <Card style={styles.card}>
@@ -418,7 +462,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                 <Button
                   title="Remove Photo"
                   onPress={handleRemoveImage}
-                  variant="danger"
+                  variant="error"
                   disabled={uploadingImage || isSubmitting}
                 />
               </View>
@@ -444,6 +488,12 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           }
           onValidatedSubmit={handleValidatedSubmit}
         />
+        {mode === 'create' && (
+          <Text style={styles.submitHint}>
+            All groups on VineMe are verified before they're live. Submit
+            request and your clergy will approve your group.
+          </Text>
+        )}
 
         {onCancel && (
           <Button
@@ -508,6 +558,12 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 8,
   },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: '#4a4a4a',
+    marginTop: -4,
+    marginBottom: 12,
+  },
   inputLabel: {
     fontSize: 16,
     fontWeight: '500',
@@ -557,6 +613,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   cancelButton: {
+    marginTop: 12,
+  },
+  warningBox: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#fff7e6',
+    borderWidth: 1,
+    borderColor: '#ffd591',
+  },
+  warningTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#b36b00',
+    marginBottom: 8,
+  },
+  warningCopy: {
+    fontSize: 13,
+    color: '#8c5400',
+    marginBottom: 12,
+  },
+  requiredAsterisk: {
+    color: '#ff3b30',
+  },
+  textInput: {
+    paddingHorizontal: 12,
+  },
+  textAreaInput: {
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  submitHint: {
+    fontSize: 12,
+    color: '#666',
     marginTop: 12,
   },
 });

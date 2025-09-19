@@ -71,6 +71,8 @@ export default function CreateGroupPage() {
           'Permission Required',
           'You do not have permission to create a group in this church. Please ensure you are signed in and your profile is connected to this church. If the issue persists, contact a church admin.'
         );
+        if (__DEV__) console.warn('[CreateGroup] RLS policy violation', err);
+        return;
       }
       handleError(err, {
         context: { action: 'create_group', userId: userProfile?.id },
