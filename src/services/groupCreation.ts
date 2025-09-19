@@ -47,12 +47,13 @@ export class GroupCreationService {
         };
       }
 
-      // Validate RLS compliance
+      // Validate RLS compliance (must match RLS policies on groups)
       const rlsCheck = await permissionService.validateRLSCompliance(
         'groups',
         'insert',
         {
           church_id: groupData.church_id,
+          service_id: groupData.service_id,
         }
       );
       if (!rlsCheck.hasPermission) {
@@ -83,11 +84,48 @@ export class GroupCreationService {
         }
       } catch {}
 
+      // Normalize meeting_time to 24h HH:MM:SS to avoid type issues
+      const normalizeMeetingTime = (value: string): string => {
+        const ampmMatch = value.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!ampmMatch) return value;
+        let hour = parseInt(ampmMatch[1], 10);
+        const minute = ampmMatch[2];
+        const meridiem = ampmMatch[3].toUpperCase();
+        if (meridiem === 'PM' && hour < 12) hour += 12;
+        if (meridiem === 'AM' && hour === 12) hour = 0;
+        const hh = String(hour).padStart(2, '0');
+        return `${hh}:${minute}:00`;
+      };
+
+      // Debug diagnostics to validate auth context and derived values
+      try {
+        const [userRes, svcRes, jwtRes] = await Promise.all([
+          supabase.from('users').select('id, service_id, church_id, roles').eq('id', creatorId).single(),
+          supabase.from('services').select('id, church_id').eq('id', groupData.service_id).single(),
+          supabase.auth.getSession(),
+        ]);
+        if (__DEV__) {
+          console.log('[CreateGroupDebug] session uid:', jwtRes?.data?.session?.user?.id);
+          console.log('[CreateGroupDebug] user row:', userRes.data);
+          console.log('[CreateGroupDebug] svc row:', svcRes.data);
+          console.log('[CreateGroupDebug] payload:', {
+            ...groupData,
+            meeting_time: normalizeMeetingTime(groupData.meeting_time),
+            created_by: creatorId,
+            status: 'pending',
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('[CreateGroupDebug] pre-insert diagnostics failed', e);
+      }
+
       // Create the group with pending status (service_id will be enforced server-side)
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .insert({
           ...groupData,
+          meeting_time: normalizeMeetingTime(groupData.meeting_time),
+          created_by: creatorId,
           status: 'pending',
           created_at: new Date().toISOString(),
         })
@@ -95,23 +133,45 @@ export class GroupCreationService {
         .single();
 
       if (groupError) {
-        // Provide clearer error for RLS violations
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.error('[CreateGroupDebug] insert failed', {
+            message: groupError.message,
+            details: (groupError as any).details,
+            hint: (groupError as any).hint,
+            code: (groupError as any).code,
+          });
+        }
+        // Provide clearer message for UI but keep full context in console
         const message = groupError.message?.includes('RLS')
           ? 'RLS policy violation for groups.insert'
           : groupError.message;
         return { data: null, error: new Error(message) };
       }
 
-      // Automatically add creator as leader
-      const { error: membershipError } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: group.id,
-          user_id: creatorId,
-          role: 'leader',
-          status: 'active',
-          joined_at: new Date().toISOString(),
-        });
+      // Automatically add creator as leader only if they are a church admin.
+      // Regular users submit for approval and do not get active leadership until approved.
+      let membershipError: any = null;
+      try {
+        const { data: me } = await supabase
+          .from('users')
+          .select('roles')
+          .eq('id', creatorId)
+          .single();
+        const isChurchAdmin = Array.isArray(me?.roles) && me.roles.includes('church_admin');
+        if (isChurchAdmin) {
+          const result = await supabase
+            .from('group_memberships')
+            .insert({
+              group_id: group.id,
+              user_id: creatorId,
+              role: 'leader',
+              status: 'active',
+              joined_at: new Date().toISOString(),
+            });
+          membershipError = result.error;
+        }
+      } catch {}
 
       if (membershipError) {
         // If membership creation fails, we should clean up the group

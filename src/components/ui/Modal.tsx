@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../theme/provider/useTheme';
+import { useThemeSafe } from '../../theme/provider/useTheme';
+import { lightTheme } from '../../theme/themes';
 
 export interface ModalProps extends Omit<RNModalProps, 'children'> {
   children: React.ReactNode;
@@ -74,7 +75,13 @@ export const Modal: React.FC<ModalProps> = ({
   onAnimationEnd,
   ...modalProps
 }) => {
-  const { colors, spacing, typography, shadows, borderRadius } = useTheme();
+  // Use safe theme access with a sensible fallback to avoid crashes
+  const themeCtx = useThemeSafe();
+  const colors = themeCtx?.colors ?? lightTheme.colors;
+  const spacing = themeCtx?.spacing ?? lightTheme.spacing;
+  const typography = themeCtx?.typography ?? lightTheme.typography;
+  const shadows = themeCtx?.shadows ?? lightTheme.shadows;
+  const borderRadius = themeCtx?.borderRadius ?? lightTheme.borderRadius;
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
   // Handle back button press
@@ -146,9 +153,8 @@ export const Modal: React.FC<ModalProps> = ({
       <View
         style={contentStyles}
         accessible={true}
-        accessibilityRole="dialog"
-        accessibilityModal={true}
-        accessibilityLabel={title || 'Modal dialog'}
+        accessibilityLabel={title || 'Modal'}
+        accessibilityViewIsModal={true}
         onKeyPress={handleEscapeKey}
       >
         {(title || showCloseButton) && (
@@ -218,6 +224,7 @@ export const Modal: React.FC<ModalProps> = ({
             style={styles.overlayTouchable}
             activeOpacity={1}
             onPress={handleOverlayPress}
+            accessibilityRole={undefined}
             accessible={false}
           >
             <KeyboardAvoidingView

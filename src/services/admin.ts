@@ -640,7 +640,7 @@ export class GroupAdminService {
           const { data: groupReferral } = await supabase
             .from('group_referrals')
             .select('referrer_id')
-            .eq('referred_user_id', userRes.data.id)
+            .eq('referred_by_user_id', userRes.data.id)
             .eq('group_id', groupRes.data.id)
             .maybeSingle();
           if (groupReferral?.referrer_id) {

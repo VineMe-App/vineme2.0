@@ -123,7 +123,7 @@ CREATE TABLE group_referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   note TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -138,7 +138,7 @@ Stores general referral records.
 CREATE TABLE general_referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   note TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
