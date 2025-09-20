@@ -133,6 +133,7 @@ serve(async (req) => {
       // Non-fatal
     }
 
+
     // Create referral record
     if (payload.groupId) {
       // Create referral row first per spec: id = referred user id (primary key), referred_by_user_id = referrer
@@ -146,6 +147,7 @@ serve(async (req) => {
         updated_at: now,
       })
       if (refError) {
+
         return new Response(
           JSON.stringify({ ok: true, userId, referralCreated: false, warning: `Referral row not created: ${refError.message}` }),
           { status: 200 },
@@ -188,6 +190,7 @@ serve(async (req) => {
     }
 
     // Return created user id
+
     return new Response(JSON.stringify({ ok: true, userId, referralCreated: Boolean(payload.groupId), membershipCreated: Boolean(payload.groupId) }), { status: 200 })
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 200 })
