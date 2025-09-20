@@ -361,6 +361,8 @@ export function sanitizeReferralInput(data: ReferralFormData): ReferralFormData 
     note: data.note.trim().substring(0, 500), // Enforce max length
     firstName: data.firstName?.trim().substring(0, 50),
     lastName: data.lastName?.trim().substring(0, 50),
+    groupId: data.groupId, // Include groupId
+    referrerId: data.referrerId, // Include referrerId
   };
 }
 

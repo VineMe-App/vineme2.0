@@ -68,6 +68,8 @@ export class ReferralService {
    */
   async createReferral(data: CreateReferralData): Promise<ReferralResponse> {
     try {
+      console.log('createReferral called with data:', JSON.stringify(data, null, 2));
+      
       // Sanitize input data
       const sanitizedData = sanitizeReferralInput(data);
 
@@ -464,7 +466,18 @@ export class ReferralService {
         return null;
       }
 
-      const result = resp as {
+      // Parse the response if it's a string
+      let parsedResponse = resp;
+      if (typeof resp === 'string') {
+        try {
+          parsedResponse = JSON.parse(resp);
+        } catch (e) {
+          console.error('Failed to parse edge function response:', e);
+          return null;
+        }
+      }
+      
+      const result = parsedResponse as {
         ok?: boolean;
         userId?: string;
         referralId?: string;
