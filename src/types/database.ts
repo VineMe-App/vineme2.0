@@ -214,10 +214,12 @@ export interface ContactAuditLogWithDetails extends ContactAuditLog {
 
 // Referral system types
 export interface Referral {
-  id: string; // Referred user's UUID
+  id: string; // Unique referral UUID
+  referred_user_id: string | null;
   referred_by_user_id: string | null;
   group_id: string | null;
   church_id: string | null;
+  status: 'pending' | 'approved' | 'rejected';
   note?: string | null;
   created_at: string;
   updated_at?: string | null;
