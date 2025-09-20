@@ -766,12 +766,6 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
                     accessibilityRole="button"
                   >
                     <Text style={styles.viewButtonText}>View Group</Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color="#fff"
-                      style={{ marginLeft: 4 }}
-                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1012,11 +1006,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   cardTitle: {
     fontSize: 16,
@@ -1051,10 +1040,10 @@ const styles = StyleSheet.create({
   viewButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: '#f10078', // Primary brand pink
+    borderRadius: 20, // More rounded sides
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   viewButtonText: {
     color: '#fff',
