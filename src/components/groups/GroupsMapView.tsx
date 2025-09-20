@@ -67,27 +67,27 @@ const getClusterVisuals = (count: number) => {
   if (count >= 50) {
     return {
       size: 60,
-      bubbleColor: '#6366f1',
+      bubbleColor: '#be185d', // Darkest pink
     } as const;
   }
 
   if (count >= 25) {
     return {
       size: 52,
-      bubbleColor: '#8b5cf6',
+      bubbleColor: '#f10078', // Primary brand pink
     } as const;
   }
 
   if (count >= 10) {
     return {
       size: 44,
-      bubbleColor: '#a855f7',
+      bubbleColor: '#db2777', // Darker pink
     } as const;
   }
 
   return {
     size: 36,
-    bubbleColor: '#c084fc',
+    bubbleColor: '#f472b6', // Medium pink - much more visible
   } as const;
 };
 
@@ -844,20 +844,20 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#6366f1',
+    backgroundColor: '#f10078', // Primary brand pink
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#f10078',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
   markerBubbleActive: {
-    backgroundColor: '#8b5cf6',
+    backgroundColor: '#f472b6', // Lighter pink for active state
   },
   calloutContainer: {
     width: 250,
