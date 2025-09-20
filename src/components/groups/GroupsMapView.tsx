@@ -95,7 +95,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   groups,
   onGroupPress,
   isLoading = false,
-  enableClustering = true,
+  enableClustering = true, // Re-enabled with optimizations
   clusterRadius = 40,
   minClusterSize = 2,
 }) => {
@@ -107,6 +107,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     useState(false);
   const [clusters, setClusters] = useState<(Cluster | ClusterPoint)[]>([]);
   const mapRef = useRef<MapView>(null);
+  const isUpdatingClusters = useRef(false);
 
   // Selection state for card panel
   const [selectedItems, setSelectedItems] = useState<GroupWithDetails[] | null>(
@@ -146,8 +147,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   );
 
   const updateClusters = useCallback(() => {
-    if (!enableClustering) return;
+    if (!enableClustering || isUpdatingClusters.current) return;
 
+    isUpdatingClusters.current = true;
     const endClustering = MapPerformanceMonitor.startClustering();
 
     try {
@@ -157,10 +159,36 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       );
       const newClusters = clusterer.getClusters(bounds, zoom);
 
-      setClusters(newClusters);
+      // Only update if clusters actually changed to prevent unnecessary re-renders
+      setClusters((prevClusters) => {
+        if (prevClusters.length !== newClusters.length) {
+          return newClusters;
+        }
+
+        // Check if any cluster positions changed significantly
+        const hasSignificantChange = newClusters.some((newCluster, index) => {
+          const prevCluster = prevClusters[index];
+          if (
+            !prevCluster ||
+            'count' in newCluster !== 'count' in prevCluster
+          ) {
+            return true;
+          }
+
+          if ('count' in newCluster && 'count' in prevCluster) {
+            return newCluster.count !== prevCluster.count;
+          }
+
+          return false;
+        });
+
+        return hasSignificantChange ? newClusters : prevClusters;
+      });
+
       MapPerformanceMonitor.recordPointCount(newClusters.length);
     } finally {
       endClustering();
+      isUpdatingClusters.current = false;
     }
   }, [enableClustering, currentRegion, clusterer]);
 
@@ -172,9 +200,14 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
   // Update clusters when region changes (optimized to prevent flashing)
   useEffect(() => {
-    if (!enableClustering || markers.length === 0) {
-      // Convert markers to cluster points for consistency
-      const clusterPoints: ClusterPoint[] = markers.map((marker, index) => ({
+    if (markers.length === 0) {
+      setClusters([]);
+      return;
+    }
+
+    if (!enableClustering) {
+      // Convert markers to cluster points for consistency - only when markers change
+      const clusterPoints: ClusterPoint[] = markers.map((marker) => ({
         id: `marker-${marker.group.id}`,
         latitude: marker.coordinates.latitude,
         longitude: marker.coordinates.longitude,
@@ -184,12 +217,15 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       return;
     }
 
-    // Use requestAnimationFrame for smoother updates
-    const rafId = requestAnimationFrame(() => {
-      updateClusters();
-    });
+    // Debounce cluster updates to prevent flashing during rapid zoom/pan
+    const timeoutId = setTimeout(() => {
+      const rafId = requestAnimationFrame(() => {
+        updateClusters();
+      });
+      return () => cancelAnimationFrame(rafId);
+    }, 150); // 150ms debounce
 
-    return () => cancelAnimationFrame(rafId);
+    return () => clearTimeout(timeoutId);
   }, [currentRegion, markers, enableClustering, clusterer, updateClusters]);
 
   const initializeMap = async () => {
@@ -387,7 +423,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           )}
           accessibilityHint="Double tap to view group details"
           accessibilityRole="button"
-          anchor={{ x: 0.5, y: 1 }}
+          anchor={{ x: 0.5, y: 0.5 }}
         >
           <View
             style={[styles.markerBubble, isActive && styles.markerBubbleActive]}
@@ -412,18 +448,18 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
           cluster.count
         )}
-        accessibilityHint="Double tap to view groups in this area"
-        accessibilityRole="button"
-        onPress={() => {
-          // Show swipeable cards for groups within this cluster
-          const items = cluster.points.map((p) => p.data);
-          setSelectedItems(items);
-          setSelectedIndex(0);
-          ScreenReaderUtils.announceForAccessibility(
-            `Showing ${cluster.count} groups in this area`
-          );
-        }}
-        anchor={{ x: 0.5, y: 1 }}
+          accessibilityHint="Double tap to view groups in this area"
+          accessibilityRole="button"
+          onPress={() => {
+            // Show swipeable cards for groups within this cluster
+            const items = cluster.points.map((p) => p.data);
+            setSelectedItems(items);
+            setSelectedIndex(0);
+            ScreenReaderUtils.announceForAccessibility(
+              `Showing ${cluster.count} groups in this area`
+            );
+          }}
+          anchor={{ x: 0.5, y: 0.5 }}
       >
         <View
           style={[
@@ -467,10 +503,15 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     [currentRegion]
   );
 
-  const handleRegionChange = useCallback((newRegion: Region) => {
-    // Update current region immediately for smoother interactions
-    setCurrentRegion(newRegion);
-  }, []);
+  const handleRegionChange = useCallback(
+    (newRegion: Region) => {
+      // Only update if there's a meaningful change to prevent excessive updates
+      if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+        setCurrentRegion(newRegion);
+      }
+    },
+    [currentRegion]
+  );
 
   if (isLoading || isLoadingLocation) {
     return (
@@ -487,7 +528,166 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
-        customMapStyle={[]}
+        customMapStyle={[
+          {
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#f5f5f5',
+              },
+            ],
+          },
+          {
+            elementType: 'labels.icon',
+            stylers: [
+              {
+                visibility: 'off',
+              },
+            ],
+          },
+          {
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#616161',
+              },
+            ],
+          },
+          {
+            elementType: 'labels.text.stroke',
+            stylers: [
+              {
+                color: '#f5f5f5',
+              },
+            ],
+          },
+          {
+            featureType: 'administrative.land_parcel',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#bdbdbd',
+              },
+            ],
+          },
+          {
+            featureType: 'poi',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#eeeeee',
+              },
+            ],
+          },
+          {
+            featureType: 'poi',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#757575',
+              },
+            ],
+          },
+          {
+            featureType: 'poi.park',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#e5e5e5',
+              },
+            ],
+          },
+          {
+            featureType: 'poi.park',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#9e9e9e',
+              },
+            ],
+          },
+          {
+            featureType: 'road',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#ffffff',
+              },
+            ],
+          },
+          {
+            featureType: 'road.arterial',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#757575',
+              },
+            ],
+          },
+          {
+            featureType: 'road.highway',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#dadada',
+              },
+            ],
+          },
+          {
+            featureType: 'road.highway',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#616161',
+              },
+            ],
+          },
+          {
+            featureType: 'road.local',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#9e9e9e',
+              },
+            ],
+          },
+          {
+            featureType: 'transit.line',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#e5e5e5',
+              },
+            ],
+          },
+          {
+            featureType: 'transit.station',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#eeeeee',
+              },
+            ],
+          },
+          {
+            featureType: 'water',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#c9c9c9',
+              },
+            ],
+          },
+          {
+            featureType: 'water',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#9e9e9e',
+              },
+            ],
+          },
+        ]}
         initialRegion={region}
         showsUserLocation={!locationPermissionDenied}
         showsMyLocationButton={!locationPermissionDenied}
@@ -789,6 +989,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingVertical: 8,
+    paddingBottom: 100, // Add space for bottom navbar
     backgroundColor: 'transparent',
   },
   cardPanelHeader: {
