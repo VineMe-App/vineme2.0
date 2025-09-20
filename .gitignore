@@ -36,7 +36,6 @@ local.properties
 
 # React Native / Expo
 # Generated native folders - these are created by expo run:ios/android
-ios/
 android/
 
 # node.js
@@ -49,7 +48,12 @@ yarn-error.log
 *.jsbundle
 
 # CocoaPods
-/ios/Pods/
+ios/Pods/
+ios/build/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/DerivedData/
 
 # Expo
 .expo/
