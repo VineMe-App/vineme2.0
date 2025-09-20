@@ -63,6 +63,8 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: LONGITUDE_DELTA,
 };
 
+const POSITION_EPSILON = 1e-6;
+
 const getClusterVisuals = (count: number) => {
   if (count >= 50) {
     return {
@@ -146,6 +148,39 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     [clusterRadius]
   );
 
+  const hasPositionChanged = useCallback(
+    (
+      prev: Cluster | ClusterPoint,
+      next: Cluster | ClusterPoint
+    ): boolean => {
+      if ('count' in next && 'count' in prev) {
+        if (next.count !== prev.count) {
+          return true;
+        }
+
+        const prevCoords = prev.coordinates;
+        const nextCoords = next.coordinates;
+
+        return (
+          Math.abs(prevCoords.latitude - nextCoords.latitude) >
+            POSITION_EPSILON ||
+          Math.abs(prevCoords.longitude - nextCoords.longitude) >
+            POSITION_EPSILON
+        );
+      }
+
+      if (!('count' in next) && !('count' in prev)) {
+        return (
+          Math.abs(prev.latitude - next.latitude) > POSITION_EPSILON ||
+          Math.abs(prev.longitude - next.longitude) > POSITION_EPSILON
+        );
+      }
+
+      return true;
+    },
+    []
+  );
+
   const updateClusters = useCallback(() => {
     if (!enableClustering || isUpdatingClusters.current) return;
 
@@ -165,21 +200,15 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           return newClusters;
         }
 
-        // Check if any cluster positions changed significantly
-        const hasSignificantChange = newClusters.some((newCluster, index) => {
+        // Detect meaningful identity or position changes before updating state
+        const hasSignificantChange = newClusters.some((nextCluster, index) => {
           const prevCluster = prevClusters[index];
-          if (
-            !prevCluster ||
-            'count' in newCluster !== 'count' in prevCluster
-          ) {
+
+          if (!prevCluster || prevCluster.id !== nextCluster.id) {
             return true;
           }
 
-          if ('count' in newCluster && 'count' in prevCluster) {
-            return newCluster.count !== prevCluster.count;
-          }
-
-          return false;
+          return hasPositionChanged(prevCluster, nextCluster);
         });
 
         return hasSignificantChange ? newClusters : prevClusters;
@@ -190,7 +219,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       endClustering();
       isUpdatingClusters.current = false;
     }
-  }, [enableClustering, currentRegion, clusterer]);
+  }, [enableClustering, currentRegion, clusterer, hasPositionChanged]);
 
   // Initialize map region and process group locations
   useEffect(() => {
