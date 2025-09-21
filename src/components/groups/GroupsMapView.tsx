@@ -63,7 +63,8 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: LONGITUDE_DELTA,
 };
 
-const POSITION_EPSILON = 1e-6;
+const POSITION_EPSILON = 1e-5;
+const VIEW_TRACKING_RESET_DELAY = 250;
 
 const getClusterVisuals = (count: number) => {
   if (count >= 50) {
@@ -110,6 +111,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   const [clusters, setClusters] = useState<(Cluster | ClusterPoint)[]>([]);
   const mapRef = useRef<MapView>(null);
   const isUpdatingClusters = useRef(false);
+  const viewTrackingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const [shouldTrackViewChanges, setShouldTrackViewChanges] = useState(true);
 
   // Selection state for card panel
   const [selectedItems, setSelectedItems] = useState<GroupWithDetails[] | null>(
@@ -149,10 +154,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   );
 
   const hasPositionChanged = useCallback(
-    (
-      prev: Cluster | ClusterPoint,
-      next: Cluster | ClusterPoint
-    ): boolean => {
+    (prev: Cluster | ClusterPoint, next: Cluster | ClusterPoint): boolean => {
       if ('count' in next && 'count' in prev) {
         if (next.count !== prev.count) {
           return true;
@@ -220,6 +222,30 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       isUpdatingClusters.current = false;
     }
   }, [enableClustering, currentRegion, clusterer, hasPositionChanged]);
+
+  const resetViewTracking = useCallback(() => {
+    setShouldTrackViewChanges(true);
+
+    if (viewTrackingTimeoutRef.current) {
+      clearTimeout(viewTrackingTimeoutRef.current);
+    }
+
+    viewTrackingTimeoutRef.current = setTimeout(() => {
+      setShouldTrackViewChanges(false);
+      viewTrackingTimeoutRef.current = null;
+    }, VIEW_TRACKING_RESET_DELAY);
+  }, []);
+
+  useEffect(() => {
+    resetViewTracking();
+
+    return () => {
+      if (viewTrackingTimeoutRef.current) {
+        clearTimeout(viewTrackingTimeoutRef.current);
+        viewTrackingTimeoutRef.current = null;
+      }
+    };
+  }, [clusters, activeGroupId, resetViewTracking]);
 
   // Initialize map region and process group locations
   useEffect(() => {
@@ -432,16 +458,17 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   };
 
   const renderGroupMarker = useCallback(
-    (point: ClusterPoint, index: number) => {
+    (point: ClusterPoint, _index: number) => {
       const { data: group, latitude, longitude } = point;
       const isActive = activeGroupId === group.id;
 
       return (
         <Marker
-          key={`group-${group.id}-${index}`}
+          key={`group-${group.id}`}
           coordinate={{ latitude, longitude }}
           title={group.title}
           description={group.description}
+          tracksViewChanges={shouldTrackViewChanges}
           onPress={() => {
             setSelectedItems([group]);
             setSelectedIndex(0);
@@ -462,21 +489,23 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </Marker>
       );
     },
-    [activeGroupId]
+    [activeGroupId, shouldTrackViewChanges]
   );
 
-  const renderClusterMarker = useCallback((cluster: Cluster, index: number) => {
-    const { size, bubbleColor } = getClusterVisuals(cluster.count);
-    const digitCount = `${cluster.count}`.length;
-    const fontSize = digitCount === 1 ? 16 : digitCount === 2 ? 14 : 12;
+  const renderClusterMarker = useCallback(
+    (cluster: Cluster, _index: number) => {
+      const { size, bubbleColor } = getClusterVisuals(cluster.count);
+      const digitCount = `${cluster.count}`.length;
+      const fontSize = digitCount === 1 ? 16 : digitCount === 2 ? 14 : 12;
 
-    return (
-      <Marker
-        key={`cluster-${cluster.id}-${index}`}
-        coordinate={cluster.coordinates}
-        accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
-          cluster.count
-        )}
+      return (
+        <Marker
+          key={`cluster-${cluster.id}`}
+          coordinate={cluster.coordinates}
+          accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
+            cluster.count
+          )}
+          tracksViewChanges={shouldTrackViewChanges}
           accessibilityHint="Double tap to view groups in this area"
           accessibilityRole="button"
           onPress={() => {
@@ -489,25 +518,27 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             );
           }}
           anchor={{ x: 0.5, y: 0.5 }}
-      >
-        <View
-          style={[
-            styles.clusterBubble,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              backgroundColor: bubbleColor,
-            },
-          ]}
         >
-          <Text style={[styles.clusterCount, { fontSize }]}>
-            {cluster.count}
-          </Text>
-        </View>
-      </Marker>
-    );
-  }, []);
+          <View
+            style={[
+              styles.clusterBubble,
+              {
+                width: size,
+                height: size,
+                borderRadius: size / 2,
+                backgroundColor: bubbleColor,
+              },
+            ]}
+          >
+            <Text style={[styles.clusterCount, { fontSize }]}>
+              {cluster.count}
+            </Text>
+          </View>
+        </Marker>
+      );
+    },
+    [shouldTrackViewChanges]
+  );
 
   const renderMarker = useCallback(
     (item: ClusterPoint | Cluster, index: number) => {
