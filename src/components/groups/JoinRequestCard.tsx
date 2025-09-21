@@ -41,10 +41,6 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   const initiateContactMutation = useInitiateContactAction();
   const updateJourneyStatusMutation = useUpdateMembershipJourneyStatus();
 
-  const { data: contactInfo } = useGetContactInfo(
-    showContactInfo && hasContactConsent ? request.id : undefined,
-    leaderId
-  );
 
   const initialJourneyStatus = useMemo(
     () => (request.journey_status ?? null) as MembershipJourneyStatus | null,
@@ -52,8 +48,12 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   );
   const [journeyStatus, setJourneyStatus] =
     useState<MembershipJourneyStatus | null>(initialJourneyStatus);
-  const isReferral = Boolean(request.referral_id);
   const hasContactConsent = request.contact_consent ?? true;
+  const { data: contactInfo } = useGetContactInfo(
+    showContactInfo && hasContactConsent ? request.id : undefined,
+    leaderId
+  );
+  const isReferral = Boolean(request.referral_id);
   const journeySteps = useMemo(
     () => [
       { value: 1 as MembershipJourneyStatus, label: 'Reached out' },
