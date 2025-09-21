@@ -66,6 +66,8 @@ export class JoinRequestService {
           user_id: requestData.user_id,
           role: 'member',
           status: 'pending',
+          contact_consent: requestData.contact_consent ?? null,
+          message: requestData.message ?? null,
           // joined_at is set when request is approved
         })
         .select()
@@ -160,6 +162,8 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
+          contact_consent,
+          message,
           referral_id,
           journey_status,
           joined_at,
@@ -204,6 +208,8 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
+          contact_consent,
+          message,
           referral_id,
           journey_status,
           joined_at,

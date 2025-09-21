@@ -78,8 +78,8 @@ export interface GroupJoinRequest {
   id: string;
   group_id: string;
   user_id: string;
-  contact_consent?: boolean;
-  message?: string;
+  contact_consent?: boolean | null;
+  message?: string | null;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;
   updated_at?: string;
