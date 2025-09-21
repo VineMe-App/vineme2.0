@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import {
   View,
   Text,
@@ -9,14 +15,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { AdminAccessibilityLabels, ScreenReaderUtils } from '@/utils/accessibility';
-import MapView, {
-  Marker,
-  Callout,
-  Region,
-  PROVIDER_GOOGLE,
-} from 'react-native-maps';
-import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
+import {
+  AdminAccessibilityLabels,
+  ScreenReaderUtils,
+} from '@/utils/accessibility';
+import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService, Coordinates } from '../../services/location';
 import {
@@ -60,11 +63,42 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: LONGITUDE_DELTA,
 };
 
+const POSITION_EPSILON = 1e-5;
+const VIEW_TRACKING_RESET_DELAY = 250;
+
+const getClusterVisuals = (count: number) => {
+  if (count >= 50) {
+    return {
+      size: 60,
+      bubbleColor: '#be185d', // Darkest pink
+    } as const;
+  }
+
+  if (count >= 25) {
+    return {
+      size: 52,
+      bubbleColor: '#f10078', // Primary brand pink
+    } as const;
+  }
+
+  if (count >= 10) {
+    return {
+      size: 44,
+      bubbleColor: '#db2777', // Darker pink
+    } as const;
+  }
+
+  return {
+    size: 36,
+    bubbleColor: '#f472b6', // Medium pink - much more visible
+  } as const;
+};
+
 export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   groups,
   onGroupPress,
   isLoading = false,
-  enableClustering = true,
+  enableClustering = true, // Re-enabled with optimizations
   clusterRadius = 40,
   minClusterSize = 2,
 }) => {
@@ -76,12 +110,37 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     useState(false);
   const [clusters, setClusters] = useState<(Cluster | ClusterPoint)[]>([]);
   const mapRef = useRef<MapView>(null);
+  const isUpdatingClusters = useRef(false);
+  const viewTrackingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const [shouldTrackViewChanges, setShouldTrackViewChanges] = useState(true);
 
   // Selection state for card panel
   const [selectedItems, setSelectedItems] = useState<GroupWithDetails[] | null>(
     null
   );
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    if (!selectedItems || selectedItems.length === 0) {
+      setSelectedIndex(0);
+      return;
+    }
+
+    setSelectedIndex((prevIndex) =>
+      Math.min(prevIndex, Math.max(selectedItems.length - 1, 0))
+    );
+  }, [selectedItems]);
+
+  const activeGroupId = useMemo(() => {
+    if (!selectedItems || selectedItems.length === 0) {
+      return null;
+    }
+
+    const safeIndex = Math.min(selectedIndex, selectedItems.length - 1);
+    return selectedItems[safeIndex]?.id ?? null;
+  }, [selectedItems, selectedIndex]);
 
   // Create clusterer instance
   const clusterer = useMemo(
@@ -94,25 +153,135 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     [clusterRadius]
   );
 
+  const hasPositionChanged = useCallback(
+    (prev: Cluster | ClusterPoint, next: Cluster | ClusterPoint): boolean => {
+      if ('count' in next && 'count' in prev) {
+        if (next.count !== prev.count) {
+          return true;
+        }
+
+        const prevCoords = prev.coordinates;
+        const nextCoords = next.coordinates;
+
+        return (
+          Math.abs(prevCoords.latitude - nextCoords.latitude) >
+            POSITION_EPSILON ||
+          Math.abs(prevCoords.longitude - nextCoords.longitude) >
+            POSITION_EPSILON
+        );
+      }
+
+      if (!('count' in next) && !('count' in prev)) {
+        return (
+          Math.abs(prev.latitude - next.latitude) > POSITION_EPSILON ||
+          Math.abs(prev.longitude - next.longitude) > POSITION_EPSILON
+        );
+      }
+
+      return true;
+    },
+    []
+  );
+
+  const updateClusters = useCallback(() => {
+    if (!enableClustering || isUpdatingClusters.current) return;
+
+    isUpdatingClusters.current = true;
+    const endClustering = MapPerformanceMonitor.startClustering();
+
+    try {
+      const bounds = MapViewportOptimizer.getOptimalBounds(currentRegion);
+      const zoom = MapViewportOptimizer.getZoomLevel(
+        currentRegion.latitudeDelta
+      );
+      const newClusters = clusterer.getClusters(bounds, zoom);
+
+      // Only update if clusters actually changed to prevent unnecessary re-renders
+      setClusters((prevClusters) => {
+        if (prevClusters.length !== newClusters.length) {
+          return newClusters;
+        }
+
+        // Detect meaningful identity or position changes before updating state
+        const hasSignificantChange = newClusters.some((nextCluster, index) => {
+          const prevCluster = prevClusters[index];
+
+          if (!prevCluster || prevCluster.id !== nextCluster.id) {
+            return true;
+          }
+
+          return hasPositionChanged(prevCluster, nextCluster);
+        });
+
+        return hasSignificantChange ? newClusters : prevClusters;
+      });
+
+      MapPerformanceMonitor.recordPointCount(newClusters.length);
+    } finally {
+      endClustering();
+      isUpdatingClusters.current = false;
+    }
+  }, [enableClustering, currentRegion, clusterer, hasPositionChanged]);
+
+  const resetViewTracking = useCallback(() => {
+    setShouldTrackViewChanges(true);
+
+    if (viewTrackingTimeoutRef.current) {
+      clearTimeout(viewTrackingTimeoutRef.current);
+    }
+
+    viewTrackingTimeoutRef.current = setTimeout(() => {
+      setShouldTrackViewChanges(false);
+      viewTrackingTimeoutRef.current = null;
+    }, VIEW_TRACKING_RESET_DELAY);
+  }, []);
+
+  useEffect(() => {
+    resetViewTracking();
+
+    return () => {
+      if (viewTrackingTimeoutRef.current) {
+        clearTimeout(viewTrackingTimeoutRef.current);
+        viewTrackingTimeoutRef.current = null;
+      }
+    };
+  }, [clusters, activeGroupId, resetViewTracking]);
+
   // Initialize map region and process group locations
   useEffect(() => {
     initializeMap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups]);
 
-  // Update clusters when region changes (with debouncing)
+  // Update clusters when region changes (optimized to prevent flashing)
   useEffect(() => {
-    if (!enableClustering || markers.length === 0) {
-      setClusters(markers);
+    if (markers.length === 0) {
+      setClusters([]);
       return;
     }
 
+    if (!enableClustering) {
+      // Convert markers to cluster points for consistency - only when markers change
+      const clusterPoints: ClusterPoint[] = markers.map((marker) => ({
+        id: `marker-${marker.group.id}`,
+        latitude: marker.coordinates.latitude,
+        longitude: marker.coordinates.longitude,
+        data: marker.group,
+      }));
+      setClusters(clusterPoints);
+      return;
+    }
+
+    // Debounce cluster updates to prevent flashing during rapid zoom/pan
     const timeoutId = setTimeout(() => {
-      updateClusters();
-    }, 300); // Debounce cluster updates
+      const rafId = requestAnimationFrame(() => {
+        updateClusters();
+      });
+      return () => cancelAnimationFrame(rafId);
+    }, 150); // 150ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [currentRegion, markers, enableClustering, clusterer]);
+  }, [currentRegion, markers, enableClustering, clusterer, updateClusters]);
 
   const initializeMap = async () => {
     setIsLoadingLocation(true);
@@ -273,25 +442,6 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     }
   };
 
-  const updateClusters = () => {
-    if (!enableClustering) return;
-
-    const endClustering = MapPerformanceMonitor.startClustering();
-
-    try {
-      const bounds = MapViewportOptimizer.getOptimalBounds(currentRegion);
-      const zoom = MapViewportOptimizer.getZoomLevel(
-        currentRegion.latitudeDelta
-      );
-      const newClusters = clusterer.getClusters(bounds, zoom);
-
-      setClusters(newClusters);
-      MapPerformanceMonitor.recordPointCount(newClusters.length);
-    } finally {
-      endClustering();
-    }
-  };
-
   const handleRequestLocationPermission = async () => {
     const permission = await locationService.requestLocationPermission();
 
@@ -307,92 +457,121 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     }
   };
 
-  const renderMarker = (item: ClusterPoint | Cluster, index: number) => {
-    const isCluster = 'count' in item && item.count > 1;
+  const renderGroupMarker = useCallback(
+    (point: ClusterPoint, _index: number) => {
+      const { data: group, latitude, longitude } = point;
+      const isActive = activeGroupId === group.id;
 
-    if (isCluster) {
-      return renderClusterMarker(item as Cluster, index);
-    } else {
-      return renderGroupMarker(item as ClusterPoint, index);
-    }
-  };
-
-  const renderGroupMarker = (point: ClusterPoint, index: number) => {
-    const { data: group, latitude, longitude } = point;
-
-    return (
-      <Marker
-        key={`group-${group.id}-${index}`}
-        coordinate={{ latitude, longitude }}
-        title={group.title}
-        description={group.description}
-        onPress={() => {
-          setSelectedItems([group]);
-          setSelectedIndex(0);
-        }}
-        accessibilityLabel={AdminAccessibilityLabels.mapMarker(
-          group.title,
-          group.member_count || 0
-        )}
-        accessibilityHint="Double tap to view group details"
-        accessibilityRole="button"
-      >
-        <View style={styles.markerContainer}>
+      return (
+        <Marker
+          key={`group-${group.id}`}
+          coordinate={{ latitude, longitude }}
+          title={group.title}
+          description={group.description}
+          tracksViewChanges={shouldTrackViewChanges}
+          onPress={() => {
+            setSelectedItems([group]);
+            setSelectedIndex(0);
+          }}
+          accessibilityLabel={AdminAccessibilityLabels.mapMarker(
+            group.title,
+            group.member_count || 0
+          )}
+          accessibilityHint="Double tap to view group details"
+          accessibilityRole="button"
+          anchor={{ x: 0.5, y: 0.5 }}
+        >
           <View
-            style={styles.marker}
-            accessibilityElementsHidden={true}
-            importantForAccessibility="no-hide-descendants"
+            style={[styles.markerBubble, isActive && styles.markerBubbleActive]}
           >
-            <Ionicons name="book-outline" size={12} color="#fff" />
+            <Ionicons name="people" size={16} color="#ffffff" />
           </View>
-        </View>
-      </Marker>
-    );
-  };
+        </Marker>
+      );
+    },
+    [activeGroupId, shouldTrackViewChanges]
+  );
 
-  const renderClusterMarker = (cluster: Cluster, index: number) => {
-    return (
-      <Marker
-        key={`cluster-${cluster.id}-${index}`}
-        coordinate={cluster.coordinates}
-        accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
-          cluster.count
-        )}
-        accessibilityHint="Double tap to view groups in this area"
-        accessibilityRole="button"
-        onPress={() => {
-          // Show swipeable cards for groups within this cluster
-          const items = cluster.points.map((p) => p.data);
-          setSelectedItems(items);
-          setSelectedIndex(0);
-          ScreenReaderUtils.announceForAccessibility(
-            `Showing ${cluster.count} groups in this area`
-          );
-        }}
-      >
-        <View style={styles.clusterContainer}>
+  const renderClusterMarker = useCallback(
+    (cluster: Cluster, _index: number) => {
+      const { size, bubbleColor } = getClusterVisuals(cluster.count);
+      const digitCount = `${cluster.count}`.length;
+      const fontSize = digitCount === 1 ? 16 : digitCount === 2 ? 14 : 12;
+
+      return (
+        <Marker
+          key={`cluster-${cluster.id}`}
+          coordinate={cluster.coordinates}
+          accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
+            cluster.count
+          )}
+          tracksViewChanges={shouldTrackViewChanges}
+          accessibilityHint="Double tap to view groups in this area"
+          accessibilityRole="button"
+          onPress={() => {
+            // Show swipeable cards for groups within this cluster
+            const items = cluster.points.map((p) => p.data);
+            setSelectedItems(items);
+            setSelectedIndex(0);
+            ScreenReaderUtils.announceForAccessibility(
+              `Showing ${cluster.count} groups in this area`
+            );
+          }}
+          anchor={{ x: 0.5, y: 0.5 }}
+        >
           <View
             style={[
-              styles.clusterMarker,
+              styles.clusterBubble,
               {
-                backgroundColor: cluster.count > 10 ? '#d32f2f' : '#007AFF',
+                width: size,
+                height: size,
+                borderRadius: size / 2,
+                backgroundColor: bubbleColor,
               },
             ]}
-            accessibilityElementsHidden={true}
           >
-            <Text style={styles.clusterText}>{cluster.count}</Text>
+            <Text style={[styles.clusterCount, { fontSize }]}>
+              {cluster.count}
+            </Text>
           </View>
-        </View>
-      </Marker>
-    );
-  };
+        </Marker>
+      );
+    },
+    [shouldTrackViewChanges]
+  );
 
-  const handleRegionChangeComplete = (newRegion: Region) => {
-    // Only update if there's a significant change
-    if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
-      setCurrentRegion(newRegion);
-    }
-  };
+  const renderMarker = useCallback(
+    (item: ClusterPoint | Cluster, index: number) => {
+      const isCluster = 'count' in item && item.count > 1;
+
+      if (isCluster) {
+        return renderClusterMarker(item as Cluster, index);
+      }
+
+      return renderGroupMarker(item as ClusterPoint, index);
+    },
+    [renderClusterMarker, renderGroupMarker]
+  );
+
+  const handleRegionChangeComplete = useCallback(
+    (newRegion: Region) => {
+      // Only update if there's a significant change to prevent excessive re-clustering
+      if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+        setCurrentRegion(newRegion);
+      }
+    },
+    [currentRegion]
+  );
+
+  const handleRegionChange = useCallback(
+    (newRegion: Region) => {
+      // Only update if there's a meaningful change to prevent excessive updates
+      if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+        setCurrentRegion(newRegion);
+      }
+    },
+    [currentRegion]
+  );
 
   if (isLoading || isLoadingLocation) {
     return (
@@ -409,13 +588,173 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
-        mapId={GOOGLE_MAPS_MAP_ID}
+        customMapStyle={[
+          {
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#f5f5f5',
+              },
+            ],
+          },
+          {
+            elementType: 'labels.icon',
+            stylers: [
+              {
+                visibility: 'off',
+              },
+            ],
+          },
+          {
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#616161',
+              },
+            ],
+          },
+          {
+            elementType: 'labels.text.stroke',
+            stylers: [
+              {
+                color: '#f5f5f5',
+              },
+            ],
+          },
+          {
+            featureType: 'administrative.land_parcel',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#bdbdbd',
+              },
+            ],
+          },
+          {
+            featureType: 'poi',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#eeeeee',
+              },
+            ],
+          },
+          {
+            featureType: 'poi',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#757575',
+              },
+            ],
+          },
+          {
+            featureType: 'poi.park',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#e5e5e5',
+              },
+            ],
+          },
+          {
+            featureType: 'poi.park',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#9e9e9e',
+              },
+            ],
+          },
+          {
+            featureType: 'road',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#ffffff',
+              },
+            ],
+          },
+          {
+            featureType: 'road.arterial',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#757575',
+              },
+            ],
+          },
+          {
+            featureType: 'road.highway',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#dadada',
+              },
+            ],
+          },
+          {
+            featureType: 'road.highway',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#616161',
+              },
+            ],
+          },
+          {
+            featureType: 'road.local',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#9e9e9e',
+              },
+            ],
+          },
+          {
+            featureType: 'transit.line',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#e5e5e5',
+              },
+            ],
+          },
+          {
+            featureType: 'transit.station',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#eeeeee',
+              },
+            ],
+          },
+          {
+            featureType: 'water',
+            elementType: 'geometry',
+            stylers: [
+              {
+                color: '#c9c9c9',
+              },
+            ],
+          },
+          {
+            featureType: 'water',
+            elementType: 'labels.text.fill',
+            stylers: [
+              {
+                color: '#9e9e9e',
+              },
+            ],
+          },
+        ]}
         initialRegion={region}
         showsUserLocation={!locationPermissionDenied}
         showsMyLocationButton={!locationPermissionDenied}
         showsCompass={true}
         showsScale={true}
         loadingEnabled={true}
+        onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={() => setSelectedItems(null)}
         moveOnMarkerPress={false}
@@ -425,12 +764,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         accessibilityLabel={`Map showing ${markers.length} groups`}
         accessibilityHint="Interactive map with group locations. Use list view for better accessibility."
       >
-        {(enableClustering ? clusters : markers).map(renderMarker)}
+        {clusters.map(renderMarker)}
       </MapView>
 
       {selectedItems && selectedItems.length > 0 && (
         <View style={styles.cardPanel}>
-          <View style={styles.cardPanelHeader}> 
+          <View style={styles.cardPanelHeader}>
             <Text style={styles.cardPanelTitle}>
               {selectedItems.length > 1
                 ? `${selectedIndex + 1} of ${selectedItems.length}`
@@ -453,7 +792,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
                 e.nativeEvent.contentOffset.x /
                   Math.max(1, e.nativeEvent.layoutMeasurement.width)
               );
-              setSelectedIndex(Math.min(Math.max(page, 0), selectedItems.length - 1));
+              setSelectedIndex(
+                Math.min(Math.max(page, 0), selectedItems.length - 1)
+              );
             }}
           >
             {selectedItems.map((g) => (
@@ -485,12 +826,6 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
                     accessibilityRole="button"
                   >
                     <Text style={styles.viewButtonText}>View Group</Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color="#fff"
-                      style={{ marginLeft: 4 }}
-                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -559,29 +894,24 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 16,
   },
-  markerContainer: {
-    alignItems: 'center',
-  },
-  marker: {
-    backgroundColor: '#007AFF',
-    borderRadius: 20,
+  markerBubble: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f10078', // Primary brand pink
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-    shadowColor: '#000',
+    shadowColor: '#f10078',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  markerText: {
-    fontSize: 18,
+  markerBubbleActive: {
+    backgroundColor: '#f472b6', // Lighter pink for active state
   },
   calloutContainer: {
     width: 250,
@@ -669,30 +999,21 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-  clusterContainer: {
+  clusterBubble: {
     alignItems: 'center',
-  },
-  clusterMarker: {
-    borderRadius: 25,
-    width: 50,
-    height: 50,
     justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  clusterText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  clusterCount: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
   clusterCallout: {
     width: 150,
@@ -722,6 +1043,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingVertical: 8,
+    paddingBottom: 100, // Add space for bottom navbar
     backgroundColor: 'transparent',
   },
   cardPanelHeader: {
@@ -744,11 +1066,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   cardTitle: {
     fontSize: 16,
@@ -783,10 +1100,10 @@ const styles = StyleSheet.create({
   viewButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: '#f10078', // Primary brand pink
+    borderRadius: 20, // More rounded sides
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   viewButtonText: {
     color: '#fff',
