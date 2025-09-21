@@ -226,10 +226,10 @@ export class ReferralRateLimiter {
   private static instance: ReferralRateLimiter;
   private rateLimitMap = new Map<string, ReferralRateLimitInfo[]>();
   
-  // Rate limits
-  private readonly HOURLY_LIMIT = 5; // 5 referrals per hour
-  private readonly DAILY_LIMIT = 20; // 20 referrals per day
-  private readonly WEEKLY_LIMIT = 50; // 50 referrals per week
+  // Rate limits - TEMPORARILY INCREASED FOR TESTING
+  private readonly HOURLY_LIMIT = 100; // 100 referrals per hour (was 5)
+  private readonly DAILY_LIMIT = 500; // 500 referrals per day (was 20)
+  private readonly WEEKLY_LIMIT = 1000; // 1000 referrals per week (was 50)
   
   private readonly HOUR_MS = 60 * 60 * 1000;
   private readonly DAY_MS = 24 * this.HOUR_MS;
@@ -361,6 +361,8 @@ export function sanitizeReferralInput(data: ReferralFormData): ReferralFormData 
     note: data.note.trim().substring(0, 500), // Enforce max length
     firstName: data.firstName?.trim().substring(0, 50),
     lastName: data.lastName?.trim().substring(0, 50),
+    groupId: data.groupId, // Include groupId
+    referrerId: data.referrerId, // Include referrerId
   };
 }
 

@@ -66,7 +66,7 @@ export const useGroupReferrals = (groupId?: string) => {
 
       // Record query performance
       performanceMonitor.recordQueryPerformance(
-        `group_referrals_${groupId}`,
+        `referrals_by_group_${groupId}`,
         duration,
         false
       );

@@ -1,10 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { joinRequestService } from '../services/joinRequests';
-import type {
-  GroupJoinRequest,
-  GroupJoinRequestWithUser,
-  GroupMembership,
-} from '../types/database';
+import type { MembershipJourneyStatus } from '../types/database';
 import type { CreateJoinRequestData } from '../services/joinRequests';
 
 // Query keys
@@ -287,6 +283,45 @@ export const useInitiateContactAction = () => {
     },
     onError: (error) => {
       console.error('Failed to initiate contact action:', error);
+    },
+  });
+};
+
+/**
+ * Hook to update the journey status of a membership
+ */
+export const useUpdateMembershipJourneyStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      membershipId,
+      leaderId,
+      journeyStatus,
+    }: {
+      membershipId: string;
+      leaderId: string;
+      journeyStatus: MembershipJourneyStatus | null;
+    }) => {
+      const { data, error } = await joinRequestService.updateJourneyStatus(
+        membershipId,
+        leaderId,
+        journeyStatus
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (!data) return;
+      queryClient.invalidateQueries({
+        queryKey: joinRequestKeys.byGroup(data.group_id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['groups', 'members', data.group_id],
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update membership journey status:', error);
     },
   });
 };

@@ -144,10 +144,10 @@ class ReferralService {
 
 ### Database Schema Extensions
 
-#### group_referrals (New Table)
+#### referrals (New Table)
 
 ```sql
-CREATE TABLE group_referrals (
+CREATE TABLE referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

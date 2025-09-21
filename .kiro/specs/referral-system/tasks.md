@@ -53,7 +53,7 @@
   - _Requirements: 2.2, 2.3, 3.4, 3.5, 3.6_
 
 - [x] 9. Add referral tracking to database operations
-  - Implement database operations for group_referrals table
+  - Implement database operations for referrals table
   - Implement database operations for general_referrals table
   - Add proper foreign key relationships and constraints
   - Include timestamp tracking for referral creation

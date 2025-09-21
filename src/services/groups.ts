@@ -2,7 +2,6 @@ import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import { triggerJoinRequestReceivedNotification } from './notifications';
 import type {
-  Group,
   GroupWithDetails,
   GroupMembership,
   GroupMembershipWithUser,
@@ -72,6 +71,8 @@ export class GroupService {
             role,
             status,
             joined_at,
+            journey_status,
+            referral_id,
             user:users(id, name, avatar_url)
           )
         `
@@ -123,6 +124,8 @@ export class GroupService {
             role,
             status,
             joined_at,
+            journey_status,
+            referral_id,
             user:users(id, name, avatar_url)
           )
         `
@@ -275,7 +278,10 @@ export class GroupService {
           }
         }
       } catch (notifyErr) {
-        console.error('Failed to trigger join request notifications:', notifyErr);
+        console.error(
+          'Failed to trigger join request notifications:',
+          notifyErr
+        );
       }
 
       return { data, error: null };
@@ -383,7 +389,8 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url)
+          user:users(id, name, avatar_url, newcomer),
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
         `
         )
         .eq('group_id', groupId)
@@ -437,7 +444,8 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url)
+          user:users(id, name, avatar_url, newcomer),
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
         `
         )
         .eq('group_id', groupId)
@@ -539,7 +547,7 @@ export class GroupService {
 
       // TODO: Implement actual email sending or store referral in database
       // This could involve:
-      // 1. Storing the referral in a 'group_referrals' table
+      // 1. Storing the referral in a 'referrals' table
       // 2. Sending an email with group details and invitation link
       // 3. Creating a temporary invitation token
 

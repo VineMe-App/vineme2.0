@@ -60,24 +60,31 @@ export interface Group {
   updated_at?: string;
 }
 
+export type MembershipJourneyStatus = 1 | 2 | 3;
+
 export interface GroupMembership {
   id: string;
   group_id: string;
   user_id: string;
   role: 'member' | 'leader' | 'admin';
-  joined_at: string;
+  joined_at: string | null;
   status: 'active' | 'inactive' | 'pending';
+  referral_id?: string | null;
+  journey_status?: MembershipJourneyStatus | null;
+  contact_consent?: boolean | null;
 }
 
 export interface GroupJoinRequest {
   id: string;
   group_id: string;
   user_id: string;
-  contact_consent: boolean;
-  message?: string;
+  contact_consent?: boolean | null;
+  message?: string | null;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;
   updated_at?: string;
+  referral_id?: string | null;
+  journey_status?: MembershipJourneyStatus | null;
 }
 
 export interface Event {
@@ -131,6 +138,7 @@ export interface Ticket {
 // Joined/Extended types for queries with relationships
 export interface GroupMembershipWithUser extends GroupMembership {
   user?: User;
+  referral?: Referral;
 }
 
 export interface GroupJoinRequestWithUser extends GroupJoinRequest {
@@ -179,8 +187,7 @@ export interface ContactAuditLog {
 }
 
 export interface ContactPrivacySettings {
-  id: string;
-  user_id: string;
+  user_id: string; // Primary key
   allow_email_sharing: boolean;
   allow_phone_sharing: boolean;
   allow_contact_by_leaders: boolean;
@@ -205,35 +212,29 @@ export interface ContactAuditLogWithDetails extends ContactAuditLog {
 }
 
 // Referral system types
-export interface GroupReferral {
-  id: string;
-  group_id: string;
-  referrer_id: string;
-  referred_by_user_id: string;
-  note?: string;
+export interface Referral {
+  id: string; // Unique referral UUID
+  referred_user_id: string | null;
+  referred_by_user_id: string | null;
+  group_id: string | null;
+  church_id: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  note?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
 }
 
-export interface GeneralReferral {
-  id: string;
-  referrer_id: string;
-  referred_by_user_id: string;
-  note?: string;
-  created_at: string;
-  updated_at: string;
+export interface ReferralWithDetails extends Referral {
+  group?: Group | null;
+  referrer?: User | null;
+  referred_user?: User | null;
 }
 
-export interface GroupReferralWithDetails extends GroupReferral {
-  group?: Group;
-  referrer?: User;
-  referred_user?: User;
-}
-
-export interface GeneralReferralWithDetails extends GeneralReferral {
-  referrer?: User;
-  referred_user?: User;
-}
+// Legacy aliases maintained for compatibility while migrating to unified referrals table
+export type GroupReferral = Referral;
+export type GeneralReferral = Referral;
+export type GroupReferralWithDetails = ReferralWithDetails;
+export type GeneralReferralWithDetails = ReferralWithDetails;
 
 // Enhanced Notifications System Types - Re-exported from dedicated notifications types file
 export type {
@@ -275,7 +276,6 @@ export type DatabaseGroup = Group;
 export type DatabaseEvent = Event;
 export type DatabaseFriendship = Friendship;
 export type DatabaseTicket = Ticket;
-export type DatabaseGroupReferral = GroupReferral;
-export type DatabaseGeneralReferral = GeneralReferral;
+export type DatabaseReferral = Referral;
 export type DatabaseNotification = Notification;
 export type DatabaseNotificationSettings = NotificationSettings;

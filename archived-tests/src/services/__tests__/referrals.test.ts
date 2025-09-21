@@ -681,7 +681,7 @@ describe('ReferralService', () => {
         const result = await referralService.validateDatabaseSchema();
 
         expect(result.error).toBeNull();
-        expect(result.data).toHaveProperty('groupReferralsExists');
+        expect(result.data).toHaveProperty('referralsExists');
         expect(result.data).toHaveProperty('generalReferralsExists');
         expect(result.data).toHaveProperty('indexesExist');
         expect(result.data).toHaveProperty('constraintsValid');

@@ -40,7 +40,7 @@ export interface GroupJoinRequest {
   group_id: string;
   user_id: string;
   user?: User;
-  contact_consent: boolean;
+  contact_consent?: boolean;
   message?: string;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;
@@ -294,7 +294,11 @@ export class GroupAdminService {
       // Notify group creator/leader of approval
       try {
         const [{ data: group }, { data: admin }] = await Promise.all([
-          supabase.from('groups').select('id, title, created_by').eq('id', groupId).single(),
+          supabase
+            .from('groups')
+            .select('id, title, created_by')
+            .eq('id', groupId)
+            .single(),
           supabase.from('users').select('name').eq('id', adminId).single(),
         ]);
         if (group && admin) {
@@ -393,7 +397,11 @@ export class GroupAdminService {
       // Notify group creator/leader of denial
       try {
         const [{ data: group }, { data: admin }] = await Promise.all([
-          supabase.from('groups').select('id, title, created_by').eq('id', groupId).single(),
+          supabase
+            .from('groups')
+            .select('id, title, created_by')
+            .eq('id', groupId)
+            .single(),
           supabase.from('users').select('name').eq('id', adminId).single(),
         ]);
         if (group && admin) {
@@ -546,7 +554,6 @@ export class GroupAdminService {
           group_id: item.group_id,
           user_id: item.user_id,
           user: item.user,
-          contact_consent: true, // Default for now, can be enhanced later
           status: 'pending',
           created_at: item.joined_at,
         })) || [];
@@ -614,8 +621,16 @@ export class GroupAdminService {
       // Notify requester of approval and fire referral-joined-group if applicable
       try {
         const [groupRes, userRes, approverRes] = await Promise.all([
-          supabase.from('groups').select('id, title').eq('id', request.group_id).single(),
-          supabase.from('users').select('id, name').eq('id', request.user_id).single(),
+          supabase
+            .from('groups')
+            .select('id, title')
+            .eq('id', request.group_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('id, name')
+            .eq('id', request.user_id)
+            .single(),
           supabase.auth.getUser(),
         ]);
         const approverId = approverRes?.data?.user?.id;
@@ -638,14 +653,14 @@ export class GroupAdminService {
 
           // Check for referral linking this user and group
           const { data: groupReferral } = await supabase
-            .from('group_referrals')
-            .select('referrer_id')
-            .eq('referred_by_user_id', userRes.data.id)
+            .from('referrals')
+            .select('referred_by_user_id')
+            .eq('referred_user_id', userRes.data.id)
             .eq('group_id', groupRes.data.id)
             .maybeSingle();
-          if (groupReferral?.referrer_id) {
+          if (groupReferral?.referred_by_user_id) {
             await triggerReferralJoinedGroupNotification({
-              referrerId: groupReferral.referrer_id,
+              referrerId: groupReferral.referred_by_user_id,
               referredUserId: userRes.data.id,
               referredUserName: userRes.data.name,
               groupId: groupRes.data.id,
@@ -717,8 +732,16 @@ export class GroupAdminService {
       // Notify requester of denial
       try {
         const [groupRes, userRes, approverRes] = await Promise.all([
-          supabase.from('groups').select('id, title').eq('id', request.group_id).single(),
-          supabase.from('users').select('id, name').eq('id', request.user_id).single(),
+          supabase
+            .from('groups')
+            .select('id, title')
+            .eq('id', request.group_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('id, name')
+            .eq('id', request.user_id)
+            .single(),
           supabase.auth.getUser(),
         ]);
         const approverId = approverRes?.data?.user?.id;

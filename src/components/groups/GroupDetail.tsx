@@ -14,7 +14,6 @@ import { useRouter } from 'expo-router';
 import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
-import { GroupLeaderPanel } from './GroupLeaderPanel';
 import {
   useJoinGroup,
   useLeaveGroup,
@@ -200,6 +199,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   // Check if current user is a leader of this group
   const userMembership = members?.find((m) => m.user_id === userProfile?.id);
   const isGroupLeader = userMembership?.role === 'leader';
+  const canManageGroup = Boolean(isGroupLeader || isChurchAdminForService);
   // removed duplicate isChurchAdminForService
 
   // Friends in group - use the same logic as groups list
@@ -243,10 +243,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     (request) => request.group_id === group.id && request.status === 'pending'
   );
 
-  const handleGroupUpdated = () => {
-    onMembershipChange?.();
-  };
-
   // Referral submission handled in /referral page
 
   return (
@@ -282,10 +278,24 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               </View>
             )}
           </View>
-          {onShare && (
-            <TouchableOpacity onPress={onShare} style={styles.iconButton}>
-              <Ionicons name="share-outline" size={22} color="#374151" />
-            </TouchableOpacity>
+          {(canManageGroup || onShare) && (
+            <View style={styles.headerActions}>
+              {canManageGroup && (
+                <TouchableOpacity
+                  onPress={() => router.push(`/group-management/${group.id}`)}
+                  style={styles.iconButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open group management"
+                >
+                  <Ionicons name="settings-outline" size={22} color="#374151" />
+                </TouchableOpacity>
+              )}
+              {onShare && (
+                <TouchableOpacity onPress={onShare} style={styles.iconButton}>
+                  <Ionicons name="share-outline" size={22} color="#374151" />
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
 
@@ -430,11 +440,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               )}
             </View>
           )}
-
-        {/* Group Leader Panel - only for leaders */}
-        {isGroupLeader && (
-          <GroupLeaderPanel group={group} onGroupUpdated={handleGroupUpdated} />
-        )}
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
@@ -587,6 +592,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   titleSection: {
     flex: 1,
     marginRight: 12,
@@ -595,6 +604,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     backgroundColor: '#f3f4f6',
+    marginLeft: 8,
   },
   title: {
     fontSize: 24,

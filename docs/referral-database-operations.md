@@ -5,18 +5,18 @@ This document describes the database operations implemented for the referral tra
 ## Overview
 
 The referral system database operations provide comprehensive tracking and management of user referrals through two main tables:
-- `group_referrals`: For referrals to specific groups
+- `referrals`: For referrals to specific groups
 - `general_referrals`: For general referrals when no specific group fits
 
 ## Requirements Addressed
 
 ### Requirement 6.1: Store referrer's ID and referral details for general referrals
-- ✅ Implemented in `general_referrals` table with `referrer_id` and `note` fields
+- ✅ Implemented in `general_referrals` table with `referred_by_user_id` and `note` fields
 - ✅ Proper foreign key relationships to `users` table
 - ✅ Validation and constraint handling
 
-### Requirement 6.2: Store referrer's ID, group ID, and referral details in group_referrals table
-- ✅ Implemented in `group_referrals` table with `group_id`, `referrer_id`, and `note` fields
+### Requirement 6.2: Store referrer's ID, group ID, and referral details in referrals table
+- ✅ Implemented in `referrals` table with `group_id`, `referred_by_user_id`, `referred_user_id`, and `note` fields
 - ✅ Proper foreign key relationships to `groups` and `users` tables
 - ✅ Validation and constraint handling
 
@@ -36,19 +36,21 @@ The referral system database operations provide comprehensive tracking and manag
 
 ### Tables Created
 
-#### group_referrals
+#### referrals
 ```sql
-CREATE TABLE group_referrals (
+CREATE TABLE referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-  referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
   referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  church_id UUID REFERENCES churches(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   note TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
-  UNIQUE(group_id, referrer_id, referred_by_user_id),
-  CHECK (referrer_id != referred_by_user_id)
+
+  UNIQUE(referred_by_user_id, referred_user_id, group_id),
+  CHECK (referred_by_user_id != referred_user_id)
 );
 ```
 
@@ -56,14 +58,16 @@ CREATE TABLE group_referrals (
 ```sql
 CREATE TABLE general_referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  church_id UUID REFERENCES churches(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   note TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
-  UNIQUE(referrer_id, referred_by_user_id),
-  CHECK (referrer_id != referred_by_user_id)
+
+  UNIQUE(referred_by_user_id, referred_user_id),
+  CHECK (referred_by_user_id != referred_user_id)
 );
 ```
 
@@ -181,7 +185,7 @@ const stats = await referralService.getReferralStatistics(
 ### Validating Database Integrity
 ```typescript
 const validation = await referralService.validateReferralIntegrity();
-// Returns: orphanedGroupReferrals, invalidUserReferences, issues[]
+// Returns: orphanedReferrals, invalidUserReferences, issues[]
 ```
 
 ## Files Modified/Created

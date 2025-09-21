@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '../ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '../ui/Modal';
@@ -34,7 +34,7 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
   const joinDate = new Date(member.joined_at).toLocaleDateString();
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Manage Member">
+    <Modal isVisible={visible} onClose={onClose} title="Manage Member">
       <View style={styles.container}>
         {/* Member Info */}
         <View style={styles.memberInfo}>
