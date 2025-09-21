@@ -654,13 +654,13 @@ export class GroupAdminService {
           // Check for referral linking this user and group
           const { data: groupReferral } = await supabase
             .from('referrals')
-            .select('referrer_id')
-            .eq('referred_by_user_id', userRes.data.id)
+            .select('referred_by_user_id')
+            .eq('referred_user_id', userRes.data.id)
             .eq('group_id', groupRes.data.id)
             .maybeSingle();
-          if (groupReferral?.referrer_id) {
+          if (groupReferral?.referred_by_user_id) {
             await triggerReferralJoinedGroupNotification({
-              referrerId: groupReferral.referrer_id,
+              referrerId: groupReferral.referred_by_user_id,
               referredUserId: userRes.data.id,
               referredUserName: userRes.data.name,
               groupId: groupRes.data.id,

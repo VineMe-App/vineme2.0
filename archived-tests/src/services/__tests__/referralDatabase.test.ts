@@ -76,13 +76,33 @@ describe('ReferralDatabaseUtils', () => {
       expect(referralsTable?.columns).toContainEqual({
         name: 'group_id',
         type: 'uuid',
+        nullable: true,
+      });
+      expect(referralsTable?.columns).toContainEqual({
+        name: 'referred_user_id',
+        type: 'uuid',
+        nullable: false,
+      });
+      expect(referralsTable?.columns).toContainEqual({
+        name: 'church_id',
+        type: 'uuid',
+        nullable: true,
+      });
+      expect(referralsTable?.columns).toContainEqual({
+        name: 'status',
+        type: 'text',
         nullable: false,
       });
 
       const generalReferralsTable = result.tables.find(t => t.name === 'general_referrals');
       expect(generalReferralsTable).toBeDefined();
       expect(generalReferralsTable?.columns).toContainEqual({
-        name: 'referrer_id',
+        name: 'referred_by_user_id',
+        type: 'uuid',
+        nullable: false,
+      });
+      expect(generalReferralsTable?.columns).toContainEqual({
+        name: 'referred_user_id',
         type: 'uuid',
         nullable: false,
       });
@@ -92,14 +112,13 @@ describe('ReferralDatabaseUtils', () => {
   describe('performMaintenance', () => {
     it('should check for orphaned records', async () => {
       // Mock orphaned records query
-      const mockSelect = jest.fn().mockReturnValue({
-        not: jest.fn().mockReturnValue({
-          limit: jest.fn().mockResolvedValue({ 
-            data: [{ id: 'orphaned-1' }, { id: 'orphaned-2' }], 
-            error: null 
-          }),
-        }),
+      const mockLimit = jest.fn().mockResolvedValue({
+        data: [{ id: 'orphaned-1' }, { id: 'orphaned-2' }],
+        error: null,
       });
+      const mockSecondNot = jest.fn().mockReturnValue({ limit: mockLimit });
+      const mockFirstNot = jest.fn().mockReturnValue({ not: mockSecondNot });
+      const mockSelect = jest.fn().mockReturnValue({ not: mockFirstNot });
 
       (supabase.from as jest.Mock).mockReturnValue({
         select: mockSelect,
@@ -115,14 +134,13 @@ describe('ReferralDatabaseUtils', () => {
 
     it('should handle maintenance errors', async () => {
       // Mock maintenance query error
-      const mockSelect = jest.fn().mockReturnValue({
-        not: jest.fn().mockReturnValue({
-          limit: jest.fn().mockResolvedValue({ 
-            data: null, 
-            error: { message: 'Query failed' } 
-          }),
-        }),
+      const mockLimit = jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'Query failed' },
       });
+      const mockSecondNot = jest.fn().mockReturnValue({ limit: mockLimit });
+      const mockFirstNot = jest.fn().mockReturnValue({ not: mockSecondNot });
+      const mockSelect = jest.fn().mockReturnValue({ not: mockFirstNot });
 
       (supabase.from as jest.Mock).mockReturnValue({
         select: mockSelect,
@@ -139,18 +157,23 @@ describe('ReferralDatabaseUtils', () => {
 describe('REFERRAL_SCHEMA_SQL', () => {
   it('should contain all required SQL definitions', () => {
     expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('CREATE TABLE IF NOT EXISTS referrals');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('group_id UUID NOT NULL REFERENCES groups(id)');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('referrer_id UUID NOT NULL REFERENCES users(id)');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('group_id UUID REFERENCES groups(id) ON DELETE SET NULL');
     expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('referred_by_user_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_by_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('referred_user_id UUID NOT NULL REFERENCES users(id)');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('church_id UUID REFERENCES churches(id) ON DELETE SET NULL');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain("status TEXT NOT NULL DEFAULT 'pending'");
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('CHECK (referred_by_user_id != referred_user_id)');
 
     expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CREATE TABLE IF NOT EXISTS general_referrals');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('referrer_id UUID NOT NULL REFERENCES users(id)');
     expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('referred_by_user_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_by_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('referred_user_id UUID NOT NULL REFERENCES users(id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain("status TEXT NOT NULL DEFAULT 'pending'");
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referred_by_user_id != referred_user_id)');
 
     expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_referrals_group_id');
-    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_general_referrals_referrer_id');
+    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_referrals_referred_user_id');
+    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_referrals_unique_referral');
+    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_user_id');
 
     expect(REFERRAL_SCHEMA_SQL.RLS_POLICIES).toContain('ALTER TABLE referrals ENABLE ROW LEVEL SECURITY');
     expect(REFERRAL_SCHEMA_SQL.RLS_POLICIES).toContain('ALTER TABLE general_referrals ENABLE ROW LEVEL SECURITY');
@@ -166,13 +189,13 @@ describe('REFERRAL_SCHEMA_SQL', () => {
   });
 
   it('should have proper unique constraints', () => {
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('UNIQUE(group_id, referrer_id, referred_by_user_id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('UNIQUE(referrer_id, referred_by_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('UNIQUE(referred_by_user_id, referred_user_id, group_id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('UNIQUE(referred_by_user_id, referred_user_id)');
   });
 
   it('should have proper check constraints', () => {
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_by_user_id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referrer_id != referred_by_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('CHECK (referred_by_user_id != referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referred_by_user_id != referred_user_id)');
   });
 
   it('should have proper timestamp fields', () => {

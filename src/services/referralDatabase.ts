@@ -21,18 +21,20 @@ export const REFERRAL_SCHEMA_SQL = {
   REFERRALS_TABLE: `
     CREATE TABLE IF NOT EXISTS referrals (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-      referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
       referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      church_id UUID REFERENCES churches(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
       note TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      
-      -- Ensure a user can only be referred to a group once by the same referrer
-      UNIQUE(group_id, referrer_id, referred_by_user_id),
-      
-      -- Ensure a user cannot refer themselves
-      CHECK (referrer_id != referred_by_user_id)
+
+      -- Prevent duplicate referrals for the same context
+      UNIQUE(referred_by_user_id, referred_user_id, group_id),
+
+      -- Ensure referrers cannot refer themselves
+      CHECK (referred_by_user_id != referred_user_id)
     );
   `,
 
@@ -40,17 +42,19 @@ export const REFERRAL_SCHEMA_SQL = {
   GENERAL_REFERRALS_TABLE: `
     CREATE TABLE IF NOT EXISTS general_referrals (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      church_id UUID REFERENCES churches(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
       note TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      
-      -- Ensure a user can only be generally referred once by the same referrer
-      UNIQUE(referrer_id, referred_by_user_id),
-      
-      -- Ensure a user cannot refer themselves
-      CHECK (referrer_id != referred_by_user_id)
+
+      -- Prevent duplicate general referrals
+      UNIQUE(referred_by_user_id, referred_user_id),
+
+      -- Ensure referrers cannot refer themselves
+      CHECK (referred_by_user_id != referred_user_id)
     );
   `,
 
@@ -58,18 +62,17 @@ export const REFERRAL_SCHEMA_SQL = {
   INDEXES: `
     -- Indexes for referrals table
     CREATE INDEX IF NOT EXISTS idx_referrals_group_id ON referrals(group_id);
-    CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
     CREATE INDEX IF NOT EXISTS idx_referrals_referred_by_user_id ON referrals(referred_by_user_id);
+    CREATE INDEX IF NOT EXISTS idx_referrals_referred_user_id ON referrals(referred_user_id);
+    CREATE INDEX IF NOT EXISTS idx_referrals_church_id ON referrals(church_id);
     CREATE INDEX IF NOT EXISTS idx_referrals_created_at ON referrals(created_at);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_referrals_unique_referral
+      ON referrals (referred_by_user_id, referred_user_id, COALESCE(group_id, '00000000-0000-0000-0000-000000000000'));
 
     -- Indexes for general_referrals table
-    CREATE INDEX IF NOT EXISTS idx_general_referrals_referrer_id ON general_referrals(referrer_id);
     CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_by_user_id ON general_referrals(referred_by_user_id);
+    CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_user_id ON general_referrals(referred_user_id);
     CREATE INDEX IF NOT EXISTS idx_general_referrals_created_at ON general_referrals(created_at);
-
-    -- Composite indexes for common queries
-    CREATE INDEX IF NOT EXISTS idx_referrals_referrer_created ON referrals(referrer_id, created_at);
-    CREATE INDEX IF NOT EXISTS idx_general_referrals_referrer_created ON general_referrals(referrer_id, created_at);
   `,
 
   // Row Level Security (RLS) policies
@@ -80,24 +83,24 @@ export const REFERRAL_SCHEMA_SQL = {
 
     -- Policy: Users can view referrals they made
     CREATE POLICY "Users can view their own referrals" ON referrals
-      FOR SELECT USING (auth.uid() = referrer_id);
+      FOR SELECT USING (auth.uid() = referred_by_user_id);
 
     CREATE POLICY "Users can view their own general referrals" ON general_referrals
-      FOR SELECT USING (auth.uid() = referrer_id);
+      FOR SELECT USING (auth.uid() = referred_by_user_id);
 
     -- Policy: Users can view referrals made about them
     CREATE POLICY "Users can view referrals about them" ON referrals
-      FOR SELECT USING (auth.uid() = referred_by_user_id);
+      FOR SELECT USING (auth.uid() = referred_user_id);
 
     CREATE POLICY "Users can view general referrals about them" ON general_referrals
-      FOR SELECT USING (auth.uid() = referred_by_user_id);
+      FOR SELECT USING (auth.uid() = referred_user_id);
 
     -- Policy: Users can create referrals
     CREATE POLICY "Users can create group referrals" ON referrals
-      FOR INSERT WITH CHECK (auth.uid() = referrer_id);
+      FOR INSERT WITH CHECK (auth.uid() = referred_by_user_id);
 
     CREATE POLICY "Users can create general referrals" ON general_referrals
-      FOR INSERT WITH CHECK (auth.uid() = referrer_id);
+      FOR INSERT WITH CHECK (auth.uid() = referred_by_user_id);
 
     -- Policy: Admin users can manage all referrals
     CREATE POLICY "Admins can manage all group referrals" ON referrals
@@ -108,12 +111,12 @@ export const REFERRAL_SCHEMA_SQL = {
           AND 'admin' = ANY(roles)
         )
       );
-    
+
     CREATE POLICY "Admins can manage all general referrals" ON general_referrals
       FOR ALL USING (
         EXISTS (
-          SELECT 1 FROM users 
-          WHERE id = auth.uid() 
+          SELECT 1 FROM users
+          WHERE id = auth.uid()
           AND 'admin' = ANY(roles)
         )
       );
@@ -226,9 +229,11 @@ export class ReferralDatabaseUtils {
             name: 'referrals',
             columns: [
               { name: 'id', type: 'uuid', nullable: false },
-              { name: 'group_id', type: 'uuid', nullable: false },
-              { name: 'referrer_id', type: 'uuid', nullable: false },
+              { name: 'group_id', type: 'uuid', nullable: true },
               { name: 'referred_by_user_id', type: 'uuid', nullable: false },
+              { name: 'referred_user_id', type: 'uuid', nullable: false },
+              { name: 'church_id', type: 'uuid', nullable: true },
+              { name: 'status', type: 'text', nullable: false },
               { name: 'note', type: 'text', nullable: true },
               { name: 'created_at', type: 'timestamp with time zone', nullable: false },
               { name: 'updated_at', type: 'timestamp with time zone', nullable: false },
@@ -238,8 +243,10 @@ export class ReferralDatabaseUtils {
             name: 'general_referrals',
             columns: [
               { name: 'id', type: 'uuid', nullable: false },
-              { name: 'referrer_id', type: 'uuid', nullable: false },
               { name: 'referred_by_user_id', type: 'uuid', nullable: false },
+              { name: 'referred_user_id', type: 'uuid', nullable: false },
+              { name: 'church_id', type: 'uuid', nullable: true },
+              { name: 'status', type: 'text', nullable: false },
               { name: 'note', type: 'text', nullable: true },
               { name: 'created_at', type: 'timestamp with time zone', nullable: false },
               { name: 'updated_at', type: 'timestamp with time zone', nullable: false },
@@ -274,6 +281,7 @@ export class ReferralDatabaseUtils {
       const { data: orphanedGroupRefs, error: orphanedError } = await supabase
         .from('referrals')
         .select('id')
+        .not('group_id', 'is', null)
         .not('group_id', 'in', `(SELECT id FROM groups)`)
         .limit(100);
 
