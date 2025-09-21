@@ -250,6 +250,7 @@ serve(async (req) => {
       }
     }
 
+
     // Create referral record
     const { data: referralRow, error: referralError } = await supabase
       .from('referrals')
