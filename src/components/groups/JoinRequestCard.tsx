@@ -48,7 +48,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   );
   const [journeyStatus, setJourneyStatus] =
     useState<MembershipJourneyStatus | null>(initialJourneyStatus);
-  const hasContactConsent = request.contact_consent ?? true;
+  const hasContactConsent = request.contact_consent === true;
   const { data: contactInfo } = useGetContactInfo(
     showContactInfo && hasContactConsent ? request.id : undefined,
     leaderId
