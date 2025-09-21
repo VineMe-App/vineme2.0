@@ -180,7 +180,7 @@ export class ContactAuditService {
   }
 
   /**
-   * Get user's privacy settings
+   * Get user's privacy settings, creating them if they don't exist
    */
   async getPrivacySettings(
     userId: string
@@ -197,17 +197,24 @@ export class ContactAuditService {
         return { data: null, error: new Error(error.message) };
       }
 
-      // If no settings exist, return default settings
+      // If no settings exist, create them with default values
       if (!data) {
-        const defaultSettings: ContactPrivacySettings = {
-          id: '',
-          user_id: userId,
-          allow_email_sharing: true,
-          allow_phone_sharing: true,
-          allow_contact_by_leaders: true,
-          created_at: new Date().toISOString(),
-        };
-        return { data: defaultSettings, error: null };
+        const { data: newSettings, error: createError } = await supabase
+          .from('contact_privacy_settings')
+          .insert({
+            user_id: userId,
+            allow_email_sharing: true,
+            allow_phone_sharing: true,
+            allow_contact_by_leaders: true,
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          return { data: null, error: new Error(createError.message) };
+        }
+
+        return { data: newSettings, error: null };
       }
 
       return { data, error: null };
@@ -223,6 +230,42 @@ export class ContactAuditService {
   }
 
   /**
+   * Ensure privacy settings exist for a user (create if missing)
+   */
+  async ensurePrivacySettings(
+    userId: string
+  ): Promise<ContactAuditServiceResponse<ContactPrivacySettings>> {
+    try {
+      // First try to get existing settings
+      const existingResult = await this.getPrivacySettings(userId);
+      
+      // If we got settings back, return them
+      if (existingResult.data) {
+        return existingResult;
+      }
+
+      // If there was an error getting settings, return it
+      if (existingResult.error) {
+        return existingResult;
+      }
+
+      // This shouldn't happen, but just in case
+      return {
+        data: null,
+        error: new Error('Failed to ensure privacy settings'),
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to ensure privacy settings'),
+      };
+    }
+  }
+
+  /**
    * Update user's privacy settings
    */
   async updatePrivacySettings(
@@ -230,45 +273,21 @@ export class ContactAuditService {
     updates: UpdatePrivacySettingsData
   ): Promise<ContactAuditServiceResponse<ContactPrivacySettings>> {
     try {
-      // Check if settings exist
-      const { data: existing } = await supabase
+      // Use upsert to either update existing or create new settings
+      const { data, error } = await supabase
         .from('contact_privacy_settings')
-        .select('id')
-        .eq('user_id', userId)
+        .upsert({
+          user_id: userId,
+          allow_email_sharing: updates.allow_email_sharing ?? true,
+          allow_phone_sharing: updates.allow_phone_sharing ?? true,
+          allow_contact_by_leaders: updates.allow_contact_by_leaders ?? true,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false,
+        })
+        .select()
         .single();
-
-      let data, error;
-
-      if (existing) {
-        // Update existing settings
-        const result = await supabase
-          .from('contact_privacy_settings')
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', userId)
-          .select()
-          .single();
-
-        data = result.data;
-        error = result.error;
-      } else {
-        // Create new settings
-        const result = await supabase
-          .from('contact_privacy_settings')
-          .insert({
-            user_id: userId,
-            allow_email_sharing: updates.allow_email_sharing ?? true,
-            allow_phone_sharing: updates.allow_phone_sharing ?? true,
-            allow_contact_by_leaders: updates.allow_contact_by_leaders ?? true,
-          })
-          .select()
-          .single();
-
-        data = result.data;
-        error = result.error;
-      }
 
       if (error) {
         return { data: null, error: new Error(error.message) };

@@ -234,6 +234,26 @@ serve(async (req) => {
         );
       }
       console.log('Created new user profile');
+
+      // Create default privacy settings for the new user
+      const { error: privacyError } = await supabase
+        .from('contact_privacy_settings')
+        .upsert({
+          user_id: userId,
+          allow_email_sharing: true,
+          allow_phone_sharing: true,
+          allow_contact_by_leaders: true,
+        }, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false,
+        });
+
+      if (privacyError) {
+        console.log('Failed to create privacy settings:', privacyError.message);
+        // Non-fatal error - continue without privacy settings
+      } else {
+        console.log('Created default privacy settings');
+      }
     } else {
       // Update existing profile with new church info if needed
       const updates: any = {};

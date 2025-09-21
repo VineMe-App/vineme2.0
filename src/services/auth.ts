@@ -189,6 +189,31 @@ export class AuthService {
         return { error: new Error(error.message) };
       }
 
+      // Create default privacy settings for the user if they don't exist
+      try {
+        const { error: privacyError } = await supabase
+          .from('contact_privacy_settings')
+          .upsert({
+            user_id: user.id,
+            allow_email_sharing: true,
+            allow_phone_sharing: true,
+            allow_contact_by_leaders: true,
+          }, {
+            onConflict: 'user_id',
+            ignoreDuplicates: false, // Update if exists, create if not
+          });
+
+        if (privacyError && __DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn('Failed to create privacy settings:', privacyError.message);
+        }
+      } catch (privacyErr) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn('Privacy settings creation failed:', privacyErr);
+        }
+      }
+
       return { error: null };
     } catch (error) {
       return {

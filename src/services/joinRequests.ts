@@ -564,7 +564,7 @@ export class JoinRequestService {
     try {
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
-        .select('id, group_id, user_id, contact_consent')
+        .select('id, group_id, user_id, contact_consent, status')
         .eq('id', requestId)
         .single();
 
@@ -596,10 +596,19 @@ export class JoinRequestService {
         };
       }
 
+      // CRITICAL: Check if user explicitly consented to contact sharing
       if (membership.contact_consent === false) {
         return {
           data: null,
           error: new Error('User has not consented to share contact information'),
+        };
+      }
+
+      // CRITICAL: Only allow contact info access for approved members (not pending requests)
+      if (membership.status !== 'active') {
+        return {
+          data: null,
+          error: new Error('Can only view contact information for approved group members'),
         };
       }
 
@@ -695,7 +704,7 @@ export class JoinRequestService {
     contactValue: string
   ): Promise<GroupServiceResponse<boolean>> {
     try {
-      // Fetch membership record for audit
+      // Fetch membership record with contact_consent and status
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
         .select(
@@ -703,6 +712,8 @@ export class JoinRequestService {
           id,
           group_id,
           user_id,
+          status,
+          contact_consent,
           user:users(id, name)
         `
         )
@@ -735,7 +746,23 @@ export class JoinRequestService {
         };
       }
 
-      // Check privacy settings for the specific contact type
+      // CRITICAL: Check if user explicitly consented to contact sharing
+      if (membership.contact_consent === false) {
+        return {
+          data: null,
+          error: new Error('User has not consented to share contact information'),
+        };
+      }
+
+      // CRITICAL: Only allow contact for approved members (not pending requests)
+      if (membership.status !== 'active') {
+        return {
+          data: null,
+          error: new Error('Can only contact approved group members'),
+        };
+      }
+
+      // Check global privacy settings for the specific contact type
       const contactType = actionType === 'call' ? 'phone' : 'email';
       const canContact = await contactAuditService.canShareContact(
         membership.user.id,

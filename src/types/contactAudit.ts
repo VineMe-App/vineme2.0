@@ -11,8 +11,7 @@ export interface ContactAuditLog {
 }
 
 export interface ContactPrivacySettings {
-  id: string;
-  user_id: string;
+  user_id: string; // Primary key
   allow_email_sharing: boolean;
   allow_phone_sharing: boolean;
   allow_contact_by_leaders: boolean;
