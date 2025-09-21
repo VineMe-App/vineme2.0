@@ -558,7 +558,7 @@ export class JoinRequestService {
     try {
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
-        .select('id, group_id, user_id')
+        .select('id, group_id, user_id, contact_consent')
         .eq('id', requestId)
         .single();
 
@@ -590,6 +590,13 @@ export class JoinRequestService {
         };
       }
 
+      if (membership.contact_consent === false) {
+        return {
+          data: null,
+          error: new Error('User has not consented to share contact information'),
+        };
+      }
+
       const { data: contact, error: contactError } = await supabase.rpc(
         'get_user_contact_admin',
         {
@@ -611,13 +618,39 @@ export class JoinRequestService {
       const contactFields: string[] = [];
 
       if (contact?.email) {
-        contactInfo.email = contact.email;
-        contactFields.push('email');
+        const emailAllowed = await contactAuditService.canShareContact(
+          membership.user_id,
+          'email',
+          leaderId,
+          membership.group_id
+        );
+
+        if (emailAllowed.error) {
+          return { data: null, error: emailAllowed.error };
+        }
+
+        if (emailAllowed.data === true) {
+          contactInfo.email = contact.email;
+          contactFields.push('email');
+        }
       }
 
       if (contact?.phone) {
-        contactInfo.phone = contact.phone;
-        contactFields.push('phone');
+        const phoneAllowed = await contactAuditService.canShareContact(
+          membership.user_id,
+          'phone',
+          leaderId,
+          membership.group_id
+        );
+
+        if (phoneAllowed.error) {
+          return { data: null, error: phoneAllowed.error };
+        }
+
+        if (phoneAllowed.data === true) {
+          contactInfo.phone = contact.phone;
+          contactFields.push('phone');
+        }
       }
 
       if (contactFields.length > 0) {
