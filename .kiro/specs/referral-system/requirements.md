@@ -39,7 +39,7 @@ The referral system allows existing users to connect and refer new people to gro
 3. WHEN a user taps "Refer a friend" on a group page THEN the system SHALL display the referral form
 4. WHEN a user completes the group referral form THEN the system SHALL create a new auth.user record
 5. WHEN a new auth.user is created via group referral THEN the system SHALL create a corresponding public.user record with newcomer=true
-6. WHEN a group referral is submitted THEN the system SHALL create a record in the group_referrals table
+6. WHEN a group referral is submitted THEN the system SHALL create a record in the referrals table
 7. WHEN the group referral is processed THEN the system SHALL trigger an automated verification email to the referred person
 
 ### Requirement 4
@@ -72,7 +72,7 @@ The referral system allows existing users to connect and refer new people to gro
 #### Acceptance Criteria
 
 1. WHEN a general referral is created THEN the system SHALL store the referrer's ID and referral details
-2. WHEN a group referral is created THEN the system SHALL store the referrer's ID, group ID, and referral details in group_referrals table
+2. WHEN a group referral is created THEN the system SHALL store the referrer's ID, group ID, and referral details in the referrals table
 3. WHEN any referral is created THEN the system SHALL timestamp the referral for tracking purposes
 4. WHEN a referred user is created THEN the system SHALL mark them as newcomer=true in the public.user table
 5. WHEN referral data is stored THEN the system SHALL ensure data integrity and proper relationships between tables

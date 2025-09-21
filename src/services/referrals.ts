@@ -915,7 +915,7 @@ export class ReferralService {
    */
   async validateDatabaseSchema(): Promise<
     ReferralServiceResponse<{
-      groupReferralsExists: boolean;
+      referralsExists: boolean;
       generalReferralsExists: boolean;
       indexesExist: boolean;
       constraintsValid: boolean;

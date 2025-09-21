@@ -547,7 +547,7 @@ export class GroupService {
 
       // TODO: Implement actual email sending or store referral in database
       // This could involve:
-      // 1. Storing the referral in a 'group_referrals' table
+      // 1. Storing the referral in a 'referrals' table
       // 2. Sending an email with group details and invitation link
       // 3. Creating a temporary invitation token
 

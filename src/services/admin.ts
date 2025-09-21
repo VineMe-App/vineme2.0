@@ -653,7 +653,7 @@ export class GroupAdminService {
 
           // Check for referral linking this user and group
           const { data: groupReferral } = await supabase
-            .from('group_referrals')
+            .from('referrals')
             .select('referrer_id')
             .eq('referred_by_user_id', userRes.data.id)
             .eq('group_id', groupRes.data.id)

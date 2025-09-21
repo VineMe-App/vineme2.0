@@ -114,12 +114,12 @@ interface CreateReferredUserData {
 
 ## Database Schema
 
-### group_referrals Table
+### referrals Table
 
 Stores group-specific referral records.
 
 ```sql
-CREATE TABLE group_referrals (
+CREATE TABLE referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

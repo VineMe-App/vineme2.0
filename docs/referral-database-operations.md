@@ -5,7 +5,7 @@ This document describes the database operations implemented for the referral tra
 ## Overview
 
 The referral system database operations provide comprehensive tracking and management of user referrals through two main tables:
-- `group_referrals`: For referrals to specific groups
+- `referrals`: For referrals to specific groups
 - `general_referrals`: For general referrals when no specific group fits
 
 ## Requirements Addressed
@@ -15,8 +15,8 @@ The referral system database operations provide comprehensive tracking and manag
 - ✅ Proper foreign key relationships to `users` table
 - ✅ Validation and constraint handling
 
-### Requirement 6.2: Store referrer's ID, group ID, and referral details in group_referrals table
-- ✅ Implemented in `group_referrals` table with `group_id`, `referrer_id`, and `note` fields
+### Requirement 6.2: Store referrer's ID, group ID, and referral details in referrals table
+- ✅ Implemented in `referrals` table with `group_id`, `referrer_id`, and `note` fields
 - ✅ Proper foreign key relationships to `groups` and `users` tables
 - ✅ Validation and constraint handling
 
@@ -36,9 +36,9 @@ The referral system database operations provide comprehensive tracking and manag
 
 ### Tables Created
 
-#### group_referrals
+#### referrals
 ```sql
-CREATE TABLE group_referrals (
+CREATE TABLE referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -181,7 +181,7 @@ const stats = await referralService.getReferralStatistics(
 ### Validating Database Integrity
 ```typescript
 const validation = await referralService.validateReferralIntegrity();
-// Returns: orphanedGroupReferrals, invalidUserReferences, issues[]
+// Returns: orphanedReferrals, invalidUserReferences, issues[]
 ```
 
 ## Files Modified/Created
