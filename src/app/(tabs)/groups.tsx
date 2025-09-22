@@ -30,7 +30,7 @@ import {
   getActiveFiltersDescription,
   getActiveFiltersCount,
 } from '../../utils/groupFilters';
-import type { GroupWithDetails } from '../../types/database';
+import type { GroupWithDetails, User } from '../../types/database';
 import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
@@ -350,15 +350,20 @@ const GroupItemWithMembership: React.FC<{
 
   const membershipStatus = membershipData?.membership?.role || null;
 
-  const friendsCount = React.useMemo(() => {
+  const friendsInGroup = React.useMemo(() => {
     const friendIds = new Set(
       (friendsQuery.data || [])
         .map((f) => f.friend?.id)
         .filter((id): id is string => !!id)
     );
-    return (members || []).filter((m) => m.user?.id && friendIds.has(m.user.id))
-      .length;
+    return (members || [])
+      .filter((m) => m.user?.id && friendIds.has(m.user.id))
+      .map((m) => m.user)
+      .filter((user): user is NonNullable<typeof user> => !!user)
+      .slice(0, 3); // Only take first 3 for avatars
   }, [friendsQuery.data, members]);
+
+  const friendsCount = friendsInGroup.length;
 
   return (
     <GroupCard
@@ -371,9 +376,10 @@ const GroupItemWithMembership: React.FC<{
           : (group as any).__distanceKm
       }
       friendsCount={friendsCount}
+      friendsInGroup={friendsInGroup}
       onPressFriends={() => {
         // Navigate to group detail and open friends modal
-        router.push(`/group/${group.id}?friends=1`);
+        onPress();
       }}
     />
   );

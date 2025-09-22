@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Text } from '../ui/Text';
-import type { GroupWithDetails } from '../../types/database';
+import type { GroupWithDetails, User } from '../../types/database';
 import { OptimizedImage } from '../ui/OptimizedImage';
+import { Avatar } from '../ui/Avatar';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '../../theme/provider/useTheme';
@@ -12,6 +13,7 @@ interface GroupCardProps {
   onPress: () => void;
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
   friendsCount?: number;
+  friendsInGroup?: User[];
   onPressFriends?: () => void;
   style?: ViewStyle;
   distanceKm?: number;
@@ -22,6 +24,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onPress,
   membershipStatus,
   friendsCount,
+  friendsInGroup,
   onPressFriends,
   style,
   distanceKm,
@@ -54,19 +57,49 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       activeOpacity={0.7}
     >
       <View style={styles.content}>
-        {group.image_url && (
-          <OptimizedImage
-            source={{ uri: group.image_url }}
-            style={styles.image}
-            quality="medium"
-            lazy={true}
-            maxWidth={400}
-            maxHeight={120}
-            resizeMode="cover"
-          />
-        )}
+        {/* Group Image with Friend Avatars Overlay */}
+        <View style={styles.imageContainer}>
+          {group.image_url && (
+            <OptimizedImage
+              source={{ uri: group.image_url }}
+              style={styles.image}
+              quality="medium"
+              lazy={true}
+              maxWidth={400}
+              maxHeight={120}
+              resizeMode="cover"
+            />
+          )}
+
+          {/* Friend Avatars Overlay */}
+          {friendsInGroup && friendsInGroup.length > 0 && (
+            <View style={styles.friendsOverlay}>
+              <View style={styles.friendAvatars}>
+                {friendsInGroup.map((friend, index) => (
+                  <View
+                    key={friend.id}
+                    style={[
+                      styles.friendAvatar,
+                      { marginLeft: index > 0 ? -8 : 0 },
+                    ]}
+                  >
+                    <Avatar
+                      imageUrl={friend.avatar_url}
+                      name={friend.name}
+                      size={24}
+                    />
+                  </View>
+                ))}
+              </View>
+              <Text variant="caption" style={styles.friendsCount}>
+                {friendsCount} friend{friendsCount !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
+        </View>
 
         <View style={styles.info}>
+          {/* Title and Status */}
           <View style={styles.header}>
             <Text
               variant="h6"
@@ -153,29 +186,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 </Text>
               </View>
             )}
-            {typeof friendsCount === 'number' && friendsCount > 0 && (
-              <TouchableOpacity
-                style={[styles.detailRow, styles.friendsPill]}
-                onPress={onPressFriends || onPress}
-                accessibilityRole="button"
-                accessibilityLabel={`View ${friendsCount} friends in this group`}
-              >
-                <Ionicons
-                  name="person-circle-outline"
-                  size={16}
-                  color="#2563eb"
-                />
-                <Text
-                  variant="bodySmall"
-                  weight="semiBold"
-                  style={[styles.detailText, styles.friendsText]}
-                  numberOfLines={1}
-                >
-                  {friendsCount} friend{friendsCount !== 1 ? 's' : ''} in this
-                  group
-                </Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           {group.service?.name && (
@@ -206,12 +216,39 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
+  imageContainer: {
+    position: 'relative',
+    marginBottom: 12,
+  },
   image: {
     width: '100%',
     height: 120,
     borderRadius: 8,
-    marginBottom: 12,
     backgroundColor: '#f0f0f0',
+  },
+  friendsOverlay: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  friendAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  friendAvatar: {
+    // No border - just clean avatar circles
+  },
+  friendsCount: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
   },
   info: {
     flex: 1,
@@ -270,16 +307,6 @@ const styles = StyleSheet.create({
   detailText: {
     color: '#333',
     flex: 1,
-  },
-  friendsPill: {
-    backgroundColor: '#eff6ff',
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  friendsText: {
-    color: '#1d4ed8',
   },
   service: {
     color: '#888',
