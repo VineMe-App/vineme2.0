@@ -113,7 +113,7 @@ const GroupCardWithData: React.FC<{
 
   const membershipStatus = membershipData?.membership?.role || null;
 
-  const friendsInGroup = React.useMemo(() => {
+  const friendUsers = React.useMemo(() => {
     if (!userProfile?.id || !friendsQuery.data) return [];
 
     const friendIds = new Set(
@@ -125,11 +125,15 @@ const GroupCardWithData: React.FC<{
     return (members || [])
       .filter((m) => m.user?.id && friendIds.has(m.user.id))
       .map((m) => m.user)
-      .filter((user): user is NonNullable<typeof user> => !!user)
-      .slice(0, 3);
+      .filter((user): user is NonNullable<typeof user> => !!user);
   }, [friendsQuery.data, members, userProfile?.id]);
 
-  const friendsCount = friendsInGroup.length;
+  const friendsInGroup = React.useMemo(
+    () => friendUsers.slice(0, 3),
+    [friendUsers]
+  );
+
+  const friendsCount = friendUsers.length;
 
   const leaders = React.useMemo(() => {
     return (members || [])

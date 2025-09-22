@@ -16,6 +16,7 @@ import { KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeSafe } from '../../theme/provider/useTheme';
 import { lightTheme } from '../../theme/themes';
+import { withOpacity } from '../../utils/colors';
 
 export interface ModalProps extends Omit<RNModalProps, 'children'> {
   children: React.ReactNode;
@@ -83,6 +84,26 @@ export const Modal: React.FC<ModalProps> = ({
   const shadows = themeCtx?.shadows ?? lightTheme.shadows;
   const borderRadius = themeCtx?.borderRadius ?? lightTheme.borderRadius;
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const overlayBaseColor = colors.surface?.overlay ?? 'rgba(0, 0, 0, 0.5)';
+
+  const overlayBackgroundColor = React.useMemo(() => {
+    const clampedOpacity = Math.max(0, Math.min(1, overlayOpacity));
+
+    if (overlayBaseColor.startsWith('#')) {
+      return withOpacity(overlayBaseColor, clampedOpacity);
+    }
+
+    const rgbaMatch = overlayBaseColor.match(
+      /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\)/i
+    );
+
+    if (rgbaMatch) {
+      const [, r, g, b] = rgbaMatch;
+      return `rgba(${r}, ${g}, ${b}, ${clampedOpacity})`;
+    }
+
+    return overlayBaseColor;
+  }, [overlayBaseColor, overlayOpacity]);
 
   // Handle back button press
   useEffect(() => {
@@ -137,7 +158,16 @@ export const Modal: React.FC<ModalProps> = ({
     }
   };
 
-  const styles = createStyles(colors, spacing, typography, shadows, borderRadius, screenWidth, screenHeight, overlayOpacity);
+  const styles = createStyles(
+    colors,
+    spacing,
+    typography,
+    shadows,
+    borderRadius,
+    screenWidth,
+    screenHeight,
+    overlayBackgroundColor
+  );
 
   const renderContent = () => {
     const contentStyles = [
@@ -256,13 +286,23 @@ export const Modal: React.FC<ModalProps> = ({
   );
 };
 
-const createStyles = (colors: any, spacing: any, typography: any, shadows: any, borderRadius: any, screenWidth: number, screenHeight: number, overlayOpacity: number) => StyleSheet.create({
+const createStyles = (
+  colors: any,
+  spacing: any,
+  typography: any,
+  shadows: any,
+  borderRadius: any,
+  screenWidth: number,
+  screenHeight: number,
+  overlayColor: string
+) =>
+  StyleSheet.create({
   safeArea: {
     flex: 1,
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: overlayColor,
   },
   overlayTouchable: {
     flex: 1,

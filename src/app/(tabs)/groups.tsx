@@ -350,20 +350,25 @@ const GroupItemWithMembership: React.FC<{
 
   const membershipStatus = membershipData?.membership?.role || null;
 
-  const friendsInGroup = React.useMemo(() => {
+  const friendUsers = React.useMemo(() => {
     const friendIds = new Set(
       (friendsQuery.data || [])
         .map((f) => f.friend?.id)
         .filter((id): id is string => !!id)
     );
+
     return (members || [])
       .filter((m) => m.user?.id && friendIds.has(m.user.id))
       .map((m) => m.user)
-      .filter((user): user is NonNullable<typeof user> => !!user)
-      .slice(0, 3); // Only take first 3 for avatars
+      .filter((user): user is NonNullable<typeof user> => !!user);
   }, [friendsQuery.data, members]);
 
-  const friendsCount = friendsInGroup.length;
+  const friendsInGroup = React.useMemo(
+    () => friendUsers.slice(0, 3),
+    [friendUsers]
+  );
+
+  const friendsCount = friendUsers.length;
 
   const leaders = React.useMemo(() => {
     return (members || [])
