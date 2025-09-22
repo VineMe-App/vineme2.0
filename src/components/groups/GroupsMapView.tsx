@@ -652,7 +652,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             elementType: 'geometry',
             stylers: [
               {
-                color: '#f5f5f5',
+                color: '#f0f9f0', // Faint green tint using brand color
               },
             ],
           },
@@ -712,7 +712,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             elementType: 'geometry',
             stylers: [
               {
-                color: '#e5e5e5',
+                color: '#bcddbd',
               },
             ],
           },
@@ -730,7 +730,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             elementType: 'geometry',
             stylers: [
               {
-                color: '#ffffff',
+                color: '#d9e3d9', // Very faint green tint for roads
               },
             ],
           },
@@ -793,7 +793,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             elementType: 'geometry',
             stylers: [
               {
-                color: '#c9c9c9',
+                color: '#d0e8d0', // Slightly more green for water
               },
             ],
           },
