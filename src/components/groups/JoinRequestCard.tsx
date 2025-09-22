@@ -298,15 +298,6 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                     {step.label}
                   </Text>
                 </View>
-                {index < journeySteps.length - 1 && (
-                  <View
-                    style={[
-                      styles.progressLine,
-                      (journeyStatus ?? 0) > step.value &&
-                        styles.progressLineActive,
-                    ]}
-                  />
-                )}
               </React.Fragment>
             );
           })}
@@ -388,12 +379,15 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
           title="Decline"
           onPress={handleDecline}
           variant="secondary"
+          size="small"
           disabled={isProcessing}
           style={styles.declineButton}
         />
         <Button
-          title="Activate"
+          title="Add to group"
           onPress={handleApprove}
+          variant="secondary"
+          size="small"
           loading={approveRequestMutation.isPending}
           disabled={!canActivate || isProcessing}
           style={styles.approveButton}
@@ -464,11 +458,12 @@ const styles = StyleSheet.create({
   progressSteps: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 16,
   },
   progressStepWrapper: {
-    flex: 1,
     alignItems: 'center',
+    minWidth: 60,
   },
   progressCircle: {
     width: 36,
@@ -504,15 +499,6 @@ const styles = StyleSheet.create({
   progressStepLabelActive: {
     color: '#111827',
     fontWeight: '600',
-  },
-  progressLine: {
-    height: 2,
-    backgroundColor: '#e5e7eb',
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  progressLineActive: {
-    backgroundColor: '#ec4899',
   },
   messageSection: {
     marginBottom: 16,
