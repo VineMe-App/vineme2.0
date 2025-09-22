@@ -824,7 +824,16 @@ export class JoinRequestService {
         'Failed to fetch contact privacy settings for join requests:',
         error
       );
-    } else if (data) {
+
+      return records.map((record) =>
+        ({
+          ...record,
+          contact_consent: false,
+        } as T)
+      );
+    }
+
+    if (data) {
       privacySettings = data as PrivacySettingRecord[];
     }
 
@@ -835,12 +844,14 @@ export class JoinRequestService {
       ])
     );
 
-    return records.map((record) =>
-      ({
+    return records.map((record) => {
+      const consent = privacyMap.get(record.user_id);
+
+      return {
         ...record,
-        contact_consent: privacyMap.get(record.user_id) ?? true,
-      } as T)
-    );
+        contact_consent: consent ?? true,
+      } as T;
+    });
   }
 }
 
