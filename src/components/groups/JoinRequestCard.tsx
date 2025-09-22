@@ -13,6 +13,7 @@ import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { Ionicons } from '@expo/vector-icons';
 import {
   useApproveJoinRequest,
   useDeclineJoinRequest,
@@ -416,29 +417,70 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
       {showContactInfo && contactInfo && (
         <View style={styles.contactInfo}>
           {contactInfo.email && (
-            <TouchableOpacity
-              onPress={() => handleContactPress('email', contactInfo.email)}
-              style={styles.contactItem}
-              disabled={initiateContactMutation.isPending}
-            >
-              <Text style={styles.contactLabel}>Email</Text>
-              <Text style={styles.contactValue}>{contactInfo.email}</Text>
-            </TouchableOpacity>
+            <View style={styles.contactItem}>
+              <TouchableOpacity
+                onPress={() =>
+                  contactInfo.email &&
+                  handleContactPress('email', contactInfo.email)
+                }
+                style={styles.contactMain}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Text style={styles.contactLabel}>Email</Text>
+                <Text style={styles.contactValue}>{contactInfo.email}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  if (!contactInfo.email) return;
+                  try {
+                    await Clipboard.setStringAsync(contactInfo.email);
+                    Alert.alert('Copied', 'Email copied to clipboard');
+                  } catch (error) {
+                    console.error('Copy error:', error);
+                    Alert.alert('Error', 'Failed to copy email');
+                  }
+                }}
+                style={styles.copyButton}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Ionicons name="copy-outline" size={18} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
           )}
           {contactInfo.phone && (
-            <TouchableOpacity
-              onPress={() => {
-                const formattedPhone = formatPhoneNumber(contactInfo.phone);
-                handleContactPress('phone', formattedPhone);
-              }}
-              style={styles.contactItem}
-              disabled={initiateContactMutation.isPending}
-            >
-              <Text style={styles.contactLabel}>Phone</Text>
-              <Text style={styles.contactValue}>
-                {formatPhoneNumber(contactInfo.phone)}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.contactItem}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!contactInfo.phone) return;
+                  const formattedPhone = formatPhoneNumber(contactInfo.phone);
+                  handleContactPress('phone', formattedPhone);
+                }}
+                style={styles.contactMain}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Text style={styles.contactLabel}>Phone</Text>
+                <Text style={styles.contactValue}>
+                  {formatPhoneNumber(contactInfo.phone)}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  if (!contactInfo.phone) return;
+                  try {
+                    const formattedPhone = formatPhoneNumber(contactInfo.phone);
+                    await Clipboard.setStringAsync(formattedPhone);
+                    Alert.alert('Copied', 'Phone number copied to clipboard');
+                  } catch (error) {
+                    console.error('Copy error:', error);
+                    Alert.alert('Error', 'Failed to copy phone number');
+                  }
+                }}
+                style={styles.copyButton}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Ionicons name="copy-outline" size={18} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
           )}
           {!contactInfo.email && !contactInfo.phone && (
             <Text style={styles.noContactText}>
@@ -636,9 +678,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#dbeafe',
+  },
+  contactMain: {
+    flex: 1,
+  },
+  copyButton: {
+    padding: 8,
+    marginLeft: 8,
+    borderRadius: 6,
+    backgroundColor: '#f3f4f6',
   },
   contactLabel: {
     fontSize: 13,
