@@ -341,6 +341,7 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
     color: colors.text.primary,
     fontFamily: typography.fontFamily.semiBold,
     lineHeight: typography.lineHeight.lg,
+    paddingLeft: 20, // TODO: make this dynamic. Somehow just putting spacing.xl doesn't work.
   },
   closeButton: {
     padding: spacing.sm,
