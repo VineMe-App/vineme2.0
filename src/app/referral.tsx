@@ -469,8 +469,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   actions: {
-    flexDirection: 'row',
-    gap: 16,
+    alignItems: 'center',
     marginTop: 24,
   },
   footerNote: {
@@ -498,14 +497,10 @@ const SubmitControls: React.FC<{
   return (
     <View style={styles.actions}>
       <Button
-        title="Cancel"
-        variant="outline"
-        onPress={onCancel}
-        disabled={isSubmitting}
-      />
-      <Button
         title="Send Referral"
-        variant="primary"
+        variant="secondary"
+        size="small"
+        fullWidth
         onPress={handlePress}
         loading={isSubmitting}
       />
