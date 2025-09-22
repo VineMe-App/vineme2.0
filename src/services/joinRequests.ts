@@ -66,7 +66,6 @@ export class JoinRequestService {
           user_id: requestData.user_id,
           role: 'member',
           status: 'pending',
-          contact_consent: requestData.contact_consent ?? null,
           // joined_at is set when request is approved
         })
         .select()
@@ -161,7 +160,6 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
-          contact_consent,
           referral_id,
           journey_status,
           joined_at,
@@ -206,7 +204,6 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
-          contact_consent,
           referral_id,
           journey_status,
           joined_at,
@@ -561,7 +558,7 @@ export class JoinRequestService {
     try {
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
-        .select('id, group_id, user_id, contact_consent, status')
+        .select('id, group_id, user_id, status')
         .eq('id', requestId)
         .single();
 
@@ -590,14 +587,6 @@ export class JoinRequestService {
         return {
           data: null,
           error: new Error('User information not available'),
-        };
-      }
-
-      // CRITICAL: Check if user explicitly consented to contact sharing
-      if (membership.contact_consent === false) {
-        return {
-          data: null,
-          error: new Error('User has not consented to share contact information'),
         };
       }
 
@@ -701,7 +690,7 @@ export class JoinRequestService {
     contactValue: string
   ): Promise<GroupServiceResponse<boolean>> {
     try {
-      // Fetch membership record with contact_consent and status
+      // Fetch membership record with status
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
         .select(
@@ -710,7 +699,6 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
-          contact_consent,
           user:users(id, name)
         `
         )
@@ -740,14 +728,6 @@ export class JoinRequestService {
         return {
           data: null,
           error: new Error('User information not available'),
-        };
-      }
-
-      // CRITICAL: Check if user explicitly consented to contact sharing
-      if (membership.contact_consent === false) {
-        return {
-          data: null,
-          error: new Error('User has not consented to share contact information'),
         };
       }
 
