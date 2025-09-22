@@ -98,14 +98,11 @@ export default function OtherUserProfileScreen() {
     switch (status) {
       case 'accepted':
         return (
-          <View style={styles.actionsRow}>
-            <Button title="Friends" variant="secondary" disabled />
-            <Button
-              title="Remove Friend"
-              variant="danger"
-              onPress={handleRemoveFriend}
-            />
-          </View>
+          <Button
+            title="Remove Friend"
+            variant="danger"
+            onPress={handleRemoveFriend}
+          />
         );
       case 'pending': {
         // If there's a pending request where the target user is the sender to me, show Accept
