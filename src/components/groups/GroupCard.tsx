@@ -4,6 +4,7 @@ import { Text } from '../ui/Text';
 import type { GroupWithDetails, User } from '../../types/database';
 import { OptimizedImage } from '../ui/OptimizedImage';
 import { Avatar } from '../ui/Avatar';
+import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '../../theme/provider/useTheme';
@@ -61,7 +62,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       <View style={styles.content}>
         {/* Group Image with Friend Avatars Overlay */}
         <View style={styles.imageContainer}>
-          {group.image_url && (
+          {group.image_url ? (
             <OptimizedImage
               source={{ uri: group.image_url }}
               style={styles.image}
@@ -71,9 +72,21 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               maxHeight={120}
               resizeMode="cover"
             />
+          ) : (
+            <GroupPlaceholderImage style={styles.image} />
           )}
 
-          {/* Friend Avatars Overlay */}
+          {/* Bottom Left - Members Indicator */}
+          {group.member_count !== undefined && (
+            <View style={styles.bottomLeftIndicator}>
+              <View style={styles.indicator}>
+                <Text style={styles.indicatorText}>{group.member_count}</Text>
+                <Ionicons name="person-outline" size={14} color="#fff" />
+              </View>
+            </View>
+          )}
+
+          {/* Bottom Right - Friend Avatars */}
           {friendsInGroup && friendsInGroup.length > 0 && (
             <View style={styles.friendsOverlay}>
               <View style={styles.friendAvatars}>
@@ -130,16 +143,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             )}
           </View>
 
-          <Text
-            variant="body"
-            color="secondary"
-            style={styles.description}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            {group.description}
-          </Text>
-
           <View style={styles.details}>
             {typeof distanceKm === 'number' && (
               <View style={styles.detailRow}>
@@ -175,19 +178,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 {formatLocation(group.location)}
               </Text>
             </View>
-            {group.member_count !== undefined && (
-              <View style={styles.detailRow}>
-                <Ionicons name="people-outline" size={16} color="#6b7280" />
-                <Text
-                  variant="bodySmall"
-                  style={styles.detailText}
-                  numberOfLines={1}
-                >
-                  {group.member_count} member
-                  {group.member_count !== 1 ? 's' : ''}
-                </Text>
-              </View>
-            )}
             {leaders && leaders.length > 0 && (
               <View style={styles.detailRow}>
                 <Ionicons name="star-outline" size={16} color="#6b7280" />
@@ -267,7 +257,7 @@ const styles = StyleSheet.create({
   friendsOverlay: {
     position: 'absolute',
     bottom: 8,
-    left: 8,
+    right: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderRadius: 12,
     paddingHorizontal: 8,
@@ -287,6 +277,25 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '500',
+  },
+  bottomLeftIndicator: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+  },
+  indicator: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  indicatorText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   info: {
     flex: 1,
@@ -324,14 +333,8 @@ const styles = StyleSheet.create({
   memberText: {
     color: '#1976d2',
   },
-  leaderText: {
-    color: '#f57c00',
-  },
   adminText: {
     color: '#c2185b',
-  },
-  description: {
-    marginBottom: 12,
   },
   details: {
     marginBottom: 8,

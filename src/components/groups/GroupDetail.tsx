@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { useRouter } from 'expo-router';
 import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
@@ -247,8 +248,10 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {group.image_url && (
+      {group.image_url ? (
         <Image source={{ uri: group.image_url }} style={styles.headerImage} />
+      ) : (
+        <GroupPlaceholderImage style={styles.headerImage} />
       )}
 
       <View style={styles.content}>
@@ -431,7 +434,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                         </Text>
                         <Text style={styles.memberJoinDate}>
                           Joined{' '}
-                          {new Date(member.joined_at).toLocaleDateString()}
+                          {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : 'Unknown'}
                         </Text>
                       </View>
                     </TouchableOpacity>
