@@ -26,7 +26,6 @@ import {
   useCreateJoinRequest,
   useUserJoinRequests,
 } from '../../hooks/useJoinRequests';
-// import type { GroupMembershipWithUser } from '../../types/database';
 import { useAuthStore } from '../../stores/auth';
 import { useFriends } from '../../hooks/useFriendships';
 import { Modal } from '../ui/Modal';
@@ -277,9 +276,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
         )}
 
         {group.status === 'pending' && isGroupLeader && (
-          <View style={[styles.pendingBadge, styles.imagePendingBadge]}>
+          <View style={styles.imageBadge}>
             <Ionicons name="time-outline" size={16} color="#b45309" />
-            <Text style={styles.pendingText}>Pending admin approval</Text>
+            <Text>Pending admin approval</Text>
           </View>
         )}
       </View>
@@ -602,12 +601,18 @@ const styles = StyleSheet.create({
     top: 12,
     right: 12,
     zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fffbeb',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 24,
   },
-  imagePendingBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    zIndex: 1,
+  pendingText: {
+    color: '#92400e',
+    fontWeight: '600',
+    fontSize: 12,
   },
   content: {
     padding: 16,
@@ -637,22 +642,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1a1a1a',
     marginBottom: 8,
-  },
-  pendingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    backgroundColor: '#fffbeb',
-    borderWidth: 1,
-    borderColor: '#fde68a',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  pendingText: {
-    color: '#92400e',
-    fontWeight: '600',
   },
   statusBadge: {
     paddingHorizontal: 12,
