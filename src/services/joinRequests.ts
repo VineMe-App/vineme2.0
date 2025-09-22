@@ -599,11 +599,13 @@ export class JoinRequestService {
         };
       }
 
-      // CRITICAL: Only allow contact info access for approved members (not pending requests)
-      if (membership.status !== 'active') {
+      // Allow leaders to view contact info for pending or active members only
+      if (membership.status !== 'active' && membership.status !== 'pending') {
         return {
           data: null,
-          error: new Error('Can only view contact information for approved group members'),
+          error: new Error(
+            'Contact information is only available for pending or active group members'
+          ),
         };
       }
 
@@ -740,11 +742,13 @@ export class JoinRequestService {
         };
       }
 
-      // CRITICAL: Only allow contact for approved members (not pending requests)
-      if (membership.status !== 'active') {
+      // Allow leaders to contact pending or active members
+      if (membership.status !== 'active' && membership.status !== 'pending') {
         return {
           data: null,
-          error: new Error('Can only contact approved group members'),
+          error: new Error(
+            'Contact actions are only available for pending or active group members'
+          ),
         };
       }
 
