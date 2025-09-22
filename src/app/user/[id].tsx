@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,9 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  Modal,
+  Dimensions,
+  Image,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
@@ -21,6 +24,7 @@ import {
 } from '@/hooks/useFriendships';
 
 export default function OtherUserProfileScreen() {
+  const [imageModalVisible, setImageModalVisible] = useState(false);
   const params = useLocalSearchParams<{ id?: string }>();
   const targetUserId = useMemo(
     () => (Array.isArray(params.id) ? params.id[0] : params.id),
@@ -79,6 +83,10 @@ export default function OtherUserProfileScreen() {
     );
   };
 
+  const handleAvatarPress = () => {
+    setImageModalVisible(true);
+  };
+
   const ActionButton = () => {
     if (isSelf) return null;
 
@@ -98,14 +106,13 @@ export default function OtherUserProfileScreen() {
     switch (status) {
       case 'accepted':
         return (
-          <View style={styles.actionsRow}>
-            <Button title="Friends" variant="secondary" disabled />
-            <Button
-              title="Remove Friend"
-              variant="danger"
-              onPress={handleRemoveFriend}
-            />
-          </View>
+          <Button
+            title="Remove Friend"
+            variant="secondary"
+            size="small"
+            onPress={handleRemoveFriend}
+            style={styles.actionButton}
+          />
         );
       case 'pending': {
         // If there's a pending request where the target user is the sender to me, show Accept
@@ -132,7 +139,15 @@ export default function OtherUserProfileScreen() {
       case 'rejected':
         return <Button title="Request Rejected" variant="secondary" disabled />;
       default:
-        return <Button title="Add Friend" onPress={handleAddFriend} />;
+        return (
+          <Button
+            title="Add Friend"
+            variant="secondary"
+            size="small"
+            onPress={handleAddFriend}
+            style={styles.actionButton}
+          />
+        );
     }
   };
 
@@ -167,6 +182,7 @@ export default function OtherUserProfileScreen() {
                 size={100}
                 imageUrl={profile.avatar_url}
                 name={profile.name}
+                onPress={handleAvatarPress}
               />
               <Text style={styles.name}>{profile.name}</Text>
               {profile.email ? (
@@ -229,6 +245,53 @@ export default function OtherUserProfileScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Image Modal */}
+      <Modal
+        visible={imageModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setImageModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            {profile?.avatar_url ? (
+              <TouchableOpacity
+                style={styles.modalImageContainer}
+                onPress={() => setImageModalVisible(false)}
+                activeOpacity={1}
+              >
+                <Image
+                  source={{ uri: profile.avatar_url }}
+                  style={styles.modalImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.modalInitialsContainer}
+                onPress={() => setImageModalVisible(false)}
+                activeOpacity={1}
+              >
+                <View style={styles.modalInitialsBackground}>
+                  <Text style={styles.modalInitialsText}>
+                    {profile?.name
+                      ?.split(' ')
+                      .map(word => word.charAt(0))
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2) || '?'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -333,5 +396,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginTop: 8,
+  },
+  actionButton: {
+    marginTop: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: Dimensions.get('window').width * 0.9,
+    height: Dimensions.get('window').height * 0.7,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImageContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  modalInitialsContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalInitialsBackground: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalInitialsText: {
+    fontSize: 80,
+    fontWeight: 'bold',
+    color: '#6b7280',
   },
 });
