@@ -467,16 +467,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                   style={styles.whatsappButton}
                 />
               )}
-              <Button
-                title="Refer a Friend"
-                onPress={() =>
-                  router.push({
-                    pathname: '/referral',
-                    params: { groupId: group.id, groupName: group.title },
-                  })
-                }
-                variant="secondary"
-              />
+              {group.status !== 'pending' && (
+                <Button
+                  title="Refer a Friend"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/referral',
+                      params: { groupId: group.id, groupName: group.title },
+                    })
+                  }
+                  variant="secondary"
+                />
+              )}
               <Button
                 title="Leave Group"
                 onPress={handleLeaveGroup}

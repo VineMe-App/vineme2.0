@@ -86,6 +86,14 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             </View>
           )}
 
+          {/* Top Left - Pending Badge */}
+          {group.status === 'pending' && (
+            <View style={styles.pendingBadge}>
+              <Ionicons name="time-outline" size={16} color="#b45309" />
+              <Text style={styles.pendingText}>Pending</Text>
+            </View>
+          )}
+
           {/* Bottom Right - Friend Avatars */}
           {friendsInGroup && friendsInGroup.length > 0 && (
             <View style={styles.friendsOverlay}>
@@ -368,5 +376,22 @@ const styles = StyleSheet.create({
   service: {
     color: '#888',
     fontStyle: 'italic',
+  },
+  pendingBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fffbeb',
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  pendingText: {
+    color: '#92400e',
+    fontWeight: '600',
+    fontSize: 12,
   },
 });
