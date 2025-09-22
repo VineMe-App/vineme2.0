@@ -575,6 +575,27 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             ScreenReaderUtils.announceForAccessibility(
               `Showing ${cluster.count} groups in this area`
             );
+
+            // Center and zoom on the cluster, positioning it in the top half
+            if (mapRef.current) {
+              // Calculate offset to position cluster in top half of screen
+              const { height } = Dimensions.get('window');
+              const cardPanelHeight = 200; // Approximate height of card panel
+              const topHalfOffset = (height - cardPanelHeight) / 4; // Position in upper quarter
+
+              // Adjust offset based on zoom level (0.05 delta)
+              const latitudeOffset = (topHalfOffset / height) * 0.05;
+
+              mapRef.current.animateToRegion(
+                {
+                  latitude: cluster.coordinates.latitude - latitudeOffset,
+                  longitude: cluster.coordinates.longitude,
+                  latitudeDelta: 0.05, // Less zoom - higher values = more zoomed out
+                  longitudeDelta: 0.05,
+                },
+                1000
+              ); // 1 second animation
+            }
           }}
           anchor={{ x: 0.5, y: 0.5 }}
         >
