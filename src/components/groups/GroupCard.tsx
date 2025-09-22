@@ -14,6 +14,7 @@ interface GroupCardProps {
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
   friendsCount?: number;
   friendsInGroup?: User[];
+  leaders?: User[];
   onPressFriends?: () => void;
   style?: ViewStyle;
   distanceKm?: number;
@@ -25,6 +26,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   membershipStatus,
   friendsCount,
   friendsInGroup,
+  leaders,
   onPressFriends,
   style,
   distanceKm,
@@ -186,6 +188,42 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 </Text>
               </View>
             )}
+            {leaders && leaders.length > 0 && (
+              <View style={styles.detailRow}>
+                <Ionicons name="star-outline" size={16} color="#6b7280" />
+                <View style={styles.leaderTextAndAvatars}>
+                  <Text
+                    variant="bodySmall"
+                    style={styles.leaderText}
+                    numberOfLines={1}
+                  >
+                    Led by{' '}
+                    {leaders
+                      .slice(0, 3)
+                      .map((leader) => leader.name)
+                      .join(', ')}
+                    {leaders.length > 3 && ` and ${leaders.length - 3} others`}
+                  </Text>
+                  <View style={styles.leaderAvatars}>
+                    {leaders.slice(0, 3).map((leader, index) => (
+                      <View
+                        key={leader.id}
+                        style={[
+                          styles.leaderAvatar,
+                          { marginLeft: index > 0 ? -4 : 0 },
+                        ]}
+                      >
+                        <Avatar
+                          imageUrl={leader.avatar_url}
+                          name={leader.name}
+                          size={20}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
 
           {group.service?.name && (
@@ -307,6 +345,22 @@ const styles = StyleSheet.create({
   detailText: {
     color: '#333',
     flex: 1,
+  },
+  leaderTextAndAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  leaderText: {
+    color: '#333',
+  },
+  leaderAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  leaderAvatar: {
+    // No border - just clean avatar circles
   },
   service: {
     color: '#888',

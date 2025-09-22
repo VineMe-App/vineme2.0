@@ -365,6 +365,14 @@ const GroupItemWithMembership: React.FC<{
 
   const friendsCount = friendsInGroup.length;
 
+  const leaders = React.useMemo(() => {
+    return (members || [])
+      .filter((m) => m.role === 'leader' && m.user)
+      .map((m) => m.user)
+      .filter((user): user is NonNullable<typeof user> => !!user)
+      .slice(0, 3); // Limit to 3 leaders for display
+  }, [members]);
+
   return (
     <GroupCard
       group={group}
@@ -377,6 +385,7 @@ const GroupItemWithMembership: React.FC<{
       }
       friendsCount={friendsCount}
       friendsInGroup={friendsInGroup}
+      leaders={leaders}
       onPressFriends={() => {
         // Navigate to group detail and open friends modal
         onPress();
