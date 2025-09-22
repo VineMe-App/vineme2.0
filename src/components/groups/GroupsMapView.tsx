@@ -30,7 +30,11 @@ import {
   type ClusterPoint,
 } from '../../utils/mapClustering';
 import { Button } from '../ui';
+import { GroupCard } from './GroupCard';
 import type { GroupWithDetails } from '../../types/database';
+import { useGroupMembership, useGroupMembers } from '../../hooks/useGroups';
+import { useFriends } from '../../hooks/useFriendships';
+import { useAuthStore } from '../../stores/auth';
 
 interface GroupsMapViewProps {
   groups: GroupWithDetails[];
@@ -55,10 +59,10 @@ const ASPECT_RATIO = width / height;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
-// Default region (centered on a general area)
+// Default region (centered on London)
 const DEFAULT_REGION: Region = {
-  latitude: 37.78825,
-  longitude: -122.4324,
+  latitude: 51.5074,
+  longitude: -0.1278,
   latitudeDelta: LATITUDE_DELTA,
   longitudeDelta: LONGITUDE_DELTA,
 };
@@ -92,6 +96,61 @@ const getClusterVisuals = (count: number) => {
     size: 36,
     bubbleColor: '#f472b6', // Medium pink - much more visible
   } as const;
+};
+
+// Component to handle group card data for map view
+const GroupCardWithData: React.FC<{
+  group: GroupWithDetails;
+  onPress: () => void;
+}> = ({ group, onPress }) => {
+  const { userProfile } = useAuthStore();
+  const { data: membershipData } = useGroupMembership(
+    group.id,
+    userProfile?.id
+  );
+  const { data: members } = useGroupMembers(group.id);
+  const friendsQuery = useFriends(userProfile?.id);
+
+  const membershipStatus = membershipData?.membership?.role || null;
+
+  const friendsInGroup = React.useMemo(() => {
+    if (!userProfile?.id || !friendsQuery.data) return [];
+
+    const friendIds = new Set(
+      (friendsQuery.data || [])
+        .map((f) => f.friend?.id)
+        .filter((id): id is string => !!id)
+    );
+
+    return (members || [])
+      .filter((m) => m.user?.id && friendIds.has(m.user.id))
+      .map((m) => m.user)
+      .filter((user): user is NonNullable<typeof user> => !!user)
+      .slice(0, 3);
+  }, [friendsQuery.data, members, userProfile?.id]);
+
+  const friendsCount = friendsInGroup.length;
+
+  const leaders = React.useMemo(() => {
+    return (members || [])
+      .filter((m) => m.role === 'leader' && m.user)
+      .map((m) => m.user)
+      .filter((user): user is NonNullable<typeof user> => !!user)
+      .slice(0, 3);
+  }, [members]);
+
+  return (
+    <GroupCard
+      group={group}
+      onPress={onPress}
+      membershipStatus={membershipStatus}
+      friendsCount={friendsCount}
+      friendsInGroup={friendsInGroup}
+      leaders={leaders}
+      onPressFriends={() => onPress()}
+      style={styles.mapGroupCard}
+    />
+  );
 };
 
 export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
@@ -770,15 +829,33 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       {selectedItems && selectedItems.length > 0 && (
         <View style={styles.cardPanel}>
           <View style={styles.cardPanelHeader}>
-            <Text style={styles.cardPanelTitle}>
-              {selectedItems.length > 1
-                ? `${selectedIndex + 1} of ${selectedItems.length}`
-                : 'Group'}
-            </Text>
+            <View style={styles.cardCounterOverlay}>
+              <Text style={styles.cardPanelTitle}>
+                {selectedItems.length > 1
+                  ? `${selectedIndex + 1} of ${selectedItems.length}`
+                  : 'Group'}
+              </Text>
+            </View>
+            {selectedItems.length > 1 && (
+              <View style={styles.dotsOverlay}>
+                <View style={styles.dotsContainer}>
+                  {selectedItems.map((_, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.dot,
+                        i === selectedIndex && styles.dotActive,
+                      ]}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
             <TouchableOpacity
               onPress={() => setSelectedItems(null)}
               accessibilityLabel="Close group preview"
               accessibilityRole="button"
+              style={styles.closeButtonOverlay}
             >
               <Ionicons name="close" size={20} color="#111827" />
             </TouchableOpacity>
@@ -798,49 +875,13 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             }}
           >
             {selectedItems.map((g) => (
-              <View key={g.id} style={styles.card}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {g.title}
-                </Text>
-                {g.location && (
-                  <Text style={styles.cardSubtitle} numberOfLines={1}>
-                    {typeof g.location === 'string'
-                      ? g.location
-                      : g.location.address}
-                  </Text>
-                )}
-                <Text style={styles.cardDescription} numberOfLines={2}>
-                  {g.description}
-                </Text>
-                <View style={styles.cardMetaRow}>
-                  <Ionicons name="time-outline" size={14} color="#6b7280" />
-                  <Text style={styles.cardMetaText}>
-                    {g.meeting_day} • {g.meeting_time}
-                  </Text>
-                </View>
-                <View style={styles.cardActions}>
-                  <TouchableOpacity
-                    style={styles.viewButton}
-                    onPress={() => onGroupPress(g)}
-                    accessibilityLabel={`View details for ${g.title}`}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.viewButtonText}>View Group</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <GroupCardWithData
+                key={g.id}
+                group={g}
+                onPress={() => onGroupPress(g)}
+              />
             ))}
           </ScrollView>
-          {selectedItems.length > 1 && (
-            <View style={styles.dotsContainer}>
-              {selectedItems.map((_, i) => (
-                <View
-                  key={i}
-                  style={[styles.dot, i === selectedIndex && styles.dotActive]}
-                />
-              ))}
-            </View>
-          )}
         </View>
       )}
 
@@ -1043,7 +1084,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingVertical: 8,
-    paddingBottom: 100, // Add space for bottom navbar
+    paddingBottom: 66, // Same as horizontal card margins
     backgroundColor: 'transparent',
   },
   cardPanelHeader: {
@@ -1058,63 +1099,55 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontWeight: '600',
   },
-  card: {
+  cardCounterOverlay: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  closeButtonOverlay: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    padding: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  mapGroupCard: {
     width: width - 32,
     marginHorizontal: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 12,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  cardDescription: {
-    fontSize: 13,
-    color: '#374151',
-    marginTop: 8,
-  },
-  cardMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  cardMetaText: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginLeft: 6,
-  },
-  cardActions: {
-    marginTop: 12,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  viewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f10078', // Primary brand pink
-    borderRadius: 20, // More rounded sides
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  viewButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+  dotsOverlay: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 8,
   },
   dot: {
     width: 6,
