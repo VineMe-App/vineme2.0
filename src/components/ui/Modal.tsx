@@ -149,6 +149,25 @@ export const Modal: React.FC<ModalProps> = ({
       style,
     ];
 
+    const renderBody = () => {
+      if (scrollable) {
+        return (
+          <View style={styles.bodyContainer}>
+            <ScrollView
+              style={styles.bodyScroll}
+              contentContainerStyle={[styles.bodyScrollContent, bodyStyle]}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          </View>
+        );
+      }
+
+      return <View style={[styles.bodyContent, bodyStyle]}>{children}</View>;
+    };
+
     return (
       <View
         style={contentStyles}
@@ -182,18 +201,7 @@ export const Modal: React.FC<ModalProps> = ({
             )}
           </View>
         )}
-        {scrollable ? (
-          <ScrollView
-            style={[styles.bodyScroll, bodyStyle]}
-            contentContainerStyle={styles.bodyScrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.body}>{children}</View>
-          </ScrollView>
-        ) : (
-          <View style={[styles.body, bodyStyle]}>{children}</View>
-        )}
+        {renderBody()}
       </View>
     );
   };
@@ -254,8 +262,7 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
   },
   overlay: {
     flex: 1,
-    backgroundColor: colors.surface.overlay,
-    opacity: overlayOpacity,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   overlayTouchable: {
     flex: 1,
@@ -285,16 +292,16 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
     elevation: 10, // Android shadow
   },
   small: {
-    width: Math.min(screenWidth * 0.8, 320),
-    maxWidth: 320,
+    width: Math.min(screenWidth * 0.85, 400),
+    maxWidth: 400,
   },
   medium: {
-    width: Math.min(screenWidth * 0.9, 480),
-    maxWidth: 480,
+    width: Math.min(screenWidth * 0.9, 600),
+    maxWidth: 600,
   },
   large: {
-    width: Math.min(screenWidth * 0.95, 640),
-    maxWidth: 640,
+    width: Math.min(screenWidth * 0.95, 800),
+    maxWidth: 800,
   },
   fullscreen: {
     width: '100%',
@@ -320,12 +327,12 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.primary,
-    minHeight: 56, // Minimum touch target
+    minHeight: 64, // Minimum touch target
   },
   title: {
     flex: 1,
@@ -344,15 +351,26 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
     justifyContent: 'center',
     alignItems: 'center',
   },
-  body: {
-    padding: spacing.lg,
-    flex: 1,
+  bodyContainer: {
+    width: '100%',
+    maxHeight: '100%',
+    alignSelf: 'stretch',
+    flexShrink: 1,
+  },
+  bodyContent: {
+    width: '100%',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+    flexShrink: 1,
   },
   bodyScroll: {
-    flex: 1,
+    width: '100%',
+    maxHeight: '100%',
   },
   bodyScrollContent: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
-    flexGrow: 1,
   },
 });

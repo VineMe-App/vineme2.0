@@ -519,7 +519,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           title="Friends in this Group"
           size="large"
           scrollable
-          style={styles.friendsModal}
         >
           {friendsInGroup.length > 0 ? (
             <View style={styles.friendsModalContainer}>
@@ -751,12 +750,6 @@ const styles = StyleSheet.create({
   whatsappButton: {
     backgroundColor: '#25D366',
     borderColor: '#25D366',
-  },
-  friendsModal: {
-    width: '90%',
-    maxWidth: 500,
-    minHeight: 400,
-    maxHeight: '80%',
   },
   friendsModalContainer: {
     flex: 1,
