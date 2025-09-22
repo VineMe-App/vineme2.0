@@ -5,12 +5,15 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Text } from '../ui/Text';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { Ionicons } from '@expo/vector-icons';
 import {
   useApproveJoinRequest,
   useDeclineJoinRequest,
@@ -29,6 +32,11 @@ interface JoinRequestCardProps {
   onRequestProcessed?: () => void;
 }
 
+// Helper function to ensure phone number has + prefix
+const formatPhoneNumber = (phone: string): string => {
+  return phone.startsWith('+') ? phone : `+${phone}`;
+};
+
 export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   request,
   leaderId,
@@ -40,7 +48,6 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   const declineRequestMutation = useDeclineJoinRequest();
   const initiateContactMutation = useInitiateContactAction();
   const updateJourneyStatusMutation = useUpdateMembershipJourneyStatus();
-
 
   const initialJourneyStatus = useMemo(
     () => (request.journey_status ?? null) as MembershipJourneyStatus | null,
@@ -196,15 +203,78 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
       });
 
       // Then open the contact app
-      const url = type === 'email' ? `mailto:${value}` : `tel:${value}`;
+      let url: string;
+      let fallbackMessage: string;
 
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
+      if (type === 'email') {
+        url = `mailto:${value}`;
+        fallbackMessage =
+          'No email app is configured on this device. You can copy the email address and use your preferred email app.';
       } else {
-        Alert.alert('Error', `Cannot open ${type} app`);
+        // For phone, use tel: scheme
+        url = `tel:${value}`;
+        fallbackMessage =
+          'No phone app is configured on this device. You can copy the phone number and use your preferred calling app.';
+      }
+
+      try {
+        // Add debugging information
+        console.log(`Attempting to open ${type} URL:`, url);
+        console.log('Platform:', Platform.OS);
+
+        // Try to open the URL directly
+        await Linking.openURL(url);
+        console.log(`Successfully opened ${type} app`);
+      } catch (linkingError) {
+        console.log('Linking error:', linkingError);
+        console.log('URL that failed:', url);
+
+        // If direct opening fails, show a more helpful error with options
+        const buttons = [
+          { text: 'Cancel', style: 'cancel' as const },
+          {
+            text: 'Copy to Clipboard',
+            onPress: async () => {
+              try {
+                await Clipboard.setStringAsync(value);
+                Alert.alert(
+                  'Copied',
+                  `${type === 'email' ? 'Email' : 'Phone number'} copied to clipboard`
+                );
+              } catch (clipboardError) {
+                console.error('Clipboard error:', clipboardError);
+                Alert.alert('Error', 'Failed to copy to clipboard');
+              }
+            },
+          },
+        ];
+
+        // Add WhatsApp option for phone numbers
+        if (type === 'phone') {
+          buttons.push({
+            text: 'Try WhatsApp',
+            onPress: async () => {
+              try {
+                // Remove any non-digits and format for WhatsApp
+                const cleanPhone = value.replace(/\D/g, '');
+                const whatsappUrl = `whatsapp://send?phone=${cleanPhone}`;
+                console.log('Attempting WhatsApp URL:', whatsappUrl);
+                await Linking.openURL(whatsappUrl);
+              } catch (whatsappError) {
+                console.log('WhatsApp error:', whatsappError);
+                Alert.alert(
+                  'Error',
+                  'WhatsApp is not installed or cannot be opened'
+                );
+              }
+            },
+          });
+        }
+
+        Alert.alert('Cannot Open App', fallbackMessage, buttons);
       }
     } catch (error) {
+      console.error('Contact action error:', error);
       Alert.alert(
         'Error',
         error instanceof Error
@@ -298,15 +368,6 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                     {step.label}
                   </Text>
                 </View>
-                {index < journeySteps.length - 1 && (
-                  <View
-                    style={[
-                      styles.progressLine,
-                      (journeyStatus ?? 0) > step.value &&
-                        styles.progressLineActive,
-                    ]}
-                  />
-                )}
               </React.Fragment>
             );
           })}
@@ -356,24 +417,70 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
       {showContactInfo && contactInfo && (
         <View style={styles.contactInfo}>
           {contactInfo.email && (
-            <TouchableOpacity
-              onPress={() => handleContactPress('email', contactInfo.email)}
-              style={styles.contactItem}
-              disabled={initiateContactMutation.isPending}
-            >
-              <Text style={styles.contactLabel}>Email</Text>
-              <Text style={styles.contactValue}>{contactInfo.email}</Text>
-            </TouchableOpacity>
+            <View style={styles.contactItem}>
+              <TouchableOpacity
+                onPress={() =>
+                  contactInfo.email &&
+                  handleContactPress('email', contactInfo.email)
+                }
+                style={styles.contactMain}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Text style={styles.contactLabel}>Email</Text>
+                <Text style={styles.contactValue}>{contactInfo.email}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  if (!contactInfo.email) return;
+                  try {
+                    await Clipboard.setStringAsync(contactInfo.email);
+                    Alert.alert('Copied', 'Email copied to clipboard');
+                  } catch (error) {
+                    console.error('Copy error:', error);
+                    Alert.alert('Error', 'Failed to copy email');
+                  }
+                }}
+                style={styles.copyButton}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Ionicons name="copy-outline" size={18} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
           )}
           {contactInfo.phone && (
-            <TouchableOpacity
-              onPress={() => handleContactPress('phone', contactInfo.phone)}
-              style={styles.contactItem}
-              disabled={initiateContactMutation.isPending}
-            >
-              <Text style={styles.contactLabel}>Phone</Text>
-              <Text style={styles.contactValue}>{contactInfo.phone}</Text>
-            </TouchableOpacity>
+            <View style={styles.contactItem}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!contactInfo.phone) return;
+                  const formattedPhone = formatPhoneNumber(contactInfo.phone);
+                  handleContactPress('phone', formattedPhone);
+                }}
+                style={styles.contactMain}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Text style={styles.contactLabel}>Phone</Text>
+                <Text style={styles.contactValue}>
+                  {formatPhoneNumber(contactInfo.phone)}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  if (!contactInfo.phone) return;
+                  try {
+                    const formattedPhone = formatPhoneNumber(contactInfo.phone);
+                    await Clipboard.setStringAsync(formattedPhone);
+                    Alert.alert('Copied', 'Phone number copied to clipboard');
+                  } catch (error) {
+                    console.error('Copy error:', error);
+                    Alert.alert('Error', 'Failed to copy phone number');
+                  }
+                }}
+                style={styles.copyButton}
+                disabled={initiateContactMutation.isPending}
+              >
+                <Ionicons name="copy-outline" size={18} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
           )}
           {!contactInfo.email && !contactInfo.phone && (
             <Text style={styles.noContactText}>
@@ -388,12 +495,15 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
           title="Decline"
           onPress={handleDecline}
           variant="secondary"
+          size="small"
           disabled={isProcessing}
           style={styles.declineButton}
         />
         <Button
-          title="Activate"
+          title="Add to group"
           onPress={handleApprove}
+          variant="secondary"
+          size="small"
           loading={approveRequestMutation.isPending}
           disabled={!canActivate || isProcessing}
           style={styles.approveButton}
@@ -464,11 +574,12 @@ const styles = StyleSheet.create({
   progressSteps: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 16,
   },
   progressStepWrapper: {
-    flex: 1,
     alignItems: 'center',
+    minWidth: 60,
   },
   progressCircle: {
     width: 36,
@@ -504,15 +615,6 @@ const styles = StyleSheet.create({
   progressStepLabelActive: {
     color: '#111827',
     fontWeight: '600',
-  },
-  progressLine: {
-    height: 2,
-    backgroundColor: '#e5e7eb',
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  progressLineActive: {
-    backgroundColor: '#ec4899',
   },
   messageSection: {
     marginBottom: 16,
@@ -576,9 +678,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#dbeafe',
+  },
+  contactMain: {
+    flex: 1,
+  },
+  copyButton: {
+    padding: 8,
+    marginLeft: 8,
+    borderRadius: 6,
+    backgroundColor: '#f3f4f6',
   },
   contactLabel: {
     fontSize: 13,
