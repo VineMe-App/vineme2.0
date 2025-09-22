@@ -22,7 +22,6 @@ import { GroupCard } from '../../components/groups/GroupCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Card } from '../../components/ui/Card';
-import { Avatar } from '../../components/ui/Avatar';
 import { FriendRequestNotifications } from '../../components/friends/FriendRequestNotifications';
 import { ConnectSomeoneSection } from '../../components/referrals/ConnectSomeoneSection';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,21 +113,6 @@ export default function HomeScreen() {
           { backgroundColor: theme.colors.surface.primary },
         ]}
       >
-        <View style={styles.userSection}>
-          <Avatar
-            uri={userProfile?.avatar_url}
-            name={userProfile?.name || user?.email || 'User'}
-            size={60}
-          />
-          <View style={styles.userInfo}>
-            <Text variant="h3" style={styles.greeting}>
-              Hello, {userProfile?.name || 'there'}!
-            </Text>
-            <Text variant="bodyLarge" color="secondary" style={styles.subtitle}>
-              Welcome back to VineMe
-            </Text>
-          </View>
-        </View>
 
         <View style={styles.headerRight}>
           {pendingRequests.length > 0 && (
@@ -349,17 +333,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  userSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  headerMetaRow: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   orgCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -395,16 +368,6 @@ const styles = StyleSheet.create({
   },
   orgCta: {
     color: '#111827',
-  },
-  userInfo: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  greeting: {
-    marginBottom: 4,
-  },
-  subtitle: {
-    // Typography handled by Text component variant
   },
   statsSection: {
     flexDirection: 'row',

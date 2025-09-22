@@ -248,38 +248,47 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {group.image_url ? (
-        <Image source={{ uri: group.image_url }} style={styles.headerImage} />
-      ) : (
-        <GroupPlaceholderImage style={styles.headerImage} />
-      )}
+      <View style={styles.headerContainer}>
+        {group.image_url ? (
+          <Image source={{ uri: group.image_url }} style={styles.headerImage} />
+        ) : (
+          <GroupPlaceholderImage style={styles.headerImage} />
+        )}
+
+        {/* Badge positioned at top right of image */}
+        {membershipStatus && (
+          <View
+            style={[
+              styles.statusBadge,
+              styles[`${membershipStatus}Badge`],
+              styles.imageBadge,
+            ]}
+          >
+            <Text
+              style={[styles.statusText, styles[`${membershipStatus}Text`]]}
+            >
+              {membershipStatus === 'member'
+                ? 'Member'
+                : membershipStatus === 'leader'
+                  ? 'Leader'
+                  : 'Admin'}
+            </Text>
+          </View>
+        )}
+
+        {group.status === 'pending' && isGroupLeader && (
+          <View style={[styles.pendingBadge, styles.imagePendingBadge]}>
+            <Ionicons name="time-outline" size={16} color="#b45309" />
+            <Text style={styles.pendingText}>Pending admin approval</Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.content}>
-        {/* Header with title and status */}
+        {/* Header with title and actions */}
         <View style={styles.header}>
           <View style={styles.titleSection}>
             <Text style={styles.title}>{group.title}</Text>
-            {membershipStatus && (
-              <View
-                style={[styles.statusBadge, styles[`${membershipStatus}Badge`]]}
-              >
-                <Text
-                  style={[styles.statusText, styles[`${membershipStatus}Text`]]}
-                >
-                  {membershipStatus === 'member'
-                    ? 'Member'
-                    : membershipStatus === 'leader'
-                      ? 'Leader'
-                      : 'Admin'}
-                </Text>
-              </View>
-            )}
-            {group.status === 'pending' && isGroupLeader && (
-              <View style={styles.pendingBadge}>
-                <Ionicons name="time-outline" size={16} color="#b45309" />
-                <Text style={styles.pendingText}>Pending admin approval</Text>
-              </View>
-            )}
           </View>
           {(canManageGroup || onShare) && (
             <View style={styles.headerActions}>
@@ -434,7 +443,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                         </Text>
                         <Text style={styles.memberJoinDate}>
                           Joined{' '}
-                          {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : 'Unknown'}
+                          {member.joined_at
+                            ? new Date(member.joined_at).toLocaleDateString()
+                            : 'Unknown'}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -576,10 +587,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  headerContainer: {
+    position: 'relative',
+  },
   headerImage: {
     width: '100%',
     height: 200,
     backgroundColor: '#f0f0f0',
+  },
+  imageBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 1,
+  },
+  imagePendingBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 1,
   },
   content: {
     padding: 16,
@@ -629,18 +655,22 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     minWidth: 70,
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   memberBadge: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: 'rgba(227, 242, 253, 0.9)',
+    borderColor: 'rgba(25, 118, 210, 0.3)',
   },
   leaderBadge: {
-    backgroundColor: '#fff3e0',
+    backgroundColor: 'rgba(255, 243, 224, 0.9)',
+    borderColor: 'rgba(245, 124, 0, 0.3)',
   },
   adminBadge: {
-    backgroundColor: '#fce4ec',
+    backgroundColor: 'rgba(252, 228, 236, 0.9)',
+    borderColor: 'rgba(194, 24, 91, 0.3)',
   },
   statusText: {
     fontSize: 14,
@@ -648,12 +678,15 @@ const styles = StyleSheet.create({
   },
   memberText: {
     color: '#1976d2',
+    opacity: 0.9,
   },
   leaderText: {
     color: '#f57c00',
+    opacity: 0.9,
   },
   adminText: {
     color: '#c2185b',
+    opacity: 0.9,
   },
   description: {
     fontSize: 16,

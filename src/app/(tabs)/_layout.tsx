@@ -4,10 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Text } from '@/components/ui/Text';
+import { Avatar } from '@/components/ui/Avatar';
 import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithBadge';
 import { useNotificationBadge } from '@/hooks/useNotifications';
 import { useAuthStore } from '@/stores/auth';
-import { useState } from 'react';
 import { useRouter } from 'expo-router';
 
 // Custom header component for home tab with notification icon
@@ -16,7 +16,6 @@ const HomeHeader = () => {
   const router = useRouter();
   const { user } = useAuthStore();
   const { count: unreadCount } = useNotificationBadge(user?.id);
-  const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
 
   const handleNotificationPress = () => {
     // Navigate to the notifications page
@@ -39,6 +38,18 @@ const HomeHeader = () => {
         accessibilityHint="Double tap to open notifications panel"
       />
     </View>
+  );
+};
+
+// Custom profile tab icon component
+const ProfileTabIcon = ({ color, size }: { color: string; size: number }) => {
+  const { userProfile } = useAuthStore();
+  return (
+    <Avatar
+      imageUrl={userProfile?.avatar_url}
+      name={userProfile?.name || 'User'}
+      size={size}
+    />
   );
 };
 
@@ -169,7 +180,7 @@ export default function TabLayout() {
           tabBarLabel: 'Profile',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <ProfileTabIcon color={color} size={size} />
           ),
         }}
       />

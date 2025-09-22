@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   Platform,
   SafeAreaView,
+  Modal,
+  Dimensions,
+  Image,
 } from 'react-native';
 import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '@/stores/auth';
@@ -32,6 +35,7 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
   
   const deleteAccountMutation = useDeleteAccount();
 
@@ -65,6 +69,10 @@ export default function ProfileScreen() {
       friendsQuery.refetch(),
       receivedRequestsQuery.refetch(),
     ]);
+  };
+
+  const handleAvatarPress = () => {
+    setImageModalVisible(true);
   };
 
   const handleSignOut = async () => {
@@ -161,6 +169,7 @@ export default function ProfileScreen() {
                 size={100}
                 imageUrl={userProfile.avatar_url}
                 name={userProfile.name}
+                onPress={handleAvatarPress}
               />
 
               <Text variant="h3" style={styles.name}>{userProfile.name}</Text>
@@ -366,6 +375,53 @@ export default function ProfileScreen() {
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
+      {/* Image Modal */}
+      <Modal
+        visible={imageModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setImageModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            {userProfile?.avatar_url ? (
+              <TouchableOpacity
+                style={styles.modalImageContainer}
+                onPress={() => setImageModalVisible(false)}
+                activeOpacity={1}
+              >
+                <Image
+                  source={{ uri: userProfile.avatar_url }}
+                  style={styles.modalImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.modalInitialsContainer}
+                onPress={() => setImageModalVisible(false)}
+                activeOpacity={1}
+              >
+                <View style={styles.modalInitialsBackground}>
+                  <Text style={styles.modalInitialsText}>
+                    {userProfile?.name
+                      ?.split(' ')
+                      .map(word => word.charAt(0))
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2) || '?'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {userProfile && (
         <EditProfileModal
           visible={showEditModal}
@@ -561,5 +617,47 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 100, // Generous bottom spacing for navbar clearance
     paddingBottom: 20, // Additional padding for extra safety
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: Dimensions.get('window').width * 0.9,
+    height: Dimensions.get('window').height * 0.7,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImageContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  modalInitialsContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalInitialsBackground: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalInitialsText: {
+    fontSize: 80,
+    fontWeight: 'bold',
+    color: '#6b7280',
   },
 });

@@ -35,7 +35,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   };
 
   const textStyle = {
-    fontSize: size * 0.4,
+    fontSize: size * 0.35,
   };
 
   const content = (
