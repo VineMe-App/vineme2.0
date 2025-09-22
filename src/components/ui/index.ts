@@ -69,6 +69,7 @@ export type { TextProps } from './Text';
 export { EmptyState } from './EmptyState';
 export { OfflineBanner } from './OfflineBanner';
 export { OptimizedImage, preloadImages, useImageCache } from './OptimizedImage';
+export { GroupPlaceholderImage } from './GroupPlaceholderImage';
 export {
   RoleBasedRender,
   AdminOnly,

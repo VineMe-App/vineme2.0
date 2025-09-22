@@ -30,7 +30,7 @@ import {
   getActiveFiltersDescription,
   getActiveFiltersCount,
 } from '../../utils/groupFilters';
-import type { GroupWithDetails } from '../../types/database';
+import type { GroupWithDetails, User } from '../../types/database';
 import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
@@ -350,15 +350,33 @@ const GroupItemWithMembership: React.FC<{
 
   const membershipStatus = membershipData?.membership?.role || null;
 
-  const friendsCount = React.useMemo(() => {
+  const friendUsers = React.useMemo(() => {
     const friendIds = new Set(
       (friendsQuery.data || [])
         .map((f) => f.friend?.id)
         .filter((id): id is string => !!id)
     );
-    return (members || []).filter((m) => m.user?.id && friendIds.has(m.user.id))
-      .length;
+
+    return (members || [])
+      .filter((m) => m.user?.id && friendIds.has(m.user.id))
+      .map((m) => m.user)
+      .filter((user): user is NonNullable<typeof user> => !!user);
   }, [friendsQuery.data, members]);
+
+  const friendsInGroup = React.useMemo(
+    () => friendUsers.slice(0, 3),
+    [friendUsers]
+  );
+
+  const friendsCount = friendUsers.length;
+
+  const leaders = React.useMemo(() => {
+    return (members || [])
+      .filter((m) => m.role === 'leader' && m.user)
+      .map((m) => m.user)
+      .filter((user): user is NonNullable<typeof user> => !!user)
+      .slice(0, 3); // Limit to 3 leaders for display
+  }, [members]);
 
   return (
     <GroupCard
@@ -371,9 +389,11 @@ const GroupItemWithMembership: React.FC<{
           : (group as any).__distanceKm
       }
       friendsCount={friendsCount}
+      friendsInGroup={friendsInGroup}
+      leaders={leaders}
       onPressFriends={() => {
         // Navigate to group detail and open friends modal
-        router.push(`/group/${group.id}?friends=1`);
+        onPress();
       }}
     />
   );

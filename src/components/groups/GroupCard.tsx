@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Text } from '../ui/Text';
-import type { GroupWithDetails } from '../../types/database';
+import type { GroupWithDetails, User } from '../../types/database';
 import { OptimizedImage } from '../ui/OptimizedImage';
+import { Avatar } from '../ui/Avatar';
+import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '../../theme/provider/useTheme';
@@ -12,6 +14,8 @@ interface GroupCardProps {
   onPress: () => void;
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
   friendsCount?: number;
+  friendsInGroup?: User[];
+  leaders?: User[];
   onPressFriends?: () => void;
   style?: ViewStyle;
   distanceKm?: number;
@@ -22,6 +26,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onPress,
   membershipStatus,
   friendsCount,
+  friendsInGroup,
+  leaders,
   onPressFriends,
   style,
   distanceKm,
@@ -54,19 +60,61 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       activeOpacity={0.7}
     >
       <View style={styles.content}>
-        {group.image_url && (
-          <OptimizedImage
-            source={{ uri: group.image_url }}
-            style={styles.image}
-            quality="medium"
-            lazy={true}
-            maxWidth={400}
-            maxHeight={120}
-            resizeMode="cover"
-          />
-        )}
+        {/* Group Image with Friend Avatars Overlay */}
+        <View style={styles.imageContainer}>
+          {group.image_url ? (
+            <OptimizedImage
+              source={{ uri: group.image_url }}
+              style={styles.image}
+              quality="medium"
+              lazy={true}
+              maxWidth={400}
+              maxHeight={120}
+              resizeMode="cover"
+            />
+          ) : (
+            <GroupPlaceholderImage style={styles.image} />
+          )}
+
+          {/* Bottom Left - Members Indicator */}
+          {group.member_count !== undefined && (
+            <View style={styles.bottomLeftIndicator}>
+              <View style={styles.indicator}>
+                <Text style={styles.indicatorText}>{group.member_count}</Text>
+                <Ionicons name="person-outline" size={14} color="#fff" />
+              </View>
+            </View>
+          )}
+
+          {/* Bottom Right - Friend Avatars */}
+          {friendsInGroup && friendsInGroup.length > 0 && (
+            <View style={styles.friendsOverlay}>
+              <View style={styles.friendAvatars}>
+                {friendsInGroup.map((friend, index) => (
+                  <View
+                    key={friend.id}
+                    style={[
+                      styles.friendAvatar,
+                      { marginLeft: index > 0 ? -8 : 0 },
+                    ]}
+                  >
+                    <Avatar
+                      imageUrl={friend.avatar_url}
+                      name={friend.name}
+                      size={24}
+                    />
+                  </View>
+                ))}
+              </View>
+              <Text variant="caption" style={styles.friendsCount}>
+                {friendsCount} friend{friendsCount !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
+        </View>
 
         <View style={styles.info}>
+          {/* Title and Status */}
           <View style={styles.header}>
             <Text
               variant="h6"
@@ -94,16 +142,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               </View>
             )}
           </View>
-
-          <Text
-            variant="body"
-            color="secondary"
-            style={styles.description}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            {group.description}
-          </Text>
 
           <View style={styles.details}>
             {typeof distanceKm === 'number' && (
@@ -140,41 +178,41 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 {formatLocation(group.location)}
               </Text>
             </View>
-            {group.member_count !== undefined && (
+            {leaders && leaders.length > 0 && (
               <View style={styles.detailRow}>
-                <Ionicons name="people-outline" size={16} color="#6b7280" />
-                <Text
-                  variant="bodySmall"
-                  style={styles.detailText}
-                  numberOfLines={1}
-                >
-                  {group.member_count} member
-                  {group.member_count !== 1 ? 's' : ''}
-                </Text>
+                <Ionicons name="star-outline" size={16} color="#6b7280" />
+                <View style={styles.leaderTextAndAvatars}>
+                  <Text
+                    variant="bodySmall"
+                    style={styles.leaderText}
+                    numberOfLines={1}
+                  >
+                    Led by{' '}
+                    {leaders
+                      .slice(0, 3)
+                      .map((leader) => leader.name)
+                      .join(', ')}
+                    {leaders.length > 3 && ` and ${leaders.length - 3} others`}
+                  </Text>
+                  <View style={styles.leaderAvatars}>
+                    {leaders.slice(0, 3).map((leader, index) => (
+                      <View
+                        key={leader.id}
+                        style={[
+                          styles.leaderAvatar,
+                          { marginLeft: index > 0 ? -4 : 0 },
+                        ]}
+                      >
+                        <Avatar
+                          imageUrl={leader.avatar_url}
+                          name={leader.name}
+                          size={20}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                </View>
               </View>
-            )}
-            {typeof friendsCount === 'number' && friendsCount > 0 && (
-              <TouchableOpacity
-                style={[styles.detailRow, styles.friendsPill]}
-                onPress={onPressFriends || onPress}
-                accessibilityRole="button"
-                accessibilityLabel={`View ${friendsCount} friends in this group`}
-              >
-                <Ionicons
-                  name="person-circle-outline"
-                  size={16}
-                  color="#2563eb"
-                />
-                <Text
-                  variant="bodySmall"
-                  weight="semiBold"
-                  style={[styles.detailText, styles.friendsText]}
-                  numberOfLines={1}
-                >
-                  {friendsCount} friend{friendsCount !== 1 ? 's' : ''} in this
-                  group
-                </Text>
-              </TouchableOpacity>
             )}
           </View>
 
@@ -206,12 +244,58 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
+  imageContainer: {
+    position: 'relative',
+    marginBottom: 12,
+  },
   image: {
     width: '100%',
     height: 120,
     borderRadius: 8,
-    marginBottom: 12,
     backgroundColor: '#f0f0f0',
+  },
+  friendsOverlay: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  friendAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  friendAvatar: {
+    // No border - just clean avatar circles
+  },
+  friendsCount: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  bottomLeftIndicator: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+  },
+  indicator: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  indicatorText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   info: {
     flex: 1,
@@ -249,14 +333,8 @@ const styles = StyleSheet.create({
   memberText: {
     color: '#1976d2',
   },
-  leaderText: {
-    color: '#f57c00',
-  },
   adminText: {
     color: '#c2185b',
-  },
-  description: {
-    marginBottom: 12,
   },
   details: {
     marginBottom: 8,
@@ -271,15 +349,21 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
   },
-  friendsPill: {
-    backgroundColor: '#eff6ff',
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
+  leaderTextAndAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
-  friendsText: {
-    color: '#1d4ed8',
+  leaderText: {
+    color: '#333',
+  },
+  leaderAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  leaderAvatar: {
+    // No border - just clean avatar circles
   },
   service: {
     color: '#888',

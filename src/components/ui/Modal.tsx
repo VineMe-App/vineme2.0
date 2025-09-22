@@ -16,6 +16,7 @@ import { KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeSafe } from '../../theme/provider/useTheme';
 import { lightTheme } from '../../theme/themes';
+import { withOpacity } from '../../utils/colors';
 
 export interface ModalProps extends Omit<RNModalProps, 'children'> {
   children: React.ReactNode;
@@ -83,6 +84,26 @@ export const Modal: React.FC<ModalProps> = ({
   const shadows = themeCtx?.shadows ?? lightTheme.shadows;
   const borderRadius = themeCtx?.borderRadius ?? lightTheme.borderRadius;
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const overlayBaseColor = colors.surface?.overlay ?? 'rgba(0, 0, 0, 0.5)';
+
+  const overlayBackgroundColor = React.useMemo(() => {
+    const clampedOpacity = Math.max(0, Math.min(1, overlayOpacity));
+
+    if (overlayBaseColor.startsWith('#')) {
+      return withOpacity(overlayBaseColor, clampedOpacity);
+    }
+
+    const rgbaMatch = overlayBaseColor.match(
+      /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\)/i
+    );
+
+    if (rgbaMatch) {
+      const [, r, g, b] = rgbaMatch;
+      return `rgba(${r}, ${g}, ${b}, ${clampedOpacity})`;
+    }
+
+    return overlayBaseColor;
+  }, [overlayBaseColor, overlayOpacity]);
 
   // Handle back button press
   useEffect(() => {
@@ -137,7 +158,16 @@ export const Modal: React.FC<ModalProps> = ({
     }
   };
 
-  const styles = createStyles(colors, spacing, typography, shadows, borderRadius, screenWidth, screenHeight, overlayOpacity);
+  const styles = createStyles(
+    colors,
+    spacing,
+    typography,
+    shadows,
+    borderRadius,
+    screenWidth,
+    screenHeight,
+    overlayBackgroundColor
+  );
 
   const renderContent = () => {
     const contentStyles = [
@@ -148,6 +178,25 @@ export const Modal: React.FC<ModalProps> = ({
       contentStyle,
       style,
     ];
+
+    const renderBody = () => {
+      if (scrollable) {
+        return (
+          <View style={styles.bodyContainer}>
+            <ScrollView
+              style={styles.bodyScroll}
+              contentContainerStyle={[styles.bodyScrollContent, bodyStyle]}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          </View>
+        );
+      }
+
+      return <View style={[styles.bodyContent, bodyStyle]}>{children}</View>;
+    };
 
     return (
       <View
@@ -182,18 +231,7 @@ export const Modal: React.FC<ModalProps> = ({
             )}
           </View>
         )}
-        {scrollable ? (
-          <ScrollView
-            style={[styles.bodyScroll, bodyStyle]}
-            contentContainerStyle={styles.bodyScrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.body}>{children}</View>
-          </ScrollView>
-        ) : (
-          <View style={[styles.body, bodyStyle]}>{children}</View>
-        )}
+        {renderBody()}
       </View>
     );
   };
@@ -248,14 +286,23 @@ export const Modal: React.FC<ModalProps> = ({
   );
 };
 
-const createStyles = (colors: any, spacing: any, typography: any, shadows: any, borderRadius: any, screenWidth: number, screenHeight: number, overlayOpacity: number) => StyleSheet.create({
+const createStyles = (
+  colors: any,
+  spacing: any,
+  typography: any,
+  shadows: any,
+  borderRadius: any,
+  screenWidth: number,
+  screenHeight: number,
+  overlayColor: string
+) =>
+  StyleSheet.create({
   safeArea: {
     flex: 1,
   },
   overlay: {
     flex: 1,
-    backgroundColor: colors.surface.overlay,
-    opacity: overlayOpacity,
+    backgroundColor: overlayColor,
   },
   overlayTouchable: {
     flex: 1,
@@ -285,16 +332,16 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
     elevation: 10, // Android shadow
   },
   small: {
-    width: Math.min(screenWidth * 0.8, 320),
-    maxWidth: 320,
+    width: Math.min(screenWidth * 0.85, 400),
+    maxWidth: 400,
   },
   medium: {
-    width: Math.min(screenWidth * 0.9, 480),
-    maxWidth: 480,
+    width: Math.min(screenWidth * 0.9, 600),
+    maxWidth: 600,
   },
   large: {
-    width: Math.min(screenWidth * 0.95, 640),
-    maxWidth: 640,
+    width: Math.min(screenWidth * 0.95, 800),
+    maxWidth: 800,
   },
   fullscreen: {
     width: '100%',
@@ -320,12 +367,12 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.primary,
-    minHeight: 56, // Minimum touch target
+    minHeight: 64, // Minimum touch target
   },
   title: {
     flex: 1,
@@ -334,6 +381,7 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
     color: colors.text.primary,
     fontFamily: typography.fontFamily.semiBold,
     lineHeight: typography.lineHeight.lg,
+    paddingLeft: 20, // TODO: make this dynamic. Somehow just putting spacing.xl doesn't work.
   },
   closeButton: {
     padding: spacing.sm,
@@ -344,15 +392,26 @@ const createStyles = (colors: any, spacing: any, typography: any, shadows: any, 
     justifyContent: 'center',
     alignItems: 'center',
   },
-  body: {
-    padding: spacing.lg,
-    flex: 1,
+  bodyContainer: {
+    width: '100%',
+    maxHeight: '100%',
+    alignSelf: 'stretch',
+    flexShrink: 1,
+  },
+  bodyContent: {
+    width: '100%',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+    flexShrink: 1,
   },
   bodyScroll: {
-    flex: 1,
+    width: '100%',
+    maxHeight: '100%',
   },
   bodyScrollContent: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
-    flexGrow: 1,
   },
 });

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { useRouter } from 'expo-router';
 import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
@@ -247,8 +248,10 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {group.image_url && (
+      {group.image_url ? (
         <Image source={{ uri: group.image_url }} style={styles.headerImage} />
+      ) : (
+        <GroupPlaceholderImage style={styles.headerImage} />
       )}
 
       <View style={styles.content}>
@@ -431,7 +434,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                         </Text>
                         <Text style={styles.memberJoinDate}>
                           Joined{' '}
-                          {new Date(member.joined_at).toLocaleDateString()}
+                          {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : 'Unknown'}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -513,17 +516,12 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
         <Modal
           isVisible={showFriendsModal}
           onClose={() => setShowFriendsModal(false)}
-          title="Friends in this Group"
+          title={`Friends in this Group (${friendsInGroup.length})`}
           size="large"
           scrollable
-          style={styles.friendsModal}
         >
           {friendsInGroup.length > 0 ? (
             <View style={styles.friendsModalContainer}>
-              <Text style={styles.friendsCountText}>
-                {friendsInGroup.length} friend
-                {friendsInGroup.length !== 1 ? 's' : ''} in this group
-              </Text>
               <View style={styles.friendsList}>
                 {friendsInGroup.map((friend) => (
                   <TouchableOpacity
@@ -749,21 +747,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#25D366',
     borderColor: '#25D366',
   },
-  friendsModal: {
-    width: '90%',
-    maxWidth: 500,
-    minHeight: 400,
-    maxHeight: '80%',
-  },
   friendsModalContainer: {
     flex: 1,
     width: '100%',
-  },
-  friendsCountText: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 20,
-    textAlign: 'center',
   },
   friendsList: {
     flex: 1,
