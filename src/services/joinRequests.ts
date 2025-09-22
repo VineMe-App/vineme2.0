@@ -7,6 +7,7 @@ import {
   triggerJoinRequestReceivedNotification,
 } from './notifications';
 import type {
+  ContactPrivacySettings,
   GroupJoinRequest,
   GroupJoinRequestWithUser,
   GroupMembership,
@@ -66,7 +67,6 @@ export class JoinRequestService {
           user_id: requestData.user_id,
           role: 'member',
           status: 'pending',
-          contact_consent: requestData.contact_consent ?? null,
           // joined_at is set when request is approved
         })
         .select()
@@ -161,7 +161,6 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
-          contact_consent,
           referral_id,
           journey_status,
           joined_at,
@@ -179,7 +178,11 @@ export class JoinRequestService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const requestsWithConsent = await this.attachContactConsent(
+        (data || []) as GroupJoinRequestWithUser[]
+      );
+
+      return { data: requestsWithConsent, error: null };
     } catch (error) {
       return {
         data: null,
@@ -206,7 +209,6 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
-          contact_consent,
           referral_id,
           journey_status,
           joined_at,
@@ -222,7 +224,11 @@ export class JoinRequestService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const requestsWithConsent = await this.attachContactConsent(
+        (data || []) as GroupJoinRequestWithUser[]
+      );
+
+      return { data: requestsWithConsent, error: null };
     } catch (error) {
       return {
         data: null,
@@ -561,7 +567,7 @@ export class JoinRequestService {
     try {
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
-        .select('id, group_id, user_id, contact_consent, status')
+        .select('id, group_id, user_id, status')
         .eq('id', requestId)
         .single();
 
@@ -593,19 +599,13 @@ export class JoinRequestService {
         };
       }
 
-      // CRITICAL: Check if user explicitly consented to contact sharing
-      if (membership.contact_consent === false) {
+      // Allow leaders to view contact info for pending or active members only
+      if (membership.status !== 'active' && membership.status !== 'pending') {
         return {
           data: null,
-          error: new Error('User has not consented to share contact information'),
-        };
-      }
-
-      // CRITICAL: Only allow contact info access for approved members (not pending requests)
-      if (membership.status !== 'active') {
-        return {
-          data: null,
-          error: new Error('Can only view contact information for approved group members'),
+          error: new Error(
+            'Contact information is only available for pending or active group members'
+          ),
         };
       }
 
@@ -701,7 +701,7 @@ export class JoinRequestService {
     contactValue: string
   ): Promise<GroupServiceResponse<boolean>> {
     try {
-      // Fetch membership record with contact_consent and status
+      // Fetch membership record with status
       const { data: membership, error: membershipError } = await supabase
         .from('group_memberships')
         .select(
@@ -710,7 +710,6 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
-          contact_consent,
           user:users(id, name)
         `
         )
@@ -743,19 +742,13 @@ export class JoinRequestService {
         };
       }
 
-      // CRITICAL: Check if user explicitly consented to contact sharing
-      if (membership.contact_consent === false) {
+      // Allow leaders to contact pending or active members
+      if (membership.status !== 'active' && membership.status !== 'pending') {
         return {
           data: null,
-          error: new Error('User has not consented to share contact information'),
-        };
-      }
-
-      // CRITICAL: Only allow contact for approved members (not pending requests)
-      if (membership.status !== 'active') {
-        return {
-          data: null,
-          error: new Error('Can only contact approved group members'),
+          error: new Error(
+            'Contact actions are only available for pending or active group members'
+          ),
         };
       }
 
@@ -797,6 +790,68 @@ export class JoinRequestService {
             : new Error('Failed to initiate contact action'),
       };
     }
+  }
+
+  private async attachContactConsent<
+    T extends { user_id: string; contact_consent?: boolean | null }
+  >(records: T[]): Promise<T[]> {
+    if (!records || records.length === 0) {
+      return records;
+    }
+
+    const userIds = Array.from(
+      new Set(records.map((record) => record.user_id).filter(Boolean))
+    );
+
+    if (userIds.length === 0) {
+      return records;
+    }
+
+    type PrivacySettingRecord = Pick<
+      ContactPrivacySettings,
+      'user_id' | 'allow_contact_by_leaders'
+    >;
+
+    let privacySettings: PrivacySettingRecord[] = [];
+
+    const { data, error } = await supabase
+      .from('contact_privacy_settings')
+      .select('user_id, allow_contact_by_leaders')
+      .in('user_id', userIds);
+
+    if (error) {
+      console.error(
+        'Failed to fetch contact privacy settings for join requests:',
+        error
+      );
+
+      return records.map((record) =>
+        ({
+          ...record,
+          contact_consent: false,
+        } as T)
+      );
+    }
+
+    if (data) {
+      privacySettings = data as PrivacySettingRecord[];
+    }
+
+    const privacyMap = new Map<string, boolean>(
+      privacySettings.map((setting) => [
+        setting.user_id,
+        setting.allow_contact_by_leaders === true,
+      ])
+    );
+
+    return records.map((record) => {
+      const consent = privacyMap.get(record.user_id);
+
+      return {
+        ...record,
+        contact_consent: consent ?? true,
+      } as T;
+    });
   }
 }
 

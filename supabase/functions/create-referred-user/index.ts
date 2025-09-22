@@ -158,15 +158,16 @@ serve(async (req) => {
     } else {
       // Create new auth user
       const tempPassword = generateSecurePassword();
+      const normalizedPhone = normalizePhone(payload.phone);
       const { data: authData, error: authError } =
         await supabase.auth.admin.createUser({
           email: payload.email,
           password: tempPassword,
           email_confirm: false,
-          phone: normalizePhone(payload.phone) ?? undefined,
+          phone: normalizedPhone ?? undefined,
           user_metadata: {
             name: buildFullName(payload.firstName, payload.lastName),
-            phone: normalizePhone(payload.phone) || payload.phone || '',
+            phone: normalizedPhone || payload.phone || '',
             referred: true,
             referrer_id: payload.referrerId,
           },
