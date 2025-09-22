@@ -8,7 +8,7 @@ import {
   TextInput,
 } from 'react-native';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
-import { Button, Checkbox } from '../ui';
+import { Button } from '../ui';
 import { Ionicons } from '@expo/vector-icons';
 
 interface FilterPanelProps {
@@ -99,7 +99,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             <View style={styles.searchContainer}>
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search group titles and descriptions..."
+                placeholder="Search group titles/descriptions..."
+                placeholderTextColor="#9ca3af"
                 value={localSearchQuery}
                 onChangeText={setLocalSearchQuery}
                 onSubmitEditing={handleSearchSubmit}
@@ -117,15 +118,27 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           {/* Meeting Days Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Meeting Days</Text>
-            <View style={styles.checkboxGrid}>
+            <View style={styles.buttonGrid}>
               {MEETING_DAYS.map((day) => (
-                <View key={day.value} style={styles.checkboxItem}>
-                  <Checkbox
-                    checked={filters.meetingDays.includes(day.value)}
-                    onPress={() => handleMeetingDayToggle(day.value)}
-                    label={day.label}
-                  />
-                </View>
+                <TouchableOpacity
+                  key={day.value}
+                  style={[
+                    styles.filterButton,
+                    filters.meetingDays.includes(day.value) &&
+                      styles.filterButtonActive,
+                  ]}
+                  onPress={() => handleMeetingDayToggle(day.value)}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      filters.meetingDays.includes(day.value) &&
+                        styles.filterButtonTextActive,
+                    ]}
+                  >
+                    {day.label}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
@@ -133,29 +146,50 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           {/* Social Filters */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Social</Text>
-            <View style={styles.checkboxGrid}>
-              <View style={styles.checkboxItem}>
-                <Checkbox
-                  checked={filters.onlyWithFriends}
-                  onPress={() => setOnlyWithFriends(!filters.onlyWithFriends)}
-                  label="Only groups with my friends"
-                />
-              </View>
+            <View style={styles.buttonGrid}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  filters.onlyWithFriends && styles.filterButtonActive,
+                ]}
+                onPress={() => setOnlyWithFriends(!filters.onlyWithFriends)}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    filters.onlyWithFriends && styles.filterButtonTextActive,
+                  ]}
+                >
+                  Only groups with my friends
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
           {/* Categories Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Group Types</Text>
-            <View style={styles.checkboxGrid}>
+            <View style={styles.buttonGrid}>
               {GROUP_CATEGORIES.map((category) => (
-                <View key={category.value} style={styles.checkboxItem}>
-                  <Checkbox
-                    checked={filters.categories.includes(category.value)}
-                    onPress={() => handleCategoryToggle(category.value)}
-                    label={category.label}
-                  />
-                </View>
+                <TouchableOpacity
+                  key={category.value}
+                  style={[
+                    styles.filterButton,
+                    filters.categories.includes(category.value) &&
+                      styles.filterButtonActive,
+                  ]}
+                  onPress={() => handleCategoryToggle(category.value)}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      filters.categories.includes(category.value) &&
+                        styles.filterButtonTextActive,
+                    ]}
+                  >
+                    {category.label}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
@@ -195,11 +229,13 @@ const styles = StyleSheet.create({
   panel: {
     position: 'absolute',
     right: 0,
-    top: 0,
-    bottom: 0,
+    top: 60,
+    height: '80%',
     width: '85%',
     maxWidth: 400,
     backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: -2,
@@ -246,15 +282,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
     backgroundColor: '#f8f9fa',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
   },
   searchInput: {
     flex: 1,
     padding: 12,
     fontSize: 16,
     color: '#1a1a1a',
+    backgroundColor: 'transparent',
   },
   searchButton: {
     padding: 12,
@@ -264,11 +306,33 @@ const styles = StyleSheet.create({
   searchButtonText: {
     fontSize: 16,
   },
-  checkboxGrid: {
+  buttonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
-  checkboxItem: {
-    marginBottom: 4,
+  filterButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: '#e3ffd1',
+    borderColor: '#e3ffd1',
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  filterButtonTextActive: {
+    color: '#000',
+    fontWeight: '600',
   },
   footer: {
     padding: 16,
