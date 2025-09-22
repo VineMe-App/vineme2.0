@@ -7,6 +7,7 @@ import {
   triggerJoinRequestReceivedNotification,
 } from './notifications';
 import type {
+  ContactPrivacySettings,
   GroupJoinRequest,
   GroupJoinRequestWithUser,
   GroupMembership,
@@ -177,7 +178,11 @@ export class JoinRequestService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const requestsWithConsent = await this.attachContactConsent(
+        (data || []) as GroupJoinRequestWithUser[]
+      );
+
+      return { data: requestsWithConsent, error: null };
     } catch (error) {
       return {
         data: null,
@@ -219,7 +224,11 @@ export class JoinRequestService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const requestsWithConsent = await this.attachContactConsent(
+        (data || []) as GroupJoinRequestWithUser[]
+      );
+
+      return { data: requestsWithConsent, error: null };
     } catch (error) {
       return {
         data: null,
@@ -777,6 +786,57 @@ export class JoinRequestService {
             : new Error('Failed to initiate contact action'),
       };
     }
+  }
+
+  private async attachContactConsent<
+    T extends { user_id: string; contact_consent?: boolean | null }
+  >(records: T[]): Promise<T[]> {
+    if (!records || records.length === 0) {
+      return records;
+    }
+
+    const userIds = Array.from(
+      new Set(records.map((record) => record.user_id).filter(Boolean))
+    );
+
+    if (userIds.length === 0) {
+      return records;
+    }
+
+    type PrivacySettingRecord = Pick<
+      ContactPrivacySettings,
+      'user_id' | 'allow_contact_by_leaders'
+    >;
+
+    let privacySettings: PrivacySettingRecord[] = [];
+
+    const { data, error } = await supabase
+      .from('contact_privacy_settings')
+      .select('user_id, allow_contact_by_leaders')
+      .in('user_id', userIds);
+
+    if (error) {
+      console.error(
+        'Failed to fetch contact privacy settings for join requests:',
+        error
+      );
+    } else if (data) {
+      privacySettings = data as PrivacySettingRecord[];
+    }
+
+    const privacyMap = new Map<string, boolean>(
+      privacySettings.map((setting) => [
+        setting.user_id,
+        setting.allow_contact_by_leaders === true,
+      ])
+    );
+
+    return records.map((record) =>
+      ({
+        ...record,
+        contact_consent: privacyMap.get(record.user_id) ?? true,
+      } as T)
+    );
   }
 }
 
