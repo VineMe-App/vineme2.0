@@ -277,10 +277,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       )}
 
       <View style={styles.content}>
-        {/* Header with title and status */}
+        {/* Header with status (title removed; shown in navigation header) */}
         <View style={styles.header}>
           <View style={styles.titleSection}>
-            <Text style={styles.title}>{group.title}</Text>
             {membershipStatus && (
               <View
                 style={[styles.statusBadge, styles[`${membershipStatus}Badge`]]}
@@ -303,11 +302,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               </View>
             )}
           </View>
-          {onShare && (
-            <TouchableOpacity onPress={onShare} style={styles.iconButton}>
-              <Ionicons name="share-outline" size={22} color="#374151" />
-            </TouchableOpacity>
-          )}
+          {/* Share button moved to navigation header */}
         </View>
 
         <Text style={styles.description}>{group.description}</Text>
@@ -477,7 +472,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               <Button
                 title="Leave Group"
                 onPress={handleLeaveGroup}
-                variant="danger"
+                variant="error"
                 loading={isLoading}
                 disabled={isLoading}
               />
@@ -595,15 +590,19 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     backgroundColor: '#f0f0f0',
+    marginTop: 0,
+    marginBottom: 16,
   },
   content: {
-    padding: 16,
+    paddingTop: 0,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 4,
   },
   titleSection: {
     flex: 1,
