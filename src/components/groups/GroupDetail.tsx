@@ -63,7 +63,15 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
   const friendsQuery = useFriends(userProfile?.id);
 
-  const formatMeetingTime = (day: string, time: string) => `${day}s at ${time}`;
+  const formatMeetingTime = (day: string, time: string) => {
+    const date = new Date(`2000-01-01T${time}`);
+    const formattedTime = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return `${day}s at ${formattedTime}`;
+  };
 
   const formatLocation = (location: any) => {
     const parsed = locationService.parseGroupLocation(location);

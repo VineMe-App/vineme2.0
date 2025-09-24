@@ -42,7 +42,7 @@ export default function GroupDetailScreen() {
         header: () => (
           <View
             style={{
-              height: 150,
+              height: 125,
               backgroundColor: 'white',
               paddingTop: insets.top,
             }}
@@ -72,11 +72,24 @@ export default function GroupDetailScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Centered title area */}
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+            {/* Centered title area (description removed per request) */}
+            <View
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: 24,
+              }}
+            >
               <Text
                 numberOfLines={1}
-                style={{ fontSize: 22, fontWeight: '700', fontFamily: 'Manrope-Bold', textAlign: 'center' }}
+                style={{
+                  fontSize: 22,
+                  fontWeight: '700',
+                  fontFamily: 'Manrope-Bold',
+                  textAlign: 'center',
+                  marginTop: -15,
+                }}
               >
                 {group.title}
               </Text>

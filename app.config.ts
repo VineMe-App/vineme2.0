@@ -18,6 +18,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.vineme.app',
+    associatedDomains: [
+      'applinks:vineme.app',
+      'applinks:www.vineme.app',
+    ],
     config: {
       // Enables Google Maps on iOS when using react-native-maps
       googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
@@ -40,6 +44,27 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#ffffff',
     },
     package: 'com.vineme.app',
+    intentFilters: [
+      {
+        action: 'VIEW',
+        data: [
+          { scheme: 'https', host: 'vineme.app', pathPrefix: '/group/' },
+          { scheme: 'https', host: 'www.vineme.app', pathPrefix: '/group/' },
+          { scheme: 'https', host: 'vineme.app', pathPrefix: '/event/' },
+          { scheme: 'https', host: 'www.vineme.app', pathPrefix: '/event/' },
+          { scheme: 'https', host: 'vineme.app', pathPrefix: '/referral/' },
+          { scheme: 'https', host: 'www.vineme.app', pathPrefix: '/referral/' },
+          { scheme: 'https', host: 'vineme.app', pathPrefix: '/notifications' },
+          {
+            scheme: 'https',
+            host: 'www.vineme.app',
+            pathPrefix: '/notifications',
+          },
+        ],
+        category: ['BROWSABLE', 'DEFAULT'],
+        autoVerify: true,
+      },
+    ],
   },
   web: {
     favicon: './assets/favicon.png',
