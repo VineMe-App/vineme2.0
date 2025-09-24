@@ -243,6 +243,16 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     (request) => request.group_id === group.id && request.status === 'pending'
   );
 
+  // Debug logging
+  console.log('GroupDetail Debug:', {
+    groupId: group.id,
+    groupTitle: group.title,
+    membershipStatus,
+    pendingRequest: !!pendingRequest,
+    userJoinRequests: userJoinRequests?.length || 0,
+    groupStatus: group.status,
+  });
+
   // Referral submission handled in /referral page
 
   return (
@@ -487,18 +497,32 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               />
             </View>
           ) : pendingRequest ? (
-            <View style={styles.pendingRequestContainer}>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
-              >
-                <Ionicons name="time-outline" size={16} color="#92400e" />
-                <Text style={styles.pendingRequestText}>
-                  Your join request is pending approval
+            <View style={styles.pendingRequestWrapper}>
+              <View style={styles.pendingRequestContainer}>
+                <View
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                >
+                  <Ionicons name="time-outline" size={16} color="#92400e" />
+                  <Text style={styles.pendingRequestText}>
+                    Your join request is pending approval
+                  </Text>
+                </View>
+                <Text style={styles.pendingRequestSubtext}>
+                  Group leaders will review your request and get back to you soon.
                 </Text>
               </View>
-              <Text style={styles.pendingRequestSubtext}>
-                Group leaders will review your request and get back to you soon.
-              </Text>
+              <Button
+                title="Refer a Friend"
+                onPress={() => {
+                  console.log('Refer a Friend button pressed for group:', group.id);
+                  router.push({
+                    pathname: '/referral',
+                    params: { groupId: group.id, groupName: group.title },
+                  });
+                }}
+                variant="secondary"
+                style={styles.referButtonOutsidePending}
+              />
             </View>
           ) : (
             <View style={styles.actionButtons}>
@@ -823,6 +847,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  pendingRequestWrapper: {
+    gap: 12,
+  },
   pendingRequestContainer: {
     padding: 16,
     backgroundColor: '#fff3cd',
@@ -843,5 +870,8 @@ const styles = StyleSheet.create({
     color: '#856404',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  referButtonOutsidePending: {
+    marginTop: 0,
   },
 });
