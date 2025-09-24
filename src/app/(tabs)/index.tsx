@@ -264,9 +264,25 @@ export default function HomeScreen() {
           // Build a unified list of cards: active memberships first, then pending join requests
         }
         {(() => {
-          const membershipCards = (userGroupMemberships || []).map((membership) => (
+          const renderableMemberships = (userGroupMemberships || []).filter((membership) => {
+            const group = membership.group;
+            if (!group) return false;
+
+            const status = group.status as string | undefined;
+            if (status === 'closed' || status === 'denied') {
+              return false;
+            }
+
+            return true;
+          });
+
+          const membershipCards = renderableMemberships.map((membership) => (
             <ActiveMembershipCard key={`active-${membership.group_id}`} membership={membership} />
           ));
+
+          const membershipGroupIds = new Set(
+            renderableMemberships.map((membership) => membership.group_id),
+          );
 
           const pendingCards = (userJoinRequests || []).map((req) => (
             <View key={`pending-join-${req.id}`} style={styles.horizontalCard}>
@@ -280,7 +296,7 @@ export default function HomeScreen() {
 
           // Add cards for pending created groups not already present via memberships
           const createdPendingCards = (userPendingCreatedGroups || [])
-            .filter((g) => !(userGroupMemberships || []).some((m) => m.group_id === g.id))
+            .filter((g) => !membershipGroupIds.has(g.id))
             .map((group) => (
               <View key={`pending-created-${group.id}`} style={styles.horizontalCard}>
                 <GroupCard
