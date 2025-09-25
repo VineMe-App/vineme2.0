@@ -36,7 +36,13 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   if (!group) return null;
   const formatMeetingTime = (day: string, time: string) => {
-    return `${day}s at ${time}`;
+    const date = new Date(`2000-01-01T${time}`);
+    const formattedTime = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return `${day}s at ${formattedTime}`;
   };
 
   const formatLocation = (location: any) => {

@@ -38,10 +38,12 @@ export const shareGroup = async (groupId: string, groupTitle: string) => {
       id: groupId,
       title: groupTitle,
     });
+    // Use a web URL for messaging apps like WhatsApp so links are clickable
+    const webUrl = generateWebUrl({ type: 'group', id: groupId, title: groupTitle });
 
     const shareOptions = {
-      message: `Check out this Bible study group: ${groupTitle}\n\nJoin us on VineMe: ${deepLink}`,
-      url: deepLink,
+      message: `Check out this Bible study group: ${groupTitle}\n\nOpen on the web: ${webUrl}`,
+      url: webUrl,
       title: `Join ${groupTitle} on VineMe`,
     };
 

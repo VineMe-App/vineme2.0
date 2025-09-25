@@ -63,7 +63,15 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
   const friendsQuery = useFriends(userProfile?.id);
 
-  const formatMeetingTime = (day: string, time: string) => `${day}s at ${time}`;
+  const formatMeetingTime = (day: string, time: string) => {
+    const date = new Date(`2000-01-01T${time}`);
+    const formattedTime = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return `${day}s at ${formattedTime}`;
+  };
 
   const formatLocation = (location: any) => {
     const parsed = locationService.parseGroupLocation(location);
@@ -284,32 +292,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       </View>
 
       <View style={styles.content}>
-        {/* Header with title and actions */}
-        <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>{group.title}</Text>
-          </View>
-          {(canManageGroup || onShare) && (
-            <View style={styles.headerActions}>
-              {canManageGroup && (
-                <TouchableOpacity
-                  onPress={() => router.push(`/group-management/${group.id}`)}
-                  style={styles.iconButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open group management"
-                >
-                  <Ionicons name="settings-outline" size={22} color="#374151" />
-                </TouchableOpacity>
-              )}
-              {onShare && (
-                <TouchableOpacity onPress={onShare} style={styles.iconButton}>
-                  <Ionicons name="share-outline" size={22} color="#374151" />
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        </View>
-
         <Text style={styles.description}>{group.description}</Text>
 
         <View style={styles.infoSection}>
@@ -595,6 +577,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     backgroundColor: '#f0f0f0',
+    marginTop: 0,
+    marginBottom: 16,
   },
   imageBadge: {
     position: 'absolute',
@@ -615,13 +599,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   content: {
-    padding: 16,
+    paddingTop: 0,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    display: 'none',
   },
   headerActions: {
     flexDirection: 'row',
