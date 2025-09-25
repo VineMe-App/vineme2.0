@@ -108,7 +108,7 @@ export default function EmailLoginScreen() {
                 <Text variant="h3" weight="bold" style={styles.verificationTitle}>Verification Sent!</Text>
                 <Text variant="body" color="secondary" style={styles.verificationMessage}>
                   We've sent verification to{'\n'}
-                  <Text variant="body" weight="semiBold" color="primary" style={styles.emailAddress}>{email}</Text>
+                  <Text variant="body" weight="semiBold" color="primary" style={{ textAlign: 'center' }}>{email}</Text>
                 </Text>
               </View>
 
@@ -286,10 +286,6 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     lineHeight: 22,
-  },
-  emailAddress: {
-    fontWeight: '600',
-    color: '#1a1a1a',
   },
   optionContainer: {
     backgroundColor: '#f8f9fa',
