@@ -18,10 +18,8 @@ import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 export default function PhoneSignUpScreen() {
   const router = useRouter();
   const { signUpWithPhone, verifyOtp, linkEmail, isLoading } = useAuthStore();
-
-  const [step, setStep] = useState<'enter-phone' | 'enter-code' | 'link-email'>(
-    'enter-phone'
-  );
+  
+  const [step, setStep] = useState<'enter-phone' | 'enter-code' | 'link-email'>('enter-phone');
   const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
   const [code, setCode] = useState('');

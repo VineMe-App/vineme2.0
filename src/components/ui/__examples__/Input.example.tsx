@@ -267,7 +267,7 @@ export const InputExample: React.FC = () => {
 
         <Input
           label="Phone Number"
-          placeholder="(555) 123-4567"
+          placeholder="7123456789"
           value={formData.phone}
           onChangeText={(value) => handleInputChange('phone', value)}
           keyboardType="phone-pad"
