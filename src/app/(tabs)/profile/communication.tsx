@@ -101,7 +101,7 @@ export default function CommunicationAndSecurityScreen() {
   const [emailStep, setEmailStep] = useState<'idle' | 'enter-email'>('idle');
   const [phoneStep, setPhoneStep] = useState<'idle' | 'enter-phone' | 'verify-code'>('idle');
   const [newEmail, setNewEmail] = useState('');
-  const [countryCode, setCountryCode] = useState('+1');
+  const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
   const [phoneCode, setPhoneCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
@@ -296,7 +296,7 @@ export default function CommunicationAndSecurityScreen() {
                   onChangeText={(t) => setLocalNumber(t.replace(/\D/g, ''))}
                   style={[styles.input, { marginTop: 12 }]}
                   keyboardType="phone-pad"
-                  placeholder="5551234567"
+                  placeholder="7123456789"
                   autoCapitalize="none"
                   editable={!isLoading}
                 />

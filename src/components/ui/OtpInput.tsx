@@ -21,8 +21,27 @@ export function OtpInput({
           ref={refs[i]}
           value={digits[i] || ''}
           onChangeText={(t) => {
-            const d = t.replace(/[^0-9]/g, '').slice(-1);
-            const next = (value.substring(0, i) + d + value.substring(i + 1)).slice(0, length);
+            const numericText = t.replace(/[^0-9]/g, '');
+
+            // Handle paste - if we get multiple digits
+            if (numericText.length > 1) {
+              const pasteValue = numericText.slice(0, length); // Take only the first 'length' digits
+              onChange(pasteValue.padEnd(length, ''));
+              // Focus the last filled box or the next empty one
+              const lastIndex = Math.min(pasteValue.length - 1, length - 1);
+              if (lastIndex < length - 1) {
+                refs[lastIndex + 1]?.current?.focus();
+              }
+              return;
+            }
+
+            // Handle normal single digit input
+            const d = numericText.slice(-1);
+            const next = (
+              value.substring(0, i) +
+              d +
+              value.substring(i + 1)
+            ).slice(0, length);
             onChange(next);
             if (d && i < length - 1) refs[i + 1].current?.focus();
           }}
@@ -43,20 +62,29 @@ export function OtpInput({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     gap: 12,
     marginBottom: 16,
+    alignSelf: 'center',
+    maxWidth: '100%',
   },
   box: {
-    width: 56,
-    height: 56,
-    borderWidth: 1,
+    width: 44,
+    height: 50,
+    borderWidth: 1.5,
     borderColor: '#e5e7eb',
-    borderRadius: 10,
+    borderRadius: 12,
     textAlign: 'center',
-    fontSize: 22,
+    fontSize: 18,
+    fontWeight: '600',
     backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
-
-
