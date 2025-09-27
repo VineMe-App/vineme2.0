@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores';
 import { useErrorHandler } from '../../hooks';
 import { groupCreationService } from '../../services/groupCreation';
@@ -97,13 +97,14 @@ export default function CreateGroupPage() {
   };
 
   return (
-    <GroupEditorForm
-      mode="create"
-      headerTitle="Create New Group"
-      subTitle="Share the key details and set your meeting location on the map."
-      onSubmit={handleSubmit}
-      onUploadImage={handleUploadImage}
-      isSubmitting={isSubmitting}
-    />
+    <>
+      <Stack.Screen options={{ title: 'Create New Group' }} />
+      <GroupEditorForm
+        mode="create"
+        onSubmit={handleSubmit}
+        onUploadImage={handleUploadImage}
+        isSubmitting={isSubmitting}
+      />
+    </>
   );
 }

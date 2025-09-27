@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system';
 import { supabase } from './supabase';
 
 export interface GroupMediaResponse<T = any> {
@@ -21,26 +22,101 @@ function inferFileExtension(uri: string, fallback: string = 'jpg') {
   return fallback;
 }
 
+function inferContentType(ext: string): string {
+  switch (ext.toLowerCase()) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'heic':
+    case 'heif':
+      return 'image/heic';
+    case 'jpeg':
+    case 'jpg':
+    default:
+      return 'image/jpeg';
+  }
+}
+
+const BASE64_CHARS =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const sanitized = base64.replace(/[^A-Za-z0-9+/=]/g, '');
+  const paddingMatch = sanitized.match(/=+$/);
+  const paddingLength = paddingMatch ? paddingMatch[0].length : 0;
+  const byteLength = Math.floor((sanitized.length * 3) / 4) - paddingLength;
+  const bytes = new Uint8Array(byteLength);
+
+  let byteIndex = 0;
+  for (let i = 0; i < sanitized.length; i += 4) {
+    const enc1 = BASE64_CHARS.indexOf(sanitized[i]);
+    const enc2 = BASE64_CHARS.indexOf(sanitized[i + 1]);
+    const enc3 = BASE64_CHARS.indexOf(sanitized[i + 2]);
+    const enc4 = BASE64_CHARS.indexOf(sanitized[i + 3]);
+
+    const chunk =
+      (enc1 << 18) |
+      (enc2 << 12) |
+      ((enc3 & 63) << 6) |
+      (enc4 & 63);
+
+    if (byteIndex < byteLength) {
+      bytes[byteIndex++] = (chunk >> 16) & 0xff;
+    }
+    if (enc3 !== 64 && byteIndex < byteLength) {
+      bytes[byteIndex++] = (chunk >> 8) & 0xff;
+    }
+    if (enc4 !== 64 && byteIndex < byteLength) {
+      bytes[byteIndex++] = chunk & 0xff;
+    }
+  }
+
+  return bytes;
+}
+
 class GroupMediaService {
   async uploadGroupImage(
     localUri: string,
     options: UploadOptions = {}
   ): Promise<GroupMediaResponse<string>> {
     try {
-      const response = await fetch(localUri);
-      const blob = await response.blob();
+      const fileInfo = await FileSystem.getInfoAsync(localUri, {
+        size: true,
+      });
+
+      if (!fileInfo.exists || fileInfo.isDirectory) {
+        return {
+          data: null,
+          error: new Error('Selected image could not be accessed.'),
+        };
+      }
+
       const fileExt = inferFileExtension(localUri, 'jpg');
+      const contentType = inferContentType(fileExt);
+
+      const base64 = await FileSystem.readAsStringAsync(localUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const fileBytes = base64ToUint8Array(base64);
+
       const fileNameParts = [
         options.groupId || 'group',
         options.uploaderId || 'user',
         Date.now().toString(),
       ];
       const fileName = `${fileNameParts.filter(Boolean).join('-')}.${fileExt}`;
-      const filePath = `${GROUP_IMAGE_BUCKET}/${fileName}`;
+      const directory = options.groupId
+        ? `groups/${options.groupId}`
+        : `pending/${options.uploaderId || 'anonymous'}`;
+      const filePath = `${directory}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from(GROUP_IMAGE_BUCKET)
-        .upload(filePath, blob, { upsert: true });
+        .upload(filePath, fileBytes, {
+          contentType,
+          upsert: true,
+        });
 
       if (uploadError) {
         return { data: null, error: new Error(uploadError.message) };

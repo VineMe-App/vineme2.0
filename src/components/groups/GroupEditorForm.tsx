@@ -380,7 +380,10 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           <FormField name="meeting_time">
             {({ value, error, onChange }) => (
               <View>
-                <Text style={styles.inputLabel}>Meeting Time *</Text>
+                <Text style={styles.inputLabel}>
+                  Meeting Time
+                  <Text style={styles.requiredAsterisk}> *</Text>
+                </Text>
                 <TouchableOpacity
                   style={[
                     styles.timePickerButton,

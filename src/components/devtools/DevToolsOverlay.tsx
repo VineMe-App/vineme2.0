@@ -25,12 +25,13 @@ import {
   getStoredPushToken,
   registerForPushNotifications,
 } from '../../services/notifications';
+import { buildInfo, describeBuild } from '../../devtools/buildInfo';
 
 export function DevToolsOverlay() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<
-    'state' | 'logs' | 'errors' | 'queries' | 'notifs' | 'styles'
-  >('state');
+    'build' | 'state' | 'logs' | 'errors' | 'queries' | 'notifs' | 'styles'
+  >('build');
   const [tick, setTick] = useState(0);
   const segments = useSegments();
   const router = useRouter();
@@ -83,7 +84,15 @@ export function DevToolsOverlay() {
         <View style={styles.header}>
           <Text style={styles.title}>DevTools</Text>
           <View style={styles.tabs}>
-            {(['state', 'logs', 'errors', 'queries', 'notifs', 'styles'] as const).map(
+            {([
+              'build',
+              'state',
+              'logs',
+              'errors',
+              'queries',
+              'notifs',
+              'styles',
+            ] as const).map(
               (t) => (
                 <TouchableOpacity
                   key={t}
@@ -111,6 +120,7 @@ export function DevToolsOverlay() {
         </View>
 
         <ScrollView style={styles.content}>
+          {tab === 'build' && <BuildInfoPanel />}
           {tab === 'state' && <AppStatePanel segments={segments} />}
           {tab === 'logs' && (
             <View>
@@ -168,6 +178,27 @@ function AppStatePanel({ segments }: { segments: string[] }) {
     <View>
       <Text style={styles.sectionTitle}>App State</Text>
       <Text style={styles.mono}>{JSON.stringify(state, null, 2)}</Text>
+    </View>
+  );
+}
+
+function BuildInfoPanel() {
+  return (
+    <View>
+      <Text style={styles.sectionTitle}>Bundle Revision</Text>
+      <View style={styles.buildCard}>
+        <Text style={styles.buildBadge}>Revision #{buildInfo.revision}</Text>
+        <Text style={styles.buildSummary}>{buildInfo.summary}</Text>
+        <Text style={styles.buildMeta}>
+          Loaded: {buildInfo.timestampLocal} ({buildInfo.timestampIso})
+        </Text>
+        <Text style={styles.buildMeta}>Descriptor: {describeBuild()}</Text>
+      </View>
+      <Text style={styles.buildNote}>
+        This counter increments whenever a new bundle loads. Update
+        `src/devtools/buildInfo.ts` to tweak the summary or add extra notes so
+        it&apos;s easy to confirm which change reached your device.
+      </Text>
     </View>
   );
 }
@@ -243,6 +274,48 @@ const styles = StyleSheet.create({
   sectionTitle: { fontWeight: '700', marginBottom: 8 },
   mono: { fontFamily: 'monospace' },
   logLine: { fontSize: 12, marginBottom: 4 },
+  buildCard: {
+    backgroundColor: '#fff',
+    borderColor: '#e5e7eb',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  buildBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#2563eb',
+    color: '#fff',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  buildSummary: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 6,
+  },
+  buildMeta: {
+    fontSize: 12,
+    color: '#374151',
+    marginBottom: 4,
+    fontFamily: 'monospace',
+  },
+  buildNote: {
+    fontSize: 12,
+    color: '#6b7280',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
   errorBox: {
     backgroundColor: '#fff0f0',
     borderColor: '#ffccd1',
