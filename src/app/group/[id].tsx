@@ -35,6 +35,22 @@ export default function GroupDetailScreen() {
   const { data: membershipData, refetch: refetchMembership } =
     useGroupMembership(id, userProfile?.id);
 
+  // Check if user can manage the group (is a leader or church admin for the service)
+  const canManageGroup = React.useMemo(() => {
+    if (!group || !userProfile) return false;
+
+    const isLeader = membershipData?.membership?.role === 'leader' || membershipData?.membership?.role === 'admin';
+
+    const isChurchAdminForService = Boolean(
+      userProfile.roles?.includes('church_admin') &&
+        userProfile.service_id &&
+        group.service_id &&
+        userProfile.service_id === group.service_id
+    );
+
+    return Boolean(isLeader || isChurchAdminForService);
+  }, [group, userProfile, membershipData]);
+
   // Update the header title and add share action to header when available
   React.useEffect(() => {
     if (group?.title) {
@@ -47,7 +63,7 @@ export default function GroupDetailScreen() {
               paddingTop: insets.top,
             }}
           >
-            {/* Top row: small back + text on left, share on right */}
+            {/* Top row: small back + text on left, cog/share on right */}
             <View
               style={{
                 flexDirection: 'row',
@@ -67,9 +83,21 @@ export default function GroupDetailScreen() {
                 <Ionicons name="chevron-back" size={18} color="#000" />
                 <Text style={{ fontSize: 14, marginLeft: 2, color: '#000' }}>Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleShare} style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
-                <Ionicons name="share-outline" size={20} color="#374151" />
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {canManageGroup && (
+                  <TouchableOpacity
+                    onPress={() => router.push(`/group-management/${group.id}`)}
+                    style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open group management"
+                  >
+                    <Ionicons name="settings-outline" size={20} color="#374151" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={handleShare} style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
+                  <Ionicons name="share-outline" size={20} color="#374151" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Centered title area (description removed per request) */}
@@ -98,7 +126,7 @@ export default function GroupDetailScreen() {
         ),
       });
     }
-  }, [group?.title, navigation, insets.top]);
+  }, [group?.title, group?.id, canManageGroup, navigation, insets.top, router]);
 
   const handleRefresh = async () => {
     await Promise.all([refetchGroup(), refetchMembership()]);
