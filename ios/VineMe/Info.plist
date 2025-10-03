@@ -95,5 +95,7 @@
     <string>Light</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
+    <key>GMSApiKey</key>
+    <string>AIzaSyAQK0DPyn13NPIjseS37x_wL3-ezcj0_e8</string>
   </dict>
 </plist>
