@@ -142,60 +142,81 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please grant permission to access your photo library.'
-      );
-      return;
-    }
+    try {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please grant permission to access your photo library.'
+        );
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+      console.log('[EditProfile] Launching image library picker');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], // Fixed deprecated MediaTypeOptions
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets[0]) {
-      uploadAvatar(result.assets[0].uri);
+      console.log('[EditProfile] Image picker result:', result);
+
+      if (!result.canceled && result.assets[0]) {
+        console.log('[EditProfile] Selected image URI:', result.assets[0].uri);
+        uploadAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('[EditProfile] Error in pickImage:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
   };
 
   const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please grant permission to access your camera.'
-      );
-      return;
-    }
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please grant permission to access your camera.'
+        );
+        return;
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+      console.log('[EditProfile] Launching camera');
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets[0]) {
-      uploadAvatar(result.assets[0].uri);
+      console.log('[EditProfile] Camera result:', result);
+
+      if (!result.canceled && result.assets[0]) {
+        console.log('[EditProfile] Captured photo URI:', result.assets[0].uri);
+        uploadAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('[EditProfile] Error in takePhoto:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
     }
   };
 
   const uploadAvatar = async (uri: string) => {
     try {
-      // Convert URI to blob for upload
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
+      console.log('[EditProfile] Starting upload for URI:', uri);
       await uploadAvatarMutation.mutateAsync({
         userId: user.id,
-        file: blob,
+        fileUri: uri,
       });
+      console.log('[EditProfile] Upload completed successfully');
+      Alert.alert('Success', 'Profile photo updated!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to upload avatar. Please try again.');
+      console.error('[EditProfile] Upload failed:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Error', `Failed to upload avatar: ${errorMessage}`);
     }
   };
 
