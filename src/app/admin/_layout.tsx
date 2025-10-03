@@ -14,7 +14,7 @@ export default function AdminLayout() {
           <View style={styles.errorContainer}>
             <Text style={styles.errorTitle}>Access Denied</Text>
             <ErrorMessage
-              message="You do not have permission to access admin features. Church admin role required."
+              error="You do not have permission to access admin features. Church admin role required."
               onRetry={() => router.back()}
             />
           </View>
