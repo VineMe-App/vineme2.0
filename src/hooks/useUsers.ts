@@ -131,14 +131,14 @@ export const useUploadAvatar = () => {
   return useMutation({
     mutationFn: async ({
       userId,
-      file,
+      fileUri,
     }: {
       userId: string;
-      file: File | Blob;
+      fileUri: string;
     }) => {
       const { data: avatarUrl, error } = await userService.uploadAvatar(
         userId,
-        file
+        fileUri
       );
       if (error) throw error;
 
