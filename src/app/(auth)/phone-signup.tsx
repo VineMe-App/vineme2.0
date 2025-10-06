@@ -14,7 +14,6 @@ import { Text } from '@/components/ui/Text';
 import { useRouter, Link } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
-import { OtpInput } from '@/components/ui/OtpInput';
 
 export default function PhoneSignUpScreen() {
   const router = useRouter();
@@ -139,12 +138,17 @@ export default function PhoneSignUpScreen() {
             <>
               <Text style={styles.label}>Enter 4-digit code</Text>
               <Text style={styles.phoneDisplay}>Sent to {fullPhone}</Text>
-              <OtpInput
+              <TextInput
                 value={code}
-                onChange={(text) =>
+                onChangeText={(text) =>
                   setCode(text.replace(/\D/g, '').slice(0, 4))
                 }
-                length={4}
+                style={styles.otpInput}
+                keyboardType="number-pad"
+                placeholder="1234"
+                maxLength={4}
+                textAlign="center"
+                autoFocus
               />
               <Button
                 title="Verify"
@@ -254,6 +258,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#f9f9f9',
     marginBottom: 16,
+  },
+  otpInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 16,
+    fontSize: 24,
+    fontWeight: 'bold',
+    backgroundColor: '#f9f9f9',
+    marginBottom: 16,
+    textAlign: 'center',
+    letterSpacing: 8,
   },
   button: {
     marginTop: 8,
