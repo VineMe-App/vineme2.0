@@ -14,18 +14,33 @@ import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Text } from '@/components/ui/Text';
 import { useAuthStore } from '@/stores/auth';
-import { useNotificationSettings, useNotificationPermissions } from '@/hooks/useNotifications';
-import { registerForPushNotifications, unregisterFromPushNotifications } from '@/services/notifications';
+import {
+  useNotificationSettings,
+  useNotificationPermissions,
+} from '@/hooks/useNotifications';
+import {
+  registerForPushNotifications,
+  unregisterFromPushNotifications,
+} from '@/services/notifications';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
-import { usePrivacySettings, useUpdatePrivacySettings } from '@/hooks/useContactAudit';
+import {
+  usePrivacySettings,
+  useUpdatePrivacySettings,
+} from '@/hooks/useContactAudit';
 
 export default function CommunicationAndSecurityScreen() {
-  const { user, userProfile, linkEmail, linkPhone, verifyOtp, isLoading } = useAuthStore();
+  const { user, userProfile, linkEmail, linkPhone, verifyOtp, isLoading } =
+    useAuthStore();
   const userId = user?.id || userProfile?.id;
 
   // Notification settings state
-  const { settings, isLoading: settingsLoading, updateSettings, isUpdating } = useNotificationSettings(userId);
+  const {
+    settings,
+    isLoading: settingsLoading,
+    updateSettings,
+    isUpdating,
+  } = useNotificationSettings(userId);
   const { checkPermissions, requestPermissions } = useNotificationPermissions();
   const [localNotif, setLocalNotif] = useState({
     friend_requests: true,
@@ -43,7 +58,9 @@ export default function CommunicationAndSecurityScreen() {
   const [pushGranted, setPushGranted] = useState<boolean | null>(null);
 
   useEffect(() => {
-    checkPermissions().then(setPushGranted).catch(() => setPushGranted(null));
+    checkPermissions()
+      .then(setPushGranted)
+      .catch(() => setPushGranted(null));
   }, [checkPermissions]);
 
   useEffect(() => {
@@ -73,13 +90,19 @@ export default function CommunicationAndSecurityScreen() {
     if (!userId) return;
     try {
       // Manage push token when toggled
-      if (settings && localNotif.push_notifications !== settings.push_notifications) {
+      if (
+        settings &&
+        localNotif.push_notifications !== settings.push_notifications
+      ) {
         if (localNotif.push_notifications) {
           const granted = await checkPermissions();
           if (!granted) {
             const req = await requestPermissions();
             if (!req) {
-              Alert.alert('Permission Required', 'Please enable notifications in system settings.');
+              Alert.alert(
+                'Permission Required',
+                'Please enable notifications in system settings.'
+              );
             }
           }
           await registerForPushNotifications(userId);
@@ -99,9 +122,11 @@ export default function CommunicationAndSecurityScreen() {
 
   // Security: email & phone linking
   const [emailStep, setEmailStep] = useState<'idle' | 'enter-email'>('idle');
-  const [phoneStep, setPhoneStep] = useState<'idle' | 'enter-phone' | 'verify-code'>('idle');
+  const [phoneStep, setPhoneStep] = useState<
+    'idle' | 'enter-phone' | 'verify-code'
+  >('idle');
   const [newEmail, setNewEmail] = useState('');
-  const [countryCode, setCountryCode] = useState('+1');
+  const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
   const [phoneCode, setPhoneCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
@@ -110,8 +135,10 @@ export default function CommunicationAndSecurityScreen() {
   const currentPhone = user?.phone || userProfile?.phone;
 
   const handleLinkEmail = async () => {
-    if (!newEmail.trim()) return Alert.alert('Error', 'Please enter your email address');
-    if (!/\S+@\S+\.\S+/.test(newEmail)) return Alert.alert('Error', 'Please enter a valid email address');
+    if (!newEmail.trim())
+      return Alert.alert('Error', 'Please enter your email address');
+    if (!/\S+@\S+\.\S+/.test(newEmail))
+      return Alert.alert('Error', 'Please enter a valid email address');
     const result = await linkEmail(newEmail.trim());
     if (result.success) {
       setEmailStep('idle');
@@ -128,7 +155,10 @@ export default function CommunicationAndSecurityScreen() {
     const result = await linkPhone(phone);
     if (result.success) {
       setPhoneStep('verify-code');
-      Alert.alert('Verification Sent', 'Please check your phone for the verification code.');
+      Alert.alert(
+        'Verification Sent',
+        'Please check your phone for the verification code.'
+      );
     } else {
       Alert.alert('Error', result.error || 'Failed to link phone');
     }
@@ -147,7 +177,8 @@ export default function CommunicationAndSecurityScreen() {
   };
 
   // Privacy: contact sharing with group leaders
-  const { data: privacySettings, isLoading: privacyLoading } = usePrivacySettings(userId!);
+  const { data: privacySettings, isLoading: privacyLoading } =
+    usePrivacySettings(userId!);
   const updatePrivacyMutation = useUpdatePrivacySettings();
   const [allowEmailSharing, setAllowEmailSharing] = useState(true);
   const [allowPhoneSharing, setAllowPhoneSharing] = useState(true);
@@ -203,7 +234,9 @@ export default function CommunicationAndSecurityScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Communication & Security</Text>
-          <Text style={styles.subtitle}>Manage notifications and sign-in connections</Text>
+          <Text style={styles.subtitle}>
+            Manage notifications and sign-in connections
+          </Text>
         </View>
 
         {/* Notifications Section */}
@@ -222,21 +255,74 @@ export default function CommunicationAndSecurityScreen() {
               </View>
 
               <Text style={styles.sectionLabel}>Friends</Text>
-              <View style={styles.settingItem}><Checkbox checked={localNotif.friend_requests} onPress={() => toggleNotif('friend_requests')} label="Friend request received" /></View>
-              <View style={styles.settingItem}><Checkbox checked={localNotif.friend_request_accepted} onPress={() => toggleNotif('friend_request_accepted')} label="Friend request accepted" /></View>
+              <View style={styles.settingItem}>
+                <Checkbox
+                  checked={localNotif.friend_requests}
+                  onPress={() => toggleNotif('friend_requests')}
+                  label="Friend request received"
+                />
+              </View>
+              <View style={styles.settingItem}>
+                <Checkbox
+                  checked={localNotif.friend_request_accepted}
+                  onPress={() => toggleNotif('friend_request_accepted')}
+                  label="Friend request accepted"
+                />
+              </View>
 
               <Text style={styles.sectionLabel}>Groups</Text>
-              <View style={styles.settingItem}><Checkbox checked={localNotif.group_requests} onPress={() => toggleNotif('group_requests')} label="New group request (admins)" /></View>
-              <View style={styles.settingItem}><Checkbox checked={localNotif.group_request_responses} onPress={() => toggleNotif('group_request_responses')} label="Group request responses" /></View>
-              <View style={styles.settingItem}><Checkbox checked={localNotif.join_requests} onPress={() => toggleNotif('join_requests')} label="Join request received (leaders)" /></View>
-              <View style={styles.settingItem}><Checkbox checked={localNotif.join_request_responses} onPress={() => toggleNotif('join_request_responses')} label="My join request responses" /></View>
+              <View style={styles.settingItem}>
+                <Checkbox
+                  checked={localNotif.group_requests}
+                  onPress={() => toggleNotif('group_requests')}
+                  label="New group request (admins)"
+                />
+              </View>
+              <View style={styles.settingItem}>
+                <Checkbox
+                  checked={localNotif.group_request_responses}
+                  onPress={() => toggleNotif('group_request_responses')}
+                  label="Group request responses"
+                />
+              </View>
+              <View style={styles.settingItem}>
+                <Checkbox
+                  checked={localNotif.join_requests}
+                  onPress={() => toggleNotif('join_requests')}
+                  label="Join request received (leaders)"
+                />
+              </View>
+              <View style={styles.settingItem}>
+                <Checkbox
+                  checked={localNotif.join_request_responses}
+                  onPress={() => toggleNotif('join_request_responses')}
+                  label="My join request responses"
+                />
+              </View>
 
               <Text style={styles.sectionLabel}>Referrals & Events</Text>
-              <View style={styles.settingItem}><Checkbox checked={localNotif.referral_updates} onPress={() => toggleNotif('referral_updates')} label="Referral updates" /></View>
-              <View style={styles.settingItem}><Checkbox checked={localNotif.event_reminders} onPress={() => toggleNotif('event_reminders')} label="Event reminders" /></View>
+              <View style={styles.settingItem}>
+                <Checkbox
+                  checked={localNotif.referral_updates}
+                  onPress={() => toggleNotif('referral_updates')}
+                  label="Referral updates"
+                />
+              </View>
+              <View style={styles.settingItem}>
+                <Checkbox
+                  checked={localNotif.event_reminders}
+                  onPress={() => toggleNotif('event_reminders')}
+                  label="Event reminders"
+                />
+              </View>
 
               <View style={styles.actionsRow}>
-                <Button title="Save Notifications" onPress={saveNotif} loading={isUpdating} disabled={!hasNotifChanges || isUpdating} />
+                <Button
+                  title="Save Notifications"
+                  onPress={saveNotif}
+                  loading={isUpdating}
+                  disabled={!hasNotifChanges || isUpdating}
+                />
               </View>
             </>
           )}
@@ -255,7 +341,12 @@ export default function CommunicationAndSecurityScreen() {
               <Text style={styles.noCredential}>No email linked</Text>
             )}
             {emailStep === 'idle' ? (
-              <Button title={currentEmail ? 'Update Email' : 'Link Email'} onPress={() => setEmailStep('enter-email')} variant="secondary" style={styles.inlineBtn} />
+              <Button
+                title={currentEmail ? 'Update Email' : 'Link Email'}
+                onPress={() => setEmailStep('enter-email')}
+                variant="secondary"
+                style={styles.inlineBtn}
+              />
             ) : (
               <View style={styles.inputSection}>
                 <TextInput
@@ -269,15 +360,26 @@ export default function CommunicationAndSecurityScreen() {
                   editable={!isLoading}
                 />
                 <View style={styles.actionsRow}>
-                  <Button title="Cancel" onPress={() => { setEmailStep('idle'); setNewEmail(''); }} variant="secondary" />
-                  <Button title="Send Code" onPress={handleLinkEmail} loading={isLoading} />
+                  <Button
+                    title="Cancel"
+                    onPress={() => {
+                      setEmailStep('idle');
+                      setNewEmail('');
+                    }}
+                    variant="secondary"
+                  />
+                  <Button
+                    title="Send Code"
+                    onPress={handleLinkEmail}
+                    loading={isLoading}
+                  />
                 </View>
               </View>
             )}
           </View>
 
           {/* Phone */}
-          <View style={[styles.credBlock, { marginTop: 16 }]}> 
+          <View style={[styles.credBlock, { marginTop: 16 }]}>
             <Text style={styles.label}>Phone</Text>
             {currentPhone ? (
               <Text style={styles.currentValue}>{currentPhone}</Text>
@@ -285,35 +387,75 @@ export default function CommunicationAndSecurityScreen() {
               <Text style={styles.noCredential}>No phone linked</Text>
             )}
             {phoneStep === 'idle' && (
-              <Button title={currentPhone ? 'Update Phone' : 'Link Phone'} onPress={() => setPhoneStep('enter-phone')} variant="secondary" style={styles.inlineBtn} />
+              <Button
+                title={currentPhone ? 'Update Phone' : 'Link Phone'}
+                onPress={() => setPhoneStep('enter-phone')}
+                variant="secondary"
+                style={styles.inlineBtn}
+              />
             )}
 
             {phoneStep === 'enter-phone' && (
               <View style={styles.inputSection}>
-                <CountryCodePicker value={countryCode} onChange={setCountryCode} label="Country" />
+                <CountryCodePicker
+                  value={countryCode}
+                  onChange={setCountryCode}
+                  label="Country"
+                />
                 <TextInput
                   value={localNumber}
                   onChangeText={(t) => setLocalNumber(t.replace(/\D/g, ''))}
                   style={[styles.input, { marginTop: 12 }]}
                   keyboardType="phone-pad"
-                  placeholder="5551234567"
+                  placeholder="7123456789"
                   autoCapitalize="none"
                   editable={!isLoading}
                 />
                 <View style={styles.actionsRow}>
-                  <Button title="Cancel" onPress={() => { setPhoneStep('idle'); setLocalNumber(''); }} variant="secondary" />
-                  <Button title="Send Code" onPress={handleLinkPhone} loading={isLoading} />
+                  <Button
+                    title="Cancel"
+                    onPress={() => {
+                      setPhoneStep('idle');
+                      setLocalNumber('');
+                    }}
+                    variant="secondary"
+                  />
+                  <Button
+                    title="Send Code"
+                    onPress={handleLinkPhone}
+                    loading={isLoading}
+                  />
                 </View>
               </View>
             )}
 
             {phoneStep === 'verify-code' && (
               <View style={styles.inputSection}>
-                <Text style={styles.helperText}>Enter code sent to {fullPhone}</Text>
-                <OtpInput value={phoneCode} onChange={(t) => setPhoneCode(t.replace(/\D/g, '').slice(0, 4))} length={4} />
+                <Text style={styles.helperText}>
+                  Enter code sent to {fullPhone}
+                </Text>
+                <OtpInput
+                  value={phoneCode}
+                  onChange={(t) =>
+                    setPhoneCode(t.replace(/\D/g, '').slice(0, 4))
+                  }
+                  length={4}
+                />
                 <View style={styles.actionsRow}>
-                  <Button title="Cancel" onPress={() => { setPhoneStep('idle'); setLocalNumber(''); setPhoneCode(''); }} variant="secondary" />
-                  <Button title="Verify" onPress={handleVerifyPhone} loading={isLoading} />
+                  <Button
+                    title="Cancel"
+                    onPress={() => {
+                      setPhoneStep('idle');
+                      setLocalNumber('');
+                      setPhoneCode('');
+                    }}
+                    variant="secondary"
+                  />
+                  <Button
+                    title="Verify"
+                    onPress={handleVerifyPhone}
+                    loading={isLoading}
+                  />
                 </View>
               </View>
             )}
@@ -333,7 +475,10 @@ export default function CommunicationAndSecurityScreen() {
                   onPress={() => togglePrivacy('leaders')}
                   label="Allow group leaders to contact me"
                 />
-                <Text style={styles.helperText}>When enabled, leaders can access your contact info when you request to join.</Text>
+                <Text style={styles.helperText}>
+                  When enabled, leaders can access your contact info when you
+                  request to join.
+                </Text>
               </View>
 
               {allowContactByLeaders && (
@@ -360,7 +505,9 @@ export default function CommunicationAndSecurityScreen() {
                   title="Save Privacy"
                   onPress={savePrivacy}
                   loading={updatePrivacyMutation.isPending}
-                  disabled={!hasPrivacyChanges || updatePrivacyMutation.isPending}
+                  disabled={
+                    !hasPrivacyChanges || updatePrivacyMutation.isPending
+                  }
                 />
               </View>
             </>
@@ -378,16 +525,44 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '700', color: '#111827' },
   subtitle: { fontSize: 14, color: '#6b7280', marginTop: 4 },
   card: { marginBottom: 16, padding: 20 },
-  cardTitle: { fontSize: 18, fontWeight: '600', color: '#1f2937', marginBottom: 12 },
-  sectionLabel: { fontSize: 14, fontWeight: '600', color: '#374151', marginTop: 12, marginBottom: 8 },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginTop: 12,
+    marginBottom: 8,
+  },
   settingItem: { marginBottom: 10 },
   actionsRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
   label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 },
   currentValue: { fontSize: 16, color: '#111827', marginBottom: 6 },
-  noCredential: { fontSize: 14, color: '#6b7280', fontStyle: 'italic', marginBottom: 6 },
+  noCredential: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontStyle: 'italic',
+    marginBottom: 6,
+  },
   inlineBtn: { marginTop: 4 },
   inputSection: { marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#fff' },
-  helperText: { fontSize: 12, color: '#6b7280', marginVertical: 8, textAlign: 'center' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginVertical: 8,
+    textAlign: 'center',
+  },
   credBlock: {},
 });

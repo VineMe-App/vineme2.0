@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  TextInput, 
-  Alert, 
+import {
+  View,
+  StyleSheet,
+  TextInput,
+  Alert,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
@@ -19,9 +19,11 @@ import { OtpInput } from '@/components/ui/OtpInput';
 export default function PhoneSignUpScreen() {
   const router = useRouter();
   const { signUpWithPhone, verifyOtp, linkEmail, isLoading } = useAuthStore();
-  
-  const [step, setStep] = useState<'enter-phone' | 'enter-code' | 'link-email'>('enter-phone');
-  const [countryCode, setCountryCode] = useState('+1');
+
+  const [step, setStep] = useState<'enter-phone' | 'enter-code' | 'link-email'>(
+    'enter-phone'
+  );
+  const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
@@ -30,9 +32,9 @@ export default function PhoneSignUpScreen() {
   const handleSendCode = async () => {
     const phone = `${countryCode}${localNumber.replace(/\D/g, '')}`;
     setFullPhone(phone);
-    
+
     const result = await signUpWithPhone(phone);
-    
+
     if (result.success) {
       setStep('enter-code');
     } else {
@@ -42,7 +44,7 @@ export default function PhoneSignUpScreen() {
 
   const handleVerify = async () => {
     const result = await verifyOtp(fullPhone, code, 'sms');
-    
+
     if (result.success) {
       // After successful phone verification, ask for email
       setStep('link-email');
@@ -63,7 +65,7 @@ export default function PhoneSignUpScreen() {
     }
 
     const result = await linkEmail(email.trim());
-    
+
     if (result.success) {
       Alert.alert(
         'Account Created!',
@@ -97,32 +99,36 @@ export default function PhoneSignUpScreen() {
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>
             {step === 'enter-phone' && 'Enter your phone number to get started'}
-            {step === 'enter-code' && 'Enter the 4-digit code sent to your phone'}
-            {step === 'link-email' && 'Link your email address to complete setup'}
+            {step === 'enter-code' &&
+              'Enter the 4-digit code sent to your phone'}
+            {step === 'link-email' &&
+              'Link your email address to complete setup'}
           </Text>
         </View>
 
         <View style={styles.form}>
           {step === 'enter-phone' && (
             <>
-              <CountryCodePicker 
-                value={countryCode} 
-                onChange={setCountryCode} 
-                label="Country" 
+              <CountryCodePicker
+                value={countryCode}
+                onChange={setCountryCode}
+                label="Country"
               />
-              <Text style={[styles.label, { marginTop: 16 }]}>Phone Number</Text>
+              <Text style={[styles.label, { marginTop: 16 }]}>
+                Phone Number
+              </Text>
               <TextInput
                 value={localNumber}
                 onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
                 style={styles.input}
                 keyboardType="phone-pad"
-                placeholder="5551234567"
+                placeholder="7123456789"
                 autoCapitalize="none"
                 editable={!isLoading}
               />
-              <Button 
-                title="Send Code" 
-                onPress={handleSendCode} 
+              <Button
+                title="Send Code"
+                onPress={handleSendCode}
                 loading={isLoading}
                 style={styles.button}
               />
@@ -133,20 +139,27 @@ export default function PhoneSignUpScreen() {
             <>
               <Text style={styles.label}>Enter 4-digit code</Text>
               <Text style={styles.phoneDisplay}>Sent to {fullPhone}</Text>
-              <OtpInput 
-                value={code} 
-                onChange={(text) => setCode(text.replace(/\D/g, '').slice(0, 4))} 
-                length={4} 
+              <OtpInput
+                value={code}
+                onChange={(text) =>
+                  setCode(text.replace(/\D/g, '').slice(0, 4))
+                }
+                length={4}
               />
-              <Button 
-                title="Verify" 
-                onPress={handleVerify} 
+              <Button
+                title="Verify"
+                onPress={handleVerify}
                 loading={isLoading}
                 style={styles.button}
               />
               <View style={styles.resendContainer}>
-                <TouchableOpacity onPress={handleResendCode} disabled={isLoading}>
-                  <Text style={styles.resendText}>Didn't receive code? Resend</Text>
+                <TouchableOpacity
+                  onPress={handleResendCode}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.resendText}>
+                    Didn't receive code? Resend
+                  </Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -156,7 +169,8 @@ export default function PhoneSignUpScreen() {
             <>
               <Text style={styles.label}>Email Address</Text>
               <Text style={styles.helperText}>
-                We'll use this to send you important updates and help you recover your account.
+                We'll use this to send you important updates and help you
+                recover your account.
               </Text>
               <TextInput
                 value={email}
@@ -168,9 +182,9 @@ export default function PhoneSignUpScreen() {
                 autoCorrect={false}
                 editable={!isLoading}
               />
-              <Button 
-                title="Complete Setup" 
-                onPress={handleLinkEmail} 
+              <Button
+                title="Complete Setup"
+                onPress={handleLinkEmail}
                 loading={isLoading}
                 style={styles.button}
               />

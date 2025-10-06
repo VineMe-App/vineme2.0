@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  TextInput, 
-  Alert, 
+import {
+  View,
+  StyleSheet,
+  TextInput,
+  Alert,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
@@ -19,9 +19,9 @@ import { OtpInput } from '@/components/ui/OtpInput';
 export default function PhoneLoginScreen() {
   const router = useRouter();
   const { signInWithPhone, verifyOtp, isLoading } = useAuthStore();
-  
+
   const [step, setStep] = useState<'enter-phone' | 'enter-code'>('enter-phone');
-  const [countryCode, setCountryCode] = useState('+1');
+  const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
   const [code, setCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
@@ -29,9 +29,9 @@ export default function PhoneLoginScreen() {
   const handleSendCode = async () => {
     const phone = `${countryCode}${localNumber.replace(/\D/g, '')}`;
     setFullPhone(phone);
-    
+
     const result = await signInWithPhone(phone);
-    
+
     if (result.success) {
       setStep('enter-code');
     } else if (result.userNotFound) {
@@ -43,7 +43,7 @@ export default function PhoneLoginScreen() {
 
   const handleVerify = async () => {
     const result = await verifyOtp(fullPhone, code, 'sms');
-    
+
     if (result.success) {
       router.replace('/(tabs)');
     } else {
@@ -65,76 +65,104 @@ export default function PhoneLoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text variant="h2" weight="bold" style={styles.title}>Sign in with Phone</Text>
+          <Text variant="h2" weight="bold" style={styles.title}>
+            Sign in with Phone
+          </Text>
           <Text variant="body" color="secondary" style={styles.subtitle}>
-            {step === 'enter-phone' 
+            {step === 'enter-phone'
               ? 'Enter your phone number to receive a verification code'
-              : 'Enter the 4-digit code sent to your phone'
-            }
+              : 'Enter the 4-digit code sent to your phone'}
           </Text>
         </View>
 
         <View style={styles.form}>
           {step === 'enter-phone' ? (
             <>
-              <CountryCodePicker 
-                value={countryCode} 
-                onChange={setCountryCode} 
-                label="Country" 
+              <CountryCodePicker
+                value={countryCode}
+                onChange={setCountryCode}
+                label="Country"
               />
-              <Text variant="label" style={[styles.label, { marginTop: 16 }]}>Phone Number</Text>
+              <Text variant="label" style={[styles.label, { marginTop: 16 }]}>
+                Phone Number
+              </Text>
               <TextInput
                 value={localNumber}
                 onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
                 style={styles.input}
                 keyboardType="phone-pad"
-                placeholder="5551234567"
+                placeholder="7123456789"
                 autoCapitalize="none"
                 editable={!isLoading}
               />
-              <Button 
-                title="Send Code" 
-                onPress={handleSendCode} 
+              <Button
+                title="Send Code"
+                onPress={handleSendCode}
                 loading={isLoading}
                 style={styles.button}
               />
             </>
           ) : (
             <>
-              <Text variant="body" color="secondary" style={styles.phoneDisplay}>Sent to {fullPhone}</Text>
-              <OtpInput 
-                value={code} 
-                onChange={(text) => setCode(text.replace(/\D/g, '').slice(0, 4))} 
-                length={4} 
+              <Text
+                variant="body"
+                color="secondary"
+                style={styles.phoneDisplay}
+              >
+                Sent to {fullPhone}
+              </Text>
+              <OtpInput
+                value={code}
+                onChange={(text) =>
+                  setCode(text.replace(/\D/g, '').slice(0, 4))
+                }
+                length={4}
               />
-              <Button 
-                title="Verify" 
-                onPress={handleVerify} 
+              <Button
+                title="Verify"
+                onPress={handleVerify}
                 loading={isLoading}
                 style={styles.button}
               />
               <View style={styles.resendContainer}>
-                <TouchableOpacity onPress={handleResendCode} disabled={isLoading}>
-                  <Text variant="body" color="primary" style={styles.resendText}>Didn't receive code? Resend</Text>
+                <TouchableOpacity
+                  onPress={handleResendCode}
+                  disabled={isLoading}
+                >
+                  <Text
+                    variant="body"
+                    color="primary"
+                    style={styles.resendText}
+                  >
+                    Didn't receive code? Resend
+                  </Text>
                 </TouchableOpacity>
               </View>
             </>
           )}
 
           <View style={styles.footer}>
-            <Text variant="body" color="secondary" style={styles.footerText}>Prefer email? </Text>
+            <Text variant="body" color="secondary" style={styles.footerText}>
+              Prefer email?{' '}
+            </Text>
             <Link href="/(auth)/email-login" asChild>
               <TouchableOpacity>
-                <Text variant="body" color="primary" style={styles.linkText}>Sign in with email</Text>
+                <Text variant="body" color="primary" style={styles.linkText}>
+                  Sign in with email
+                </Text>
               </TouchableOpacity>
             </Link>
           </View>
 
           <View style={styles.footer}>
-            <Text variant="body" color="secondary" style={styles.footerText}>Don't have an account? </Text>
+            <Text variant="body" color="secondary" style={styles.footerText}>
+              Don't have an account?{' '}
+            </Text>
             <Link href="/(auth)/phone-signup" asChild>
               <TouchableOpacity>
-                <Text variant="body" color="primary" style={styles.linkText}>Sign up with phone</Text>
+                <Text variant="body" color="primary" style={styles.linkText}>
+                  Sign up with phone
+                </Text>
               </TouchableOpacity>
             </Link>
           </View>
@@ -222,5 +250,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
-

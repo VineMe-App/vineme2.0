@@ -368,7 +368,7 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
                     error ? styles.phoneInputError : null,
                   ]}
                   keyboardType="phone-pad"
-                  placeholder="5551234567"
+                  placeholder="7123456789"
                   autoCapitalize="none"
                   testID="referral-phone-input"
                 />
