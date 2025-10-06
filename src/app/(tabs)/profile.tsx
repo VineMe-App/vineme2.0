@@ -342,7 +342,7 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Friends Section - Compact */}
+            {/* Friends Section - Just the manage button */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text variant="h4" style={styles.sectionTitle}>
@@ -355,91 +355,6 @@ export default function ProfileScreen() {
                   size="small"
                 />
               </View>
-
-              {friendsQuery.data && friendsQuery.data.length > 0 ? (
-                <>
-                  {friendsQuery.data.slice(0, 5).map((friendship: any) => {
-                    const friend = friendship.friend;
-                    const friendFullName = getFullName(friend);
-                    const friendShortName = getDisplayName(friend, {
-                      lastInitial: true,
-                      fallback: 'full',
-                    });
-
-                    return (
-                      <TouchableOpacity
-                        key={friendship.id}
-                        style={styles.friendItem}
-                        onPress={() =>
-                          friend?.id && router.push(`/user/${friend.id}`)
-                        }
-                        accessibilityRole="button"
-                        accessibilityLabel={`View ${friendFullName || friendShortName || 'user'} profile`}
-                      >
-                        <Avatar
-                          size={40}
-                          imageUrl={friend?.avatar_url}
-                          name={friendFullName}
-                        />
-                        <View style={styles.friendInfo}>
-                          <Text
-                            variant="body"
-                            weight="semiBold"
-                            style={styles.friendName}
-                          >
-                            {friendShortName ||
-                              friendFullName ||
-                              'Unknown User'}
-                          </Text>
-                          <Text
-                            variant="bodySmall"
-                            color="secondary"
-                            style={styles.friendEmail}
-                          >
-                            {friend?.email}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                  {friendsQuery.data.length > 5 && (
-                    <TouchableOpacity onPress={() => setShowFriendsModal(true)}>
-                      <Text
-                        variant="body"
-                        color="primary"
-                        style={styles.moreText}
-                      >
-                        and {friendsQuery.data.length - 5} more friends
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              ) : (
-                <View
-                  style={[
-                    styles.emptyFriendsContainer,
-                    { backgroundColor: theme.colors.surface.secondary },
-                  ]}
-                >
-                  <Text variant="h5" style={styles.emptyFriendsText}>
-                    No friends yet
-                  </Text>
-                  <Text
-                    variant="body"
-                    color="secondary"
-                    style={styles.emptyFriendsSubtext}
-                  >
-                    Start connecting with other church members
-                  </Text>
-                  <Button
-                    title="Find Friends"
-                    onPress={() => setShowFriendsModal(true)}
-                    variant="secondary"
-                    size="small"
-                    style={styles.findFriendsButton}
-                  />
-                </View>
-              )}
             </View>
           </>
         )}
@@ -668,33 +583,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6c757d',
   },
-  friendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  friendInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  friendName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1a1a1a',
-  },
-  friendEmail: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  moreText: {
-    fontSize: 14,
-    color: '#6c757d',
-    textAlign: 'center',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
   actionsSection: {
     marginTop: 32,
     paddingTop: 24,
@@ -706,26 +594,6 @@ const styles = StyleSheet.create({
   },
   signOutButton: {
     marginTop: 16,
-  },
-  emptyFriendsContainer: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    borderRadius: 8,
-  },
-  emptyFriendsText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6c757d',
-    marginBottom: 4,
-  },
-  emptyFriendsSubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  findFriendsButton: {
-    marginTop: 8,
   },
   adminActions: {
     flexDirection: 'row',
