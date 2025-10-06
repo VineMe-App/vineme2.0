@@ -693,5 +693,9 @@ const styles = StyleSheet.create({
     fontSize: 80,
     fontWeight: 'bold',
     color: '#6b7280',
+    lineHeight: 80,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
 });
