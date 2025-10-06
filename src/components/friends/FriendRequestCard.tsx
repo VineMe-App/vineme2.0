@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Avatar } from '../ui/Avatar';
+import { getDisplayName, getFullName } from '@/utils/name';
 import type { FriendshipWithUser } from '../../services/friendships';
 
 interface FriendRequestCardProps {
@@ -29,6 +30,12 @@ export function FriendRequestCard({
     return null;
   }
 
+  const shortName = getDisplayName(displayUser, {
+    lastInitial: true,
+    fallback: 'full',
+  });
+  const fullName = getFullName(displayUser);
+
   const handleAccept = () => {
     onAccept?.(friendship.id);
   };
@@ -49,15 +56,15 @@ export function FriendRequestCard({
           displayUser?.id && router.push(`/user/${displayUser.id}`)
         }
         accessibilityRole="button"
-        accessibilityLabel={`View ${displayUser.name}'s profile`}
+        accessibilityLabel={`View ${fullName || 'user'}'s profile`}
       >
         <Avatar
           imageUrl={displayUser.avatar_url}
-          name={displayUser.name}
+          name={fullName}
           size={50}
         />
         <View style={styles.textContainer}>
-          <Text style={styles.name}>{displayUser.name}</Text>
+          <Text style={styles.name}>{shortName || fullName || 'User'}</Text>
           <Text style={styles.email}>{displayUser.email}</Text>
           <Text style={styles.status}>
             {type === 'received' ? 'Wants to be friends' : 'Request sent'}

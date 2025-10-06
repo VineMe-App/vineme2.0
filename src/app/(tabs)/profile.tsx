@@ -6,7 +6,6 @@ import {
   RefreshControl,
   Alert,
   TouchableOpacity,
-  Platform,
   SafeAreaView,
   Modal,
   Dimensions,
@@ -16,28 +15,32 @@ import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '@/stores/auth';
 import {
   useUserProfile,
-  useUserGroupMemberships,
   useDeleteAccount,
+  useUploadAvatar,
+  useDeleteAvatar,
 } from '@/hooks/useUsers';
 import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { EditProfileModal } from '@/components/profile';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
 import { useTheme } from '@/theme/provider/useTheme';
+import { getDisplayName, getFullName } from '@/utils/name';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 // Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const { theme } = useTheme();
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false);
-  
+
   const deleteAccountMutation = useDeleteAccount();
+  const uploadAvatarMutation = useUploadAvatar();
+  const deleteAvatarMutation = useDeleteAvatar();
 
   const {
     data: userProfile,
@@ -46,26 +49,19 @@ export default function ProfileScreen() {
     refetch: refetchProfile,
   } = useUserProfile(user?.id);
 
-  const {
-    data: groupMemberships,
-    isLoading: groupsLoading,
-    refetch: refetchGroups,
-  } = useUserGroupMemberships(user?.id);
-
   // Use the new friendship hooks for better data management
   const friendsQuery = useFriends(user?.id);
   const receivedRequestsQuery = useReceivedFriendRequests(user?.id);
 
   const isLoading =
-    profileLoading ||
-    groupsLoading ||
-    friendsQuery.isLoading ||
-    receivedRequestsQuery.isLoading;
+    profileLoading || friendsQuery.isLoading || receivedRequestsQuery.isLoading;
+
+  const profileFullName = getFullName(userProfile);
+  const profileShortName = getDisplayName(userProfile, { fallback: 'full' });
 
   const handleRefresh = async () => {
     await Promise.all([
       refetchProfile(),
-      refetchGroups(),
       friendsQuery.refetch(),
       receivedRequestsQuery.refetch(),
     ]);
@@ -73,6 +69,107 @@ export default function ProfileScreen() {
 
   const handleAvatarPress = () => {
     setImageModalVisible(true);
+  };
+
+  const handleAvatarEdit = () => {
+    Alert.alert('Profile Photo', 'Choose an option', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Choose from Library', onPress: pickImage },
+      { text: 'Take Photo', onPress: takePhoto },
+      ...(userProfile?.avatar_url
+        ? [
+            {
+              text: 'Remove Photo',
+              onPress: removeAvatar,
+              style: 'destructive' as const,
+            },
+          ]
+        : []),
+    ]);
+  };
+
+  const pickImage = async () => {
+    try {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please grant permission to access your photo library.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        uploadAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('[Profile] Error in pickImage:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please grant permission to access your camera.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        uploadAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('[Profile] Error in takePhoto:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    }
+  };
+
+  const uploadAvatar = async (uri: string) => {
+    if (!user?.id) return;
+    try {
+      await uploadAvatarMutation.mutateAsync({
+        userId: user.id,
+        fileUri: uri,
+      });
+      Alert.alert('Success', 'Profile photo updated!');
+    } catch (error) {
+      console.error('[Profile] Upload failed:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Error', `Failed to upload avatar: ${errorMessage}`);
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!userProfile?.avatar_url || !user?.id) return;
+    try {
+      await deleteAvatarMutation.mutateAsync({
+        userId: user.id,
+        avatarUrl: userProfile.avatar_url,
+      });
+      Alert.alert('Success', 'Profile photo removed!');
+    } catch (error) {
+      console.error('[Profile] Remove failed:', error);
+      Alert.alert('Error', 'Failed to remove avatar. Please try again.');
+    }
   };
 
   const handleSignOut = async () => {
@@ -104,7 +201,7 @@ export default function ProfileScreen() {
               await deleteAccountMutation.mutateAsync(user.id);
               await signOut();
               router.replace({ pathname: '/(auth)/sign-in' as any });
-            } catch (e) {
+            } catch {
               Alert.alert(
                 'Error',
                 'Failed to delete account. Please try again.'
@@ -125,7 +222,9 @@ export default function ProfileScreen() {
         ]}
       >
         <View style={styles.errorContainer}>
-          <Text variant="body" color="error" style={styles.errorText}>Failed to load profile</Text>
+          <Text variant="body" color="error" style={styles.errorText}>
+            Failed to load profile
+          </Text>
           <Button title="Retry" onPress={handleRefresh} />
         </View>
       </SafeAreaView>
@@ -141,7 +240,9 @@ export default function ProfileScreen() {
         ]}
       >
         <View style={styles.errorContainer}>
-          <Text variant="body" color="error" style={styles.errorText}>Profile not found</Text>
+          <Text variant="body" color="error" style={styles.errorText}>
+            Profile not found
+          </Text>
           <Button title="Refresh" onPress={handleRefresh} />
         </View>
       </SafeAreaView>
@@ -165,25 +266,37 @@ export default function ProfileScreen() {
         {userProfile && (
           <>
             <View style={styles.profileSection}>
-              <Avatar
-                size={100}
-                imageUrl={userProfile.avatar_url}
-                name={userProfile.name}
-                onPress={handleAvatarPress}
-              />
+              <View style={styles.avatarContainer}>
+                <Avatar
+                  size={100}
+                  imageUrl={userProfile.avatar_url}
+                  name={profileFullName}
+                  onPress={handleAvatarPress}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.editIconButton,
+                    {
+                      backgroundColor: theme.colors.primary[500],
+                    },
+                  ]}
+                  onPress={handleAvatarEdit}
+                  accessibilityLabel="Edit profile photo"
+                  accessibilityRole="button"
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="pencil-sharp" size={16} color="#fff" />
+                </TouchableOpacity>
+              </View>
 
-              <Text variant="h3" style={styles.name}>{userProfile.name}</Text>
+              <Text variant="h3" style={styles.name}>
+                {profileFullName || profileShortName || 'Your Profile'}
+              </Text>
               {user?.email ? (
-                <Text variant="body" color="secondary" style={styles.email}>{user.email}</Text>
+                <Text variant="body" color="secondary" style={styles.email}>
+                  {user.email}
+                </Text>
               ) : null}
-
-              <Button
-                title="Edit Profile"
-                onPress={() => setShowEditModal(true)}
-                variant="secondary"
-                size="small"
-                style={styles.editButton}
-              />
             </View>
 
             {/* Friend Request Notifications */}
@@ -193,18 +306,15 @@ export default function ProfileScreen() {
             />
 
             <View style={styles.infoSection}>
-              <Text variant="h4" style={styles.sectionTitle}>Profile Information</Text>
-
-              {user?.email ? (
-                <View style={styles.infoItem}>
-                  <Text variant="label" style={styles.infoLabel}>Email</Text>
-                  <Text variant="body" style={styles.infoValue}>{user.email}</Text>
-                </View>
-              ) : null}
+              <Text variant="h4" style={styles.sectionTitle}>
+                Profile Information
+              </Text>
 
               {userProfile.church && (
                 <View style={styles.infoItem}>
-                  <Text variant="label" style={styles.infoLabel}>Church</Text>
+                  <Text variant="label" style={styles.infoLabel}>
+                    Church
+                  </Text>
                   <Text variant="body" style={styles.infoValue}>
                     {userProfile.church.name}
                   </Text>
@@ -213,7 +323,9 @@ export default function ProfileScreen() {
 
               {userProfile.service && (
                 <View style={styles.infoItem}>
-                  <Text variant="label" style={styles.infoLabel}>Service</Text>
+                  <Text variant="label" style={styles.infoLabel}>
+                    Service
+                  </Text>
                   <Text variant="body" style={styles.infoValue}>
                     {userProfile.service.name}
                   </Text>
@@ -221,119 +333,28 @@ export default function ProfileScreen() {
               )}
 
               <View style={styles.infoItem}>
-                <Text variant="label" style={styles.infoLabel}>Role</Text>
-                <Text variant="body" style={styles.infoValue}>
-                  {userProfile.roles?.join(', ') || 'Member'}
+                <Text variant="label" style={styles.infoLabel}>
+                  Member Since
                 </Text>
-              </View>
-
-              <View style={styles.infoItem}>
-                <Text variant="label" style={styles.infoLabel}>Member Since</Text>
                 <Text variant="body" style={styles.infoValue}>
                   {new Date(userProfile.created_at).toLocaleDateString()}
                 </Text>
               </View>
             </View>
 
-            {groupMemberships && groupMemberships.length > 0 && (
-              <View style={styles.section}>
-                <Text variant="h4" style={styles.sectionTitle}>My Groups</Text>
-                {groupMemberships.map((membership: any) => (
-                  <View
-                    key={membership.id}
-                    style={[
-                      styles.membershipItem,
-                      { backgroundColor: theme.colors.surface.secondary },
-                    ]}
-                  >
-                    <View style={styles.membershipInfo}>
-                      <Text variant="bodyLarge" weight="semiBold" style={styles.membershipTitle}>
-                        {membership.group?.title || 'Unknown Group'}
-                      </Text>
-                      <Text variant="caption" weight="semiBold" style={styles.membershipRole}>
-                        {membership.role.charAt(0).toUpperCase() +
-                          membership.role.slice(1)}
-                      </Text>
-                    </View>
-                    <Text variant="caption" color="secondary" style={styles.membershipDate}>
-                      Joined{' '}
-                      {new Date(membership.joined_at).toLocaleDateString()}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {/* Friends Section */}
+            {/* Friends Section - Just the manage button */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text variant="h4" style={styles.sectionTitle}>
-                  Friends ({friendsQuery.data?.length || 0})
+                  Friends
                 </Text>
                 <Button
-                  title="Manage"
+                  title={`Manage (${friendsQuery.data?.length || 0})`}
                   onPress={() => setShowFriendsModal(true)}
                   variant="secondary"
                   size="small"
                 />
               </View>
-
-              {friendsQuery.data && friendsQuery.data.length > 0 ? (
-                <>
-                  {friendsQuery.data.slice(0, 5).map((friendship: any) => (
-                    <TouchableOpacity
-                      key={friendship.id}
-                      style={styles.friendItem}
-                      onPress={() =>
-                        friendship.friend?.id &&
-                        router.push(`/user/${friendship.friend.id}`)
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel={`View ${friendship.friend?.name || 'user'} profile`}
-                    >
-                      <Avatar
-                        size={40}
-                        imageUrl={friendship.friend?.avatar_url}
-                        name={friendship.friend?.name}
-                      />
-                      <View style={styles.friendInfo}>
-                        <Text variant="body" weight="semiBold" style={styles.friendName}>
-                          {friendship.friend?.name || 'Unknown User'}
-                        </Text>
-                        <Text variant="bodySmall" color="secondary" style={styles.friendEmail}>
-                          {friendship.friend?.email}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                  {friendsQuery.data.length > 5 && (
-                    <TouchableOpacity onPress={() => setShowFriendsModal(true)}>
-                      <Text variant="body" color="primary" style={styles.moreText}>
-                        and {friendsQuery.data.length - 5} more friends
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              ) : (
-                <View
-                  style={[
-                    styles.emptyFriendsContainer,
-                    { backgroundColor: theme.colors.surface.secondary },
-                  ]}
-                >
-                  <Text variant="h5" style={styles.emptyFriendsText}>No friends yet</Text>
-                  <Text variant="body" color="secondary" style={styles.emptyFriendsSubtext}>
-                    Start connecting with other church members
-                  </Text>
-                  <Button
-                    title="Find Friends"
-                    onPress={() => setShowFriendsModal(true)}
-                    variant="secondary"
-                    size="small"
-                    style={styles.findFriendsButton}
-                  />
-                </View>
-              )}
             </View>
           </>
         )}
@@ -341,7 +362,9 @@ export default function ProfileScreen() {
         {/* Admin Features */}
         <ChurchAdminOnly>
           <View style={styles.section}>
-            <Text variant="h4" style={styles.sectionTitle}>Admin</Text>
+            <Text variant="h4" style={styles.sectionTitle}>
+              Admin
+            </Text>
             <Button
               title="Open Admin Dashboard"
               onPress={() => router.push('/admin')}
@@ -370,7 +393,7 @@ export default function ProfileScreen() {
             style={styles.signOutButton}
           />
         </View>
-        
+
         {/* Bottom spacing to ensure content is visible above navbar */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -410,7 +433,7 @@ export default function ProfileScreen() {
                   <Text style={styles.modalInitialsText}>
                     {userProfile?.name
                       ?.split(' ')
-                      .map(word => word.charAt(0))
+                      .map((word) => word.charAt(0))
                       .join('')
                       .toUpperCase()
                       .slice(0, 2) || '?'}
@@ -421,14 +444,6 @@ export default function ProfileScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
-
-      {userProfile && (
-        <EditProfileModal
-          visible={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          user={userProfile}
-        />
-      )}
 
       <FriendManagementModal
         visible={showFriendsModal}
@@ -467,6 +482,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  editIconButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 0,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -477,10 +516,8 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 16,
     color: '#6c757d',
+    marginTop: 4,
     marginBottom: 16,
-  },
-  editButton: {
-    marginTop: 8,
   },
   infoSection: {
     marginBottom: 32,
@@ -546,33 +583,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6c757d',
   },
-  friendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  friendInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  friendName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1a1a1a',
-  },
-  friendEmail: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  moreText: {
-    fontSize: 14,
-    color: '#6c757d',
-    textAlign: 'center',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
   actionsSection: {
     marginTop: 32,
     paddingTop: 24,
@@ -584,26 +594,6 @@ const styles = StyleSheet.create({
   },
   signOutButton: {
     marginTop: 16,
-  },
-  emptyFriendsContainer: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    borderRadius: 8,
-  },
-  emptyFriendsText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6c757d',
-    marginBottom: 4,
-  },
-  emptyFriendsSubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  findFriendsButton: {
-    marginTop: 8,
   },
   adminActions: {
     flexDirection: 'row',
@@ -659,5 +649,9 @@ const styles = StyleSheet.create({
     fontSize: 80,
     fontWeight: 'bold',
     color: '#6b7280',
+    lineHeight: 80,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
 });

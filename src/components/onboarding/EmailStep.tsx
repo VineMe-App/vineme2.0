@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { supabase } from '@/services/supabase';
+import { Button } from '@/components/ui/Button';
 
 export default function EmailStep({
   data,
   onNext,
+  onBack,
+  canGoBack,
   isLoading,
 }: OnboardingStepProps) {
   const { user } = useAuthStore();
@@ -86,6 +83,7 @@ export default function EmailStep({
               if (error) setError(null);
             }}
             placeholder="you@example.com"
+            placeholderTextColor="#666"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -95,18 +93,23 @@ export default function EmailStep({
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.button,
-          (!email.trim() || isLoading) && styles.buttonDisabled,
-        ]}
-        onPress={handleNext}
-        disabled={!email.trim() || isLoading}
-      >
-        <Text style={styles.buttonText}>
-          {isLoading ? 'Please wait...' : 'Continue'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <Button
+          title="Back"
+          variant="ghost"
+          onPress={onBack}
+          disabled={!canGoBack || isLoading}
+          fullWidth
+        />
+        <Button
+          title="Continue"
+          onPress={handleNext}
+          loading={isLoading}
+          disabled={!email.trim() || isLoading}
+          variant="primary"
+          fullWidth
+        />
+      </View>
     </View>
   );
 }
@@ -145,13 +148,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  buttonDisabled: { backgroundColor: '#ccc' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  footer: { gap: 12 },
 });

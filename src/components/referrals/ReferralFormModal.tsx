@@ -71,13 +71,35 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
     firstName: {
       initialValue: '',
       rules: {
-        maxLength: 50,
+        required: true,
+        custom: (value: string) => {
+          const trimmed = value?.trim() || '';
+          if (!trimmed) return 'First name is required';
+          if (trimmed.length > 50) {
+            return 'First name must be 50 characters or less';
+          }
+          if (!/^[a-zA-Z\s\-'\.]+$/.test(trimmed)) {
+            return 'First name contains invalid characters';
+          }
+          return undefined;
+        },
       },
     },
     lastName: {
       initialValue: '',
       rules: {
-        maxLength: 50,
+        required: true,
+        custom: (value: string) => {
+          const trimmed = value?.trim() || '';
+          if (!trimmed) return 'Last name is required';
+          if (trimmed.length > 50) {
+            return 'Last name must be 50 characters or less';
+          }
+          if (!/^[a-zA-Z\s\-'\.]+$/.test(trimmed)) {
+            return 'Last name contains invalid characters';
+          }
+          return undefined;
+        },
       },
     },
     email: {
@@ -138,12 +160,15 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
         setFormError(null);
         setWarnings({});
 
+        const trimmedFirst = values.firstName?.trim() || '';
+        const trimmedLast = values.lastName?.trim() || '';
+
         const formData: ReferralFormModalData = {
           email: values.email.trim(),
           phone: `${values.countryCode}${values.localNumber.replace(/\D/g, '')}`,
           note: values.note.trim(),
-          firstName: values.firstName?.trim() || undefined,
-          lastName: values.lastName?.trim() || undefined,
+          firstName: trimmedFirst,
+          lastName: trimmedLast,
         };
 
         // Client-side validation
@@ -271,8 +296,9 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
                     onChangeText={onChange}
                     onBlur={onBlur}
                     error={error}
-                    placeholder="Optional"
+                    placeholder="Enter first name"
                     autoCapitalize="words"
+                    required
                     testID="referral-first-name-input"
                   />
                 )}
@@ -288,8 +314,9 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
                     onChangeText={onChange}
                     onBlur={onBlur}
                     error={error}
-                    placeholder="Optional"
+                    placeholder="Enter last name"
                     autoCapitalize="words"
+                    required
                     testID="referral-last-name-input"
                   />
                 )}
@@ -341,7 +368,7 @@ export const ReferralFormModal: React.FC<ReferralFormModalProps> = ({
                     error ? styles.phoneInputError : null,
                   ]}
                   keyboardType="phone-pad"
-                  placeholder="5551234567"
+                  placeholder="7123456789"
                   autoCapitalize="none"
                   testID="referral-phone-input"
                 />

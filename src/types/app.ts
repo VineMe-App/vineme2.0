@@ -13,17 +13,19 @@ export interface SignInCredentials {
 export interface SignUpCredentials {
   email: string;
   password: string;
-  name: string;
+  firstName: string;
+  lastName: string;
 }
 
 // Onboarding types
 export interface OnboardingData {
-  name: string;
+  first_name: string;
+  last_name: string;
   church_id?: string;
   service_id?: string;
-  interests: string[];
-  preferred_meeting_night: string;
   group_status?: 'existing' | 'looking';
+  avatar_url?: string;
+  bio?: string;
 }
 
 export interface OnboardingStep {
@@ -37,6 +39,7 @@ export interface OnboardingStepProps {
   data: OnboardingData;
   onNext: (stepData: Partial<OnboardingData>) => void;
   onBack: () => void;
+  canGoBack: boolean;
   isLoading?: boolean;
   error?: string | null;
 }

@@ -22,6 +22,7 @@ import {
   useReceivedFriendRequests,
   useAcceptFriendRequest,
 } from '@/hooks/useFriendships';
+import { getDisplayName, getFullName } from '@/utils/name';
 
 export default function OtherUserProfileScreen() {
   const [imageModalVisible, setImageModalVisible] = useState(false);
@@ -47,10 +48,12 @@ export default function OtherUserProfileScreen() {
   const removeFriend = useRemoveFriend();
 
   const isSelf = user?.id && targetUserId === user.id;
+  const profileFullName = getFullName(profile);
+  const profileShortName = getDisplayName(profile, { fallback: 'full' });
 
   const handleAddFriend = () => {
-    if (!targetUserId || !profile?.name) return;
-    Alert.alert('Add Friend', `Send a friend request to ${profile.name}?`, [
+    if (!targetUserId || !profileFullName) return;
+    Alert.alert('Add Friend', `Send a friend request to ${profileShortName || profileFullName}?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Send',
@@ -181,10 +184,12 @@ export default function OtherUserProfileScreen() {
               <Avatar
                 size={100}
                 imageUrl={profile.avatar_url}
-                name={profile.name}
+                name={profileFullName}
                 onPress={handleAvatarPress}
               />
-              <Text style={styles.name}>{profile.name}</Text>
+              <Text style={styles.name}>
+                {profileFullName || profileShortName || 'User'}
+              </Text>
               {profile.email ? (
                 <Text style={styles.email}>{profile.email}</Text>
               ) : null}

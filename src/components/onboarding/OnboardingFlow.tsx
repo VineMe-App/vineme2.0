@@ -10,8 +10,7 @@ import NameStep from './NameStep';
 import EmailStep from './EmailStep';
 import ChurchStep from './ChurchStep';
 import GroupStatusStep from './GroupStatusStep';
-import InterestsStep from './InterestsStep';
-import MeetingNightStep from './MeetingNightStep';
+import ProfileDetailsStep from './ProfileDetailsStep';
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
@@ -35,26 +34,22 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     component: GroupStatusStep,
   },
   {
-    id: 'interests',
-    title: 'Your Interests',
-    component: InterestsStep,
-  },
-  {
-    id: 'meeting-night',
-    title: 'Meeting Preference',
-    component: MeetingNightStep,
+    id: 'profile',
+    title: 'Profile Details',
+    component: ProfileDetailsStep,
   },
 ];
 
 export default function OnboardingFlow() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    name: '',
+    first_name: '',
+    last_name: '',
     church_id: undefined,
     service_id: undefined,
-    interests: [],
-    preferred_meeting_night: '',
     group_status: undefined,
+    avatar_url: undefined,
+    bio: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +68,8 @@ export default function OnboardingFlow() {
       );
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        setOnboardingData(parsedData);
+        const { name: _legacyName, ...rest } = parsedData || {};
+        setOnboardingData((prev) => ({ ...prev, ...rest }));
       }
     } catch (error) {
       console.error('Error loading onboarding data:', error);
@@ -137,11 +133,14 @@ export default function OnboardingFlow() {
       const isLookingForGroup = data.group_status === 'looking';
       // Create user profile in database AFTER we have an email (EmailStep links auth.user)
       const success = await createUserProfile({
-        name: data.name,
+        first_name: data.first_name?.trim() || undefined,
+        last_name: data.last_name?.trim() || undefined,
         church_id: data.church_id,
         service_id: data.service_id,
         newcomer: isLookingForGroup, // remain newcomer if looking for a group
         onboarding_complete: true, // explicitly mark onboarding complete
+        avatar_url: data.avatar_url,
+        bio: data.bio?.trim() ? data.bio.trim() : undefined,
       });
 
       if (!success) {
@@ -207,6 +206,7 @@ export default function OnboardingFlow() {
           data={onboardingData}
           onNext={handleNext}
           onBack={handleBack}
+          canGoBack={currentStepIndex > 0}
           isLoading={isLoading}
           error={error}
         />

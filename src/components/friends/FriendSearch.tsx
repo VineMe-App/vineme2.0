@@ -19,6 +19,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { DatabaseUser } from '../../types/database';
+import { getDisplayName, getFullName } from '@/utils/name';
 
 interface FriendSearchProps {
   onClose?: () => void;
@@ -138,8 +139,8 @@ function UserSearchItem({
   );
 
   const handleSendRequest = () => {
-    if (user.id && user.name) {
-      onSendFriendRequest(user.id, user.name);
+    if (user.id) {
+      onSendFriendRequest(user.id, fullName || shortName || 'this person');
     }
   };
 
@@ -189,6 +190,8 @@ function UserSearchItem({
   };
 
   const buttonState = getButtonState();
+  const shortName = getDisplayName(user, { lastInitial: true, fallback: 'full' });
+  const fullName = getFullName(user);
 
   return (
     <View style={styles.userItem}>
@@ -196,11 +199,11 @@ function UserSearchItem({
         style={styles.userInfo}
         onPress={() => user.id && router.push(`/user/${user.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={`View ${user.name}'s profile`}
+        accessibilityLabel={`View ${fullName || 'user'}'s profile`}
       >
-        <Avatar imageUrl={user.avatar_url} name={user.name} size={50} />
+        <Avatar imageUrl={user.avatar_url} name={fullName} size={50} />
         <View style={styles.userDetails}>
-          <Text style={styles.userName}>{user.name}</Text>
+          <Text style={styles.userName}>{shortName || fullName || 'User'}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
         </View>
       </TouchableOpacity>

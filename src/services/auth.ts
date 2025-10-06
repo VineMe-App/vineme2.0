@@ -117,9 +117,14 @@ export class AuthService {
         return { error: new Error('No authenticated user') };
       }
 
+      const payload: Record<string, any> = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from('users')
-        .update(updates)
+        .update(payload)
         .eq('id', user.id);
 
       if (error) {
@@ -139,11 +144,14 @@ export class AuthService {
    * Create user profile after successful sign up
    */
   async createUserProfile(userData: {
-    name: string;
+    first_name?: string;
+    last_name?: string;
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }): Promise<{ error: Error | null }> {
     try {
       const user = await this.getCurrentUser();
@@ -154,7 +162,8 @@ export class AuthService {
       // Insert minimal required fields to avoid 400s from missing FKs or columns
       const payload: Record<string, any> = {
         id: user.id,
-        name: userData.name,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
         roles: ['user'],
         updated_at: new Date().toISOString(),
       };
@@ -173,6 +182,12 @@ export class AuthService {
       }
       if (userData.onboarding_complete !== undefined) {
         payload.onboarding_complete = userData.onboarding_complete;
+      }
+      if (userData.avatar_url) {
+        payload.avatar_url = userData.avatar_url;
+      }
+      if (userData.bio) {
+        payload.bio = userData.bio;
       }
       
       const { error } = await supabase.from('users').upsert(payload, {

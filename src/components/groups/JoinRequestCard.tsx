@@ -25,6 +25,7 @@ import type {
   GroupJoinRequestWithUser,
   MembershipJourneyStatus,
 } from '../../types/database';
+import { getDisplayName, getFullName } from '@/utils/name';
 
 interface JoinRequestCardProps {
   request: GroupJoinRequestWithUser;
@@ -71,6 +72,12 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   );
   const journeyUpdating = updateJourneyStatusMutation.isPending;
   const canActivate = (journeyStatus ?? 0) >= 3 && !journeyUpdating;
+  const requesterFullName = getFullName(request.user);
+  const requesterShortName = getDisplayName(request.user, {
+    lastInitial: true,
+    fallback: 'full',
+  });
+  const requesterFriendlyName = requesterShortName || requesterFullName || 'this person';
 
   const journeyStageLabel = useMemo(() => {
     if (!journeyStatus || journeyStatus < 1) {
@@ -123,7 +130,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   const handleApprove = () => {
     Alert.alert(
       'Approve Request',
-      `Are you sure you want to approve ${request.user?.name || 'this user'}'s request to join the group?`,
+      `Are you sure you want to approve ${requesterFriendlyName}'s request to join the group?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -138,7 +145,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
 
               Alert.alert(
                 'Request Approved',
-                `${request.user?.name || 'The user'} has been added to the group!`
+                `${requesterFriendlyName} has been added to the group!`
               );
 
               onRequestProcessed?.();
@@ -159,7 +166,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   const handleDecline = () => {
     Alert.alert(
       'Decline Request',
-      `Are you sure you want to decline ${request.user?.name || 'this user'}'s request to join the group?`,
+      `Are you sure you want to decline ${requesterFriendlyName}'s request to join the group?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -299,11 +306,11 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
           <Avatar
             size={48}
             imageUrl={request.user?.avatar_url}
-            name={request.user?.name || 'Unknown'}
+            name={requesterFullName || 'Unknown'}
           />
           <View style={styles.userDetails}>
             <Text style={styles.userName}>
-              {request.user?.name || 'Unknown User'}
+              {requesterShortName || requesterFullName || 'Unknown User'}
             </Text>
             <Text style={styles.requestDate}>
               Requested {formatDate(requestedTimestamp)}

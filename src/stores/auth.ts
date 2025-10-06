@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { User } from '@supabase/supabase-js';
 import type { DatabaseUser } from '../types/database';
 import { authService } from '../services/auth';
+import { getFullName } from '../utils/name';
 
 interface AuthState {
   // State
@@ -22,7 +23,8 @@ interface AuthState {
   loadUserProfile: () => Promise<void>;
   updateUserProfile: (updates: Partial<DatabaseUser>) => Promise<boolean>;
   createUserProfile: (userData: {
-    name: string;
+    first_name?: string;
+    last_name?: string;
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
@@ -106,8 +108,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             (result.user.user_metadata as any)?.name ||
             result.user.phone ||
             'New User';
+          const parts = String(fallbackName).trim().split(/\s+/);
+          const firstName = parts.shift() || undefined;
+          const lastName = parts.length > 0 ? parts.join(' ') : undefined;
           await get().createUserProfile({
-            name: String(fallbackName),
+            first_name: firstName,
+            last_name: lastName,
             newcomer: true,
             onboarding_complete: false,
           });
@@ -193,7 +199,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       const userProfile = await authService.getCurrentUserProfile();
-      set({ userProfile, isLoading: false });
+      const enrichedProfile = userProfile
+        ? {
+            ...userProfile,
+            name: getFullName(userProfile),
+          }
+        : null;
+      set({ userProfile: enrichedProfile, isLoading: false });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to load user profile';
@@ -226,11 +238,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   createUserProfile: async (userData: {
-    name: string;
+    first_name?: string;
+    last_name?: string;
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }): Promise<boolean> => {
     set({ isLoading: true, error: null });
 

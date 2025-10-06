@@ -6,6 +6,7 @@ import { Modal } from '../ui/Modal';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import type { GroupMembershipWithUser } from '../../types/database';
+import { getDisplayName, getFullName } from '@/utils/name';
 
 interface MemberManagementModalProps {
   visible: boolean;
@@ -32,21 +33,23 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
 
   const isLeader = member.role === 'leader';
   const joinDate = new Date(member.joined_at).toLocaleDateString();
+  const fullName = getFullName(member.user);
+  const shortName = getDisplayName(member.user, { fallback: 'full' });
 
   return (
     <Modal isVisible={visible} onClose={onClose} title="Manage Member">
-      <View style={styles.container}>
-        {/* Member Info */}
-        <View style={styles.memberInfo}>
-          <Avatar
-            size={60}
-            imageUrl={member.user?.avatar_url}
-            name={member.user?.name || 'Unknown'}
-          />
-          <View style={styles.memberDetails}>
-            <Text style={styles.memberName}>
-              {member.user?.name || 'Unknown'}
-            </Text>
+        <View style={styles.container}>
+          {/* Member Info */}
+          <View style={styles.memberInfo}>
+            <Avatar
+              size={60}
+              imageUrl={member.user?.avatar_url}
+              name={fullName || 'Unknown'}
+            />
+            <View style={styles.memberDetails}>
+              <Text style={styles.memberName}>
+                {shortName || fullName || 'Unknown'}
+              </Text>
             <View style={styles.roleContainer}>
               <Ionicons
                 name={isLeader ? 'star' : 'person'}
