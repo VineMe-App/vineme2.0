@@ -5,6 +5,7 @@ import type {
   ContactAuditLogWithDetails,
   ContactPrivacySettings,
 } from '../types/database';
+import { getFullName } from '../utils/name';
 
 export interface ContactAuditServiceResponse<T = any> {
   data: T | null;
@@ -105,8 +106,8 @@ export class ContactAuditService {
         .select(
           `
           *,
-          user:users!contact_audit_logs_user_id_fkey(id, name),
-          accessor:users!contact_audit_logs_accessor_id_fkey(id, name),
+          user:users!contact_audit_logs_user_id_fkey(id, first_name, last_name),
+          accessor:users!contact_audit_logs_accessor_id_fkey(id, first_name, last_name),
           group:groups(id, title)
         `
         )
@@ -117,7 +118,15 @@ export class ContactAuditService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const withNames = (data || []).map((log) => ({
+        ...log,
+        user: log.user ? { ...log.user, name: getFullName(log.user) } : log.user,
+        accessor: log.accessor
+          ? { ...log.accessor, name: getFullName(log.accessor) }
+          : log.accessor,
+      }));
+
+      return { data: withNames, error: null };
     } catch (error) {
       return {
         data: null,
@@ -155,8 +164,8 @@ export class ContactAuditService {
         .select(
           `
           *,
-          user:users!contact_audit_logs_user_id_fkey(id, name),
-          accessor:users!contact_audit_logs_accessor_id_fkey(id, name),
+          user:users!contact_audit_logs_user_id_fkey(id, first_name, last_name),
+          accessor:users!contact_audit_logs_accessor_id_fkey(id, first_name, last_name),
           group:groups(id, title)
         `
         )
@@ -167,7 +176,15 @@ export class ContactAuditService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const withNames = (data || []).map((log) => ({
+        ...log,
+        user: log.user ? { ...log.user, name: getFullName(log.user) } : log.user,
+        accessor: log.accessor
+          ? { ...log.accessor, name: getFullName(log.accessor) }
+          : log.accessor,
+      }));
+
+      return { data: withNames, error: null };
     } catch (error) {
       return {
         data: null,

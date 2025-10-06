@@ -26,12 +26,15 @@ const mockOnBack = jest.fn();
 
 const defaultProps = {
   data: {
+    first_name: 'Test',
+    last_name: 'User',
     name: 'Test User',
     church_id: 'church-1',
     service_id: 'service-1',
   } as OnboardingData,
   onNext: mockOnNext,
   onBack: mockOnBack,
+  canGoBack: true,
   isLoading: false,
   error: null,
 };

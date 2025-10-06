@@ -13,12 +13,14 @@ export interface SignInCredentials {
 export interface SignUpCredentials {
   email: string;
   password: string;
-  name: string;
+  firstName: string;
+  lastName: string;
 }
 
 // Onboarding types
 export interface OnboardingData {
-  name: string;
+  first_name: string;
+  last_name: string;
   church_id?: string;
   service_id?: string;
   group_status?: 'existing' | 'looking';

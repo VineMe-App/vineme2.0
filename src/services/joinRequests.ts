@@ -6,6 +6,7 @@ import {
   triggerJoinRequestDeniedNotification,
   triggerJoinRequestReceivedNotification,
 } from './notifications';
+import { getFullName } from '../utils/name';
 import type {
   ContactPrivacySettings,
   GroupJoinRequest,
@@ -82,7 +83,7 @@ export class JoinRequestService {
         const [requesterRes, groupRes] = await Promise.all([
           supabase
             .from('users')
-            .select('name')
+            .select('first_name, last_name')
             .eq('id', requestData.user_id)
             .single(),
           supabase
@@ -93,6 +94,7 @@ export class JoinRequestService {
         ]);
 
         if (requesterRes.data && groupRes.data) {
+          const requesterName = getFullName(requesterRes.data) || 'A member';
           const { data: leaders } = await supabase
             .from('group_memberships')
             .select('user_id')
@@ -107,7 +109,7 @@ export class JoinRequestService {
               groupId: requestData.group_id,
               groupTitle: groupRes.data.title,
               requesterId: requestData.user_id,
-              requesterName: requesterRes.data.name,
+              requesterName,
               leaderIds,
             });
           }
@@ -165,7 +167,7 @@ export class JoinRequestService {
           journey_status,
           joined_at,
           created_at,
-          user:users(id, name, avatar_url, newcomer),
+          user:users(id, first_name, last_name, avatar_url, newcomer),
           referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at),
           group:groups(id, title)
         `
@@ -178,8 +180,13 @@ export class JoinRequestService {
         return { data: null, error: new Error(error.message) };
       }
 
+      const normalizedRequests = (data || []).map((item) => ({
+        ...item,
+        user: item.user ? { ...item.user, name: getFullName(item.user) } : item.user,
+      })) as GroupJoinRequestWithUser[];
+
       const requestsWithConsent = await this.attachContactConsent(
-        (data || []) as GroupJoinRequestWithUser[]
+        normalizedRequests
       );
 
       return { data: requestsWithConsent, error: null };
@@ -324,7 +331,7 @@ export class JoinRequestService {
             .single(),
           supabase
             .from('users')
-            .select('id, name')
+            .select('id, first_name, last_name')
             .eq('id', membershipRecord.user_id)
             .single(),
         ]);
@@ -333,10 +340,10 @@ export class JoinRequestService {
         let approvedByName: string | undefined;
         const { data: approver } = await supabase
           .from('users')
-          .select('name')
+          .select('first_name, last_name')
           .eq('id', approverId)
           .single();
-        approvedByName = approver?.name;
+        approvedByName = getFullName(approver) || undefined;
 
         if (groupRes.data && userRes.data && approvedByName) {
           await triggerJoinRequestApprovedNotification({
@@ -477,12 +484,17 @@ export class JoinRequestService {
             .single(),
           supabase
             .from('users')
-            .select('id, name')
+            .select('id, first_name, last_name')
             .eq('id', membershipRecord.user_id)
             .single(),
-          supabase.from('users').select('name').eq('id', declinerId).single(),
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', declinerId)
+            .single(),
         ]);
-        const deniedByName = declinerRes?.data?.name || 'A group leader';
+        const deniedByName =
+          getFullName(declinerRes?.data) || 'A group leader';
         if (groupRes.data && userRes.data) {
           await triggerJoinRequestDeniedNotification({
             groupId: groupRes.data.id,
@@ -710,7 +722,7 @@ export class JoinRequestService {
           group_id,
           user_id,
           status,
-          user:users(id, name)
+          user:users(id, first_name, last_name)
         `
         )
         .eq('id', requestId)

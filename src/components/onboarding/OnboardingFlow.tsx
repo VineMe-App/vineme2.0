@@ -43,7 +43,8 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
 export default function OnboardingFlow() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    name: '',
+    first_name: '',
+    last_name: '',
     church_id: undefined,
     service_id: undefined,
     group_status: undefined,
@@ -67,7 +68,8 @@ export default function OnboardingFlow() {
       );
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        setOnboardingData((prev) => ({ ...prev, ...parsedData }));
+        const { name: _legacyName, ...rest } = parsedData || {};
+        setOnboardingData((prev) => ({ ...prev, ...rest }));
       }
     } catch (error) {
       console.error('Error loading onboarding data:', error);
@@ -131,7 +133,8 @@ export default function OnboardingFlow() {
       const isLookingForGroup = data.group_status === 'looking';
       // Create user profile in database AFTER we have an email (EmailStep links auth.user)
       const success = await createUserProfile({
-        name: data.name,
+        first_name: data.first_name?.trim() || undefined,
+        last_name: data.last_name?.trim() || undefined,
         church_id: data.church_id,
         service_id: data.service_id,
         newcomer: isLookingForGroup, // remain newcomer if looking for a group

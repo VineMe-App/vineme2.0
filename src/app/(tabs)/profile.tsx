@@ -24,16 +24,15 @@ import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { EditProfileModal } from '@/components/profile';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
 import { useTheme } from '@/theme/provider/useTheme';
+import { getDisplayName, getFullName } from '@/utils/name';
 // Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const { theme } = useTheme();
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   
@@ -61,6 +60,9 @@ export default function ProfileScreen() {
     groupsLoading ||
     friendsQuery.isLoading ||
     receivedRequestsQuery.isLoading;
+
+  const profileFullName = getFullName(userProfile);
+  const profileShortName = getDisplayName(userProfile, { fallback: 'full' });
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -168,22 +170,16 @@ export default function ProfileScreen() {
               <Avatar
                 size={100}
                 imageUrl={userProfile.avatar_url}
-                name={userProfile.name}
+                name={profileFullName}
                 onPress={handleAvatarPress}
               />
 
-              <Text variant="h3" style={styles.name}>{userProfile.name}</Text>
+              <Text variant="h3" style={styles.name}>{profileFullName || profileShortName || 'Your Profile'}</Text>
               {user?.email ? (
                 <Text variant="body" color="secondary" style={styles.email}>{user.email}</Text>
               ) : null}
 
-              <Button
-                title="Edit Profile"
-                onPress={() => setShowEditModal(true)}
-                variant="secondary"
-                size="small"
-                style={styles.editButton}
-              />
+              <View style={{ height: 12 }} />
             </View>
 
             {/* Friend Request Notifications */}
@@ -280,32 +276,40 @@ export default function ProfileScreen() {
 
               {friendsQuery.data && friendsQuery.data.length > 0 ? (
                 <>
-                  {friendsQuery.data.slice(0, 5).map((friendship: any) => (
-                    <TouchableOpacity
-                      key={friendship.id}
-                      style={styles.friendItem}
-                      onPress={() =>
-                        friendship.friend?.id &&
-                        router.push(`/user/${friendship.friend.id}`)
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel={`View ${friendship.friend?.name || 'user'} profile`}
-                    >
-                      <Avatar
-                        size={40}
-                        imageUrl={friendship.friend?.avatar_url}
-                        name={friendship.friend?.name}
-                      />
-                      <View style={styles.friendInfo}>
-                        <Text variant="body" weight="semiBold" style={styles.friendName}>
-                          {friendship.friend?.name || 'Unknown User'}
-                        </Text>
-                        <Text variant="bodySmall" color="secondary" style={styles.friendEmail}>
-                          {friendship.friend?.email}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+                  {friendsQuery.data.slice(0, 5).map((friendship: any) => {
+                    const friend = friendship.friend;
+                    const friendFullName = getFullName(friend);
+                    const friendShortName = getDisplayName(friend, {
+                      lastInitial: true,
+                      fallback: 'full',
+                    });
+
+                    return (
+                      <TouchableOpacity
+                        key={friendship.id}
+                        style={styles.friendItem}
+                        onPress={() =>
+                          friend?.id && router.push(`/user/${friend.id}`)
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel={`View ${friendFullName || friendShortName || 'user'} profile`}
+                      >
+                        <Avatar
+                          size={40}
+                          imageUrl={friend?.avatar_url}
+                          name={friendFullName}
+                        />
+                        <View style={styles.friendInfo}>
+                          <Text variant="body" weight="semiBold" style={styles.friendName}>
+                            {friendShortName || friendFullName || 'Unknown User'}
+                          </Text>
+                          <Text variant="bodySmall" color="secondary" style={styles.friendEmail}>
+                            {friend?.email}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                   {friendsQuery.data.length > 5 && (
                     <TouchableOpacity onPress={() => setShowFriendsModal(true)}>
                       <Text variant="body" color="primary" style={styles.moreText}>
@@ -422,14 +426,6 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {userProfile && (
-        <EditProfileModal
-          visible={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          user={userProfile}
-        />
-      )}
-
       <FriendManagementModal
         visible={showFriendsModal}
         onClose={() => setShowFriendsModal(false)}
@@ -478,9 +474,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6c757d',
     marginBottom: 16,
-  },
-  editButton: {
-    marginTop: 8,
   },
   infoSection: {
     marginBottom: 32,

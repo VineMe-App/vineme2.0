@@ -15,6 +15,7 @@ import { supportService } from '@/services/support';
 import { MissingServiceModal, MissingServiceFormData } from './MissingServiceModal';
 import { useAuthStore } from '@/stores/auth';
 import { Button } from '@/components/ui/Button';
+import { getFullName } from '@/utils/name';
 
 export default function ChurchStep({
   data,
@@ -155,7 +156,11 @@ export default function ChurchStep({
       additional_info: form.additionalInfo,
       contact_name: form.contactName,
       contact_email: form.contactEmail,
-      requester_name: data.name,
+      requester_name:
+        getFullName({
+          first_name: data.first_name,
+          last_name: data.last_name,
+        }) || undefined,
       requester_id: user?.id,
       requester_email: user?.email ?? undefined,
     });

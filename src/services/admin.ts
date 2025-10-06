@@ -7,6 +7,7 @@ import {
   triggerJoinRequestDeniedNotification,
   triggerReferralJoinedGroupNotification,
 } from './notifications';
+import { getFullName } from '../utils/name';
 import {
   createPaginationParams,
   createPaginatedResponse,
@@ -93,6 +94,16 @@ export interface UpdateGroupData {
   image_url?: string;
 }
 
+const withDisplayName = <T extends { first_name?: string | null; last_name?: string | null }>(
+  user: (T & { name?: string | null }) | null | undefined
+) =>
+  user
+    ? {
+        ...user,
+        name: getFullName(user),
+      }
+    : user;
+
 /**
  * Admin service for managing groups
  */
@@ -156,14 +167,14 @@ export class GroupAdminService {
           *,
           service:services(*),
           church:churches(*),
-          creator:users!groups_created_by_fkey(id, name, avatar_url),
+          creator:users!groups_created_by_fkey(id, first_name, last_name, avatar_url),
           memberships:group_memberships(
             id,
             user_id,
             role,
             status,
             joined_at,
-            user:users(id, name, avatar_url)
+            user:users(id, first_name, last_name, avatar_url)
           )
         `,
           { count: pagination ? 'exact' : undefined }
@@ -193,6 +204,12 @@ export class GroupAdminService {
       const groupsWithDetails =
         data?.map((group) => ({
           ...group,
+          creator: withDisplayName(group.creator),
+          memberships:
+            group.memberships?.map((m: any) => ({
+              ...m,
+              user: withDisplayName(m.user),
+            })) || [],
           member_count:
             group.memberships?.filter((m: any) => m.status === 'active')
               .length || 0,
@@ -299,14 +316,18 @@ export class GroupAdminService {
             .select('id, title, created_by')
             .eq('id', groupId)
             .single(),
-          supabase.from('users').select('name').eq('id', adminId).single(),
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', adminId)
+            .single(),
         ]);
         if (group && admin) {
           await triggerGroupRequestApprovedNotification({
             groupId: group.id,
             groupTitle: (group as any).title,
             leaderId: (group as any).created_by,
-            approvedByName: (admin as any).name,
+            approvedByName: getFullName(admin),
           });
         }
       } catch (e) {
@@ -402,14 +423,18 @@ export class GroupAdminService {
             .select('id, title, created_by')
             .eq('id', groupId)
             .single(),
-          supabase.from('users').select('name').eq('id', adminId).single(),
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', adminId)
+            .single(),
         ]);
         if (group && admin) {
           await triggerGroupRequestDeniedNotification({
             groupId: group.id,
             groupTitle: (group as any).title,
             leaderId: (group as any).created_by,
-            deniedByName: (admin as any).name,
+            deniedByName: getFullName(admin),
             reason,
           });
         }
@@ -536,7 +561,7 @@ export class GroupAdminService {
           user_id,
           status,
           joined_at,
-          user:users(id, name, avatar_url)
+          user:users(id, first_name, last_name, avatar_url)
         `
         )
         .eq('group_id', groupId)
@@ -553,7 +578,7 @@ export class GroupAdminService {
           id: item.id,
           group_id: item.group_id,
           user_id: item.user_id,
-          user: item.user,
+          user: withDisplayName(item.user),
           status: 'pending',
           created_at: item.joined_at,
         })) || [];
@@ -628,7 +653,7 @@ export class GroupAdminService {
             .single(),
           supabase
             .from('users')
-            .select('id, name')
+            .select('id, first_name, last_name')
             .eq('id', request.user_id)
             .single(),
           supabase.auth.getUser(),
@@ -638,12 +663,13 @@ export class GroupAdminService {
         if (approverId) {
           const { data: approverUser } = await supabase
             .from('users')
-            .select('name')
+            .select('first_name, last_name')
             .eq('id', approverId)
             .single();
-          approverName = approverUser?.name;
+          approverName = getFullName(approverUser) || undefined;
         }
         if (groupRes.data && userRes.data && approverName) {
+          const requesterName = getFullName(userRes.data);
           await triggerJoinRequestApprovedNotification({
             groupId: groupRes.data.id,
             groupTitle: groupRes.data.title,
@@ -662,7 +688,7 @@ export class GroupAdminService {
             await triggerReferralJoinedGroupNotification({
               referrerId: groupReferral.referred_by_user_id,
               referredUserId: userRes.data.id,
-              referredUserName: userRes.data.name,
+              referredUserName: requesterName || 'A member',
               groupId: groupRes.data.id,
               groupTitle: groupRes.data.title,
             });
@@ -739,7 +765,7 @@ export class GroupAdminService {
             .single(),
           supabase
             .from('users')
-            .select('id, name')
+            .select('id, first_name, last_name')
             .eq('id', request.user_id)
             .single(),
           supabase.auth.getUser(),
@@ -749,10 +775,10 @@ export class GroupAdminService {
         if (approverId) {
           const { data: approverUser } = await supabase
             .from('users')
-            .select('name')
+            .select('first_name, last_name')
             .eq('id', approverId)
             .single();
-          approverName = approverUser?.name;
+          approverName = getFullName(approverUser) || undefined;
         }
         if (groupRes.data && userRes.data && approverName) {
           await triggerJoinRequestDeniedNotification({

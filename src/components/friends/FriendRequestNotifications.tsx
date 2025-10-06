@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Avatar } from '../ui/Avatar';
+import { getDisplayName, getFullName } from '@/utils/name';
 // import type { FriendshipWithUser } from '../../types/database';
 
 interface FriendRequestNotificationsProps {
@@ -40,11 +41,20 @@ export function FriendRequestNotifications({
           const sender = request.friend || request.user;
           if (!sender) return null;
 
+          const shortName = getDisplayName(sender, {
+            lastInitial: true,
+            fallback: 'full',
+          });
+          const fullName = getFullName(sender);
+
           return (
             <View key={request.id} style={styles.requestItem}>
-              <Avatar uri={sender.avatar_url} name={sender.name} size={32} />
+              <Avatar imageUrl={sender.avatar_url} name={fullName} size={32} />
               <Text style={styles.requestText} numberOfLines={1}>
-                <Text style={styles.senderName}>{sender.name}</Text> wants to be
+                <Text style={styles.senderName}>
+                  {shortName || fullName || 'Someone'}
+                </Text>{' '}
+                wants to be
                 friends
               </Text>
             </View>

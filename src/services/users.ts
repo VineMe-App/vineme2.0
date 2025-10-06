@@ -1,9 +1,11 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import type { DatabaseUser, UserWithDetails } from '../types/database';
+import { getFullName } from '../utils/name';
 
 export interface UpdateUserProfileData {
-  name?: string;
+  first_name?: string;
+  last_name?: string;
   avatar_url?: string | null;
   church_id?: string;
   service_id?: string;
@@ -40,7 +42,7 @@ export class UserService {
           ),
           friendships:friendships!friendships_user_id_fkey(
             id, user_id, friend_id, status, created_at, updated_at,
-            friend:users!friendships_friend_id_fkey(id, name, avatar_url)
+            friend:users!friendships_friend_id_fkey(id, first_name, last_name, avatar_url)
           )
         `
         )
@@ -121,12 +123,14 @@ export class UserService {
         };
       }
 
+      const payload: Record<string, any> = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('users')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
+        .update(payload)
         .eq('id', userId)
         .select()
         .single();
@@ -259,7 +263,7 @@ export class UserService {
         .select(
           `
           *,
-          friend:users!friendships_friend_id_fkey(id, name, avatar_url)
+          friend:users!friendships_friend_id_fkey(id, first_name, last_name, avatar_url)
         `
         )
         .eq('user_id', userId)
@@ -269,7 +273,14 @@ export class UserService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const friendshipsWithNames = (data || []).map((friendship) => ({
+        ...friendship,
+        friend: friendship.friend
+          ? { ...friendship.friend, name: getFullName(friendship.friend) }
+          : friendship.friend,
+      }));
+
+      return { data: friendshipsWithNames, error: null };
     } catch (error) {
       return {
         data: null,
@@ -289,17 +300,29 @@ export class UserService {
     limit: number = 10
   ): Promise<UserServiceResponse<Partial<DatabaseUser>[]>> {
     try {
+      const sanitizedQuery = query.trim().replace(/[,%]/g, '');
+      if (!sanitizedQuery) {
+        return { data: [], error: null };
+      }
+      const pattern = `%${sanitizedQuery}%`;
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, avatar_url, church_id')
-        .ilike('name', `%${query}%`)
+        .select('id, first_name, last_name, avatar_url, church_id')
+        .or(
+          `first_name.ilike.${pattern},last_name.ilike.${pattern}`
+        )
         .limit(limit);
 
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const results = (data || []).map((user) => ({
+        ...user,
+        name: getFullName(user),
+      }));
+
+      return { data: results, error: null };
     } catch (error) {
       return {
         data: null,

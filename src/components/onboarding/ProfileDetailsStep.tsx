@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { userService } from '@/services/users';
+import { getFullName } from '@/utils/name';
 
 const BIO_MAX_LENGTH = 240;
 
@@ -177,7 +178,10 @@ export default function ProfileDetailsStep({
           <Avatar
             size={120}
             imageUrl={avatarUrl}
-            name={data.name}
+            name={getFullName({
+              first_name: data.first_name,
+              last_name: data.last_name,
+            })}
             onPress={handleChoosePhoto}
             showEditIcon
           />
