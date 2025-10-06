@@ -14,11 +14,13 @@ import { churchService } from '@/services/churches';
 import { supportService } from '@/services/support';
 import { MissingServiceModal, MissingServiceFormData } from './MissingServiceModal';
 import { useAuthStore } from '@/stores/auth';
+import { Button } from '@/components/ui/Button';
 
 export default function ChurchStep({
   data,
   onNext,
   onBack,
+  canGoBack,
   isLoading,
 }: OnboardingStepProps) {
   const [churches, setChurches] = useState<Church[]>([]);
@@ -402,26 +404,30 @@ export default function ChurchStep({
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            (!selectedChurchId || !selectedServiceId || isLoading) &&
-              styles.buttonDisabled,
-          ]}
+        <Button
+          title="Back"
+          variant="ghost"
+          onPress={onBack}
+          disabled={!canGoBack || isLoading}
+          fullWidth
+        />
+        <Button
+          title="Continue"
           onPress={handleNext}
+          loading={isLoading}
           disabled={!selectedChurchId || !selectedServiceId || isLoading}
-        >
-          <Text style={styles.buttonText}>Continue</Text>
-        </TouchableOpacity>
+          variant="primary"
+          fullWidth
+        />
         {selectedChurchId &&
           !selectedServiceId &&
           missingServiceSubmitted &&
           missingServiceLastMode === 'service' && (
-          <Text style={styles.pendingNotice}>
-            We&apos;ll email you when the service is ready. You can close the app
-            and return later.
-          </Text>
-        )}
+            <Text style={styles.pendingNotice}>
+              We&apos;ll email you when the service is ready. You can close the app
+              and return later.
+            </Text>
+          )}
       </View>
       <MissingServiceModal
         isVisible={showMissingServiceModal}
@@ -687,20 +693,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: 24,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 24, // Updated to pill shape (half of padding: 16 * 2 + text height)
-    padding: 16,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#aac8ff',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    paddingTop: 16,
+    gap: 12,
   },
   pendingNotice: {
     marginTop: 12,

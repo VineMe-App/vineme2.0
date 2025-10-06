@@ -14,6 +14,7 @@ export default function GroupStatusStep({
   data,
   onNext,
   onBack,
+  canGoBack,
   isLoading,
   error,
 }: OnboardingStepProps) {
@@ -109,21 +110,21 @@ export default function GroupStatusStep({
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Back"
-            onPress={onBack}
-            variant="outline"
-            style={styles.backButton}
-          />
-          <Button
-            title="Continue"
-            onPress={handleNext}
-            disabled={!selectedStatus}
-            loading={isLoading}
-            style={styles.nextButton}
-          />
-        </View>
+        <Button
+          title="Back"
+          onPress={onBack}
+          variant="ghost"
+          disabled={!canGoBack || isLoading}
+          fullWidth
+        />
+        <Button
+          title="Continue"
+          onPress={handleNext}
+          disabled={!selectedStatus || isLoading}
+          loading={isLoading}
+          variant="primary"
+          fullWidth
+        />
       </View>
     </ScrollView>
   );
@@ -241,15 +242,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
     paddingTop: 16,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
     gap: 12,
   },
-  backButton: {
-    flex: 1,
-  },
-  nextButton: {
-    flex: 2,
-  },
+  nextButton: {},
 });

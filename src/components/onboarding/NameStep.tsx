@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
+import { Button } from '@/components/ui/Button';
 
 export default function NameStep({
   data,
   onNext,
+  onBack,
+  canGoBack,
   isLoading,
 }: OnboardingStepProps) {
   const [name, setName] = useState(data.name || '');
@@ -76,18 +73,23 @@ export default function NameStep({
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.button,
-          (!name.trim() || isLoading) && styles.buttonDisabled,
-        ]}
-        onPress={handleNext}
-        disabled={!name.trim() || isLoading}
-      >
-        <Text style={styles.buttonText}>
-          {isLoading ? 'Please wait...' : 'Continue'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <Button
+          title="Back"
+          variant="ghost"
+          onPress={onBack}
+          disabled={!canGoBack || isLoading}
+          fullWidth
+        />
+        <Button
+          title="Continue"
+          onPress={handleNext}
+          loading={isLoading}
+          disabled={!name.trim() || isLoading}
+          variant="primary"
+          fullWidth
+        />
+      </View>
     </View>
   );
 }
@@ -137,19 +139,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 24, // Updated to pill shape (half of padding: 16 * 2 + text height)
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  footer: {
+    gap: 12,
   },
 });

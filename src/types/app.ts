@@ -37,6 +37,7 @@ export interface OnboardingStepProps {
   data: OnboardingData;
   onNext: (stepData: Partial<OnboardingData>) => void;
   onBack: () => void;
+  canGoBack: boolean;
   isLoading?: boolean;
   error?: string | null;
 }

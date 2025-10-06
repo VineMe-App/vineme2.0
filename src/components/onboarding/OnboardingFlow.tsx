@@ -203,6 +203,7 @@ export default function OnboardingFlow() {
           data={onboardingData}
           onNext={handleNext}
           onBack={handleBack}
+          canGoBack={currentStepIndex > 0}
           isLoading={isLoading}
           error={error}
         />

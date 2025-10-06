@@ -21,6 +21,7 @@ export default function ProfileDetailsStep({
   data,
   onNext,
   onBack,
+  canGoBack,
   isLoading,
 }: OnboardingStepProps) {
   const { user } = useAuthStore();
@@ -230,24 +231,28 @@ export default function ProfileDetailsStep({
       </View>
 
       <View style={styles.footer}>
-        <Button title="Back" variant="ghost" onPress={onBack} fullWidth />
-        <View style={styles.footerRow}>
-          <Button
-            title="Skip"
-            variant="secondary"
-            onPress={handleSkip}
-            disabled={uploading || isLoading}
-            style={styles.ctaButton}
-          />
-          <Button
-            title="Continue"
-            onPress={handleContinue}
-            loading={uploading || isLoading}
-            disabled={uploading}
-            variant="primary"
-            style={styles.ctaButton}
-          />
-        </View>
+        <Button
+          title="Back"
+          variant="ghost"
+          onPress={onBack}
+          disabled={!canGoBack || uploading || isLoading}
+          fullWidth
+        />
+        <Button
+          title="Skip"
+          variant="secondary"
+          onPress={handleSkip}
+          disabled={uploading || isLoading}
+          fullWidth
+        />
+        <Button
+          title="Continue"
+          onPress={handleContinue}
+          loading={uploading || isLoading}
+          disabled={uploading || isLoading}
+          variant="primary"
+          fullWidth
+        />
       </View>
     </View>
   );
@@ -338,13 +343,5 @@ const styles = StyleSheet.create({
   },
   footer: {
     gap: 12,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  ctaButton: {
-    flex: 1,
   },
 });
