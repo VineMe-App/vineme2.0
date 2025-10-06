@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  Alert,
 } from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import type { OnboardingStepProps } from '@/types/app';
@@ -165,11 +166,21 @@ export default function ChurchStep({
       return;
     }
 
+    const submissionMode = missingServiceMode;
+
     setMissingServiceSubmitting(false);
     setMissingServiceRequestError(null);
     setMissingServiceSubmitted(true);
-    setMissingServiceLastMode(missingServiceMode);
+    setMissingServiceLastMode(submissionMode);
     setShowMissingServiceModal(false);
+
+    Alert.alert(
+      'Request received',
+      submissionMode === 'church'
+        ? "Thanks for letting us know about your church. We'll reach out and add it soon."
+        : "Thanks! We'll review the service details and let you know when it's available.",
+      [{ text: 'OK' }]
+    );
   };
 
   const renderChurchItem = ({ item }: { item: Church }) => {
@@ -350,36 +361,44 @@ export default function ChurchStep({
           style={styles.churchList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.churchListContent}
-        />
-
-        <View style={styles.missingChurchContainer}>
-          <TouchableOpacity
-            style={styles.missingChurchButton}
-            onPress={() => handleOpenMissingServiceModal('church')}
-            disabled={missingServiceSubmitting}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.missingChurchTitle}>
-              Can&apos;t find your church?
-            </Text>
-            <Text style={styles.missingChurchSubtitle}>
-              Share the details and we&apos;ll add it to VineMe.
-            </Text>
-          </TouchableOpacity>
-          {missingServiceSubmitted && missingServiceLastMode === 'church' && (
-            <Text style={styles.missingChurchNotice}>
-              Thanks! We&apos;ll contact you soon about adding this church. Feel
-              free to return once it appears in the list.
-            </Text>
+          ListFooterComponent={() => (
+            <View style={styles.listFooter}>
+              <TouchableOpacity
+                style={styles.missingChurchButton}
+                onPress={() => handleOpenMissingServiceModal('church')}
+                disabled={missingServiceSubmitting}
+                activeOpacity={0.85}
+              >
+                <View style={styles.missingChurchTextGroup}>
+                  <Text style={styles.missingChurchTitle}>
+                    Can&apos;t find your church?
+                  </Text>
+                  <Text style={styles.missingChurchSubtitle}>
+                    Share the details and we&apos;ll add it to VineMe.
+                  </Text>
+                </View>
+                <View style={styles.missingChurchIcon}>
+                  <Text style={styles.missingChurchIconText}>+</Text>
+                </View>
+              </TouchableOpacity>
+              {missingServiceSubmitted &&
+                missingServiceLastMode === 'church' && (
+                  <Text style={styles.missingChurchNotice}>
+                    We&apos;re on it! We&apos;ll reach out soon about adding this
+                    church.
+                  </Text>
+                )}
+              {missingServiceRequestError &&
+                missingServiceLastMode === 'church' &&
+                !showMissingServiceModal && (
+                  <Text style={styles.serviceInlineError}>
+                    {missingServiceRequestError}
+                  </Text>
+                )}
+            </View>
           )}
-          {missingServiceRequestError &&
-            missingServiceLastMode === 'church' &&
-            !showMissingServiceModal && (
-              <Text style={styles.serviceInlineError}>
-                {missingServiceRequestError}
-              </Text>
-            )}
-        </View>
+          ListFooterComponentStyle={styles.listFooterContainer}
+        />
       </View>
 
       <View style={styles.footer}>
@@ -708,17 +727,24 @@ const styles = StyleSheet.create({
     color: '#d73a49',
     fontSize: 13,
   },
-  missingChurchContainer: {
+  listFooterContainer: {
+    paddingBottom: 16,
+  },
+  listFooter: {
     marginTop: 12,
     gap: 8,
   },
   missingChurchButton: {
     borderWidth: 1,
     borderColor: '#c6d7ff',
+    borderStyle: 'dashed',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     backgroundColor: '#f7fbff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   missingChurchTitle: {
     fontSize: 16,
@@ -729,6 +755,23 @@ const styles = StyleSheet.create({
   missingChurchSubtitle: {
     fontSize: 14,
     color: '#4d6aa7',
+    lineHeight: 20,
+  },
+  missingChurchTextGroup: {
+    flex: 1,
+  },
+  missingChurchIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#0c3c8c',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  missingChurchIconText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
     lineHeight: 20,
   },
   missingChurchNotice: {
