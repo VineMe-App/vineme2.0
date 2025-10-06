@@ -30,6 +30,8 @@ interface AuthContextType {
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }) => Promise<boolean>;
   clearError: () => void;
 }

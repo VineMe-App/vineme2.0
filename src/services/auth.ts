@@ -144,6 +144,8 @@ export class AuthService {
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }): Promise<{ error: Error | null }> {
     try {
       const user = await this.getCurrentUser();
@@ -173,6 +175,12 @@ export class AuthService {
       }
       if (userData.onboarding_complete !== undefined) {
         payload.onboarding_complete = userData.onboarding_complete;
+      }
+      if (userData.avatar_url) {
+        payload.avatar_url = userData.avatar_url;
+      }
+      if (userData.bio) {
+        payload.bio = userData.bio;
       }
       
       const { error } = await supabase.from('users').upsert(payload, {

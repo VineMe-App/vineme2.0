@@ -10,6 +10,7 @@ import NameStep from './NameStep';
 import EmailStep from './EmailStep';
 import ChurchStep from './ChurchStep';
 import GroupStatusStep from './GroupStatusStep';
+import ProfileDetailsStep from './ProfileDetailsStep';
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
@@ -32,6 +33,11 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     title: 'Group Status',
     component: GroupStatusStep,
   },
+  {
+    id: 'profile',
+    title: 'Profile Details',
+    component: ProfileDetailsStep,
+  },
 ];
 
 export default function OnboardingFlow() {
@@ -41,6 +47,8 @@ export default function OnboardingFlow() {
     church_id: undefined,
     service_id: undefined,
     group_status: undefined,
+    avatar_url: undefined,
+    bio: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +67,7 @@ export default function OnboardingFlow() {
       );
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        setOnboardingData(parsedData);
+        setOnboardingData((prev) => ({ ...prev, ...parsedData }));
       }
     } catch (error) {
       console.error('Error loading onboarding data:', error);
@@ -128,6 +136,8 @@ export default function OnboardingFlow() {
         service_id: data.service_id,
         newcomer: isLookingForGroup, // remain newcomer if looking for a group
         onboarding_complete: true, // explicitly mark onboarding complete
+        avatar_url: data.avatar_url,
+        bio: data.bio?.trim() ? data.bio.trim() : undefined,
       });
 
       if (!success) {

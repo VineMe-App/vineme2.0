@@ -231,6 +231,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }): Promise<boolean> => {
     set({ isLoading: true, error: null });
 
