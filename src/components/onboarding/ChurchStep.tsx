@@ -281,9 +281,16 @@ export default function ChurchStep({
                 );
               })
             ) : (
-              <Text style={styles.serviceEmptyText}>
-                No services available yet.
-              </Text>
+              <View style={styles.serviceEmptyContainer}>
+                <Text style={styles.serviceEmptyText}>
+                  This church hasn&apos;t added any services yet.
+                </Text>
+                <Text style={styles.serviceEmptyHelpText}>
+                  You&apos;ll need to select a service to continue onboarding.
+                  Please choose a different church for now or request this
+                  service so we can add it.
+                </Text>
+              </View>
             )}
 
             <TouchableOpacity
@@ -325,6 +332,9 @@ export default function ChurchStep({
       </View>
     );
   };
+
+  const noServicesAvailable =
+    !!selectedChurchId && !servicesLoading && services.length === 0;
 
   if (loading) {
     return (
@@ -424,8 +434,15 @@ export default function ChurchStep({
           variant="primary"
           fullWidth
         />
+        {noServicesAvailable && (
+          <Text style={styles.serviceRequiredNotice}>
+            A service is required to finish onboarding. Once a service is
+            available, come back to continue.
+          </Text>
+        )}
         {selectedChurchId &&
           !selectedServiceId &&
+          !noServicesAvailable &&
           missingServiceSubmitted &&
           missingServiceLastMode === 'service' && (
             <Text style={styles.pendingNotice}>
@@ -637,10 +654,19 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
+  serviceEmptyContainer: {
+    paddingTop: 12,
+    gap: 8,
+  },
   serviceEmptyText: {
     fontSize: 14,
-    color: '#666',
-    paddingTop: 12,
+    color: '#1a1a1a',
+    fontWeight: '600',
+  },
+  serviceEmptyHelpText: {
+    fontSize: 13,
+    color: '#4d6aa7',
+    lineHeight: 19,
   },
   otherServiceCard: {
     marginTop: 16,
@@ -705,6 +731,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
     color: '#4d6aa7',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  serviceRequiredNotice: {
+    marginTop: 12,
+    textAlign: 'center',
+    color: '#d73a49',
     fontSize: 14,
     lineHeight: 20,
   },
