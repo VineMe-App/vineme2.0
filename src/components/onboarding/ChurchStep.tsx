@@ -10,6 +10,9 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import type { OnboardingStepProps } from '@/types/app';
 import type { Church, Service } from '@/types/database';
 import { churchService } from '@/services/churches';
+import { supportService } from '@/services/support';
+import { MissingServiceModal, MissingServiceFormData } from './MissingServiceModal';
+import { useAuthStore } from '@/stores/auth';
 
 export default function ChurchStep({
   data,
@@ -28,6 +31,20 @@ export default function ChurchStep({
   const [loading, setLoading] = useState(true);
   const [servicesLoading, setServicesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMissingServiceModal, setShowMissingServiceModal] =
+    useState(false);
+  const [missingServiceSubmitting, setMissingServiceSubmitting] =
+    useState(false);
+  const [missingServiceRequestError, setMissingServiceRequestError] =
+    useState<string | null>(null);
+  const [missingServiceSubmitted, setMissingServiceSubmitted] =
+    useState(false);
+  const [missingServiceMode, setMissingServiceMode] =
+    useState<'church' | 'service'>('service');
+  const [missingServiceLastMode, setMissingServiceLastMode] =
+    useState<'church' | 'service' | null>(null);
+
+  const { user } = useAuthStore();
 
   useEffect(() => {
     loadChurches();
@@ -40,8 +57,12 @@ export default function ChurchStep({
       setServices([]);
       setSelectedServiceId(undefined);
       setServicesLoading(false);
+      if (missingServiceLastMode !== 'church') {
+        setMissingServiceSubmitted(false);
+      }
+      setMissingServiceRequestError(null);
     }
-  }, [selectedChurchId]);
+  }, [selectedChurchId, missingServiceLastMode]);
 
   const loadChurches = async () => {
     try {
@@ -92,6 +113,10 @@ export default function ChurchStep({
       setSelectedServiceId(undefined);
       setServices([]);
       setServicesLoading(true);
+      if (missingServiceLastMode !== 'church') {
+        setMissingServiceSubmitted(false);
+      }
+      setMissingServiceRequestError(null);
     }
   };
 
@@ -99,6 +124,52 @@ export default function ChurchStep({
     if (selectedChurchId && selectedServiceId) {
       onNext({ church_id: selectedChurchId, service_id: selectedServiceId });
     }
+  };
+
+  const handleOpenMissingServiceModal = (mode: 'church' | 'service') => {
+    setMissingServiceMode(mode);
+    setMissingServiceRequestError(null);
+    setShowMissingServiceModal(true);
+  };
+
+  const handleSubmitMissingService = async (
+    form: MissingServiceFormData
+  ) => {
+    if (missingServiceSubmitting) return;
+
+    setMissingServiceSubmitting(true);
+    setMissingServiceRequestError(null);
+
+    const result = await supportService.submitMissingServiceRequest({
+      church_id:
+        missingServiceMode === 'service'
+          ? form.churchId ?? selectedChurchId
+          : form.churchId,
+      church_name: form.churchName,
+      church_location: form.churchLocation,
+      service_name: form.serviceName,
+      service_time: form.serviceTime,
+      additional_info: form.additionalInfo,
+      contact_name: form.contactName,
+      contact_email: form.contactEmail,
+      requester_name: data.name,
+      requester_id: user?.id,
+      requester_email: user?.email ?? undefined,
+    });
+
+    if (!result.success) {
+      setMissingServiceRequestError(
+        result.error || 'Unable to submit request. Please try again.'
+      );
+      setMissingServiceSubmitting(false);
+      return;
+    }
+
+    setMissingServiceSubmitting(false);
+    setMissingServiceRequestError(null);
+    setMissingServiceSubmitted(true);
+    setMissingServiceLastMode(missingServiceMode);
+    setShowMissingServiceModal(false);
   };
 
   const renderChurchItem = ({ item }: { item: Church }) => {
@@ -196,6 +267,41 @@ export default function ChurchStep({
                 No services available yet.
               </Text>
             )}
+
+            <TouchableOpacity
+              style={styles.otherServiceCard}
+              onPress={() => handleOpenMissingServiceModal('service')}
+              disabled={missingServiceSubmitting}
+              activeOpacity={0.85}
+            >
+              <View style={styles.otherServiceTextGroup}>
+                <Text style={styles.otherServiceTitle}>
+                  Can&apos;t find your service?
+                </Text>
+                <Text style={styles.otherServiceSubtitle}>
+                  Send us the details and we&apos;ll add it.
+                </Text>
+              </View>
+              <View style={styles.otherServiceIcon}>
+                <Text style={styles.otherServiceIconText}>+</Text>
+              </View>
+            </TouchableOpacity>
+
+            {missingServiceSubmitted && missingServiceLastMode === 'service' && (
+              <View style={styles.infoBanner}>
+                <Text style={styles.infoBannerText}>
+                  Thanks! We received your request and will reach out once the
+                  service is available.
+                </Text>
+              </View>
+            )}
+            {missingServiceRequestError &&
+              missingServiceLastMode === 'service' &&
+              !showMissingServiceModal && (
+              <Text style={styles.serviceInlineError}>
+                {missingServiceRequestError}
+              </Text>
+            )}
           </View>
         )}
       </View>
@@ -245,6 +351,35 @@ export default function ChurchStep({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.churchListContent}
         />
+
+        <View style={styles.missingChurchContainer}>
+          <TouchableOpacity
+            style={styles.missingChurchButton}
+            onPress={() => handleOpenMissingServiceModal('church')}
+            disabled={missingServiceSubmitting}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.missingChurchTitle}>
+              Can&apos;t find your church?
+            </Text>
+            <Text style={styles.missingChurchSubtitle}>
+              Share the details and we&apos;ll add it to VineMe.
+            </Text>
+          </TouchableOpacity>
+          {missingServiceSubmitted && missingServiceLastMode === 'church' && (
+            <Text style={styles.missingChurchNotice}>
+              Thanks! We&apos;ll contact you soon about adding this church. Feel
+              free to return once it appears in the list.
+            </Text>
+          )}
+          {missingServiceRequestError &&
+            missingServiceLastMode === 'church' &&
+            !showMissingServiceModal && (
+              <Text style={styles.serviceInlineError}>
+                {missingServiceRequestError}
+              </Text>
+            )}
+        </View>
       </View>
 
       <View style={styles.footer}>
@@ -259,7 +394,36 @@ export default function ChurchStep({
         >
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
+        {selectedChurchId &&
+          !selectedServiceId &&
+          missingServiceSubmitted &&
+          missingServiceLastMode === 'service' && (
+          <Text style={styles.pendingNotice}>
+            We&apos;ll email you when the service is ready. You can close the app
+            and return later.
+          </Text>
+        )}
       </View>
+      <MissingServiceModal
+        isVisible={showMissingServiceModal}
+        onClose={() => {
+          if (!missingServiceSubmitting) {
+            setShowMissingServiceModal(false);
+          }
+        }}
+        initialChurchId={
+          missingServiceMode === 'service' ? selectedChurchId : undefined
+        }
+        initialChurchName={
+          missingServiceMode === 'service'
+            ? churches.find((c) => c.id === selectedChurchId)?.name || ''
+            : undefined
+        }
+        isSubmitting={missingServiceSubmitting}
+        onSubmit={handleSubmitMissingService}
+        error={missingServiceRequestError}
+        mode={missingServiceMode}
+      />
     </View>
   );
 }
@@ -448,6 +612,47 @@ const styles = StyleSheet.create({
     color: '#666',
     paddingTop: 12,
   },
+  otherServiceCard: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#c6d7ff',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f7fbff',
+    gap: 12,
+  },
+  otherServiceTextGroup: {
+    flex: 1,
+  },
+  otherServiceTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0c3c8c',
+    marginBottom: 4,
+  },
+  otherServiceSubtitle: {
+    fontSize: 13,
+    color: '#4d6aa7',
+    lineHeight: 18,
+  },
+  otherServiceIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#0c3c8c',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  otherServiceIconText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
   checkmarkSmall: {
     width: 20,
     height: 20,
@@ -477,5 +682,58 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  pendingNotice: {
+    marginTop: 12,
+    textAlign: 'center',
+    color: '#4d6aa7',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  infoBanner: {
+    marginTop: 16,
+    backgroundColor: '#edf5ff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#c6d7ff',
+  },
+  infoBannerText: {
+    color: '#19478a',
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  serviceInlineError: {
+    marginTop: 12,
+    color: '#d73a49',
+    fontSize: 13,
+  },
+  missingChurchContainer: {
+    marginTop: 12,
+    gap: 8,
+  },
+  missingChurchButton: {
+    borderWidth: 1,
+    borderColor: '#c6d7ff',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    backgroundColor: '#f7fbff',
+  },
+  missingChurchTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0c3c8c',
+    marginBottom: 4,
+  },
+  missingChurchSubtitle: {
+    fontSize: 14,
+    color: '#4d6aa7',
+    lineHeight: 20,
+  },
+  missingChurchNotice: {
+    fontSize: 14,
+    color: '#19478a',
+    lineHeight: 20,
   },
 });
