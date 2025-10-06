@@ -26,6 +26,7 @@ export default function ChurchStep({
     string | undefined
   >(data.service_id);
   const [loading, setLoading] = useState(true);
+  const [servicesLoading, setServicesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function ChurchStep({
     } else {
       setServices([]);
       setSelectedServiceId(undefined);
+      setServicesLoading(false);
     }
   }, [selectedChurchId]);
 
@@ -66,6 +68,7 @@ export default function ChurchStep({
 
   const loadServices = async (churchId: string) => {
     try {
+      setServicesLoading(true);
       const { data: svc, error } =
         await churchService.getServicesByChurch(churchId);
       if (!error && svc) {
@@ -77,61 +80,127 @@ export default function ChurchStep({
       }
     } catch {
       // Non-blocking
+    } finally {
+      setServicesLoading(false);
     }
   };
 
   const handleChurchSelect = (churchId: string) => {
+    const isSameChurch = selectedChurchId === churchId;
     setSelectedChurchId(churchId);
+    if (!isSameChurch) {
+      setSelectedServiceId(undefined);
+      setServices([]);
+      setServicesLoading(true);
+    }
   };
 
   const handleNext = () => {
-    if (selectedChurchId) {
+    if (selectedChurchId && selectedServiceId) {
       onNext({ church_id: selectedChurchId, service_id: selectedServiceId });
     }
   };
 
-  const handleSkip = () => {
-    onNext({ church_id: undefined });
-  };
+  const renderChurchItem = ({ item }: { item: Church }) => {
+    const isSelected = selectedChurchId === item.id;
 
-  const renderChurchItem = ({ item }: { item: Church }) => (
-    <TouchableOpacity
-      style={[
-        styles.churchItem,
-        selectedChurchId === item.id && styles.churchItemSelected,
-      ]}
-      onPress={() => handleChurchSelect(item.id)}
-      disabled={isLoading}
-    >
-      <View style={styles.churchInfo}>
-        <Text
-          style={[
-            styles.churchName,
-            selectedChurchId === item.id && styles.churchNameSelected,
-          ]}
+    return (
+      <View style={[styles.churchCard, isSelected && styles.churchCardSelected]}>
+        <TouchableOpacity
+          style={styles.churchHeader}
+          onPress={() => handleChurchSelect(item.id)}
+          disabled={isLoading}
+          activeOpacity={0.85}
         >
-          {item.name}
-        </Text>
-        {item.address && (
+          <View style={styles.churchInfo}>
+            <Text
+              style={[styles.churchName, isSelected && styles.churchNameSelected]}
+            >
+              {item.name}
+            </Text>
+            {item.address && (
+              <Text
+                style={[
+                  styles.churchAddress,
+                  isSelected && styles.churchAddressSelected,
+                ]}
+              >
+                {typeof item.address === 'string'
+                  ? item.address
+                  : item.address?.street || 'Address not available'}
+              </Text>
+            )}
+          </View>
           <Text
             style={[
-              styles.churchAddress,
-              selectedChurchId === item.id && styles.churchAddressSelected,
+              styles.expandIndicator,
+              isSelected && styles.expandIndicatorActive,
             ]}
           >
-            {typeof item.address === 'string'
-              ? item.address
-              : item.address?.street || 'Address not available'}
+            {isSelected ? '▲' : '▼'}
           </Text>
+        </TouchableOpacity>
+
+        {isSelected && (
+          <View style={styles.serviceSection}>
+            {servicesLoading ? (
+              <View style={styles.serviceLoading}>
+                <LoadingSpinner size="small" />
+                <Text style={styles.serviceLoadingText}>Loading services...</Text>
+              </View>
+            ) : services.length > 0 ? (
+              services.map((svc) => {
+                const isServiceSelected = selectedServiceId === svc.id;
+
+                return (
+                  <TouchableOpacity
+                    key={svc.id}
+                    style={[
+                      styles.serviceItem,
+                      isServiceSelected && styles.serviceItemSelected,
+                    ]}
+                    onPress={() => setSelectedServiceId(svc.id)}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.serviceInfo}>
+                      <Text
+                        style={[
+                          styles.serviceName,
+                          isServiceSelected && styles.serviceNameSelected,
+                        ]}
+                      >
+                        {svc.name}
+                      </Text>
+                      {svc.day_of_week !== undefined && (
+                        <Text style={styles.serviceMeta}>
+                          Meets on {svc.day_of_week}
+                        </Text>
+                      )}
+                      {svc.start_time && (
+                        <Text style={styles.serviceMeta}>
+                          Starts at {svc.start_time}
+                        </Text>
+                      )}
+                    </View>
+                    {isServiceSelected && (
+                      <View style={styles.checkmarkSmall}>
+                        <Text style={styles.checkmarkText}>✓</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              <Text style={styles.serviceEmptyText}>
+                No services available yet.
+              </Text>
+            )}
+          </View>
         )}
       </View>
-      {selectedChurchId === item.id && (
-        <View style={styles.checkmark}>
-          <Text style={styles.checkmarkText}>✓</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -149,9 +218,6 @@ export default function ChurchStep({
         <Text style={styles.errorMessage}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadChurches}>
           <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipButtonText}>Skip for now</Text>
         </TouchableOpacity>
       </View>
     );
@@ -179,65 +245,19 @@ export default function ChurchStep({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.churchListContent}
         />
-
-        {selectedChurchId && (
-          <>
-            <Text style={[styles.title, { marginTop: 16 }]}>
-              Select a service (optional)
-            </Text>
-            <View>
-              {services.map((svc) => (
-                <TouchableOpacity
-                  key={svc.id}
-                  style={[
-                    styles.churchItem,
-                    selectedServiceId === svc.id && styles.churchItemSelected,
-                  ]}
-                  onPress={() => setSelectedServiceId(svc.id)}
-                  disabled={isLoading}
-                >
-                  <View style={styles.churchInfo}>
-                    <Text
-                      style={[
-                        styles.churchName,
-                        selectedServiceId === svc.id &&
-                          styles.churchNameSelected,
-                      ]}
-                    >
-                      {svc.name}
-                    </Text>
-                    <Text style={styles.churchAddress}>
-                      {svc.day_of_week !== undefined
-                        ? `Meets on ${svc.day_of_week}`
-                        : ''}
-                    </Text>
-                  </View>
-                  {selectedServiceId === svc.id && (
-                    <View style={styles.checkmark}>
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
       </View>
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.button, !selectedChurchId && styles.buttonSecondary]}
-          onPress={selectedChurchId ? handleNext : handleSkip}
-          disabled={isLoading}
+          style={[
+            styles.button,
+            (!selectedChurchId || !selectedServiceId || isLoading) &&
+              styles.buttonDisabled,
+          ]}
+          onPress={handleNext}
+          disabled={!selectedChurchId || !selectedServiceId || isLoading}
         >
-          <Text
-            style={[
-              styles.buttonText,
-              !selectedChurchId && styles.buttonTextSecondary,
-            ]}
-          >
-            {selectedChurchId ? 'Continue' : 'Skip for now'}
-          </Text>
+          <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -290,13 +310,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  skipButton: {
-    padding: 12,
-  },
-  skipButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
   header: {
     padding: 24,
     paddingBottom: 0,
@@ -333,19 +346,28 @@ const styles = StyleSheet.create({
   churchListContent: {
     paddingBottom: 24,
   },
-  churchItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
+  churchCard: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 12,
     marginBottom: 12,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  churchItemSelected: {
+  churchCardSelected: {
     borderColor: '#007AFF',
-    backgroundColor: '#f0f8ff',
+    shadowOpacity: 0.08,
+    backgroundColor: '#f8fbff',
+  },
+  churchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
   },
   churchInfo: {
     flex: 1,
@@ -366,17 +388,77 @@ const styles = StyleSheet.create({
   churchAddressSelected: {
     color: '#0066cc',
   },
-  checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  expandIndicator: {
+    fontSize: 18,
+    color: '#999',
+    marginLeft: 12,
+  },
+  expandIndicatorActive: {
+    color: '#007AFF',
+  },
+  serviceSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#edf2ff',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  serviceLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 12,
+  },
+  serviceLoadingText: {
+    marginLeft: 12,
+    fontSize: 14,
+    color: '#666',
+  },
+  serviceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#e3e8f0',
+    borderRadius: 10,
+    marginTop: 12,
+    backgroundColor: '#f9fbff',
+  },
+  serviceItemSelected: {
+    borderColor: '#007AFF',
+    backgroundColor: '#edf5ff',
+  },
+  serviceInfo: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  serviceNameSelected: {
+    color: '#007AFF',
+  },
+  serviceMeta: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+  },
+  serviceEmptyText: {
+    fontSize: 14,
+    color: '#666',
+    paddingTop: 12,
+  },
+  checkmarkSmall: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkmarkText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
   },
   footer: {
@@ -388,17 +470,12 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
-  buttonSecondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#007AFF',
+  buttonDisabled: {
+    backgroundColor: '#aac8ff',
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  buttonTextSecondary: {
-    color: '#007AFF',
   },
 });

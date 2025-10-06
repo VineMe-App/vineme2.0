@@ -37,7 +37,7 @@ export default function GroupStatusStep({
     {
       id: 'looking' as const,
       title: "I'm looking for a group",
-      subtitle: 'Help me find a group that fits my interests',
+      subtitle: 'Help me find a group that fits me best',
       icon: 'search' as const,
     },
   ];

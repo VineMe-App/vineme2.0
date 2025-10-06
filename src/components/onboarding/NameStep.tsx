@@ -65,6 +65,7 @@ export default function NameStep({
             value={name}
             onChangeText={handleNameChange}
             placeholder="Enter your full name"
+            placeholderTextColor="#666"
             autoCapitalize="words"
             autoCorrect={false}
             autoFocus

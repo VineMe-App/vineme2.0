@@ -29,8 +29,6 @@ const defaultProps = {
     name: 'Test User',
     church_id: 'church-1',
     service_id: 'service-1',
-    interests: [],
-    preferred_meeting_night: '',
   } as OnboardingData,
   onNext: mockOnNext,
   onBack: mockOnBack,

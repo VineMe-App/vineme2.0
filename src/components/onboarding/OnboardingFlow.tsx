@@ -10,8 +10,6 @@ import NameStep from './NameStep';
 import EmailStep from './EmailStep';
 import ChurchStep from './ChurchStep';
 import GroupStatusStep from './GroupStatusStep';
-import InterestsStep from './InterestsStep';
-import MeetingNightStep from './MeetingNightStep';
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
@@ -34,16 +32,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     title: 'Group Status',
     component: GroupStatusStep,
   },
-  {
-    id: 'interests',
-    title: 'Your Interests',
-    component: InterestsStep,
-  },
-  {
-    id: 'meeting-night',
-    title: 'Meeting Preference',
-    component: MeetingNightStep,
-  },
 ];
 
 export default function OnboardingFlow() {
@@ -52,8 +40,6 @@ export default function OnboardingFlow() {
     name: '',
     church_id: undefined,
     service_id: undefined,
-    interests: [],
-    preferred_meeting_night: '',
     group_status: undefined,
   });
   const [isLoading, setIsLoading] = useState(false);

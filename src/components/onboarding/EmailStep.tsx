@@ -86,6 +86,7 @@ export default function EmailStep({
               if (error) setError(null);
             }}
             placeholder="you@example.com"
+            placeholderTextColor="#666"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
