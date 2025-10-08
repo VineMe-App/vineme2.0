@@ -1,16 +1,19 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 
 export function OtpInput({
   value,
   onChange,
-  length = 4,
+  length = 6,
 }: {
   value: string;
   onChange: (next: string) => void;
   length?: number;
 }) {
-  const refs = Array.from({ length }, () => useRef<TextInput>(null));
+  const refs = useMemo(
+    () => Array.from({ length }, () => useRef<TextInput>(null)),
+    [length]
+  );
   const digits = value.split('').slice(0, length);
 
   return (
@@ -22,7 +25,11 @@ export function OtpInput({
           value={digits[i] || ''}
           onChangeText={(t) => {
             const d = t.replace(/[^0-9]/g, '').slice(-1);
-            const next = (value.substring(0, i) + d + value.substring(i + 1)).slice(0, length);
+            const next = (
+              value.substring(0, i) +
+              d +
+              value.substring(i + 1)
+            ).slice(0, length);
             onChange(next);
             if (d && i < length - 1) refs[i + 1].current?.focus();
           }}
@@ -58,5 +65,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 });
-
-

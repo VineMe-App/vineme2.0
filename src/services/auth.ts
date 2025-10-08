@@ -43,7 +43,7 @@ export class AuthService {
 
       // Clear secure storage on sign out
       await secureStorage.clearAuthSession();
-      
+
       // Clear permission cache
       permissionService.clearUserCache();
 
@@ -189,11 +189,11 @@ export class AuthService {
       if (userData.bio) {
         payload.bio = userData.bio;
       }
-      
+
       const { error } = await supabase.from('users').upsert(payload, {
-          onConflict: 'id',
-          ignoreDuplicates: false,
-        });
+        onConflict: 'id',
+        ignoreDuplicates: false,
+      });
 
       if (error) {
         // Surface full error info in dev to diagnose 400s
@@ -208,19 +208,25 @@ export class AuthService {
       try {
         const { error: privacyError } = await supabase
           .from('contact_privacy_settings')
-          .upsert({
-            user_id: user.id,
-            allow_email_sharing: true,
-            allow_phone_sharing: true,
-            allow_contact_by_leaders: true,
-          }, {
-            onConflict: 'user_id',
-            ignoreDuplicates: false, // Update if exists, create if not
-          });
+          .upsert(
+            {
+              user_id: user.id,
+              allow_email_sharing: true,
+              allow_phone_sharing: true,
+              allow_contact_by_leaders: true,
+            },
+            {
+              onConflict: 'user_id',
+              ignoreDuplicates: false, // Update if exists, create if not
+            }
+          );
 
         if (privacyError && __DEV__) {
           // eslint-disable-next-line no-console
-          console.warn('Failed to create privacy settings:', privacyError.message);
+          console.warn(
+            'Failed to create privacy settings:',
+            privacyError.message
+          );
         }
       } catch (privacyErr) {
         if (__DEV__) {
@@ -247,7 +253,7 @@ export class AuthService {
   }> {
     try {
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         return { user: null, error: new Error(error.message) };
       }
@@ -272,7 +278,7 @@ export class AuthService {
         // Refresh the session
         const { data: refreshData, error: refreshError } =
           await supabase.auth.refreshSession();
-        
+
         if (refreshError) {
           await secureStorage.clearAuthSession();
           return { user: null, error: new Error('Session refresh failed') };
@@ -285,7 +291,7 @@ export class AuthService {
             refreshToken: refreshData.session.refresh_token,
             expiresAt: refreshData.session.expires_at,
           });
-          
+
           return { user: refreshData.session.user, error: null };
         }
       }
@@ -317,7 +323,10 @@ export class AuthService {
       }
 
       // Validate input data
-      const validationError = this.validateReferredUserData({ ...data, phone: normalizedPhone });
+      const validationError = this.validateReferredUserData({
+        ...data,
+        phone: normalizedPhone,
+      });
       if (validationError) {
         return { user: null, error: new Error(validationError) };
       }
@@ -349,7 +358,9 @@ export class AuthService {
       );
 
       if (authError || !authData.user) {
-        const appError = handleSupabaseError((authError ?? new Error('Unknown auth error')) as Error);
+        const appError = handleSupabaseError(
+          (authError ?? new Error('Unknown auth error')) as Error
+        );
         return {
           user: null,
           error: new Error(
@@ -386,9 +397,7 @@ export class AuthService {
       const appError = handleSupabaseError(error as Error);
       return {
         user: null,
-        error: new Error(
-          appError.message || 'Failed to create referred user'
-        ),
+        error: new Error(appError.message || 'Failed to create referred user'),
       };
     }
   }
@@ -491,7 +500,7 @@ export class AuthService {
     try {
       // Use Supabase auth to send verification email with custom redirect URL
       const redirectUrl = this.buildEmailVerificationRedirectUrl();
-      
+
       const result = await supabase.auth.resend({
         type: 'signup',
         email: email,
@@ -511,8 +520,8 @@ export class AuthService {
     } catch (error) {
       console.error('Error triggering email verification:', error);
       // Re-throw to allow proper error handling in calling code
-      throw error instanceof Error 
-        ? error 
+      throw error instanceof Error
+        ? error
         : new Error('Failed to send verification email');
     }
   }
@@ -552,7 +561,7 @@ export class AuthService {
           expiresAt: session.expires_at,
         });
       }
-      
+
       callback(session?.user || null);
     });
   }
@@ -566,12 +575,15 @@ export class AuthService {
     try {
       const phone = this.normalizePhone(rawPhone);
       if (!phone) {
-        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+        return {
+          success: false,
+          error: 'Invalid phone number format. Please use +countrycode format.',
+        };
       }
 
-      const { error } = await supabase.auth.signInWithOtp({ 
+      const { error } = await supabase.auth.signInWithOtp({
         phone,
-        options: { shouldCreateUser: true }
+        options: { shouldCreateUser: true },
       });
 
       if (error) {
@@ -582,7 +594,10 @@ export class AuthService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send verification code',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to send verification code',
       };
     }
   }
@@ -596,22 +611,28 @@ export class AuthService {
     try {
       const phone = this.normalizePhone(rawPhone);
       if (!phone) {
-        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+        return {
+          success: false,
+          error: 'Invalid phone number format. Please use +countrycode format.',
+        };
       }
 
-      const { error } = await supabase.auth.signInWithOtp({ 
+      const { error } = await supabase.auth.signInWithOtp({
         phone,
-        options: { shouldCreateUser: false }
+        options: { shouldCreateUser: false },
       });
 
       if (error) {
         // Check if user not found
-        if (error.message.toLowerCase().includes('user not found') || 
-            error.message.toLowerCase().includes('invalid login credentials')) {
-          return { 
-            success: false, 
-            error: "This phone isn't linked yet. Please log in with your email, then link your phone in Profile → Security.",
-            userNotFound: true
+        if (
+          error.message.toLowerCase().includes('user not found') ||
+          error.message.toLowerCase().includes('invalid login credentials')
+        ) {
+          return {
+            success: false,
+            error:
+              "This phone isn't linked yet. Please log in with your email, then link your phone in Profile → Security.",
+            userNotFound: true,
           };
         }
         return { success: false, error: error.message };
@@ -621,7 +642,10 @@ export class AuthService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send verification code',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to send verification code',
       };
     }
   }
@@ -645,16 +669,27 @@ export class AuthService {
       if (error) {
         const msg = error.message.toLowerCase();
         // Check if user not found
-        if (msg.includes('user not found') || msg.includes('invalid login credentials')) {
-          return { 
-            success: false, 
-            error: "This email isn't linked yet. Please sign up with your phone first.",
-            userNotFound: true
+        if (
+          msg.includes('user not found') ||
+          msg.includes('invalid login credentials')
+        ) {
+          return {
+            success: false,
+            error:
+              "This email isn't linked yet. Please sign up with your phone first.",
+            userNotFound: true,
           };
         }
         // Some projects configure supabase to block email sign-in entirely; surface a better message
-        if (msg.includes('signups not allowed') || msg.includes('disabled') || msg.includes('not allowed')) {
-          return { success: false, error: 'Email login is currently disabled by server policy.' };
+        if (
+          msg.includes('signups not allowed') ||
+          msg.includes('disabled') ||
+          msg.includes('not allowed')
+        ) {
+          return {
+            success: false,
+            error: 'Email login is currently disabled by server policy.',
+          };
         }
         return { success: false, error: error.message };
       }
@@ -663,7 +698,8 @@ export class AuthService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send magic link',
+        error:
+          error instanceof Error ? error.message : 'Failed to send magic link',
       };
     }
   }
@@ -677,12 +713,12 @@ export class AuthService {
     type: 'sms' | 'email'
   ): Promise<{ success: boolean; error?: string; user?: User }> {
     try {
-      // Expect 4-digit code for SMS, 6-digit for email
-      const expectedLength = type === 'sms' ? 4 : 6;
+      // Always expect 6-digit code for both SMS and email
+      const expectedLength = 6;
       if (!new RegExp(`^\\d{${expectedLength}}$`).test(code)) {
-        return { 
-          success: false, 
-          error: `Enter the ${expectedLength}-digit code` 
+        return {
+          success: false,
+          error: `Enter the ${expectedLength}-digit code`,
         };
       }
 
@@ -695,13 +731,13 @@ export class AuthService {
         verifyOptions = {
           phone: normalizedPhone,
           token: code,
-          type: 'sms' as const
+          type: 'sms' as const,
         };
       } else {
         verifyOptions = {
           email: phoneOrEmail,
           token: code,
-          type: 'email' as const
+          type: 'email' as const,
         };
       }
 
@@ -736,7 +772,9 @@ export class AuthService {
   /**
    * Link email to existing phone-authenticated user (no verification required)
    */
-  async linkEmail(email: string): Promise<{ success: boolean; error?: string }> {
+  async linkEmail(
+    email: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase.auth.updateUser({ email });
 
@@ -756,11 +794,16 @@ export class AuthService {
   /**
    * Link phone to existing email-authenticated user
    */
-  async linkPhone(rawPhone: string): Promise<{ success: boolean; error?: string }> {
+  async linkPhone(
+    rawPhone: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const phone = this.normalizePhone(rawPhone);
       if (!phone) {
-        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+        return {
+          success: false,
+          error: 'Invalid phone number format. Please use +countrycode format.',
+        };
       }
 
       const { error } = await supabase.auth.updateUser({ phone });

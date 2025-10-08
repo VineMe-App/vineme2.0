@@ -70,7 +70,7 @@ export default function PhoneLoginScreen() {
           <Text variant="body" color="secondary" style={styles.subtitle}>
             {step === 'enter-phone'
               ? 'Enter your phone number to receive a verification code'
-              : 'Enter the 4-digit code sent to your phone'}
+              : 'Enter the 6-digit code sent to your phone'}
           </Text>
         </View>
 
@@ -113,12 +113,12 @@ export default function PhoneLoginScreen() {
               <TextInput
                 value={code}
                 onChangeText={(text) =>
-                  setCode(text.replace(/\D/g, '').slice(0, 4))
+                  setCode(text.replace(/\D/g, '').slice(0, 6))
                 }
                 style={styles.otpInput}
                 keyboardType="number-pad"
-                placeholder="1234"
-                maxLength={4}
+                placeholder="123456"
+                maxLength={6}
                 textAlign="center"
                 autoFocus
               />
