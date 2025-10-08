@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { getDisplayName, getFullName } from '@/utils/name';
 
 interface UserManagementCardProps {
   user: UserWithGroupStatus;
@@ -44,7 +45,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
 
   const handleContactUser = () => {
     if (user.email) {
-      Alert.alert('Contact User', `Contact ${user.name} at ${user.email}?`, [
+      Alert.alert('Contact User', `Contact ${displayName} at ${user.email}?`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Email',
@@ -61,6 +62,9 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
     return user.is_connected ? 'Connected' : 'Unconnected';
   };
 
+  const fullName = getFullName(user);
+  const displayName = getDisplayName(user) || fullName || 'Member';
+
   return (
     <>
       <TouchableOpacity
@@ -69,7 +73,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
         activeOpacity={0.7}
         {...AccessibilityHelpers.createNavigationProps(
           AdminAccessibilityLabels.userConnectionStatus(
-            user.name,
+            displayName,
             user.is_connected,
             user.group_count
           ),
@@ -80,8 +84,8 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           <Avatar
             size={50}
             imageUrl={user.avatar_url}
-            name={user.name}
-            accessibilityLabel={`Profile picture for ${user.name}`}
+            name={fullName || displayName}
+            accessibilityLabel={`Profile picture for ${displayName}`}
           />
           <View style={styles.userInfo}>
             <Text
@@ -89,7 +93,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
               accessibilityRole="header"
               accessibilityLevel={3}
             >
-              {user.name}
+              {displayName}
             </Text>
             <Text
               style={styles.userEmail}
@@ -101,7 +105,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
               style={styles.statusContainer}
               accessibilityRole="group"
               accessibilityLabel={AdminAccessibilityLabels.userConnectionStatus(
-                user.name,
+                displayName,
                 user.is_connected,
                 user.group_count
               )}
@@ -166,7 +170,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
             variant="secondary"
             size="small"
             style={styles.actionButton}
-            accessibilityLabel={`View group history for ${user.name}`}
+            accessibilityLabel={`View group history for ${displayName}`}
             accessibilityHint="Double tap to see this user's group membership history"
           />
           <Button
@@ -175,7 +179,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
             variant="primary"
             size="small"
             style={styles.actionButton}
-            accessibilityLabel={`Contact ${user.name}`}
+            accessibilityLabel={`Contact ${displayName}`}
             accessibilityHint="Double tap to contact this user"
           />
         </View>
@@ -185,7 +189,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
       <Modal
         visible={showHistory}
         onClose={() => setShowHistory(false)}
-        title={`${user.name}'s Group History`}
+        title={`${displayName}'s Group History`}
       >
         <View style={styles.historyContent}>
           {historyLoading ? (

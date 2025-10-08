@@ -25,7 +25,7 @@ export default function ProfileSecurityScreen() {
   
   const [newEmail, setNewEmail] = useState('');
   
-  const [countryCode, setCountryCode] = useState('+1');
+  const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
   const [phoneCode, setPhoneCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
@@ -181,7 +181,7 @@ export default function ProfileSecurityScreen() {
                 onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
                 style={styles.input}
                 keyboardType="phone-pad"
-                placeholder="5551234567"
+                placeholder="7123456789"
                 autoCapitalize="none"
                 editable={!isLoading}
               />

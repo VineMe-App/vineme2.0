@@ -1,6 +1,17 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import { triggerJoinRequestReceivedNotification } from './notifications';
+import { getFullName } from '../utils/name';
+
+const withDisplayName = <T extends { first_name?: string | null; last_name?: string | null }>(
+  user: (T & { name?: string | null }) | null | undefined
+) =>
+  user
+    ? {
+        ...user,
+        name: getFullName(user),
+      }
+    : user;
 import type {
   GroupWithDetails,
   GroupMembership,
@@ -73,7 +84,7 @@ export class GroupService {
             joined_at,
             journey_status,
             referral_id,
-            user:users(id, name, avatar_url)
+            user:users(id, first_name, last_name, avatar_url)
           )
         `
         )
@@ -89,6 +100,10 @@ export class GroupService {
       const groupsWithCount =
         data?.map((group) => ({
           ...group,
+          memberships: group.memberships?.map((m: any) => ({
+            ...m,
+            user: withDisplayName(m.user),
+          })),
           member_count:
             group.memberships?.filter((m: any) => m.status === 'active')
               .length || 0,
@@ -126,7 +141,7 @@ export class GroupService {
             joined_at,
             journey_status,
             referral_id,
-            user:users(id, name, avatar_url)
+            user:users(id, first_name, last_name, avatar_url)
           )
         `
         )
@@ -140,6 +155,10 @@ export class GroupService {
       // Add member count
       const groupWithCount = {
         ...data,
+        memberships: data.memberships?.map((m: any) => ({
+          ...m,
+          user: withDisplayName(m.user),
+        })),
         member_count:
           data.memberships?.filter((m: any) => m.status === 'active').length ||
           0,
@@ -254,7 +273,11 @@ export class GroupService {
       // Trigger leader notifications for the join request
       try {
         const [requesterRes, groupRes] = await Promise.all([
-          supabase.from('users').select('name').eq('id', userId).single(),
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', userId)
+            .single(),
           supabase.from('groups').select('title').eq('id', groupId).single(),
         ]);
 
@@ -272,7 +295,7 @@ export class GroupService {
               groupId,
               groupTitle: groupRes.data.title,
               requesterId: userId,
-              requesterName: requesterRes.data.name,
+              requesterName: getFullName(requesterRes.data),
               leaderIds,
             });
           }
@@ -389,7 +412,7 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url, newcomer),
+          user:users(id, first_name, last_name, avatar_url, newcomer),
           referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
         `
         )
@@ -401,7 +424,12 @@ export class GroupService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const normalized = (data || []).map((m: any) => ({
+        ...m,
+        user: withDisplayName(m.user),
+      }));
+
+      return { data: normalized, error: null };
     } catch (error) {
       return {
         data: null,
@@ -444,7 +472,7 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url, newcomer),
+          user:users(id, first_name, last_name, avatar_url, newcomer),
           referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
         `
         )
@@ -457,7 +485,12 @@ export class GroupService {
         return { data: null, error: new Error(error.message) };
       }
 
-      const memberships = (data || []).filter((m: any) => Boolean(m.user?.id));
+      const memberships = (data || [])
+        .map((m: any) => ({
+          ...m,
+          user: withDisplayName(m.user),
+        }))
+        .filter((m: any) => Boolean(m.user?.id));
       return { data: memberships as any, error: null };
     } catch (error) {
       return {
@@ -482,7 +515,7 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url)
+          user:users(id, first_name, last_name, avatar_url)
         `
         )
         .eq('group_id', groupId)
@@ -494,7 +527,12 @@ export class GroupService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const normalized = (data || []).map((m: any) => ({
+        ...m,
+        user: withDisplayName(m.user),
+      }));
+
+      return { data: normalized, error: null };
     } catch (error) {
       return {
         data: null,
@@ -527,7 +565,7 @@ export class GroupService {
       // Get referrer details
       const { data: referrer, error: referrerError } = await supabase
         .from('users')
-        .select('name')
+        .select('first_name, last_name')
         .eq('id', referralData.referrer_id)
         .single();
 
@@ -539,7 +577,7 @@ export class GroupService {
       // For now, we'll just log the referral (could be stored in a referrals table)
       console.log('Group referral sent:', {
         group: group.title,
-        referrer: referrer.name,
+        referrer: getFullName(referrer),
         referee: referralData.referee_email,
         message: referralData.message,
         whatsappLink: group.whatsapp_link,
@@ -605,6 +643,10 @@ export class GroupService {
       const groupsWithCount =
         data?.map((group) => ({
           ...group,
+          memberships: group.memberships?.map((m: any) => ({
+            ...m,
+            user: m.user ? { ...m.user, name: getFullName(m.user) } : m.user,
+          })),
           member_count:
             group.memberships?.filter((m: any) => m.status === 'active')
               .length || 0,

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Badge } from '../ui/Badge';
 import { Avatar } from '../ui/Avatar';
+import { getDisplayName, getFullName } from '@/utils/name';
 import { useGroupJoinRequests } from '../../hooks/useJoinRequests';
 import { useUserGroups } from '../../hooks/useGroups';
 import type { GroupJoinRequestWithUser } from '../../types/database';
@@ -73,30 +74,38 @@ export const JoinRequestNotifications: React.FC<
         showsVerticalScrollIndicator={false}
         horizontal
       >
-        {allPendingRequests.slice(0, 5).map((request) => (
-          <TouchableOpacity
-            key={request.id}
-            style={styles.requestItem}
-            onPress={() => onRequestPress?.(request)}
-          >
-            <Avatar
-              size={32}
-              imageUrl={request.user?.avatar_url}
-              name={request.user?.name || 'Unknown'}
-            />
-            <View style={styles.requestInfo}>
-              <Text style={styles.userName} numberOfLines={1}>
-                {request.user?.name || 'Unknown'}
-              </Text>
-              <Text style={styles.groupName} numberOfLines={1}>
-                {request.group?.title}
-              </Text>
-              <Text style={styles.timeAgo}>
-                {formatTimeAgo(request.created_at)}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {allPendingRequests.slice(0, 5).map((request) => {
+          const requesterFullName = getFullName(request.user);
+          const requesterShortName = getDisplayName(request.user, {
+            lastInitial: true,
+            fallback: 'full',
+          });
+
+          return (
+            <TouchableOpacity
+              key={request.id}
+              style={styles.requestItem}
+              onPress={() => onRequestPress?.(request)}
+            >
+              <Avatar
+                size={32}
+                imageUrl={request.user?.avatar_url}
+                name={requesterFullName}
+              />
+              <View style={styles.requestInfo}>
+                <Text style={styles.userName} numberOfLines={1}>
+                  {requesterShortName || requesterFullName || 'Unknown'}
+                </Text>
+                <Text style={styles.groupName} numberOfLines={1}>
+                  {request.group?.title}
+                </Text>
+                <Text style={styles.timeAgo}>
+                  {formatTimeAgo(request.created_at)}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
 
         {allPendingRequests.length > 5 && (
           <View style={styles.moreIndicator}>

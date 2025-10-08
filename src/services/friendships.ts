@@ -5,6 +5,7 @@ import {
   triggerFriendRequestNotification,
   triggerFriendRequestAcceptedNotification,
 } from './notifications';
+import { getFullName } from '../utils/name';
 
 export interface FriendshipWithUser extends DatabaseFriendship {
   friend?: Partial<User>;
@@ -17,6 +18,14 @@ export interface FriendshipServiceResponse<T = any> {
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'rejected' | 'blocked';
+
+const withDisplayName = <T extends Partial<User> | null | undefined>(user: T) =>
+  user
+    ? {
+        ...user,
+        name: getFullName(user),
+      }
+    : user;
 
 export class FriendshipService {
   /**
@@ -73,14 +82,15 @@ export class FriendshipService {
       try {
         const { data: fromUser } = await supabase
           .from('users')
-          .select('name')
+          .select('first_name, last_name')
           .eq('id', userId)
           .single();
-        if (fromUser?.name) {
+        const fromUserName = getFullName(fromUser) || 'A friend';
+        if (fromUserName) {
           await triggerFriendRequestNotification({
             fromUserId: userId,
             toUserId: friendId,
-            fromUserName: fromUser.name,
+            fromUserName,
           });
         }
       } catch (e) {
@@ -126,14 +136,15 @@ export class FriendshipService {
         // data.user_id is the requester; userId is the accepter
         const { data: acceptor } = await supabase
           .from('users')
-          .select('name')
+          .select('first_name, last_name')
           .eq('id', userId)
           .single();
-        if (acceptor?.name) {
+        const acceptorName = getFullName(acceptor) || 'A friend';
+        if (acceptorName) {
           await triggerFriendRequestAcceptedNotification({
             originalRequesterId: data.user_id,
             acceptedByUserId: userId,
-            acceptedByUserName: acceptor.name,
+            acceptedByUserName: acceptorName,
           });
         }
       } catch (e) {
@@ -289,8 +300,8 @@ export class FriendshipService {
         .select(
           `
           *,
-          friend:users!friendships_friend_id_fkey(id, name, avatar_url, church_id),
-          user:users!friendships_user_id_fkey(id, name, avatar_url, church_id)
+          friend:users!friendships_friend_id_fkey(id, first_name, last_name, avatar_url, church_id),
+          user:users!friendships_user_id_fkey(id, first_name, last_name, avatar_url, church_id)
         `
         )
         .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
@@ -302,14 +313,19 @@ export class FriendshipService {
 
       // Transform data to always show the other user as 'friend'
       const transformedData = (data || []).map((friendship) => {
+        const normalized = {
+          ...friendship,
+          friend: withDisplayName(friendship.friend),
+          user: withDisplayName(friendship.user),
+        } as FriendshipWithUser;
         if (friendship.user_id === userId) {
-          return friendship;
+          return normalized;
         } else {
           // Swap user and friend for consistent display
           return {
-            ...friendship,
-            friend: friendship.user,
-            user: friendship.friend,
+            ...normalized,
+            friend: normalized.user,
+            user: normalized.friend,
           };
         }
       });
@@ -336,7 +352,7 @@ export class FriendshipService {
         .select(
           `
           *,
-          friend:users!friendships_friend_id_fkey(id, name, avatar_url, church_id)
+          friend:users!friendships_friend_id_fkey(id, first_name, last_name, avatar_url, church_id)
         `
         )
         .eq('user_id', userId)
@@ -346,7 +362,12 @@ export class FriendshipService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const normalized = (data || []).map((friendship) => ({
+        ...friendship,
+        friend: withDisplayName(friendship.friend),
+      }));
+
+      return { data: normalized, error: null };
     } catch (error) {
       return {
         data: null,
@@ -370,7 +391,7 @@ export class FriendshipService {
         .select(
           `
           *,
-          user:users!friendships_user_id_fkey(id, name, avatar_url, church_id)
+          user:users!friendships_user_id_fkey(id, first_name, last_name, avatar_url, church_id)
         `
         )
         .eq('friend_id', userId)
@@ -380,7 +401,12 @@ export class FriendshipService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const normalized = (data || []).map((friendship) => ({
+        ...friendship,
+        user: withDisplayName(friendship.user),
+      }));
+
+      return { data: normalized, error: null };
     } catch (error) {
       return {
         data: null,
@@ -438,8 +464,8 @@ export class FriendshipService {
         .select(
           `
           *,
-          friend:users!friendships_friend_id_fkey(id, name, avatar_url, church_id),
-          user:users!friendships_user_id_fkey(id, name, avatar_url, church_id)
+          friend:users!friendships_friend_id_fkey(id, first_name, last_name, avatar_url, church_id),
+          user:users!friendships_user_id_fkey(id, first_name, last_name, avatar_url, church_id)
         `
         )
         .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
@@ -456,14 +482,19 @@ export class FriendshipService {
 
       // Transform data to always show the other user as 'friend'
       const transformedData = (data || []).map((friendship) => {
+        const normalized = {
+          ...friendship,
+          friend: withDisplayName(friendship.friend),
+          user: withDisplayName(friendship.user),
+        } as FriendshipWithUser;
         if (friendship.user_id === userId) {
-          return friendship;
+          return normalized;
         } else {
           // Swap user and friend for consistent display
           return {
-            ...friendship,
-            friend: friendship.user,
-            user: friendship.friend,
+            ...normalized,
+            friend: normalized.user,
+            user: normalized.friend,
           };
         }
       });

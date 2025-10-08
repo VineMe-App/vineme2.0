@@ -1,26 +1,27 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  TextInput, 
-  Alert, 
+import {
+  View,
+  StyleSheet,
+  TextInput,
+  Alert,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { useRouter, Link } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { Ionicons } from '@expo/vector-icons';
-import { OtpInput } from '@/components/ui/OtpInput';
 
 export default function EmailLoginScreen() {
   const router = useRouter();
   const { signInWithEmail, verifyOtp, isLoading } = useAuthStore();
-  
-  const [step, setStep] = useState<'enter-email' | 'verify-options'>('enter-email');
+
+  const [step, setStep] = useState<'enter-email' | 'verify-options'>(
+    'enter-email'
+  );
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
 
@@ -36,7 +37,7 @@ export default function EmailLoginScreen() {
     }
 
     const result = await signInWithEmail(email.trim());
-    
+
     if (result.success) {
       setStep('verify-options');
     } else if (result.userNotFound) {
@@ -48,7 +49,7 @@ export default function EmailLoginScreen() {
 
   const handleVerifyCode = async () => {
     const result = await verifyOtp(email, code, 'email');
-    
+
     if (result.success) {
       router.replace('/(tabs)');
     } else {
@@ -59,7 +60,10 @@ export default function EmailLoginScreen() {
   const handleResendVerification = async () => {
     const result = await signInWithEmail(email);
     if (result.success) {
-      Alert.alert('Verification Sent', 'A new verification has been sent to your email.');
+      Alert.alert(
+        'Verification Sent',
+        'A new verification has been sent to your email.'
+      );
     } else {
       Alert.alert('Error', result.error || 'Failed to resend verification');
     }
@@ -72,19 +76,22 @@ export default function EmailLoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text variant="h2" weight="bold" style={styles.title}>Sign in with Email</Text>
+          <Text variant="h2" weight="bold" style={styles.title}>
+            Sign in with Email
+          </Text>
           <Text variant="body" color="secondary" style={styles.subtitle}>
-            {step === 'enter-email' 
+            {step === 'enter-email'
               ? 'Enter your email address to receive verification'
-              : 'Choose how to verify your email'
-            }
+              : 'Choose how to verify your email'}
           </Text>
         </View>
 
         <View style={styles.form}>
           {step === 'enter-email' ? (
             <>
-              <Text variant="label" style={styles.label}>Email Address</Text>
+              <Text variant="label" style={styles.label}>
+                Email Address
+              </Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -95,9 +102,9 @@ export default function EmailLoginScreen() {
                 autoCorrect={false}
                 editable={!isLoading}
               />
-              <Button 
-                title="Send Verification" 
-                onPress={handleSendVerification} 
+              <Button
+                title="Send Verification"
+                onPress={handleSendVerification}
                 loading={isLoading}
                 style={styles.button}
               />
@@ -105,10 +112,27 @@ export default function EmailLoginScreen() {
           ) : (
             <>
               <View style={styles.verificationContainer}>
-                <Text variant="h3" weight="bold" style={styles.verificationTitle}>Verification Sent!</Text>
-                <Text variant="body" color="secondary" style={styles.verificationMessage}>
+                <Text
+                  variant="h3"
+                  weight="bold"
+                  style={styles.verificationTitle}
+                >
+                  Verification Sent!
+                </Text>
+                <Text
+                  variant="body"
+                  color="secondary"
+                  style={styles.verificationMessage}
+                >
                   We've sent verification to{'\n'}
-                  <Text variant="body" weight="semiBold" color="primary" style={styles.emailAddress}>{email}</Text>
+                  <Text
+                    variant="body"
+                    weight="semiBold"
+                    color="primary"
+                    style={styles.emailAddress}
+                  >
+                    {email}
+                  </Text>
                 </Text>
               </View>
 
@@ -116,9 +140,19 @@ export default function EmailLoginScreen() {
               <View style={styles.optionContainer}>
                 <View style={styles.optionHeader}>
                   <Ionicons name="mail" size={24} color="#007AFF" />
-                  <Text variant="bodyLarge" weight="semiBold" style={styles.optionTitle}>Option 1: Magic Link</Text>
+                  <Text
+                    variant="bodyLarge"
+                    weight="semiBold"
+                    style={styles.optionTitle}
+                  >
+                    Option 1: Magic Link
+                  </Text>
                 </View>
-                <Text variant="body" color="secondary" style={styles.optionDescription}>
+                <Text
+                  variant="body"
+                  color="secondary"
+                  style={styles.optionDescription}
+                >
                   Click the link in your email to sign in automatically
                 </Text>
               </View>
@@ -126,7 +160,13 @@ export default function EmailLoginScreen() {
               {/* Divider */}
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
-                <Text variant="body" color="secondary" style={styles.dividerText}>OR</Text>
+                <Text
+                  variant="body"
+                  color="secondary"
+                  style={styles.dividerText}
+                >
+                  OR
+                </Text>
                 <View style={styles.dividerLine} />
               </View>
 
@@ -134,32 +174,58 @@ export default function EmailLoginScreen() {
               <View style={styles.optionContainer}>
                 <View style={styles.optionHeader}>
                   <Ionicons name="keypad" size={24} color="#007AFF" />
-                  <Text variant="bodyLarge" weight="semiBold" style={styles.optionTitle}>Option 2: Enter Code</Text>
+                  <Text
+                    variant="bodyLarge"
+                    weight="semiBold"
+                    style={styles.optionTitle}
+                  >
+                    Option 2: Enter Code
+                  </Text>
                 </View>
-                <Text variant="body" color="secondary" style={styles.optionDescription}>
+                <Text
+                  variant="body"
+                  color="secondary"
+                  style={styles.optionDescription}
+                >
                   Enter the 6-digit code from your email
                 </Text>
-                <OtpInput 
-                  value={code} 
-                  onChange={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))} 
-                  length={6} 
+                <TextInput
+                  value={code}
+                  onChangeText={(text) =>
+                    setCode(text.replace(/\D/g, '').slice(0, 6))
+                  }
+                  style={styles.otpInput}
+                  keyboardType="number-pad"
+                  placeholder="123456"
+                  maxLength={6}
+                  textAlign="center"
+                  autoFocus
                 />
-                <Button 
-                  title="Verify Code" 
-                  onPress={handleVerifyCode} 
+                <Button
+                  title="Verify Code"
+                  onPress={handleVerifyCode}
                   loading={isLoading}
                   style={styles.verifyButton}
                 />
               </View>
 
               <View style={styles.resendContainer}>
-                <TouchableOpacity onPress={handleResendVerification} disabled={isLoading}>
-                  <Text variant="body" color="primary" style={styles.resendText}>Didn't receive anything? Resend</Text>
+                <TouchableOpacity
+                  onPress={handleResendVerification}
+                  disabled={isLoading}
+                >
+                  <Text
+                    variant="body"
+                    color="primary"
+                    style={styles.resendText}
+                  >
+                    Didn't receive anything? Resend
+                  </Text>
                 </TouchableOpacity>
               </View>
 
-              <Button 
-                title="Try Different Email" 
+              <Button
+                title="Try Different Email"
                 onPress={() => {
                   setStep('enter-email');
                   setCode('');
@@ -171,19 +237,27 @@ export default function EmailLoginScreen() {
           )}
 
           <View style={styles.footer}>
-            <Text variant="body" color="secondary" style={styles.footerText}>Prefer phone? </Text>
+            <Text variant="body" color="secondary" style={styles.footerText}>
+              Prefer phone?{' '}
+            </Text>
             <Link href="/(auth)/phone-login" asChild>
               <TouchableOpacity>
-                <Text variant="body" color="primary" style={styles.linkText}>Sign in with phone</Text>
+                <Text variant="body" color="primary" style={styles.linkText}>
+                  Sign in with phone
+                </Text>
               </TouchableOpacity>
             </Link>
           </View>
 
           <View style={styles.footer}>
-            <Text variant="body" color="secondary" style={styles.footerText}>Don't have an account? </Text>
+            <Text variant="body" color="secondary" style={styles.footerText}>
+              Don't have an account?{' '}
+            </Text>
             <Link href="/(auth)/phone-signup" asChild>
               <TouchableOpacity>
-                <Text variant="body" color="primary" style={styles.linkText}>Sign up with phone</Text>
+                <Text variant="body" color="primary" style={styles.linkText}>
+                  Sign up with phone
+                </Text>
               </TouchableOpacity>
             </Link>
           </View>
@@ -236,6 +310,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#f9f9f9',
     marginBottom: 16,
+  },
+  otpInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 16,
+    fontSize: 24,
+    fontWeight: 'bold',
+    backgroundColor: '#f9f9f9',
+    marginBottom: 16,
+    textAlign: 'center',
+    letterSpacing: 4,
   },
   button: {
     marginTop: 8,

@@ -3,7 +3,9 @@
 
 export interface User {
   id: string;
-  name: string;
+  name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   // Email moved to auth.users; not exposed in public.users
   email?: string;
   phone?: string;
@@ -198,12 +200,16 @@ export interface ContactPrivacySettings {
 export interface ContactAuditLogWithDetails extends ContactAuditLog {
   user?: {
     id: string;
-    name: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    name?: string | null;
     email?: string;
   };
   accessor?: {
     id: string;
-    name: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    name?: string | null;
   };
   group?: {
     id: string;

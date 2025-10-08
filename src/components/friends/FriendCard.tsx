@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Avatar } from '../ui/Avatar';
+import { getDisplayName, getFullName } from '@/utils/name';
 
 import type { FriendshipWithUser } from '../../services/friendships';
 
@@ -24,6 +25,9 @@ export function FriendCard({
     return null;
   }
 
+  const shortName = getDisplayName(friend, { lastInitial: true, fallback: 'full' });
+  const fullName = getFullName(friend);
+
   const handleRemoveFriend = () => {
     if (friend?.id) {
       onRemoveFriend?.(friend.id);
@@ -42,11 +46,11 @@ export function FriendCard({
         style={styles.userInfo}
         onPress={() => friend?.id && router.push(`/user/${friend.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={`View ${friend.name}'s profile`}
+        accessibilityLabel={`View ${fullName || 'user'}'s profile`}
       >
-        <Avatar imageUrl={friend.avatar_url} name={friend.name} size={50} />
+        <Avatar imageUrl={friend.avatar_url} name={fullName} size={50} />
         <View style={styles.textContainer}>
-          <Text style={styles.name}>{friend.name}</Text>
+          <Text style={styles.name}>{shortName || fullName || 'Friend'}</Text>
           <Text style={styles.email}>{friend.email}</Text>
         </View>
       </TouchableOpacity>

@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../utils/constants';
 import type { NotificationType, Notification, NotificationSettings, NotificationTriggerData } from '../types/database';
+import { getFullName } from '../utils/name';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -687,7 +688,7 @@ export const sendJoinRequestNotification = async (
       .select(
         `
         user_id,
-        user:users(id, name)
+        user:users(id, first_name, last_name)
       `
       )
       .eq('group_id', groupId)

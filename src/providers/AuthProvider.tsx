@@ -25,11 +25,14 @@ interface AuthContextType {
   loadUserProfile: () => Promise<void>;
   updateUserProfile: (updates: Partial<DatabaseUser>) => Promise<boolean>;
   createUserProfile: (userData: {
-    name: string;
+    first_name?: string;
+    last_name?: string;
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }) => Promise<boolean>;
   clearError: () => void;
 }

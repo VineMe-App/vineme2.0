@@ -16,6 +16,7 @@ import {
   createReferralErrorMessage,
   type ReferralFormData,
 } from '../utils/referralValidation';
+import { getFullName } from '../utils/name';
 
 export interface CreateReferralData {
   email: string;
@@ -220,14 +221,17 @@ export class ReferralService {
         // Try to obtain referred user's name
         const { data: referredUser } = await supabase
           .from('users')
-          .select('id, name')
+          .select('id, first_name, last_name')
           .eq('id', userId)
           .single();
         const { triggerReferralAcceptedNotification } = await import('./notifications');
         await triggerReferralAcceptedNotification({
           referrerId: data.referrerId,
           referredUserId: userId,
-          referredUserName: referredUser?.name || data.firstName || data.email.split('@')[0],
+          referredUserName:
+            getFullName(referredUser) ||
+            data.firstName ||
+            data.email.split('@')[0],
         });
       } catch (e) {
         if (__DEV__) console.warn('Referral accepted notification failed', e);
@@ -277,14 +281,17 @@ export class ReferralService {
       try {
         const { data: referredUser } = await supabase
           .from('users')
-          .select('id, name')
+          .select('id, first_name, last_name')
           .eq('id', userId)
           .single();
         const { triggerReferralAcceptedNotification } = await import('./notifications');
         await triggerReferralAcceptedNotification({
           referrerId: data.referrerId,
           referredUserId: userId,
-          referredUserName: referredUser?.name || data.firstName || data.email.split('@')[0],
+          referredUserName:
+            getFullName(referredUser) ||
+            data.firstName ||
+            data.email.split('@')[0],
         });
       } catch (e) {
         if (__DEV__) console.warn('Referral accepted notification failed', e);
@@ -324,8 +331,8 @@ export class ReferralService {
           `
           *,
           group:groups(*),
-          referrer:users!referrals_referred_by_user_id_fkey(id, name),
-          referred_user:users!referrals_referred_user_id_fkey(id, name)
+          referrer:users!referrals_referred_by_user_id_fkey(id, first_name, last_name),
+          referred_user:users!referrals_referred_user_id_fkey(id, first_name, last_name)
         `
         )
         .eq('referred_by_user_id', userId)
@@ -336,8 +343,26 @@ export class ReferralService {
       }
 
       // Separate into group and general referrals
-      const groupReferrals = (allReferrals || []).filter(ref => ref.group_id !== null);
-      const generalReferrals = (allReferrals || []).filter(ref => ref.group_id === null);
+      const normalizeReferralUser = (user: any) =>
+        user
+          ? {
+              ...user,
+              name: getFullName(user),
+            }
+          : user;
+
+      const hydratedReferrals = (allReferrals || []).map((ref) => ({
+        ...ref,
+        referrer: normalizeReferralUser(ref.referrer),
+        referred_user: normalizeReferralUser(ref.referred_user),
+      }));
+
+      const groupReferrals = hydratedReferrals.filter(
+        (ref) => ref.group_id !== null
+      );
+      const generalReferrals = hydratedReferrals.filter(
+        (ref) => ref.group_id === null
+      );
 
       return {
         data: {
@@ -368,8 +393,8 @@ export class ReferralService {
           `
           *,
           group:groups(*),
-          referrer:users!referrals_referred_by_user_id_fkey(id, name),
-          referred_user:users!referrals_referred_user_id_fkey(id, name)
+          referrer:users!referrals_referred_by_user_id_fkey(id, first_name, last_name),
+          referred_user:users!referrals_referred_user_id_fkey(id, first_name, last_name)
         `
         )
         .eq('group_id', groupId)
@@ -379,7 +404,21 @@ export class ReferralService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const normalizeReferralUser = (user: any) =>
+        user
+          ? {
+              ...user,
+              name: getFullName(user),
+            }
+          : user;
+
+      const referralsWithNames = (data || []).map((ref) => ({
+        ...ref,
+        referrer: normalizeReferralUser(ref.referrer),
+        referred_user: normalizeReferralUser(ref.referred_user),
+      }));
+
+      return { data: referralsWithNames, error: null };
     } catch (error) {
       return {
         data: null,
@@ -664,7 +703,7 @@ export class ReferralService {
         .from('referrals')
         .select(`
           referred_by_user_id,
-          referrer:users!referrals_referred_by_user_id_fkey(name)
+          referrer:users!referrals_referred_by_user_id_fkey(first_name, last_name)
         `)
         .gte('created_at', startDate || '1970-01-01')
         .lte('created_at', endDate || '2099-12-31');
@@ -676,10 +715,10 @@ export class ReferralService {
       // Process top referrers
       const referrerMap = new Map<string, { name: string; count: number }>();
       
-      (topReferrers || []).forEach(item => {
+      (topReferrers || []).forEach((item) => {
         const existing = referrerMap.get(item.referred_by_user_id);
         referrerMap.set(item.referred_by_user_id, {
-          name: (item.referrer as any)?.name || 'Unknown',
+          name: getFullName(item.referrer) || 'Unknown',
           count: (existing?.count || 0) + 1,
         });
       });
@@ -730,17 +769,41 @@ export class ReferralService {
         .select(`
           *,
           group:groups(*),
-          referrer:users!referrals_referred_by_user_id_fkey(id, name),
-          referred_user:users!referrals_referred_user_id_fkey(id, name)
+          referrer:users!referrals_referred_by_user_id_fkey(id, first_name, last_name),
+          referred_user:users!referrals_referred_user_id_fkey(id, first_name, last_name)
         `)
         .eq('referred_user_id', userId)
         .single();
 
+      const normalizeReferralUser = (user: any) =>
+        user
+          ? {
+              ...user,
+              name: getFullName(user),
+            }
+          : user;
+
+      const normalizedReferral = referral
+        ? {
+            ...referral,
+            referrer: normalizeReferralUser(referral.referrer),
+            referred_user: normalizeReferralUser(referral.referred_user),
+          }
+        : referral;
+
       // It's expected that a referral might not exist, so we don't treat that as an error
       return {
         data: {
-          groupReferral: referralError ? undefined : (referral?.group_id ? referral : undefined),
-          generalReferral: referralError ? undefined : (referral?.group_id ? undefined : referral),
+          groupReferral: referralError
+            ? undefined
+            : normalizedReferral?.group_id
+              ? normalizedReferral
+              : undefined,
+          generalReferral: referralError
+            ? undefined
+            : normalizedReferral?.group_id
+              ? undefined
+              : normalizedReferral,
         },
         error: null,
       };

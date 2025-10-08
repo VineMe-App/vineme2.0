@@ -20,7 +20,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   showEditIcon = false,
 }) => {
   const { theme } = useTheme();
-  
+
   const initials = name
     .split(' ')
     .map((word) => word.charAt(0))
@@ -36,6 +36,9 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   const textStyle = {
     fontSize: size * 0.35,
+    lineHeight: size * 0.35,
+    textAlign: 'center' as const,
+    includeFontPadding: false,
   };
 
   const content = (
@@ -43,8 +46,23 @@ export const Avatar: React.FC<AvatarProps> = ({
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={[styles.image, avatarStyle]} />
       ) : (
-        <View style={[styles.placeholder, avatarStyle, { backgroundColor: theme.colors.secondary[100] }]}>
-          <Text weight="black" style={[styles.initials, textStyle, { color: theme.colors.primary[500] }]}>{initials || '?'}</Text>
+        <View
+          style={[
+            styles.placeholder,
+            avatarStyle,
+            { backgroundColor: theme.colors.secondary[100] },
+          ]}
+        >
+          <Text
+            weight="black"
+            style={[
+              styles.initials,
+              textStyle,
+              { color: theme.colors.primary[500] },
+            ]}
+          >
+            {initials || '?'}
+          </Text>
         </View>
       )}
       {showEditIcon && (
@@ -78,9 +96,11 @@ const styles = StyleSheet.create({
   placeholder: {
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   initials: {
-    // Color and font weight now handled by theme and inline styles
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   editIcon: {
     position: 'absolute',

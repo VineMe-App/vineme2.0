@@ -1,92 +1,137 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
+import { Button } from '@/components/ui/Button';
 
 export default function NameStep({
   data,
   onNext,
+  onBack,
+  canGoBack,
   isLoading,
 }: OnboardingStepProps) {
-  const [name, setName] = useState(data.name || '');
-  const [error, setError] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [firstNameError, setFirstNameError] = useState<string | null>(null);
+  const [lastNameError, setLastNameError] = useState<string | null>(null);
 
   useEffect(() => {
-    setName(data.name || '');
-  }, [data.name]);
+    setFirstName(data.first_name || '');
+    setLastName(data.last_name || '');
+  }, [data.first_name, data.last_name]);
 
-  const validateName = (value: string): string | null => {
+  const validatePart = (value: string, label: string): string | null => {
     if (!value.trim()) {
-      return 'Name is required';
+      return `${label} is required`;
     }
     if (value.trim().length < 2) {
-      return 'Name must be at least 2 characters';
+      return `${label} must be at least 2 characters`;
     }
     if (value.trim().length > 50) {
-      return 'Name must be less than 50 characters';
+      return `${label} must be less than 50 characters`;
     }
     return null;
   };
 
-  const handleNext = () => {
-    const validationError = validateName(name);
-    if (validationError) {
-      setError(validationError);
+  const handleContinue = () => {
+    const firstError = validatePart(firstName, 'First name');
+    const lastError = validatePart(lastName, 'Last name');
+
+    setFirstNameError(firstError);
+    setLastNameError(lastError);
+
+    if (firstError || lastError) {
       return;
     }
 
-    setError(null);
-    onNext({ name: name.trim() });
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
+
+    onNext({
+      first_name: trimmedFirst,
+      last_name: trimmedLast,
+    });
   };
 
-  const handleNameChange = (value: string) => {
-    setName(value);
-    if (error) {
-      setError(null);
-    }
+  const handleFirstChange = (value: string) => {
+    setFirstName(value);
+    if (firstNameError) setFirstNameError(null);
   };
+
+  const handleLastChange = (value: string) => {
+    setLastName(value);
+    if (lastNameError) setLastNameError(null);
+  };
+
+  const disableContinue =
+    !firstName.trim() || !lastName.trim() || isLoading;
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>What's your name?</Text>
+        <Text style={styles.title}>What&apos;s your name?</Text>
         <Text style={styles.subtitle}>
-          This will help your church community recognize you
+          Share your first and last name so your church community can recognize
+          you.
         </Text>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={[styles.input, error ? styles.inputError : null]}
-            value={name}
-            onChangeText={handleNameChange}
-            placeholder="Enter your full name"
-            autoCapitalize="words"
-            autoCorrect={false}
-            autoFocus
-            editable={!isLoading}
-            maxLength={50}
-          />
-          {error && <Text style={styles.errorText}>{error}</Text>}
+        <View style={styles.inputGroup}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>First name</Text>
+            <TextInput
+              style={[styles.input, firstNameError ? styles.inputError : null]}
+              value={firstName}
+              onChangeText={handleFirstChange}
+              placeholder="First name"
+              placeholderTextColor="#666"
+              autoCapitalize="words"
+              autoCorrect={false}
+              autoFocus
+              editable={!isLoading}
+              maxLength={50}
+            />
+            {firstNameError && (
+              <Text style={styles.errorText}>{firstNameError}</Text>
+            )}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Last name</Text>
+            <TextInput
+              style={[styles.input, lastNameError ? styles.inputError : null]}
+              value={lastName}
+              onChangeText={handleLastChange}
+              placeholder="Last name"
+              placeholderTextColor="#666"
+              autoCapitalize="words"
+              autoCorrect={false}
+              editable={!isLoading}
+              maxLength={50}
+            />
+            {lastNameError && (
+              <Text style={styles.errorText}>{lastNameError}</Text>
+            )}
+          </View>
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.button,
-          (!name.trim() || isLoading) && styles.buttonDisabled,
-        ]}
-        onPress={handleNext}
-        disabled={!name.trim() || isLoading}
-      >
-        <Text style={styles.buttonText}>
-          {isLoading ? 'Please wait...' : 'Continue'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <Button
+          title="Back"
+          variant="ghost"
+          onPress={onBack}
+          disabled={!canGoBack || isLoading}
+          fullWidth
+        />
+        <Button
+          title="Continue"
+          onPress={handleContinue}
+          loading={isLoading}
+          disabled={disableContinue}
+          variant="primary"
+          fullWidth
+        />
+      </View>
     </View>
   );
 }
@@ -112,20 +157,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 48,
+    marginBottom: 32,
     lineHeight: 22,
   },
+  inputGroup: {
+    gap: 20,
+  },
   inputContainer: {
-    marginBottom: 24,
+    gap: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1a1a1a',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 12,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     fontSize: 18,
     backgroundColor: '#f9f9f9',
-    textAlign: 'center',
   },
   inputError: {
     borderColor: '#ff4444',
@@ -133,22 +186,8 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#ff4444',
     fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
   },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 24, // Updated to pill shape (half of padding: 16 * 2 + text height)
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  footer: {
+    gap: 12,
   },
 });

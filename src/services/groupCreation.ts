@@ -185,7 +185,7 @@ export class GroupCreationService {
       // Get creator name for notification
       const { data: creator } = await supabase
         .from('users')
-        .select('name')
+        .select('first_name, last_name')
         .eq('id', creatorId)
         .single();
 
@@ -195,7 +195,7 @@ export class GroupCreationService {
           groupId: group.id,
           groupTitle: group.title,
           creatorId: creatorId,
-          creatorName: creator.name,
+          creatorName: getFullName(creator),
           churchId: groupData.church_id,
         });
       }
@@ -677,7 +677,11 @@ export class GroupCreationService {
 
       // Get requester and group info for notification
       const [requesterResult, groupResult] = await Promise.all([
-        supabase.from('users').select('name').eq('id', userId).single(),
+        supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', userId)
+          .single(),
         supabase.from('groups').select('title').eq('id', groupId).single(),
       ]);
 
@@ -695,7 +699,7 @@ export class GroupCreationService {
           groupId,
           groupTitle: groupResult.data.title,
           requesterId: userId,
-          requesterName: requesterResult.data.name,
+          requesterName: getFullName(requesterResult.data) || 'A member',
           leaderIds,
         });
       }
