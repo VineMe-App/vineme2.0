@@ -141,12 +141,12 @@ export function MissingServiceModal({
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Campus / location (optional)</Text>
+            <Text style={styles.label}>Location (optional)</Text>
             <TextInput
               style={styles.input}
               value={churchLocation}
               onChangeText={setChurchLocation}
-              placeholder="City or campus name"
+              placeholder="Location or postcode"
               placeholderTextColor="#666"
             />
           </View>
