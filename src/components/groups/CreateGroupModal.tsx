@@ -18,6 +18,7 @@ import type { CreateGroupData } from '../../services/admin';
 import type { SelectOption } from '../ui/Select';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { debounce } from '../../utils';
+import { LocationPicker } from './LocationPicker';
 
 interface CreateGroupModalProps {
   isVisible: boolean;
@@ -397,28 +398,18 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       <FormField name="location">
         {({ value, error, onChange, onBlur }) => (
           <View>
-            <Input
-              label="Meeting Location"
-              value={value}
-              onChangeText={(text) => {
-                onChange(text);
-                debouncedGeocode(text);
+            <LocationPicker
+              value={{
+                address: value,
+                coordinates: locationCoordinates,
               }}
-              onBlur={onBlur}
-              error={error}
-              placeholder="e.g., Church Room 101, or 123 Main St, City"
-              required
-              editable={!isSubmitting}
+              onChange={(locationData) => {
+                onChange(locationData.address || '');
+                setLocationCoordinates(locationData.coordinates);
+              }}
             />
-            {isGeocodingLocation && (
-              <Text style={styles.geocodingText}>Finding location...</Text>
-            )}
-            {locationCoordinates && (
-              <View style={styles.locationConfirmation}>
-                <Text style={styles.locationConfirmationText}>
-                  Location found and will be shown on the map
-                </Text>
-              </View>
+            {error && (
+              <Text style={styles.errorText}>{error}</Text>
             )}
           </View>
         )}

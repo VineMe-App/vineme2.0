@@ -18,6 +18,7 @@ interface CheckboxProps {
   style?: ViewStyle;
   labelStyle?: TextStyle;
   testID?: string;
+  checkedIcon?: 'checkmark' | 'x';
 }
 
 export const Checkbox: React.FC<CheckboxProps> = ({
@@ -29,6 +30,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   style,
   labelStyle,
   testID,
+  checkedIcon = 'checkmark',
 }) => {
   return (
     <TouchableOpacity
@@ -45,12 +47,18 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         style={[
           styles.checkbox,
           styles[size],
-          checked && styles.checked,
+          checked && (checkedIcon === 'x' ? styles.checkedX : styles.checked),
           disabled && styles.disabled,
         ]}
       >
         {checked && (
-          <View style={[styles.checkmark, styles[`${size}Checkmark`]]} />
+          <>
+            {checkedIcon === 'x' ? (
+              <Text style={[styles.xIcon, styles[`${size}XIcon`]]}>×</Text>
+            ) : (
+              <View style={[styles.checkmark, styles[`${size}Checkmark`]]} />
+            )}
+          </>
         )}
       </View>
       {label && (
@@ -99,6 +107,10 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.primary,
     borderColor: Theme.colors.primary,
   },
+  checkedX: {
+    backgroundColor: Theme.colors.white,
+    borderColor: Theme.colors.border,
+  },
   disabled: {
     opacity: 0.6,
   },
@@ -117,6 +129,24 @@ const styles = StyleSheet.create({
   largeCheckmark: {
     width: 10,
     height: 10,
+  },
+  xIcon: {
+    color: Theme.colors.black,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  smallXIcon: {
+    fontSize: 14,
+    lineHeight: 16,
+  },
+  mediumXIcon: {
+    fontSize: 18,
+    lineHeight: 20,
+  },
+  largeXIcon: {
+    fontSize: 22,
+    lineHeight: 24,
   },
   label: {
     marginLeft: Theme.spacing.xs,

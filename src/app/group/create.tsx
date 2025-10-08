@@ -101,6 +101,7 @@ export default function CreateGroupPage() {
       <Stack.Screen options={{ title: 'Create New Group' }} />
       <GroupEditorForm
         mode="create"
+        subTitle="Share your group details and set your group location by using the map below."
         onSubmit={handleSubmit}
         onUploadImage={handleUploadImage}
         isSubmitting={isSubmitting}

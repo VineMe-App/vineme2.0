@@ -9,7 +9,9 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import {
   Form,
@@ -75,12 +77,46 @@ const defaultInitials: GroupEditorValues = {
   image_url: undefined,
 };
 
-const formatTime = (date: Date): string =>
-  date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+const formatTime = (date: Date): string => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const meridiem = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+  const paddedMinutes = String(minutes).padStart(2, '0');
+  return `${hour12}:${paddedMinutes} ${meridiem}`;
+};
+
+const formatTimeForDatabase = (displayTime: string): string => {
+  // Convert "7:01 PM" format to "HH:MM:SS" format for database
+  const trimmed = displayTime.trim();
+  const timeParts = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+  if (timeParts) {
+    let hour = parseInt(timeParts[1], 10);
+    const minute = parseInt(timeParts[2], 10);
+    const meridiem = timeParts[3]?.toUpperCase();
+
+    // Convert to 24-hour format
+    if (meridiem === 'PM' && hour < 12) hour += 12;
+    if (meridiem === 'AM' && hour === 12) hour = 0;
+
+    const paddedHour = String(hour).padStart(2, '0');
+    const paddedMinute = String(minute).padStart(2, '0');
+    return `${paddedHour}:${paddedMinute}:00`;
+  }
+
+  // If already in HH:MM or HH:MM:SS format, ensure it has seconds
+  const colonParts = trimmed.split(':');
+  if (colonParts.length === 2) {
+    return `${trimmed}:00`;
+  }
+  if (colonParts.length === 3) {
+    return trimmed;
+  }
+
+  // Fallback: return as is
+  return displayTime;
+};
 
 const parseTimeString = (value?: string): Date => {
   if (!value) return new Date();
@@ -140,10 +176,17 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
     } as GroupEditorValues;
   }, [initialValues]);
 
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<Date>(
-    parseTimeString(initialValues?.meeting_time)
-  );
+  const [selectedTime, setSelectedTime] = useState<Date>(() => {
+    const parsed = parseTimeString(initialValues?.meeting_time);
+    // If no initial time, set to 2:00 PM to ensure AM/PM is visible
+    if (!initialValues?.meeting_time) {
+      const defaultTime = new Date();
+      defaultTime.setHours(14, 0, 0, 0); // 2:00 PM
+      return defaultTime;
+    }
+    return parsed;
+  });
+  const [showTimePicker, setShowTimePicker] = useState(Platform.OS === 'ios');
   const [locationValue, setLocationValue] = useState<GroupEditorLocation>(
     mergedInitials.location || {}
   );
@@ -169,6 +212,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           }
         : null
     );
+    setShowTimePicker(Platform.OS === 'ios');
   }, [initialValues]);
 
   useEffect(() => {
@@ -290,7 +334,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
       title: String(values.title).trim(),
       description: String(values.description).trim(),
       meeting_day: String(values.meeting_day),
-      meeting_time: String(values.meeting_time),
+      meeting_time: formatTimeForDatabase(String(values.meeting_time)),
       location: locationValue,
       whatsapp_link: values.whatsapp_link
         ? String(values.whatsapp_link).trim()
@@ -306,72 +350,85 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
       {headerTitle && <Text style={styles.pageTitle}>{headerTitle}</Text>}
       {subTitle && <Text style={styles.pageSubtitle}>{subTitle}</Text>}
 
+      <View style={styles.topSpacing} />
+
       <Form config={formConfig} onSubmit={handleValidatedSubmit}>
         <Card style={styles.card}>
-          <Text style={styles.sectionTitle}>Basic Information</Text>
+          <Text style={styles.sectionTitle}>Group Information</Text>
           <FormField name="title">
             {({ value, error, onChange, onBlur }) => (
-              <Input
-                label="Group Name"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={error}
-                placeholder="e.g. Hammersmith Connect"
-                inputStyle={styles.textInput}
-                required
-              />
+              <View style={styles.fieldContainer}>
+                <Text style={styles.inputLabel}>
+                  Group Name
+                  <Text style={styles.requiredAsterisk}> *</Text>
+                </Text>
+                <Text style={styles.exampleText}>e.g. Hammersmith Connect</Text>
+                <Input
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={error}
+                  inputStyle={styles.textInput}
+                  required
+                />
+              </View>
             )}
           </FormField>
           <FormField name="description">
             {({ value, error, onChange, onBlur }) => (
-              <Input
-                label="Description"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={error}
-                placeholder="What can people expect from your group?"
-                inputStyle={StyleSheet.flatten([
-                  styles.textInput,
-                  styles.textAreaInput,
-                ])}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                required
-              />
+              <View style={styles.fieldContainer}>
+                <Text style={styles.inputLabel}>
+                  Description
+                  <Text style={styles.requiredAsterisk}> *</Text>
+                </Text>
+                <Text style={styles.exampleText}>
+                  What can people expect from your group?
+                </Text>
+                <Input
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={error}
+                  inputStyle={StyleSheet.flatten([
+                    styles.textInput,
+                    styles.textAreaInput,
+                  ])}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  required
+                />
+              </View>
             )}
           </FormField>
           <FormField name="whatsapp_link">
             {({ value, error, onChange, onBlur }) => (
-              <Input
-                label="WhatsApp Group Link"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={error}
-                placeholder="Optional"
-              />
+              <View style={styles.fieldContainer}>
+                <Text style={styles.inputLabel}>WhatsApp Group Link</Text>
+                <Text style={styles.exampleText}>Optional</Text>
+                <Input
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={error}
+                />
+              </View>
             )}
           </FormField>
-        </Card>
-
-        <Card style={styles.card}>
-          <Text style={styles.sectionTitle}>Meeting Schedule</Text>
           <FormField name="meeting_day">
             {({ value, error, onChange }) => (
-              <View>
+              <View style={styles.fieldContainer}>
                 <Text style={styles.inputLabel}>
-                  Meeting Day
+                  Group Day
                   <Text style={styles.requiredAsterisk}> *</Text>
                 </Text>
+                <Text style={styles.exampleText}>Select a day of the week</Text>
                 <Select
                   options={MEETING_DAYS}
                   value={value}
                   onSelect={(opt) => onChange(opt.value)}
                   error={error}
-                  placeholder="Select a day of the week"
+                  placeholder=""
                   variant="dropdown"
                 />
               </View>
@@ -379,43 +436,61 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           </FormField>
           <FormField name="meeting_time">
             {({ value, error, onChange }) => (
-              <View>
+              <View style={styles.fieldContainer}>
                 <Text style={styles.inputLabel}>
-                  Meeting Time
+                  Group Time
                   <Text style={styles.requiredAsterisk}> *</Text>
                 </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.timePickerButton,
-                    error && styles.timePickerButtonError,
-                  ]}
-                  onPress={() => setShowTimePicker(true)}
-                >
-                  <Text
-                    style={[
-                      styles.timePickerText,
-                      !value && styles.timePickerPlaceholder,
-                    ]}
-                  >
-                    {value || 'Select meeting time'}
-                  </Text>
-                </TouchableOpacity>
-                {error && <Text style={styles.errorText}>{error}</Text>}
-                {showTimePicker && (
+                <View style={styles.timePickerSpacing} />
+                {Platform.OS === 'android' ? (
+                  <>
+                    <TouchableOpacity
+                      style={StyleSheet.flatten([
+                        styles.androidTimeButton,
+                        error && styles.androidTimeButtonError,
+                      ])}
+                      onPress={() => setShowTimePicker(true)}
+                    >
+                      <Text style={styles.androidTimeButtonText}>
+                        {value || formatTime(selectedTime)}
+                      </Text>
+                    </TouchableOpacity>
+                    {showTimePicker && (
+                      <DateTimePicker
+                        value={selectedTime}
+                        mode="time"
+                        display="spinner"
+                        is24Hour={false}
+                        onChange={(event: DateTimePickerEvent, date?: Date) => {
+                          if (event.type === 'dismissed') {
+                            setShowTimePicker(false);
+                            return;
+                          }
+                          if (date) {
+                            setSelectedTime(date);
+                            onChange(formatTime(date));
+                          }
+                          setShowTimePicker(false);
+                        }}
+                      />
+                    )}
+                  </>
+                ) : (
                   <DateTimePicker
                     value={selectedTime}
                     mode="time"
-                    is24Hour={false}
-                    display="default"
-                    onChange={(event, date) => {
-                      if (Platform.OS !== 'ios') setShowTimePicker(false);
+                    locale="en_US"
+                    display="spinner"
+                    onChange={(_, date) => {
                       if (date) {
                         setSelectedTime(date);
                         onChange(formatTime(date));
                       }
                     }}
+                    style={styles.timePicker}
                   />
                 )}
+                {error && <Text style={styles.errorText}>{error}</Text>}
               </View>
             )}
           </FormField>
@@ -424,7 +499,8 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
         <Card style={styles.card}>
           <Text style={styles.sectionTitle}>Meeting Location</Text>
           <Text style={styles.sectionSubtitle}>
-            Search for a location, or pinch and drag the map to move the pin
+            Search for a location by typing an address, place, or postcode, or
+            pinch and drag the map to move the pin.
           </Text>
           <LocationPicker
             value={{
@@ -443,6 +519,8 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
               checked={locationSafetyConfirmed}
               label="I confirm this location is not my exact home address"
               onPress={() => setLocationSafetyConfirmed((prev) => !prev)}
+              labelStyle={styles.checkboxLabel}
+              checkedIcon="x"
             />
           </View>
         </Card>
@@ -483,6 +561,12 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           )}
         </Card>
 
+        {mode === 'create' && (
+          <Text style={styles.verificationText}>
+            All groups on VineMe are verified before they go live. Submit your
+            request and your clergy member will review your group application.
+          </Text>
+        )}
         <SubmitButton
           isSubmitting={isSubmitting || uploadingImage}
           submitLabel={
@@ -491,12 +575,6 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           }
           onValidatedSubmit={handleValidatedSubmit}
         />
-        {mode === 'create' && (
-          <Text style={styles.submitHint}>
-            All groups on VineMe are verified before they're live. Submit
-            request and your clergy will approve your group.
-          </Text>
-        )}
 
         {onCancel && (
           <Button
@@ -547,10 +625,32 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
   },
   pageSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     marginTop: 4,
-    marginBottom: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  verificationText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 0,
+    marginBottom: 20,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  exampleText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+    lineHeight: 16,
+  },
+  topSpacing: {
+    height: 12,
+  },
+  fieldContainer: {
+    marginBottom: 20,
   },
   card: {
     marginBottom: 16,
@@ -564,8 +664,8 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 13,
     color: '#4a4a4a',
-    marginTop: -4,
-    marginBottom: 12,
+    marginTop: 0,
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 16,
@@ -573,23 +673,29 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 8,
   },
-  timePickerButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 16,
-    backgroundColor: '#fff',
+  timePickerSpacing: {
+    height: 8,
+  },
+  timePicker: {
+    width: '100%',
+    marginTop: -22,
     marginBottom: 8,
   },
-  timePickerButtonError: {
-    borderColor: '#ff3b30',
+  androidTimeButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#ffffff',
+    marginBottom: 8,
   },
-  timePickerText: {
+  androidTimeButtonText: {
     fontSize: 16,
     color: '#1a1a1a',
   },
-  timePickerPlaceholder: {
-    color: '#999',
+  androidTimeButtonError: {
+    borderColor: '#ff3b30',
   },
   errorText: {
     fontSize: 14,
@@ -636,6 +742,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8c5400',
     marginBottom: 12,
+  },
+  checkboxLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginLeft: 8,
   },
   requiredAsterisk: {
     color: '#ff3b30',
