@@ -77,12 +77,46 @@ const defaultInitials: GroupEditorValues = {
   image_url: undefined,
 };
 
-const formatTime = (date: Date): string =>
-  date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+const formatTime = (date: Date): string => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const meridiem = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+  const paddedMinutes = String(minutes).padStart(2, '0');
+  return `${hour12}:${paddedMinutes} ${meridiem}`;
+};
+
+const formatTimeForDatabase = (displayTime: string): string => {
+  // Convert "7:01 PM" format to "HH:MM:SS" format for database
+  const trimmed = displayTime.trim();
+  const timeParts = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+  if (timeParts) {
+    let hour = parseInt(timeParts[1], 10);
+    const minute = parseInt(timeParts[2], 10);
+    const meridiem = timeParts[3]?.toUpperCase();
+
+    // Convert to 24-hour format
+    if (meridiem === 'PM' && hour < 12) hour += 12;
+    if (meridiem === 'AM' && hour === 12) hour = 0;
+
+    const paddedHour = String(hour).padStart(2, '0');
+    const paddedMinute = String(minute).padStart(2, '0');
+    return `${paddedHour}:${paddedMinute}:00`;
+  }
+
+  // If already in HH:MM or HH:MM:SS format, ensure it has seconds
+  const colonParts = trimmed.split(':');
+  if (colonParts.length === 2) {
+    return `${trimmed}:00`;
+  }
+  if (colonParts.length === 3) {
+    return trimmed;
+  }
+
+  // Fallback: return as is
+  return displayTime;
+};
 
 const parseTimeString = (value?: string): Date => {
   if (!value) return new Date();
@@ -152,9 +186,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
     }
     return parsed;
   });
-  const [showTimePicker, setShowTimePicker] = useState(
-    Platform.OS === 'ios'
-  );
+  const [showTimePicker, setShowTimePicker] = useState(Platform.OS === 'ios');
   const [locationValue, setLocationValue] = useState<GroupEditorLocation>(
     mergedInitials.location || {}
   );
@@ -302,7 +334,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
       title: String(values.title).trim(),
       description: String(values.description).trim(),
       meeting_day: String(values.meeting_day),
-      meeting_time: String(values.meeting_time),
+      meeting_time: formatTimeForDatabase(String(values.meeting_time)),
       location: locationValue,
       whatsapp_link: values.whatsapp_link
         ? String(values.whatsapp_link).trim()
@@ -349,7 +381,9 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                   Description
                   <Text style={styles.requiredAsterisk}> *</Text>
                 </Text>
-                <Text style={styles.exampleText}>What can people expect from your group?</Text>
+                <Text style={styles.exampleText}>
+                  What can people expect from your group?
+                </Text>
                 <Input
                   value={value}
                   onChangeText={onChange}
@@ -427,10 +461,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                         mode="time"
                         display="spinner"
                         is24Hour={false}
-                        onChange={(
-                          event: DateTimePickerEvent,
-                          date?: Date
-                        ) => {
+                        onChange={(event: DateTimePickerEvent, date?: Date) => {
                           if (event.type === 'dismissed') {
                             setShowTimePicker(false);
                             return;
@@ -468,7 +499,8 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
         <Card style={styles.card}>
           <Text style={styles.sectionTitle}>Meeting Location</Text>
           <Text style={styles.sectionSubtitle}>
-            Search for a location by typing an address, place, or postcode, or pinch and drag the map to move the pin.
+            Search for a location by typing an address, place, or postcode, or
+            pinch and drag the map to move the pin.
           </Text>
           <LocationPicker
             value={{
@@ -531,8 +563,8 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
 
         {mode === 'create' && (
           <Text style={styles.verificationText}>
-            All groups on VineMe are verified before they go live. Submit your request
-            and your clergy member will review your group application.
+            All groups on VineMe are verified before they go live. Submit your
+            request and your clergy member will review your group application.
           </Text>
         )}
         <SubmitButton
