@@ -2263,7 +2263,7 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
-  - react-native-google-maps (from `../node_modules/react-native-maps`)
+  - react-native-google-maps (from `../node_modules/react-native-maps/react-native-google-maps.podspec`)
   - react-native-maps (from `../node_modules/react-native-maps`)
   - "react-native-netinfo (from `../node_modules/@react-native-community/netinfo`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -2439,7 +2439,7 @@ EXTERNAL SOURCES:
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-google-maps:
-    :path: "../node_modules/react-native-maps"
+    :path: "../node_modules/react-native-maps/react-native-google-maps.podspec"
   react-native-maps:
     :path: "../node_modules/react-native-maps"
   react-native-netinfo:
@@ -2627,6 +2627,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: adb397651e1c00672c12e9495babca70777e411e
 
-PODFILE CHECKSUM: a2d9e4c937a908016870ee4e8f6a37f4aa3dcdc5
+PODFILE CHECKSUM: 2a4d37ebcd57fe1dfdc6f097bc081440e1ed88a7
 
 COCOAPODS: 1.16.2

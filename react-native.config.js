@@ -1,12 +1,13 @@
-// module.exports = {
-//   dependencies: {
-//     'react-native-maps': {
-//       platforms: {
-//         ios: {
-//           podspecPath: '../node_modules/react-native-maps/react-native-google-maps.podspec',
-//           sharedLibraries: ['GoogleMaps', 'Google-Maps-iOS-Utils'],
-//         },
-//       },
-//     },
-//   },
-// };
+module.exports = {
+  dependencies: {
+    'react-native-maps': {
+      platforms: {
+        ios: {
+          // Disable autolinking for react-native-maps to prevent duplicate symbols
+          // We'll manually add the Google Maps variant in Podfile
+          sourceDir: null,
+        },
+      },
+    },
+  },
+};
