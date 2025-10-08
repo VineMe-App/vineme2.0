@@ -9,7 +9,9 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import {
   Form,
@@ -150,6 +152,9 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
     }
     return parsed;
   });
+  const [showTimePicker, setShowTimePicker] = useState(
+    Platform.OS === 'ios'
+  );
   const [locationValue, setLocationValue] = useState<GroupEditorLocation>(
     mergedInitials.location || {}
   );
@@ -175,6 +180,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           }
         : null
     );
+    setShowTimePicker(Platform.OS === 'ios');
   }, [initialValues]);
 
   useEffect(() => {
@@ -402,19 +408,57 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                   <Text style={styles.requiredAsterisk}> *</Text>
                 </Text>
                 <View style={styles.timePickerSpacing} />
-                <DateTimePicker
-                  value={selectedTime}
-                  mode="time"
-                  {...(Platform.OS === 'android' ? { is24Hour: false } : { locale: 'en_US' })}
-                  display="spinner"
-                  onChange={(event, date) => {
-                    if (date) {
-                      setSelectedTime(date);
-                      onChange(formatTime(date));
-                    }
-                  }}
-                  style={styles.timePicker}
-                />
+                {Platform.OS === 'android' ? (
+                  <>
+                    <TouchableOpacity
+                      style={StyleSheet.flatten([
+                        styles.androidTimeButton,
+                        error && styles.androidTimeButtonError,
+                      ])}
+                      onPress={() => setShowTimePicker(true)}
+                    >
+                      <Text style={styles.androidTimeButtonText}>
+                        {value || formatTime(selectedTime)}
+                      </Text>
+                    </TouchableOpacity>
+                    {showTimePicker && (
+                      <DateTimePicker
+                        value={selectedTime}
+                        mode="time"
+                        display="spinner"
+                        is24Hour={false}
+                        onChange={(
+                          event: DateTimePickerEvent,
+                          date?: Date
+                        ) => {
+                          if (event.type === 'dismissed') {
+                            setShowTimePicker(false);
+                            return;
+                          }
+                          if (date) {
+                            setSelectedTime(date);
+                            onChange(formatTime(date));
+                          }
+                          setShowTimePicker(false);
+                        }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <DateTimePicker
+                    value={selectedTime}
+                    mode="time"
+                    locale="en_US"
+                    display="spinner"
+                    onChange={(_, date) => {
+                      if (date) {
+                        setSelectedTime(date);
+                        onChange(formatTime(date));
+                      }
+                    }}
+                    style={styles.timePicker}
+                  />
+                )}
                 {error && <Text style={styles.errorText}>{error}</Text>}
               </View>
             )}
@@ -604,6 +648,22 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: -22,
     marginBottom: 8,
+  },
+  androidTimeButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#ffffff',
+    marginBottom: 8,
+  },
+  androidTimeButtonText: {
+    fontSize: 16,
+    color: '#1a1a1a',
+  },
+  androidTimeButtonError: {
+    borderColor: '#ff3b30',
   },
   errorText: {
     fontSize: 14,
