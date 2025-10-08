@@ -136,7 +136,6 @@ export default function PhoneSignUpScreen() {
 
           {step === 'enter-code' && (
             <>
-              <Text style={styles.label}>Enter 6-digit code</Text>
               <Text style={styles.phoneDisplay}>Sent to {fullPhone}</Text>
               <TextInput
                 value={code}
