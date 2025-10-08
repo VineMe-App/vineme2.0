@@ -243,8 +243,11 @@ export class UserService {
         data: { publicUrl },
       } = supabase.storage.from('profile-images').getPublicUrl(filePath);
 
-      console.log('[uploadAvatar] Upload successful, URL:', publicUrl);
-      return { data: publicUrl, error: null };
+      // Add cache-busting timestamp to force image refresh
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+
+      console.log('[uploadAvatar] Upload successful, URL:', urlWithTimestamp);
+      return { data: urlWithTimestamp, error: null };
     } catch (error) {
       console.error('[uploadAvatar] Unexpected error:', error);
       return {

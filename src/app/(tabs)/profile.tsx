@@ -33,7 +33,7 @@ import * as ImagePicker from 'expo-image-picker';
 // Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, loadUserProfile } = useAuthStore();
   const { theme } = useTheme();
   const [showFriendsModal, setShowFriendsModal] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false);
@@ -149,6 +149,8 @@ export default function ProfileScreen() {
         userId: user.id,
         fileUri: uri,
       });
+      // Refresh auth store to update navbar profile picture
+      await loadUserProfile();
       Alert.alert('Success', 'Profile photo updated!');
     } catch (error) {
       console.error('[Profile] Upload failed:', error);
@@ -165,6 +167,8 @@ export default function ProfileScreen() {
         userId: user.id,
         avatarUrl: userProfile.avatar_url,
       });
+      // Refresh auth store to update navbar profile picture
+      await loadUserProfile();
       Alert.alert('Success', 'Profile photo removed!');
     } catch (error) {
       console.error('[Profile] Remove failed:', error);
