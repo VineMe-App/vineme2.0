@@ -28,6 +28,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { useTheme } from '@/theme/provider/useTheme';
 
+const formatNameList = (names: string[]): string => {
+  const filtered = names.filter((name) => name && name.trim().length > 0);
+  if (filtered.length === 0) return '';
+  if (filtered.length === 1) return filtered[0];
+  if (filtered.length === 2) return `${filtered[0]} and ${filtered[1]}`;
+  const head = filtered.slice(0, -1).join(', ');
+  return `${head} and ${filtered[filtered.length - 1]}`;
+};
+
+const buildJoinRequestMessage = (
+  groupTitle: string,
+  leaderNames: string[]
+): string => {
+  const formattedLeaders = formatNameList(leaderNames);
+  if (!formattedLeaders) {
+    return `Your request to join ${groupTitle} has been sent. A group leader will be in touch.`;
+  }
+  return `Your request to join ${groupTitle} has been sent to ${formattedLeaders}. They will be in touch.`;
+};
+
 export default function HomeScreen() {
   const { user, userProfile } = useAuthStore();
   const { theme } = useTheme();
@@ -56,6 +76,11 @@ export default function HomeScreen() {
     isLoading: joinRequestsLoading,
     refetch: refetchJoinRequests,
   } = useUserJoinRequests(userId);
+
+  const activeMemberships = userGroupMemberships || [];
+  const pendingJoinRequestsList = userJoinRequests || [];
+  const showGroupCards =
+    activeMemberships.length > 0 || pendingJoinRequestsList.length > 0;
 
   const {
     data: friends,
@@ -106,31 +131,67 @@ export default function HomeScreen() {
           <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
         }
       >
-      {/* Header with user info */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: theme.colors.surface.primary },
-        ]}
-      >
+        {/* Header with user info */}
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.colors.surface.primary },
+          ]}
+        >
+          <View style={styles.headerRight}>
+            {pendingRequests.length > 0 && (
+              <FriendRequestNotifications
+                requests={pendingRequests}
+                onPress={() => router.push('/(tabs)/profile')}
+              />
+            )}
+          </View>
 
-        <View style={styles.headerRight}>
-          {pendingRequests.length > 0 && (
-            <FriendRequestNotifications
-              requests={pendingRequests}
-              onPress={() => router.push('/(tabs)/profile')}
-            />
-          )}
-        </View>
-
-        {/* Church + Service + (optional) Manage Church CTA in one cohesive card */}
-        <ChurchAdminOnly
-          fallback={
-            <View
-              style={[
-                styles.orgCard,
-                { backgroundColor: theme.colors.surface.primary },
-              ]}
+          {/* Church + Service + (optional) Manage Church CTA in one cohesive card */}
+          <ChurchAdminOnly
+            fallback={
+              <View
+                style={[
+                  styles.orgCard,
+                  { backgroundColor: theme.colors.surface.primary },
+                ]}
+              >
+                <View style={styles.orgLeft}>
+                  {userProfile?.church?.name && (
+                    <View style={styles.orgRow}>
+                      <Ionicons name="home-outline" size={16} color="#374151" />
+                      <Text
+                        variant="label"
+                        style={styles.orgText}
+                        numberOfLines={1}
+                      >
+                        {userProfile.church.name}
+                      </Text>
+                    </View>
+                  )}
+                  {userProfile?.service?.name && (
+                    <View style={styles.orgRow}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={16}
+                        color="#374151"
+                      />
+                      <Text
+                        variant="label"
+                        style={styles.orgText}
+                        numberOfLines={1}
+                      >
+                        {userProfile.service.name}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            }
+          >
+            <TouchableOpacity
+              style={[styles.orgCard, styles.orgCardClickable]}
+              onPress={() => router.push('/admin')}
             >
               <View style={styles.orgLeft}>
                 {userProfile?.church?.name && (
@@ -162,160 +223,149 @@ export default function HomeScreen() {
                   </View>
                 )}
               </View>
-            </View>
-          }
+              <View style={styles.orgRight}>
+                <Ionicons name="settings-outline" size={16} color="#111827" />
+                <Text variant="label" weight="semiBold" style={styles.orgCta}>
+                  Manage Church
+                </Text>
+                <Ionicons
+                  name="chevron-forward-outline"
+                  size={16}
+                  color="#6b7280"
+                />
+              </View>
+            </TouchableOpacity>
+          </ChurchAdminOnly>
+        </View>
+
+        {/* Simplified My Groups Section with horizontal scroll */}
+
+        {/* My Groups Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text variant="h4" style={styles.sectionTitle}>
+              My Groups
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/groups')}>
+              <Text
+                variant="bodyLarge"
+                color="primary"
+                style={styles.seeAllText}
+              >
+                See All
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {showGroupCards ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+            >
+              {activeMemberships.map((membership) => (
+                <View key={membership.group_id} style={styles.horizontalCard}>
+                  <GroupCard
+                    group={membership.group}
+                    membershipStatus={membership.role}
+                    onPress={() => router.push(`/group/${membership.group.id}`)}
+                    style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
+                  />
+                </View>
+              ))}
+              {pendingJoinRequestsList.length > 0 &&
+                pendingJoinRequestsList.map((request) => {
+                  if (!request.group) return null;
+                  const leaderNames = (request.group_leaders || [])
+                    .map((l) => l?.name)
+                    .filter(Boolean) as string[];
+                  const message = buildJoinRequestMessage(
+                    request.group?.title || 'this group',
+                    leaderNames
+                  );
+                  return (
+                    <View
+                      key={`join-${request.id}`}
+                      style={styles.horizontalCard}
+                    >
+                      <GroupCard
+                        group={request.group as any}
+                        membershipStatus={null}
+                        onPress={undefined}
+                        style={{
+                          width: 260,
+                          minHeight: 374,
+                          marginHorizontal: 0,
+                        }}
+                        pendingLabel="Join request pending"
+                        pendingTooltip={message}
+                      />
+                    </View>
+                  );
+                })}
+            </ScrollView>
+          ) : (
+            <EmptyState
+              title="No groups yet"
+              message="Join a Bible study group to connect with your community"
+              icon={null}
+              action={
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    { backgroundColor: theme.colors.primary[500] },
+                  ]}
+                  onPress={() => router.push('/(tabs)/groups')}
+                >
+                  <Text
+                    variant="bodyLarge"
+                    weight="semiBold"
+                    color="inverse"
+                    style={styles.actionButtonText}
+                  >
+                    Browse Groups
+                  </Text>
+                </TouchableOpacity>
+              }
+            />
+          )}
+        </View>
+
+        {/* Connect Someone Section */}
+        <ConnectSomeoneSection
+          onPress={() => router.push('/referral-landing')}
+        />
+
+        {/* Small disclaimer about upcoming events (near bottom) */}
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/events')}
+          activeOpacity={0.7}
         >
-          <TouchableOpacity
-            style={[styles.orgCard, styles.orgCardClickable]}
-            onPress={() => router.push('/admin')}
-          >
-            <View style={styles.orgLeft}>
-              {userProfile?.church?.name && (
-                <View style={styles.orgRow}>
-                  <Ionicons name="home-outline" size={16} color="#374151" />
-                  <Text
-                    variant="label"
-                    style={styles.orgText}
-                    numberOfLines={1}
-                  >
-                    {userProfile.church.name}
-                  </Text>
-                </View>
-              )}
-              {userProfile?.service?.name && (
-                <View style={styles.orgRow}>
-                  <Ionicons name="calendar-outline" size={16} color="#374151" />
-                  <Text
-                    variant="label"
-                    style={styles.orgText}
-                    numberOfLines={1}
-                  >
-                    {userProfile.service.name}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <View style={styles.orgRight}>
-              <Ionicons name="settings-outline" size={16} color="#111827" />
-              <Text variant="label" weight="semiBold" style={styles.orgCta}>
-                Manage Church
+          <Card variant="filled" style={styles.eventsBanner}>
+            <View style={styles.eventsBannerRow}>
+              <Ionicons
+                name="information-circle-outline"
+                size={18}
+                color="#6b7280"
+              />
+              <Text
+                variant="body"
+                color="secondary"
+                style={styles.eventsBannerText}
+              >
+                Events are coming soon. Tap to learn more.
               </Text>
               <Ionicons
                 name="chevron-forward-outline"
-                size={16}
+                size={18}
                 color="#6b7280"
               />
             </View>
-          </TouchableOpacity>
-        </ChurchAdminOnly>
-      </View>
+          </Card>
+        </TouchableOpacity>
 
-      {/* Simplified My Groups Section with horizontal scroll */}
-
-      {/* My Groups Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text variant="h4" style={styles.sectionTitle}>
-            My Groups
-          </Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/groups')}>
-            <Text variant="bodyLarge" color="primary" style={styles.seeAllText}>
-              See All
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {userGroupMemberships && userGroupMemberships.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
-          >
-            {userGroupMemberships.map((membership) => (
-              <View key={membership.group_id} style={styles.horizontalCard}>
-                <GroupCard
-                  group={membership.group}
-                  membershipStatus={membership.role}
-                  onPress={() => router.push(`/group/${membership.group.id}`)}
-                  style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
-                />
-              </View>
-            ))}
-          </ScrollView>
-        ) : userJoinRequests && userJoinRequests.length > 0 ? (
-          <EmptyState
-            title={
-              userJoinRequests.length === 1
-                ? 'Join request pending'
-                : 'Join requests pending'
-            }
-            message={
-              userJoinRequests.length === 1
-                ? `You have requested to join ${userJoinRequests[0].group.title} - a leader will be in touch with more details`
-                : `You have requested to join ${userJoinRequests.length} groups - a leader will be in touch with more details`
-            }
-            icon={null}
-          />
-        ) : (
-          <EmptyState
-            title="No groups yet"
-            message="Join a Bible study group to connect with your community"
-            icon={null}
-            action={
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  { backgroundColor: theme.colors.primary[500] },
-                ]}
-                onPress={() => router.push('/(tabs)/groups')}
-              >
-                <Text
-                  variant="bodyLarge"
-                  weight="semiBold"
-                  color="inverse"
-                  style={styles.actionButtonText}
-                >
-                  Browse Groups
-                </Text>
-              </TouchableOpacity>
-            }
-          />
-        )}
-      </View>
-
-      {/* Connect Someone Section */}
-      <ConnectSomeoneSection onPress={() => router.push('/referral-landing')} />
-
-      {/* Small disclaimer about upcoming events (near bottom) */}
-      <TouchableOpacity
-        onPress={() => router.push('/(tabs)/events')}
-        activeOpacity={0.7}
-      >
-        <Card variant="filled" style={styles.eventsBanner}>
-          <View style={styles.eventsBannerRow}>
-            <Ionicons
-              name="information-circle-outline"
-              size={18}
-              color="#6b7280"
-            />
-            <Text
-              variant="body"
-              color="secondary"
-              style={styles.eventsBannerText}
-            >
-              Events are coming soon. Tap to learn more.
-            </Text>
-            <Ionicons
-              name="chevron-forward-outline"
-              size={18}
-              color="#6b7280"
-            />
-          </View>
-        </Card>
-      </TouchableOpacity>
-
-      {/* Bottom spacing */}
-      <View style={styles.bottomSpacing} />
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </SafeAreaView>
   );

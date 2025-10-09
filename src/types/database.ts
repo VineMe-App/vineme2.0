@@ -146,6 +146,7 @@ export interface GroupMembershipWithUser extends GroupMembership {
 export interface GroupJoinRequestWithUser extends GroupJoinRequest {
   user?: User;
   group?: Group;
+  group_leaders?: User[];
 }
 
 export interface GroupWithDetails extends Group {
