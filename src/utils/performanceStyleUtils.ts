@@ -849,10 +849,18 @@ export class PerformanceStyleUtils {
 // Export main utilities
 export const performanceStyleUtils = PerformanceStyleUtils;
 
-// Export individual classes
+// Export individual classes (with type-only exports to avoid React 19 conflicts)
+export type {
+  StyleSheetCache as StyleSheetCacheType,
+  StyleMemoization as StyleMemoizationType,
+  StyleOptimizer as StyleOptimizerType,
+  StylePerformanceMonitor as StylePerformanceMonitorType,
+};
+
+// Re-export classes as values with different names
 export {
-  StyleSheetCache,
-  StyleMemoization,
-  StyleOptimizer,
-  StylePerformanceMonitor,
+  StyleSheetCache as CachedStyleSheet,
+  StyleMemoization as MemoizedStyles,
+  StyleOptimizer as OptimizedStyles,
+  StylePerformanceMonitor as StylesPerformanceMonitor,
 };

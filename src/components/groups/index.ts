@@ -11,3 +11,5 @@ export { FilterPanel } from './FilterPanel';
 export { FilterButton } from './FilterButton';
 export { SearchBar } from './SearchBar';
 export { GroupEditorForm } from './GroupEditorForm';
+export { MapViewFallback } from './MapViewFallback';
+export { LocationPicker } from './LocationPicker';

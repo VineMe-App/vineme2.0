@@ -165,6 +165,11 @@ export default function CommunicationAndSecurityScreen() {
   };
 
   const handleVerifyPhone = async () => {
+    if (phoneCode.length !== 6) {
+      Alert.alert('Error', 'Please enter the complete 6-digit code');
+      return;
+    }
+    
     const result = await verifyOtp(fullPhone, phoneCode, 'sms');
     if (result.success) {
       setPhoneStep('idle');

@@ -73,6 +73,11 @@ export default function ProfileSecurityScreen() {
   };
 
   const handleVerifyPhone = async () => {
+    if (phoneCode.length !== 6) {
+      Alert.alert('Error', 'Please enter the complete 6-digit code');
+      return;
+    }
+    
     const result = await verifyOtp(fullPhone, phoneCode, 'sms');
 
     if (result.success) {
@@ -138,13 +143,13 @@ export default function ProfileSecurityScreen() {
                     setNewEmail('');
                   }}
                   variant="secondary"
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
                 <Button
                   title="Send Code"
                   onPress={handleLinkEmail}
                   loading={isLoading}
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
               </View>
             </View>
@@ -199,13 +204,13 @@ export default function ProfileSecurityScreen() {
                     setLocalNumber('');
                   }}
                   variant="secondary"
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
                 <Button
                   title="Send Code"
                   onPress={handleLinkPhone}
                   loading={isLoading}
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
               </View>
             </View>
@@ -231,13 +236,13 @@ export default function ProfileSecurityScreen() {
                     setPhoneCode('');
                   }}
                   variant="secondary"
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
                 <Button
                   title="Verify"
                   onPress={handleVerifyPhone}
                   loading={isLoading}
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
               </View>
             </View>
