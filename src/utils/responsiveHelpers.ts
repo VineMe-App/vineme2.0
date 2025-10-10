@@ -407,11 +407,11 @@ export const responsiveUtils = {
   getCurrentBreakpoint: () => BreakpointUtils.getCurrentBreakpoint(),
 };
 
-// Export individual classes
+// Export individual classes with renamed exports to avoid React 19 conflicts
 export {
-  DeviceUtils,
-  ResponsiveSizing,
-  BreakpointUtils,
-  GridUtils,
-  ResponsiveTypography,
+  DeviceUtils as ResponsiveDeviceUtils,
+  ResponsiveSizing as ResponsiveScale,
+  BreakpointUtils as ResponsiveBreakpoints,
+  GridUtils as ResponsiveGrid,
+  ResponsiveTypography as ResponsiveTextSizing,
 };

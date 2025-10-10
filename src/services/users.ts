@@ -1,8 +1,17 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
-import * as FileSystem from 'expo-file-system';
 import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { getFullName } from '../utils/name';
+
+// Conditionally import FileSystem - not available in Expo Go
+// Using try-catch to gracefully handle when the module isn't available
+let FileSystem: any = null;
+try {
+  FileSystem = require('expo-file-system');
+} catch (error) {
+  // FileSystem not available (likely Expo Go) - will be handled at runtime
+  console.log('[UserService] expo-file-system not available - some features will be disabled');
+}
 
 export interface UpdateUserProfileData {
   first_name?: string;
@@ -160,6 +169,15 @@ export class UserService {
     fileUri: string
   ): Promise<UserServiceResponse<string>> {
     try {
+      // Check if FileSystem is available (not in Expo Go)
+      if (!FileSystem) {
+        console.warn('[uploadAvatar] FileSystem not available - running in Expo Go');
+        return {
+          data: null,
+          error: new Error('Avatar upload requires a development build. This feature is not available in Expo Go.'),
+        };
+      }
+
       console.log('[uploadAvatar] Starting upload for user:', userId);
       console.log('[uploadAvatar] File URI:', fileUri);
 

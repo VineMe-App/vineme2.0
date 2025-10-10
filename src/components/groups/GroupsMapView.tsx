@@ -19,9 +19,25 @@ import {
   AdminAccessibilityLabels,
   ScreenReaderUtils,
 } from '@/utils/accessibility';
-import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService, Coordinates } from '../../services/location';
+import { MapViewFallback } from './MapViewFallback';
+
+// Dynamically import MapView - not available in Expo Go
+// Using try-catch to gracefully handle when the module isn't available
+let MapView: any = null;
+let Marker: any = null;
+let PROVIDER_GOOGLE: any = null;
+
+try {
+  const maps = require('react-native-maps');
+  MapView = maps.default;
+  Marker = maps.Marker;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+} catch (error) {
+  // react-native-maps not available (Expo Go) - will show fallback UI
+  console.log('[GroupsMapView] react-native-maps not available - using fallback');
+}
 import {
   MapClusterer,
   MapViewportOptimizer,
@@ -60,7 +76,12 @@ const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
 // Default region (centered on London)
-const DEFAULT_REGION: Region = {
+const DEFAULT_REGION: {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+} = {
   latitude: 51.5074,
   longitude: -0.1278,
   latitudeDelta: LATITUDE_DELTA,
@@ -165,14 +186,15 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   clusterRadius = 40,
   minClusterSize = 2,
 }) => {
+  // Always declare hooks first (Rules of Hooks)
   const [markers, setMarkers] = useState<GroupMarker[]>([]);
-  const [region, setRegion] = useState<Region>(DEFAULT_REGION);
-  const [currentRegion, setCurrentRegion] = useState<Region>(DEFAULT_REGION);
+  const [region, setRegion] = useState<typeof DEFAULT_REGION>(DEFAULT_REGION);
+  const [currentRegion, setCurrentRegion] = useState<typeof DEFAULT_REGION>(DEFAULT_REGION);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [locationPermissionDenied, setLocationPermissionDenied] =
     useState(false);
   const [clusters, setClusters] = useState<(Cluster | ClusterPoint)[]>([]);
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const isUpdatingClusters = useRef(false);
   const viewTrackingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -205,14 +227,13 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     return selectedItems[safeIndex]?.id ?? null;
   }, [selectedItems, selectedIndex]);
 
-  // Create clusterer instance
+  // Create clusterer instance only if we have MapView
   const clusterer = useMemo(
-    () =>
-      new MapClusterer({
+    () => MapView ? new MapClusterer({
         radius: clusterRadius,
         minZoom: 0,
         maxZoom: 16,
-      }),
+      }) : null,
     [clusterRadius]
   );
 
@@ -247,7 +268,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   );
 
   const updateClusters = useCallback(() => {
-    if (!enableClustering || isUpdatingClusters.current) return;
+    if (!enableClustering || isUpdatingClusters.current || !clusterer) return;
 
     isUpdatingClusters.current = true;
     const endClustering = MapPerformanceMonitor.startClustering();
@@ -312,13 +333,17 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
   // Initialize map region and process group locations
   useEffect(() => {
-    initializeMap();
+    // Only initialize if MapView is available
+    if (MapView) {
+      initializeMap();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups]);
 
   // Update clusters when region changes (optimized to prevent flashing)
   useEffect(() => {
-    if (markers.length === 0) {
+    // Don't try to cluster if MapView isn't available
+    if (!MapView || markers.length === 0) {
       setClusters([]);
       return;
     }
@@ -347,6 +372,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   }, [currentRegion, markers, enableClustering, clusterer, updateClusters]);
 
   const initializeMap = async () => {
+    // Safety check
+    if (!MapView) {
+      setIsLoadingLocation(false);
+      return;
+    }
+    
     setIsLoadingLocation(true);
 
     try {
@@ -426,6 +457,11 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   };
 
   const processGroupLocations = async () => {
+    // Safety check
+    if (!MapView) {
+      return;
+    }
+    
     const groupMarkers: GroupMarker[] = [];
 
     for (const group of groups) {
@@ -487,7 +523,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     setMarkers(groupMarkers);
 
     // Load markers into clusterer
-    if (enableClustering) {
+    if (enableClustering && clusterer) {
       clusterer.load(groups);
     }
 
@@ -638,7 +674,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   );
 
   const handleRegionChangeComplete = useCallback(
-    (newRegion: Region) => {
+    (newRegion: typeof DEFAULT_REGION) => {
       // Only update if there's a significant change to prevent excessive re-clustering
       if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
         setCurrentRegion(newRegion);
@@ -648,7 +684,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   );
 
   const handleRegionChange = useCallback(
-    (newRegion: Region) => {
+    (newRegion: typeof DEFAULT_REGION) => {
       // Only update if there's a meaningful change to prevent excessive updates
       if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
         setCurrentRegion(newRegion);
@@ -656,6 +692,18 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     },
     [currentRegion]
   );
+
+  // Check if MapView is available after all hooks
+  if (!MapView) {
+    return (
+      <View style={styles.container}>
+        <MapViewFallback
+          message="Map view requires native modules. Use a development build to see groups on the map."
+          height={height}
+        />
+      </View>
+    );
+  }
 
   if (isLoading || isLoadingLocation) {
     return (

@@ -544,11 +544,11 @@ export class StyleUtils {
 // Export default instance
 export const styleUtils = StyleUtils;
 
-// Export individual utility classes for direct access
+// Export individual utility classes with renamed exports to avoid React 19 conflicts
 export {
-  ResponsiveUtils,
-  ThemeStyleUtils,
-  PerformantStyleUtils,
-  StyleMergeUtils,
-  LayoutUtils,
+  ResponsiveUtils as ResponsiveStyleUtils,
+  ThemeStyleUtils as ThemedStyleUtils,
+  PerformantStyleUtils as PerformantStyles,
+  StyleMergeUtils as MergedStyleUtils,
+  LayoutUtils as LayoutStyleUtils,
 };

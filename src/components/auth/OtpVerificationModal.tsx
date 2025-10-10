@@ -36,7 +36,7 @@ export function OtpVerificationModal({
 
   // Countdown timer for resend button
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (countdown > 0) {
       timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     }
@@ -83,7 +83,7 @@ export function OtpVerificationModal({
   };
 
   return (
-    <Modal visible={visible} onClose={handleClose}>
+    <Modal isVisible={visible} onClose={handleClose}>
       <View style={styles.container}>
         <Text style={styles.title}>{displayTitle}</Text>
         <Text style={styles.subtitle}>{displaySubtitle}</Text>
