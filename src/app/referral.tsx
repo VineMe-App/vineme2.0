@@ -16,35 +16,14 @@ import {
   Button,
   Card,
   useFormContext,
-  Select,
-  SelectOption,
 } from '../components/ui';
+import { CountryCodePicker } from '../components/ui/CountryCodePicker';
 import { referralService } from '../services/referrals';
 import { useAuthStore } from '../stores/auth';
 import {
   validateReferralForm,
   type ReferralFormData,
 } from '../utils/referralValidation';
-
-// Country options for the dropdown
-const COUNTRY_OPTIONS: SelectOption[] = [
-  { label: '🇬🇧 United Kingdom (+44)', value: '+44' },
-  { label: '🇺🇸 United States (+1)', value: '+1-US' },
-  { label: '🇦🇺 Australia (+61)', value: '+61' },
-  { label: '🇳🇿 New Zealand (+64)', value: '+64' },
-  { label: '🇨🇦 Canada (+1)', value: '+1-CA' },
-  { label: '🇩🇪 Germany (+49)', value: '+49' },
-  { label: '🇫🇷 France (+33)', value: '+33' },
-  { label: '🇪🇸 Spain (+34)', value: '+34' },
-  { label: '🇮🇹 Italy (+39)', value: '+39' },
-  { label: '🇮🇳 India (+91)', value: '+91' },
-  { label: '🇸🇬 Singapore (+65)', value: '+65' },
-  { label: '🇿🇦 South Africa (+27)', value: '+27' },
-  { label: '🇧🇷 Brazil (+55)', value: '+55' },
-  { label: '🇳🇬 Nigeria (+234)', value: '+234' },
-  { label: '🇵🇭 Philippines (+63)', value: '+63' },
-  { label: '🇵🇰 Pakistan (+92)', value: '+92' },
-];
 
 export default function ReferralPage() {
   const params = useLocalSearchParams<{
@@ -130,11 +109,8 @@ export default function ReferralPage() {
           return;
         }
 
-        // Extract the actual country code from the value (remove country suffix)
-        const countryCode = String(values.countryCode || '+44').replace(
-          /-[A-Z]{2}$/,
-          ''
-        );
+        // Extract the actual country code from the value
+        const countryCode = String(values.countryCode || '+44');
 
         const payload: ReferralFormData = {
           email: String(values.email || '').trim(),
@@ -286,13 +262,10 @@ export default function ReferralPage() {
           <View style={styles.phoneFieldContainer}>
             <FormField name="countryCode">
               {({ value, onChange }) => (
-                <Select
-                  options={COUNTRY_OPTIONS}
+                <CountryCodePicker
                   value={value}
-                  onSelect={(option) => onChange(option.value)}
+                  onChange={onChange}
                   label="Country"
-                  variant="dropdown"
-                  style={styles.countrySelect}
                 />
               )}
             </FormField>
@@ -464,9 +437,6 @@ const styles = StyleSheet.create({
   },
   phoneFieldContainer: {
     marginBottom: 20,
-  },
-  countrySelect: {
-    marginBottom: 4,
   },
   actions: {
     alignItems: 'center',

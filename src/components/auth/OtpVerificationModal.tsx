@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity,
-  Alert
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { OtpInput } from '@/components/ui/OtpInput';
@@ -30,13 +24,13 @@ export function OtpVerificationModal({
   onSuccess,
   onResend,
   title,
-  subtitle
+  subtitle,
 }: OtpVerificationModalProps) {
   const { verifyOtp, isLoading } = useAuthStore();
   const [code, setCode] = useState('');
   const [countdown, setCountdown] = useState(0);
 
-  const codeLength = type === 'sms' ? 4 : 6;
+  const codeLength = 6; // Always 6-digit OTP for both SMS and email
   const displayTitle = title || `Enter ${codeLength}-digit code`;
   const displaySubtitle = subtitle || `Sent to ${phoneOrEmail}`;
 
@@ -51,12 +45,15 @@ export function OtpVerificationModal({
 
   const handleVerify = async () => {
     if (code.length !== codeLength) {
-      Alert.alert('Error', `Please enter the complete ${codeLength}-digit code`);
+      Alert.alert(
+        'Error',
+        `Please enter the complete ${codeLength}-digit code`
+      );
       return;
     }
 
     const result = await verifyOtp(phoneOrEmail, code, type);
-    
+
     if (result.success && result.user) {
       onSuccess(result.user);
       handleClose();
@@ -67,7 +64,7 @@ export function OtpVerificationModal({
 
   const handleResend = async () => {
     if (countdown > 0) return;
-    
+
     if (onResend) {
       const result = await onResend();
       if (result.success) {
@@ -90,37 +87,40 @@ export function OtpVerificationModal({
       <View style={styles.container}>
         <Text style={styles.title}>{displayTitle}</Text>
         <Text style={styles.subtitle}>{displaySubtitle}</Text>
-        
+
         <View style={styles.otpContainer}>
-          <OtpInput 
-            value={code} 
-            onChange={(text) => setCode(text.replace(/\D/g, '').slice(0, codeLength))} 
-            length={codeLength} 
+          <OtpInput
+            value={code}
+            onChange={(text) =>
+              setCode(text.replace(/\D/g, '').slice(0, codeLength))
+            }
+            length={codeLength}
           />
         </View>
 
-        <Button 
-          title="Verify" 
-          onPress={handleVerify} 
+        <Button
+          title="Verify"
+          onPress={handleVerify}
           loading={isLoading}
           style={styles.verifyButton}
         />
 
         {onResend && (
           <View style={styles.resendContainer}>
-            <TouchableOpacity 
-              onPress={handleResend} 
+            <TouchableOpacity
+              onPress={handleResend}
               disabled={countdown > 0 || isLoading}
               style={styles.resendButton}
             >
-              <Text style={[
-                styles.resendText, 
-                (countdown > 0 || isLoading) && styles.resendTextDisabled
-              ]}>
-                {countdown > 0 
-                  ? `Resend code in ${countdown}s` 
-                  : "Didn't receive code? Resend"
-                }
+              <Text
+                style={[
+                  styles.resendText,
+                  (countdown > 0 || isLoading) && styles.resendTextDisabled,
+                ]}
+              >
+                {countdown > 0
+                  ? `Resend code in ${countdown}s`
+                  : "Didn't receive code? Resend"}
               </Text>
             </TouchableOpacity>
           </View>
