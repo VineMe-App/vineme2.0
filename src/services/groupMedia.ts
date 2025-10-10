@@ -1,5 +1,14 @@
-import * as FileSystem from 'expo-file-system';
 import { supabase } from './supabase';
+
+// Conditionally import FileSystem - not available in Expo Go
+// Using try-catch to gracefully handle when the module isn't available
+let FileSystem: any = null;
+try {
+  FileSystem = require('expo-file-system');
+} catch (error) {
+  // FileSystem not available (likely Expo Go) - will be handled at runtime
+  console.log('[GroupMediaService] expo-file-system not available - some features will be disabled');
+}
 
 export interface GroupMediaResponse<T = any> {
   data: T | null;
@@ -81,6 +90,15 @@ class GroupMediaService {
     options: UploadOptions = {}
   ): Promise<GroupMediaResponse<string>> {
     try {
+      // Check if FileSystem is available (not in Expo Go)
+      if (!FileSystem) {
+        console.warn('[uploadGroupImage] FileSystem not available - running in Expo Go');
+        return {
+          data: null,
+          error: new Error('Image upload requires a development build. This feature is not available in Expo Go.'),
+        };
+      }
+
       const fileInfo = await FileSystem.getInfoAsync(localUri, {
         size: true,
       });

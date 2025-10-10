@@ -677,8 +677,8 @@ export class AuthService {
     type: 'sms' | 'email'
   ): Promise<{ success: boolean; error?: string; user?: User }> {
     try {
-      // Expect 4-digit code for SMS, 6-digit for email
-      const expectedLength = type === 'sms' ? 4 : 6;
+      // Twilio sends 6-digit codes for both SMS and email
+      const expectedLength = 6;
       if (!new RegExp(`^\\d{${expectedLength}}$`).test(code)) {
         return { 
           success: false, 

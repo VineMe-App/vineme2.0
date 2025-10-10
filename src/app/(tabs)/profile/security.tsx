@@ -67,6 +67,11 @@ export default function ProfileSecurityScreen() {
   };
 
   const handleVerifyPhone = async () => {
+    if (phoneCode.length !== 6) {
+      Alert.alert('Error', 'Please enter the complete 6-digit code');
+      return;
+    }
+    
     const result = await verifyOtp(fullPhone, phoneCode, 'sms');
     
     if (result.success) {
@@ -207,12 +212,12 @@ export default function ProfileSecurityScreen() {
 
           {phoneStep === 'verify-code' && (
             <View style={styles.inputSection}>
-              <Text style={styles.label}>Enter 4-digit code</Text>
+              <Text style={styles.label}>Enter 6-digit code</Text>
               <Text style={styles.helperText}>Sent to {fullPhone}</Text>
               <OtpInput 
                 value={phoneCode} 
-                onChange={(text) => setPhoneCode(text.replace(/\D/g, '').slice(0, 4))} 
-                length={4} 
+                onChange={(text) => setPhoneCode(text.replace(/\D/g, '').slice(0, 6))} 
+                length={6} 
               />
               <View style={styles.buttonRow}>
                 <Button 

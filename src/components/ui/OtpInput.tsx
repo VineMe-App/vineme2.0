@@ -4,7 +4,7 @@ import { View, TextInput, StyleSheet } from 'react-native';
 export function OtpInput({
   value,
   onChange,
-  length = 4,
+  length = 6,
 }: {
   value: string;
   onChange: (next: string) => void;

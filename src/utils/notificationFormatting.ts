@@ -568,10 +568,10 @@ export function createFormattedNotification(
   return notification;
 }
 
-// Export utility functions
+// Export utility functions (renamed exports to avoid React 19 conflicts)
 export {
-  NOTIFICATION_TEMPLATES,
-  NOTIFICATION_VALIDATION_SCHEMAS,
+  NOTIFICATION_TEMPLATES as NotificationTemplates,
+  NOTIFICATION_VALIDATION_SCHEMAS as NotificationValidationSchemas,
   formatNotificationMessage,
   generateNotificationContent,
   sanitizeNotificationContent,

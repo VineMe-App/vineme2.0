@@ -12,11 +12,27 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
 import { Input } from '../ui';
 import { locationService, type Coordinates } from '../../services/location';
 import { debounce } from '../../utils';
+import { MapViewFallback } from './MapViewFallback';
+
+// Dynamically import MapView - not available in Expo Go
+// Using try-catch to gracefully handle when the module isn't available
+let MapView: any = null;
+let Marker: any = null;
+let PROVIDER_GOOGLE: any = null;
+
+try {
+  const maps = require('react-native-maps');
+  MapView = maps.default;
+  Marker = maps.Marker;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+} catch (error) {
+  // react-native-maps not available (Expo Go) - will show fallback UI
+  console.log('[LocationPicker] react-native-maps not available - using fallback');
+}
 
 const DEFAULT_COORDINATES: Coordinates = {
   latitude: 51.4953,
@@ -38,9 +54,17 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   value,
   onChange,
 }) => {
+  // Check if MapView is available BEFORE any hooks
+  const inExpoGo = !MapView;
+  
   const [search, setSearch] = useState<string>(value?.address || '');
   const [previousSearchLength, setPreviousSearchLength] = useState((value?.address || '').length);
-  const [region, setRegion] = useState<Region>({
+  const [region, setRegion] = useState<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  }>({
     latitude: value?.coordinates?.latitude || DEFAULT_COORDINATES.latitude,
     longitude: value?.coordinates?.longitude || DEFAULT_COORDINATES.longitude,
     latitudeDelta: 0.05,
@@ -53,7 +77,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [userZoomLevel, setUserZoomLevel] = useState<{latitudeDelta: number, longitudeDelta: number} | null>(null);
   const [inputKey, setInputKey] = useState(0);
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const inputRef = useRef<any>(null);
 
   // Ensure marker is always visible immediately
@@ -278,7 +302,12 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   };
 
   const handleRegionChangeComplete = useCallback(
-    async (newRegion: Region) => {
+    async (newRegion: {
+      latitude: number;
+      longitude: number;
+      latitudeDelta: number;
+      longitudeDelta: number;
+    }) => {
       console.log('Region changed:', newRegion);
       
       // Store the user's zoom level if it's different from our current zoom
@@ -325,6 +354,29 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     },
     [onChange, region.latitude, region.longitude, userZoomLevel]
   );
+
+  // Check if MapView is available after all hooks
+  if (!MapView) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.searchContainer}>
+          <Input
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search for a location..."
+            containerStyle={styles.searchInputContainer}
+            inputStyle={styles.searchInput}
+            accessibilityLabel="Search for a location"
+            disabled
+          />
+          <Text style={styles.searchHelper}>
+            Location search requires a development build
+          </Text>
+        </View>
+        <MapViewFallback height={300} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -383,15 +435,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       
       <View style={styles.mapContainer}>
         <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          mapId={GOOGLE_MAPS_MAP_ID}
-          initialRegion={region}
-          onRegionChangeComplete={handleRegionChangeComplete}
-          showsUserLocation
-          showsMyLocationButton={Platform.OS === 'android'}
-          customMapStyle={[
+            ref={mapRef}
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            mapId={GOOGLE_MAPS_MAP_ID}
+            initialRegion={region}
+            onRegionChangeComplete={handleRegionChangeComplete}
+            showsUserLocation
+            showsMyLocationButton={Platform.OS === 'android'}
+            customMapStyle={[
             {
               elementType: 'geometry',
               stylers: [
@@ -551,15 +603,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               ],
             },
           ]}
-        >
-          {console.log('Rendering marker with coordinates:', selectedCoords)}
-          <Marker
-            coordinate={selectedCoords}
-            title="Meeting Location"
-            description="Move the map to adjust location"
-            pinColor="red"
-          />
-        </MapView>
+          >
+            {console.log('Rendering marker with coordinates:', selectedCoords)}
+            <Marker
+              coordinate={selectedCoords}
+              title="Meeting Location"
+              description="Move the map to adjust location"
+              pinColor="red"
+            />
+          </MapView>
       </View>
     </View>
   );

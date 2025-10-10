@@ -36,7 +36,7 @@ export function OtpVerificationModal({
   const [code, setCode] = useState('');
   const [countdown, setCountdown] = useState(0);
 
-  const codeLength = type === 'sms' ? 4 : 6;
+  const codeLength = 6; // Twilio sends 6 digits for both SMS and email
   const displayTitle = title || `Enter ${codeLength}-digit code`;
   const displaySubtitle = subtitle || `Sent to ${phoneOrEmail}`;
 
