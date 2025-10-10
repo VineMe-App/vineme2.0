@@ -15,7 +15,7 @@ interface MissingServicePayload {
 }
 
 const TO_EMAIL =
-  Deno.env.get('MISSING_SERVICE_TO_EMAIL') || 'hh.jacob@gmail.com';
+  Deno.env.get('MISSING_SERVICE_TO_EMAIL') || 'connect@vineme.app';
 const FROM_EMAIL =
   Deno.env.get('MISSING_SERVICE_FROM_EMAIL') || 'connect@vineme.app';
 const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY');

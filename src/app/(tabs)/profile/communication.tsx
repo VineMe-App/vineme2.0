@@ -437,9 +437,9 @@ export default function CommunicationAndSecurityScreen() {
                 <OtpInput
                   value={phoneCode}
                   onChange={(t) =>
-                    setPhoneCode(t.replace(/\D/g, '').slice(0, 4))
+                    setPhoneCode(t.replace(/\D/g, '').slice(0, 6))
                   }
-                  length={4}
+                  length={6}
                 />
                 <View style={styles.actionsRow}>
                   <Button
