@@ -329,7 +329,12 @@ export class UserService {
       if (urlParts.length < 2) {
         return { data: null, error: new Error('Invalid avatar URL format') };
       }
-      const filePath = urlParts[1];
+      const filePathWithQuery = urlParts[1];
+      const filePath = filePathWithQuery.split('?')[0];
+
+      if (!filePath) {
+        return { data: null, error: new Error('Invalid avatar URL format') };
+      }
 
       const { error } = await supabase.storage
         .from('profile-images')
