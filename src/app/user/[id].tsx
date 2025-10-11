@@ -21,6 +21,7 @@ import {
   useRemoveFriend,
   useReceivedFriendRequests,
   useAcceptFriendRequest,
+  useAcceptRejectedFriendRequest,
 } from '@/hooks/useFriendships';
 import { getDisplayName, getFullName } from '@/utils/name';
 
@@ -46,6 +47,7 @@ export default function OtherUserProfileScreen() {
   const sendFriendRequest = useSendFriendRequest();
   const acceptFriendRequest = useAcceptFriendRequest();
   const removeFriend = useRemoveFriend();
+  const acceptRejected = useAcceptRejectedFriendRequest();
 
   const isSelf = user?.id && targetUserId === user.id;
   const profileFullName = getFullName(profile);
@@ -97,14 +99,17 @@ export default function OtherUserProfileScreen() {
   const ActionButton = () => {
     if (isSelf) return null;
 
-    const status = friendshipStatusQuery.data;
+    const statusDetails = friendshipStatusQuery.data;
+    const status = statusDetails?.status;
+    const isIncoming = statusDetails?.direction === 'incoming';
     const received = receivedRequestsQuery.data || [];
     const loading =
       friendshipStatusQuery.isLoading ||
       receivedRequestsQuery.isLoading ||
       sendFriendRequest.isPending ||
       acceptFriendRequest.isPending ||
-      removeFriend.isPending;
+      removeFriend.isPending ||
+      acceptRejected.isPending;
 
     if (loading) {
       return <Button title="Loading..." variant="secondary" disabled />;
@@ -141,10 +146,22 @@ export default function OtherUserProfileScreen() {
         }
         return <Button title="Request Pending" variant="secondary" disabled />;
       }
-      case 'blocked':
-        return <Button title="Blocked" variant="secondary" disabled />;
       case 'rejected':
-        return <Button title="Request Rejected" variant="secondary" disabled />;
+        if (isIncoming) {
+          return (
+            <Button
+              title="Add Friend"
+              onPress={() =>
+                targetUserId &&
+                acceptRejected.mutate(targetUserId, {
+                  onSuccess: () => friendshipStatusQuery.refetch(),
+                  onError: (e) => Alert.alert('Error', e.message),
+                })
+              }
+            />
+          );
+        }
+        return <Button title="Request Pending" variant="secondary" disabled />;
       default:
         return (
           <Button
