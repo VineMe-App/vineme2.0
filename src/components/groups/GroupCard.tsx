@@ -92,13 +92,21 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             </View>
           )}
 
-          {/* Top Left - Pending Badge */}
-          {group.status === 'pending' && (
-            <View style={styles.pendingBadge}>
-              <Ionicons name="time-outline" size={16} color="#b45309" />
-              <Text style={styles.pendingText}>Pending</Text>
-            </View>
-          )}
+          {/* Top Left - Badges */}
+          <View style={styles.topLeftBadges}>
+            {group.status === 'pending' && (
+              <View style={styles.pendingBadge}>
+                <Ionicons name="time-outline" size={16} color="#b45309" />
+                <Text style={styles.pendingText}>Pending</Text>
+              </View>
+            )}
+            {group.at_capacity && (
+              <View style={styles.fullBadge}>
+                <Ionicons name="people" size={14} color="#c2410c" />
+                <Text style={styles.fullText}>Full</Text>
+              </View>
+            )}
+          </View>
 
           {/* Bottom Right - Friend Avatars */}
           {friendsInGroup && friendsInGroup.length > 0 && (
@@ -114,7 +122,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   >
                     <Avatar
                       imageUrl={friend.avatar_url}
-                      name={friend.name}
+                      name={friend.name || undefined}
                       size={24}
                     />
                   </View>
@@ -219,7 +227,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                       >
                         <Avatar
                           imageUrl={leader.avatar_url}
-                          name={leader.name}
+                          name={leader.name || undefined}
                           size={20}
                         />
                       </View>
@@ -383,21 +391,43 @@ const styles = StyleSheet.create({
     color: '#888',
     fontStyle: 'italic',
   },
-  pendingBadge: {
+  topLeftBadges: {
     position: 'absolute',
     top: 8,
     left: 8,
     zIndex: 1,
     flexDirection: 'row',
+    gap: 6,
+  },
+  pendingBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#fffbeb',
     paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   pendingText: {
     color: '#92400e',
     fontWeight: '600',
     fontSize: 12,
+  },
+  fullBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#fff7ed',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+  },
+  fullText: {
+    color: '#c2410c',
+    fontWeight: '700',
+    fontSize: 11,
+    letterSpacing: 0.5,
   },
 });

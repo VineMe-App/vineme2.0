@@ -69,6 +69,13 @@ export const applyGroupFilters = (
       }
     }
 
+    // Apply hideFullGroups filter
+    if (filters.hideFullGroups) {
+      if (group.at_capacity === true) {
+        return false;
+      }
+    }
+
     return true;
   });
 };
@@ -83,6 +90,7 @@ export const getActiveFiltersCount = (filters: GroupFilters): number => {
   if (filters.categories.length > 0) count++;
   if (filters.searchQuery.trim().length > 0) count++;
   if (filters.onlyWithFriends) count++;
+  if (filters.hideFullGroups) count++;
 
   return count;
 };

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupCreationService } from '../services/groupCreation';
 import { groupKeys } from './useGroups';
+import { noteKeys } from './useGroupMembershipNotes';
 import type { UpdateGroupData } from '../services/admin';
 
 /**
@@ -66,6 +67,8 @@ export const usePromoteToLeader = () => {
       // Invalidate group members to refetch with updated roles
       queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      // Invalidate notes queries (since we create a role change note)
+      queryClient.invalidateQueries({ queryKey: noteKeys.all });
     },
     onError: (error) => {
       console.error('Failed to promote to leader:', error);
@@ -101,6 +104,8 @@ export const useDemoteFromLeader = () => {
       // Invalidate group members to refetch with updated roles
       queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      // Invalidate notes queries (since we create a role change note)
+      queryClient.invalidateQueries({ queryKey: noteKeys.all });
     },
     onError: (error) => {
       console.error('Failed to demote from leader:', error);
@@ -132,13 +137,54 @@ export const useRemoveMember = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, { groupId }) => {
+    onSuccess: (data, { groupId, userId }) => {
       // Invalidate group members to refetch without removed member
       queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      // Also invalidate all memberships query (for archive view)
+      queryClient.invalidateQueries({
+        queryKey: [...groupKeys.members(groupId), 'all'],
+      });
+      // Invalidate notes queries (since we create a member removal note)
+      queryClient.invalidateQueries({ queryKey: noteKeys.all });
     },
     onError: (error) => {
       console.error('Failed to remove member:', error);
+    },
+  });
+};
+
+/**
+ * Hook for toggling group capacity status
+ */
+export const useToggleGroupCapacity = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      groupId,
+      userId,
+      atCapacity,
+    }: {
+      groupId: string;
+      userId: string;
+      atCapacity: boolean;
+    }) => {
+      const { data, error } = await groupCreationService.toggleGroupCapacity(
+        groupId,
+        userId,
+        atCapacity
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, { groupId }) => {
+      // Invalidate group data to refetch with updated capacity status
+      queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.all });
+    },
+    onError: (error) => {
+      console.error('Failed to toggle group capacity:', error);
     },
   });
 };
@@ -151,11 +197,13 @@ export const useGroupLeaderActions = () => {
   const promoteToLeaderMutation = usePromoteToLeader();
   const demoteFromLeaderMutation = useDemoteFromLeader();
   const removeMemberMutation = useRemoveMember();
+  const toggleGroupCapacityMutation = useToggleGroupCapacity();
 
   return {
     updateGroupDetailsMutation,
     promoteToLeaderMutation,
     demoteFromLeaderMutation,
     removeMemberMutation,
+    toggleGroupCapacityMutation,
   };
 };
