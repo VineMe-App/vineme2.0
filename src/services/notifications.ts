@@ -1261,7 +1261,7 @@ export const triggerReferralAcceptedNotification = async (
         referredUserId: data.referredUserId,
         referredUserName: data.referredUserName,
       },
-      action_url: `/profile/${data.referredUserId}`,
+      action_url: `/user/${data.referredUserId}`,
     });
 
     if (notification) {
