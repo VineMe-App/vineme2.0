@@ -30,13 +30,17 @@ export class StyleSheetCache {
     cacheKey?: string
   ): T {
     const key = cacheKey || this.generateKey(styles);
-    
+
     // Performance monitoring for cache hits
     const startTime = performance.now();
-    
+
     if (this.cache.has(key)) {
       this.incrementAccessCount(key);
-      performanceMonitor.recordMetric('style_cache_hit', performance.now() - startTime, { key });
+      performanceMonitor.recordMetric(
+        'style_cache_hit',
+        performance.now() - startTime,
+        { key }
+      );
       return this.cache.get(key);
     }
 
@@ -50,20 +54,28 @@ export class StyleSheetCache {
     const styleObject = typeof styles === 'function' ? styles() : styles;
     const createdStyles = StyleSheet.create(styleObject);
     const creationTime = performance.now() - creationStart;
-    
+
     // Estimate memory usage (rough approximation)
     const memoryEstimate = this.estimateMemoryUsage(styleObject);
-    
+
     this.cache.set(key, createdStyles);
     this.accessCount.set(key, 1);
     this.creationTimes.set(key, creationTime);
     this.memoryUsage.set(key, memoryEstimate);
-    
+
     // Record performance metrics
-    performanceMonitor.recordMetric('style_cache_miss', performance.now() - startTime, { key });
-    performanceMonitor.recordMetric('style_creation_time', creationTime, { key });
-    performanceMonitor.recordMetric('style_memory_usage', memoryEstimate, { key });
-    
+    performanceMonitor.recordMetric(
+      'style_cache_miss',
+      performance.now() - startTime,
+      { key }
+    );
+    performanceMonitor.recordMetric('style_creation_time', creationTime, {
+      key,
+    });
+    performanceMonitor.recordMetric('style_memory_usage', memoryEstimate, {
+      key,
+    });
+
     return createdStyles;
   }
 
@@ -77,7 +89,7 @@ export class StyleSheetCache {
   ): T {
     const themeKey = this.generateThemeKey(theme);
     const key = additionalKey ? `${themeKey}:${additionalKey}` : themeKey;
-    
+
     return this.create(() => styleFactory(theme), key);
   }
 
@@ -139,7 +151,7 @@ export class StyleSheetCache {
   private static cleanCache(): void {
     const entries = Array.from(this.accessCount.entries());
     entries.sort((a, b) => a[1] - b[1]); // Sort by access count (ascending)
-    
+
     // Remove least accessed items (bottom 25%)
     const itemsToRemove = Math.floor(entries.length * 0.25);
     for (let i = 0; i < itemsToRemove; i++) {
@@ -154,10 +166,10 @@ export class StyleSheetCache {
    */
   static clearCache(pattern?: string): void {
     if (pattern) {
-      const keysToDelete = Array.from(this.cache.keys()).filter(key =>
+      const keysToDelete = Array.from(this.cache.keys()).filter((key) =>
         key.includes(pattern)
       );
-      keysToDelete.forEach(key => {
+      keysToDelete.forEach((key) => {
         this.cache.delete(key);
         this.accessCount.delete(key);
       });
@@ -176,19 +188,37 @@ export class StyleSheetCache {
     hitRate: number;
     totalMemoryUsage: number;
     averageCreationTime: number;
-    mostAccessed: Array<{ key: string; count: number; creationTime: number; memoryUsage: number }>;
+    mostAccessed: {
+      key: string;
+      count: number;
+      creationTime: number;
+      memoryUsage: number;
+    }[];
     performanceMetrics: {
-      slowestCreations: Array<{ key: string; time: number }>;
-      largestMemoryUsage: Array<{ key: string; memory: number }>;
+      slowestCreations: { key: string; time: number }[];
+      largestMemoryUsage: { key: string; memory: number }[];
     };
   } {
-    const totalAccess = Array.from(this.accessCount.values()).reduce((a, b) => a + b, 0);
-    const hitRate = totalAccess > 0 ? (totalAccess - this.cache.size) / totalAccess : 0;
-    
-    const totalMemoryUsage = Array.from(this.memoryUsage.values()).reduce((a, b) => a + b, 0);
-    const totalCreationTime = Array.from(this.creationTimes.values()).reduce((a, b) => a + b, 0);
-    const averageCreationTime = this.creationTimes.size > 0 ? totalCreationTime / this.creationTimes.size : 0;
-    
+    const totalAccess = Array.from(this.accessCount.values()).reduce(
+      (a, b) => a + b,
+      0
+    );
+    const hitRate =
+      totalAccess > 0 ? (totalAccess - this.cache.size) / totalAccess : 0;
+
+    const totalMemoryUsage = Array.from(this.memoryUsage.values()).reduce(
+      (a, b) => a + b,
+      0
+    );
+    const totalCreationTime = Array.from(this.creationTimes.values()).reduce(
+      (a, b) => a + b,
+      0
+    );
+    const averageCreationTime =
+      this.creationTimes.size > 0
+        ? totalCreationTime / this.creationTimes.size
+        : 0;
+
     const mostAccessed = Array.from(this.accessCount.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
@@ -227,11 +257,11 @@ export class StyleSheetCache {
    * Preload styles for better performance
    */
   static preload<T extends StyleDefinition>(
-    styleFactories: Array<{
+    styleFactories: {
       factory: StyleFactory<T>;
       theme: Theme;
       key?: string;
-    }>
+    }[]
   ): void {
     styleFactories.forEach(({ factory, theme, key }) => {
       this.createThemed(factory, theme, key);
@@ -254,14 +284,14 @@ export class StyleMemoization {
   ): T {
     return ((...args: Parameters<T>) => {
       const key = keyGenerator ? keyGenerator(...args) : JSON.stringify(args);
-      
+
       if (this.memoCache.has(key)) {
         return this.memoCache.get(key);
       }
-      
+
       const result = fn(...args);
       this.memoCache.set(key, result);
-      
+
       return result;
     }) as T;
   }
@@ -293,7 +323,7 @@ export class StyleOptimizer {
    */
   static flattenStyles(styles: any): StyleValue {
     const flattened: StyleValue = {};
-    
+
     const flatten = (obj: any, prefix = '') => {
       for (const [key, value] of Object.entries(obj)) {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -304,7 +334,7 @@ export class StyleOptimizer {
         }
       }
     };
-    
+
     flatten(styles);
     return flattened;
   }
@@ -314,29 +344,31 @@ export class StyleOptimizer {
    */
   static cleanStyles(styles: StyleValue): StyleValue {
     const cleaned: StyleValue = {};
-    
+
     for (const [key, value] of Object.entries(styles)) {
       if (value !== undefined && value !== null) {
         cleaned[key as keyof StyleValue] = value;
       }
     }
-    
+
     return cleaned;
   }
 
   /**
    * Merge styles efficiently without creating intermediate objects
    */
-  static efficientMerge(...styles: (StyleValue | undefined | null)[]): StyleValue {
+  static efficientMerge(
+    ...styles: (StyleValue | undefined | null)[]
+  ): StyleValue {
     const result: StyleValue = {};
-    
+
     for (const style of styles) {
       if (style && typeof style === 'object') {
         // Use Object.assign for better performance than spread operator
         Object.assign(result, style);
       }
     }
-    
+
     return result;
   }
 
@@ -345,19 +377,19 @@ export class StyleOptimizer {
    */
   static conditionalStyles(
     baseStyles: StyleValue,
-    conditions: Array<{
+    conditions: {
       condition: boolean;
       styles: StyleValue;
-    }>
+    }[]
   ): StyleValue {
     let result = baseStyles;
-    
+
     for (const { condition, styles } of conditions) {
       if (condition) {
         result = this.efficientMerge(result, styles);
       }
     }
-    
+
     return result;
   }
 
@@ -366,14 +398,14 @@ export class StyleOptimizer {
    */
   static optimizeForRN(styles: StyleValue): StyleValue {
     const optimized = this.cleanStyles(styles);
-    
+
     // Convert string numbers to actual numbers for better performance
     for (const [key, value] of Object.entries(optimized)) {
       if (typeof value === 'string' && !isNaN(Number(value))) {
         optimized[key as keyof StyleValue] = Number(value);
       }
     }
-    
+
     return optimized;
   }
 }
@@ -395,10 +427,7 @@ export class StylePerformanceMonitor {
   /**
    * Measure style creation performance
    */
-  static measureStyleCreation<T>(
-    name: string,
-    styleCreationFn: () => T
-  ): T {
+  static measureStyleCreation<T>(name: string, styleCreationFn: () => T): T {
     if (!this.isEnabled) {
       return styleCreationFn();
     }
@@ -406,40 +435,43 @@ export class StylePerformanceMonitor {
     const startTime = performance.now();
     const result = styleCreationFn();
     const endTime = performance.now();
-    
+
     const duration = endTime - startTime;
-    
+
     if (!this.measurements.has(name)) {
       this.measurements.set(name, []);
     }
-    
+
     this.measurements.get(name)!.push(duration);
-    
+
     return result;
   }
 
   /**
    * Get performance statistics
    */
-  static getStats(): Record<string, {
-    count: number;
-    average: number;
-    min: number;
-    max: number;
-    total: number;
-  }> {
+  static getStats(): Record<
+    string,
+    {
+      count: number;
+      average: number;
+      min: number;
+      max: number;
+      total: number;
+    }
+  > {
     const stats: Record<string, any> = {};
-    
+
     for (const [name, measurements] of this.measurements.entries()) {
       const count = measurements.length;
       const total = measurements.reduce((sum, time) => sum + time, 0);
       const average = total / count;
       const min = Math.min(...measurements);
       const max = Math.max(...measurements);
-      
+
       stats[name] = { count, average, min, max, total };
     }
-    
+
     return stats;
   }
 
@@ -457,7 +489,7 @@ export class StylePerformanceMonitor {
     if (!this.isEnabled) return;
 
     const stats = this.getStats();
-    
+
     for (const [name, stat] of Object.entries(stats)) {
       if (stat.average > threshold) {
         console.warn(
@@ -485,7 +517,7 @@ export class ThemeSwitchingOptimizer {
     callback: () => void
   ): void {
     const transitionKey = `${fromTheme.name}-to-${toTheme.name}`;
-    
+
     // Check if we have a cached transition
     if (this.themeTransitionCache.has(transitionKey)) {
       const cachedTransition = this.themeTransitionCache.get(transitionKey);
@@ -502,16 +534,16 @@ export class ThemeSwitchingOptimizer {
     this.batchThemeUpdates(() => {
       // Clear theme-specific cache entries
       StyleSheetCache.clearCache(`theme:${fromTheme.name}`);
-      
+
       // Preload critical styles for new theme
       this.preloadCriticalStylesForTheme(toTheme);
-      
+
       // Execute callback
       callback();
-      
+
       // Cache this transition for future use
       this.themeTransitionCache.set(transitionKey, callback);
-      
+
       this.isTransitioning = false;
       performanceMonitor.endTimer('theme_switch', {
         fromTheme: fromTheme.name,
@@ -553,7 +585,7 @@ export class ThemeSwitchingOptimizer {
    * Flush queued component updates
    */
   private static flushComponentUpdates(): void {
-    this.componentUpdateQueue.forEach(updateFn => updateFn());
+    this.componentUpdateQueue.forEach((updateFn) => updateFn());
     this.componentUpdateQueue.clear();
   }
 
@@ -629,12 +661,12 @@ export class ThemeSwitchingOptimizer {
  */
 export class StylePerformanceDebugger {
   private static isEnabled = __DEV__;
-  private static debugLog: Array<{
+  private static debugLog: {
     timestamp: number;
     type: string;
     message: string;
     data?: any;
-  }> = [];
+  }[] = [];
 
   /**
    * Enable/disable performance debugging
@@ -657,7 +689,7 @@ export class StylePerformanceDebugger {
     };
 
     this.debugLog.push(logEntry);
-    
+
     // Keep log size manageable
     if (this.debugLog.length > 1000) {
       this.debugLog = this.debugLog.slice(-500);
@@ -687,7 +719,8 @@ export class StylePerformanceDebugger {
     }
 
     // Analyze memory usage
-    if (cacheStats.totalMemoryUsage > 1000000) { // 1MB
+    if (cacheStats.totalMemoryUsage > 1000000) {
+      // 1MB
       warnings.push(
         `High memory usage (${(cacheStats.totalMemoryUsage / 1000000).toFixed(2)}MB). Consider clearing cache more frequently.`
       );
@@ -818,20 +851,20 @@ export class PerformanceStyleUtils {
   /**
    * Batch style operations for better performance
    */
-  static batchStyleOperations<T>(operations: Array<() => T>): T[] {
+  static batchStyleOperations<T>(operations: (() => T)[]): T[] {
     // In React Native, we can batch style operations to reduce layout thrashing
-    return operations.map(op => op());
+    return operations.map((op) => op());
   }
 
   /**
    * Preload critical styles
    */
   static preloadCriticalStyles(
-    criticalStyles: Array<{
+    criticalStyles: {
       factory: StyleFactory<any>;
       theme: Theme;
       key: string;
-    }>
+    }[]
   ): void {
     this.cache.preload(criticalStyles);
   }

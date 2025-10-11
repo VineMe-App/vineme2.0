@@ -20,7 +20,7 @@ import { useTheme } from '../theme/provider/useTheme';
 // Simple themed components for demo
 const ThemedText = ({ children, style, variant = 'body', ...props }: any) => {
   const { colors, typography } = useTheme();
-  
+
   const getVariantStyle = () => {
     switch (variant) {
       case 'h1':
@@ -55,9 +55,16 @@ const ThemedText = ({ children, style, variant = 'body', ...props }: any) => {
   );
 };
 
-const ThemedButton = ({ title, variant = 'primary', onPress, disabled, style, ...props }: any) => {
+const ThemedButton = ({
+  title,
+  variant = 'primary',
+  onPress,
+  disabled,
+  style,
+  ...props
+}: any) => {
   const { colors, spacing, borderRadius } = useTheme();
-  
+
   const getButtonStyle = () => {
     const baseStyle = {
       paddingHorizontal: spacing.md,
@@ -127,9 +134,14 @@ const ThemedButton = ({ title, variant = 'primary', onPress, disabled, style, ..
   );
 };
 
-const ThemedCard = ({ children, variant = 'default', style, ...props }: any) => {
+const ThemedCard = ({
+  children,
+  variant = 'default',
+  style,
+  ...props
+}: any) => {
   const { colors, spacing, borderRadius, shadows } = useTheme();
-  
+
   const getCardStyle = () => {
     const baseStyle = {
       padding: spacing.md,
@@ -166,9 +178,16 @@ const ThemedCard = ({ children, variant = 'default', style, ...props }: any) => 
   );
 };
 
-const ThemedInput = ({ label, error, success, disabled, style, ...props }: any) => {
+const ThemedInput = ({
+  label,
+  error,
+  success,
+  disabled,
+  style,
+  ...props
+}: any) => {
   const { colors, spacing, borderRadius, typography } = useTheme();
-  
+
   const getInputStyle = () => {
     const baseStyle = {
       borderWidth: 1,
@@ -224,7 +243,10 @@ const ThemedInput = ({ label, error, success, disabled, style, ...props }: any) 
         {...props}
       />
       {error && (
-        <ThemedText variant="caption" style={{ color: colors.error[500], marginTop: spacing.xs }}>
+        <ThemedText
+          variant="caption"
+          style={{ color: colors.error[500], marginTop: spacing.xs }}
+        >
           {error}
         </ThemedText>
       )}
@@ -285,7 +307,9 @@ export default function StylingSystemDemo() {
             <ThemedText variant="h1">Heading 1</ThemedText>
             <ThemedText variant="h2">Heading 2</ThemedText>
             <ThemedText variant="body">Body Text - Regular content</ThemedText>
-            <ThemedText variant="caption">Caption - Metadata and hints</ThemedText>
+            <ThemedText variant="caption">
+              Caption - Metadata and hints
+            </ThemedText>
           </View>
         </ThemedCard>
 
@@ -301,7 +325,9 @@ export default function StylingSystemDemo() {
             <ThemedButton
               title="Secondary"
               variant="secondary"
-              onPress={() => Alert.alert('Secondary', 'Secondary button pressed')}
+              onPress={() =>
+                Alert.alert('Secondary', 'Secondary button pressed')
+              }
             />
             <ThemedButton
               title="Outline"
@@ -365,9 +391,13 @@ export default function StylingSystemDemo() {
                   false: colors.neutral[300],
                   true: colors.primary[500],
                 }}
-                thumbColor={switchValue ? colors.primary[200] : colors.neutral[50]}
+                thumbColor={
+                  switchValue ? colors.primary[200] : colors.neutral[50]
+                }
               />
-              <ThemedText style={styles.switchLabel}>Enable notifications</ThemedText>
+              <ThemedText style={styles.switchLabel}>
+                Enable notifications
+              </ThemedText>
             </View>
           </View>
         </ThemedCard>
@@ -376,17 +406,23 @@ export default function StylingSystemDemo() {
         <ThemedCard variant="elevated">
           <ThemedText variant="h2">Accessibility Features</ThemedText>
           <ThemedText>
-            All components include proper accessibility labels, roles, and keyboard navigation support.
+            All components include proper accessibility labels, roles, and
+            keyboard navigation support.
           </ThemedText>
-          
+
           <View style={styles.accessibilityGrid}>
             <ThemedButton
               title="High Contrast Test"
               variant="primary"
-              onPress={() => Alert.alert('Accessibility', 'This button meets WCAG contrast requirements')}
+              onPress={() =>
+                Alert.alert(
+                  'Accessibility',
+                  'This button meets WCAG contrast requirements'
+                )
+              }
               accessibilityHint="Tests high contrast accessibility compliance"
             />
-            
+
             <ThemedInput
               label="Screen Reader Test"
               placeholder="Try with screen reader enabled"
@@ -400,29 +436,66 @@ export default function StylingSystemDemo() {
         <ThemedCard>
           <ThemedText variant="h2">Color System</ThemedText>
           <ThemedText>Theme-aware color system with hex values</ThemedText>
-          
+
           <View style={styles.colorGrid}>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.primary[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.primary[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Primary</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.primary[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.primary[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.secondary[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.secondary[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Secondary</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.secondary[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.secondary[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.blue[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.blue[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Blue</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.blue[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.blue[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.green[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.green[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Green</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.green[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.green[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.orange[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.orange[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Orange</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.orange[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.orange[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.red[500] }]}>
+            <View
+              style={[styles.colorSwatch, { backgroundColor: colors.red[500] }]}
+            >
               <ThemedText style={styles.colorLabel}>Red</ThemedText>
               <ThemedText style={styles.colorHex}>{colors.red[500]}</ThemedText>
             </View>
@@ -432,26 +505,40 @@ export default function StylingSystemDemo() {
         {/* Spacing System */}
         <ThemedCard>
           <ThemedText variant="h2">Spacing System</ThemedText>
-          <ThemedText>Consistent spacing scale with pixel measurements</ThemedText>
-          
+          <ThemedText>
+            Consistent spacing scale with pixel measurements
+          </ThemedText>
+
           <View style={styles.spacingGrid}>
             <View style={[styles.spacingExample, { padding: spacing[1] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[1] = {spacing[1]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[1] = {spacing[1]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[2] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[2] = {spacing[2]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[2] = {spacing[2]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[4] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[4] = {spacing[4]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[4] = {spacing[4]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[6] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[6] = {spacing[6]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[6] = {spacing[6]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[8] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[8] = {spacing[8]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[8] = {spacing[8]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[12] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[12] = {spacing[12]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[12] = {spacing[12]}px
+              </ThemedText>
             </View>
           </View>
         </ThemedCard>
@@ -462,11 +549,13 @@ export default function StylingSystemDemo() {
           <ThemedText variant="caption">
             Interactive elements showcase with proper theming and accessibility.
           </ThemedText>
-          
+
           <ThemedButton
             title="Interactive Demo"
             variant="outline"
-            onPress={() => Alert.alert('Interactive', 'Interactive component demo')}
+            onPress={() =>
+              Alert.alert('Interactive', 'Interactive component demo')
+            }
             style={styles.modalButton}
           />
         </ThemedCard>

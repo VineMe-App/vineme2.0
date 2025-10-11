@@ -15,7 +15,9 @@ interface NotificationIconWithBadgeProps {
   disabled?: boolean;
 }
 
-export const NotificationIconWithBadge: React.FC<NotificationIconWithBadgeProps> = ({
+export const NotificationIconWithBadge: React.FC<
+  NotificationIconWithBadgeProps
+> = ({
   onPress,
   unreadCount,
   size = 24,
@@ -53,14 +55,13 @@ export const NotificationIconWithBadge: React.FC<NotificationIconWithBadgeProps>
   }, [unreadCount, scaleAnim]);
 
   // Default accessibility labels
-  const defaultAccessibilityLabel = 
-    accessibilityLabel || 
-    (unreadCount > 0 
+  const defaultAccessibilityLabel =
+    accessibilityLabel ||
+    (unreadCount > 0
       ? `Notifications, ${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`
-      : 'Notifications, no unread notifications'
-    );
+      : 'Notifications, no unread notifications');
 
-  const defaultAccessibilityHint = 
+  const defaultAccessibilityHint =
     accessibilityHint || 'Double tap to open notifications panel';
 
   const handlePress = () => {
@@ -73,10 +74,7 @@ export const NotificationIconWithBadge: React.FC<NotificationIconWithBadgeProps>
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled}
-      style={[
-        styles.container,
-        disabled && styles.disabled,
-      ]}
+      style={[styles.container, disabled && styles.disabled]}
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={defaultAccessibilityLabel}

@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Alert, TouchableOpacity, Platform } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  Alert,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
@@ -18,7 +26,9 @@ import { AdminPageLayout } from '@/components/admin/AdminHeader';
 
 export default function ManageUsersScreen() {
   const { userProfile } = useAuthStore();
-  const [filter, setFilter] = useState<'all' | 'connected' | 'unconnected'>('all');
+  const [filter, setFilter] = useState<'all' | 'connected' | 'unconnected'>(
+    'all'
+  );
 
   const {
     data: users,
@@ -140,18 +150,29 @@ export default function ManageUsersScreen() {
           {/* Filters */}
           <View style={styles.filterContainer}>
             <TouchableOpacity
-              style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
+              style={[
+                styles.filterButton,
+                filter === 'all' && styles.filterButtonActive,
+              ]}
               onPress={() => setFilter('all')}
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === 'all' }}
             >
-              <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filter === 'all' && styles.filterButtonTextActive,
+                ]}
+              >
                 All Users
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.filterButton, filter === 'connected' && styles.filterButtonActive]}
+              style={[
+                styles.filterButton,
+                filter === 'connected' && styles.filterButtonActive,
+              ]}
               onPress={() => setFilter('connected')}
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === 'connected' }}
@@ -167,7 +188,10 @@ export default function ManageUsersScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.filterButton, filter === 'unconnected' && styles.filterButtonActive]}
+              style={[
+                styles.filterButton,
+                filter === 'unconnected' && styles.filterButtonActive,
+              ]}
               onPress={() => setFilter('unconnected')}
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === 'unconnected' }}
@@ -186,7 +210,8 @@ export default function ManageUsersScreen() {
           {/* Counts indicator */}
           <View style={styles.countsRow}>
             <Text style={styles.countsText}>
-              All: {allCount}  •  Connected: {connectedCount}  •  Unconnected: {unconnectedCount}
+              All: {allCount} • Connected: {connectedCount} • Unconnected:{' '}
+              {unconnectedCount}
             </Text>
           </View>
 

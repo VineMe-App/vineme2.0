@@ -55,17 +55,21 @@ export default function OtherUserProfileScreen() {
 
   const handleAddFriend = () => {
     if (!targetUserId || !profileFullName) return;
-    Alert.alert('Add Friend', `Send a friend request to ${profileShortName || profileFullName}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Send',
-        onPress: () =>
-          sendFriendRequest.mutate(targetUserId, {
-            onSuccess: () => Alert.alert('Success', 'Friend request sent!'),
-            onError: (e) => Alert.alert('Error', e.message),
-          }),
-      },
-    ]);
+    Alert.alert(
+      'Add Friend',
+      `Send a friend request to ${profileShortName || profileFullName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send',
+          onPress: () =>
+            sendFriendRequest.mutate(targetUserId, {
+              onSuccess: () => Alert.alert('Success', 'Friend request sent!'),
+              onError: (e) => Alert.alert('Error', e.message),
+            }),
+        },
+      ]
+    );
   };
 
   const handleRemoveFriend = () => {
@@ -303,7 +307,7 @@ export default function OtherUserProfileScreen() {
                   <Text style={styles.modalInitialsText}>
                     {profile?.name
                       ?.split(' ')
-                      .map(word => word.charAt(0))
+                      .map((word) => word.charAt(0))
                       .join('')
                       .toUpperCase()
                       .slice(0, 2) || '?'}

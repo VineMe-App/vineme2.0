@@ -35,15 +35,18 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 }) => {
   const { theme } = useTheme();
   const { handleNotificationPress } = useNotificationNavigation();
-  
+
   // Animation values
   const translateX = useRef(new Animated.Value(0)).current;
   const actionOpacity = useRef(new Animated.Value(0)).current;
-  
+
   // Get notification metadata
   const isUnread = !notification.read;
   const timestamp = formatTimestamp(notification.created_at);
-  const { icon, iconColor, avatarData } = getNotificationMetadata(notification, theme);
+  const { icon, iconColor, avatarData } = getNotificationMetadata(
+    notification,
+    theme
+  );
 
   // Handle notification press
   const handlePress = useCallback(() => {
@@ -51,54 +54,63 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     if (isUnread && onMarkAsRead) {
       onMarkAsRead(notification.id);
     }
-    
+
     // Navigate to notification target
     handleNotificationPress(notification);
   }, [notification, isUnread, onMarkAsRead, handleNotificationPress]);
 
   // Handle swipe gestures
-  const handleGestureEvent = useCallback((event: any) => {
-    const { translationX } = event.nativeEvent;
-    
-    // Only allow left swipe (negative translation)
-    if (translationX <= 0) {
-      const clampedTranslation = Math.max(translationX, -ACTION_WIDTH * 2);
-      translateX.setValue(clampedTranslation);
-      
-      // Show actions when swiped enough
-      const opacity = Math.min(Math.abs(clampedTranslation) / ACTION_WIDTH, 1);
-      actionOpacity.setValue(opacity);
-    }
-  }, [translateX, actionOpacity]);
+  const handleGestureEvent = useCallback(
+    (event: any) => {
+      const { translationX } = event.nativeEvent;
 
-  const handleGestureStateChange = useCallback((event: any) => {
-    const { state, translationX } = event.nativeEvent;
-    
-    if (state === State.END) {
-      const shouldShowActions = Math.abs(translationX) > SWIPE_THRESHOLD;
-      
-      Animated.parallel([
-        Animated.spring(translateX, {
-          toValue: shouldShowActions ? -ACTION_WIDTH * 2 : 0,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }),
-        Animated.timing(actionOpacity, {
-          toValue: shouldShowActions ? 1 : 0,
-          duration: 200,
-          useNativeDriver: false,
-        }),
-      ]).start();
-    }
-  }, [translateX, actionOpacity]);
+      // Only allow left swipe (negative translation)
+      if (translationX <= 0) {
+        const clampedTranslation = Math.max(translationX, -ACTION_WIDTH * 2);
+        translateX.setValue(clampedTranslation);
+
+        // Show actions when swiped enough
+        const opacity = Math.min(
+          Math.abs(clampedTranslation) / ACTION_WIDTH,
+          1
+        );
+        actionOpacity.setValue(opacity);
+      }
+    },
+    [translateX, actionOpacity]
+  );
+
+  const handleGestureStateChange = useCallback(
+    (event: any) => {
+      const { state, translationX } = event.nativeEvent;
+
+      if (state === State.END) {
+        const shouldShowActions = Math.abs(translationX) > SWIPE_THRESHOLD;
+
+        Animated.parallel([
+          Animated.spring(translateX, {
+            toValue: shouldShowActions ? -ACTION_WIDTH * 2 : 0,
+            useNativeDriver: false,
+            tension: 100,
+            friction: 8,
+          }),
+          Animated.timing(actionOpacity, {
+            toValue: shouldShowActions ? 1 : 0,
+            duration: 200,
+            useNativeDriver: false,
+          }),
+        ]).start();
+      }
+    },
+    [translateX, actionOpacity]
+  );
 
   // Handle mark as read action
   const handleMarkAsRead = useCallback(() => {
     if (onMarkAsRead && isUnread) {
       onMarkAsRead(notification.id);
     }
-    
+
     // Reset swipe position
     Animated.parallel([
       Animated.spring(translateX, {
@@ -125,7 +137,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     <View style={styles.swipeActions}>
       {isUnread && (
         <TouchableOpacity
-          style={[styles.swipeAction, { backgroundColor: theme.colors.primary[500] }]}
+          style={[
+            styles.swipeAction,
+            { backgroundColor: theme.colors.primary[500] },
+          ]}
           onPress={handleMarkAsRead}
           accessibilityRole="button"
           accessibilityLabel="Mark as read"
@@ -139,15 +154,21 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           <Text
             variant="caption"
             weight="medium"
-            style={[styles.swipeActionText, { color: theme.colors.text.inverse }]}
+            style={[
+              styles.swipeActionText,
+              { color: theme.colors.text.inverse },
+            ]}
           >
             Read
           </Text>
         </TouchableOpacity>
       )}
-      
+
       <TouchableOpacity
-        style={[styles.swipeAction, { backgroundColor: theme.colors.error[500] }]}
+        style={[
+          styles.swipeAction,
+          { backgroundColor: theme.colors.error[500] },
+        ]}
         onPress={handleDelete}
         accessibilityRole="button"
         accessibilityLabel="Delete notification"
@@ -171,18 +192,12 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
   return (
     <View
-      style={[
-        styles.container,
-        isLast && styles.containerLast,
-      ]}
+      style={[styles.container, isLast && styles.containerLast]}
       testID={testID}
     >
       {/* Swipe actions background */}
       <Animated.View
-        style={[
-          styles.swipeActionsContainer,
-          { opacity: actionOpacity },
-        ]}
+        style={[styles.swipeActionsContainer, { opacity: actionOpacity }]}
       >
         {renderSwipeActions()}
       </Animated.View>
@@ -197,8 +212,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           style={[
             styles.content,
             {
-              backgroundColor: isUnread 
-                ? theme.colors.primary[50] 
+              backgroundColor: isUnread
+                ? theme.colors.primary[50]
                 : theme.colors.background.primary,
               borderBottomColor: theme.colors.border.primary,
               transform: [{ translateX }],
@@ -239,11 +254,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                     { backgroundColor: iconColor + '20' }, // 20% opacity
                   ]}
                 >
-                  <Ionicons
-                    name={icon}
-                    size={20}
-                    color={iconColor}
-                  />
+                  <Ionicons name={icon} size={20} color={iconColor} />
                 </View>
               )}
             </View>
@@ -253,17 +264,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
               <View style={styles.titleRow}>
                 <Text
                   variant="body"
-                  weight={isUnread ? "semiBold" : "medium"}
-                  style={[
-                    styles.title,
-                    { color: theme.colors.text.primary },
-                  ]}
+                  weight={isUnread ? 'semiBold' : 'medium'}
+                  style={[styles.title, { color: theme.colors.text.primary }]}
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
                   {notification.title}
                 </Text>
-                
+
                 <Text
                   variant="caption"
                   style={[
@@ -279,9 +287,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 variant="body"
                 style={[
                   styles.body,
-                  { 
-                    color: isUnread 
-                      ? theme.colors.text.primary 
+                  {
+                    color: isUnread
+                      ? theme.colors.text.primary
                       : theme.colors.text.secondary,
                   },
                 ]}
@@ -331,16 +339,20 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 function formatTimestamp(timestamp: string): string {
   const date = new Date(timestamp);
   const now = new Date();
-  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+  const diffInMinutes = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60)
+  );
 
   if (diffInMinutes < 1) {
     return 'Just now';
   } else if (diffInMinutes < 60) {
     return `${diffInMinutes}m ago`;
-  } else if (diffInMinutes < 1440) { // 24 hours
+  } else if (diffInMinutes < 1440) {
+    // 24 hours
     const hours = Math.floor(diffInMinutes / 60);
     return `${hours}h ago`;
-  } else if (diffInMinutes < 10080) { // 7 days
+  } else if (diffInMinutes < 10080) {
+    // 7 days
     const days = Math.floor(diffInMinutes / 1440);
     return `${days}d ago`;
   } else {
@@ -351,13 +363,13 @@ function formatTimestamp(timestamp: string): string {
 function formatNotificationType(type: string): string {
   return type
     .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
 function getNotificationMetadata(notification: Notification, theme: any) {
   const { type, data } = notification;
-  
+
   // Default values
   let icon: keyof typeof Ionicons.glyphMap = 'notifications-outline';
   let iconColor = theme.colors.primary[500];
@@ -375,7 +387,7 @@ function getNotificationMetadata(notification: Notification, theme: any) {
         };
       }
       break;
-      
+
     case 'group_request_submitted':
     case 'group_request_approved':
     case 'group_request_denied':
@@ -384,25 +396,39 @@ function getNotificationMetadata(notification: Notification, theme: any) {
       if (data.creatorName || data.approvedByName || data.deniedByName) {
         avatarData = {
           name: data.creatorName || data.approvedByName || data.deniedByName,
-          imageUrl: data.creatorAvatar || data.approvedByAvatar || data.deniedByAvatar,
+          imageUrl:
+            data.creatorAvatar || data.approvedByAvatar || data.deniedByAvatar,
         };
       }
       break;
-      
+
     case 'join_request_received':
     case 'join_request_approved':
     case 'join_request_denied':
     case 'group_member_added':
       icon = 'enter-outline';
       iconColor = theme.colors.primary[500];
-      if (data.requesterName || data.approvedByName || data.deniedByName || data.addedByName) {
+      if (
+        data.requesterName ||
+        data.approvedByName ||
+        data.deniedByName ||
+        data.addedByName
+      ) {
         avatarData = {
-          name: data.requesterName || data.approvedByName || data.deniedByName || data.addedByName,
-          imageUrl: data.requesterAvatar || data.approvedByAvatar || data.deniedByAvatar || data.addedByAvatar,
+          name:
+            data.requesterName ||
+            data.approvedByName ||
+            data.deniedByName ||
+            data.addedByName,
+          imageUrl:
+            data.requesterAvatar ||
+            data.approvedByAvatar ||
+            data.deniedByAvatar ||
+            data.addedByAvatar,
         };
       }
       break;
-      
+
     case 'referral_accepted':
     case 'referral_joined_group':
       icon = 'gift-outline';
@@ -414,12 +440,12 @@ function getNotificationMetadata(notification: Notification, theme: any) {
         };
       }
       break;
-      
+
     case 'event_reminder':
       icon = 'calendar-outline';
       iconColor = theme.colors.info[500];
       break;
-      
+
     default:
       icon = 'notifications-outline';
       iconColor = theme.colors.neutral[500];

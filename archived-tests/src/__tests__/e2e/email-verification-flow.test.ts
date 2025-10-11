@@ -3,7 +3,14 @@
  * Tests the complete email verification flow for referred users
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from '@jest/globals';
 import { EmailVerificationService } from '../../services/emailVerification';
 import { AuthService } from '../../services/auth';
 import { supabase } from '../../services/supabase';
@@ -83,7 +90,10 @@ describe('Email Verification Flow E2E Tests', () => {
       mockEmailService.sendTemplate.mockResolvedValue({ success: true });
 
       // Send verification email
-      await emailVerificationService.sendVerificationEmail(mockUser.id, mockUser.email);
+      await emailVerificationService.sendVerificationEmail(
+        mockUser.id,
+        mockUser.email
+      );
 
       // Verify email was sent
       expect(mockEmailService.sendTemplate).toHaveBeenCalled();
@@ -101,11 +111,16 @@ describe('Email Verification Flow E2E Tests', () => {
       });
 
       // Mock email sending failure
-      mockEmailService.sendTemplate.mockRejectedValue(new Error('Email service unavailable'));
+      mockEmailService.sendTemplate.mockRejectedValue(
+        new Error('Email service unavailable')
+      );
 
       // Attempt to send verification email
       await expect(
-        emailVerificationService.sendVerificationEmail(mockUser.id, mockUser.email)
+        emailVerificationService.sendVerificationEmail(
+          mockUser.id,
+          mockUser.email
+        )
       ).rejects.toThrow('Email service unavailable');
     });
   });
@@ -132,7 +147,9 @@ describe('Email Verification Flow E2E Tests', () => {
       });
 
       // Complete verification
-      const result = await emailVerificationService.verifyEmail(mockVerificationToken);
+      const result = await emailVerificationService.verifyEmail(
+        mockVerificationToken
+      );
 
       expect(result.success).toBe(true);
       expect(result.user).toBeDefined();
@@ -146,7 +163,8 @@ describe('Email Verification Flow E2E Tests', () => {
       });
 
       // Attempt verification with invalid token
-      const result = await emailVerificationService.verifyEmail('invalid-token');
+      const result =
+        await emailVerificationService.verifyEmail('invalid-token');
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Invalid token');
@@ -159,7 +177,8 @@ describe('Email Verification Flow E2E Tests', () => {
       (supabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        single: jest.fn()
+        single: jest
+          .fn()
           .mockResolvedValueOnce({
             data: mockReferrer,
             error: null,
@@ -178,7 +197,10 @@ describe('Email Verification Flow E2E Tests', () => {
       mockEmailService.sendTemplate.mockResolvedValue({ success: true });
 
       // Send verification email
-      await emailVerificationService.sendVerificationEmail(mockUser.id, mockUser.email);
+      await emailVerificationService.sendVerificationEmail(
+        mockUser.id,
+        mockUser.email
+      );
 
       // Verify email service was called
       expect(mockEmailService.sendTemplate).toHaveBeenCalled();
@@ -198,7 +220,10 @@ describe('Email Verification Flow E2E Tests', () => {
       mockEmailService.sendTemplate.mockResolvedValue({ success: true });
 
       // Send verification email without referrer context
-      await emailVerificationService.sendVerificationEmail(mockUser.id, mockUser.email);
+      await emailVerificationService.sendVerificationEmail(
+        mockUser.id,
+        mockUser.email
+      );
 
       // Verify email is still sent
       expect(mockEmailService.sendTemplate).toHaveBeenCalled();

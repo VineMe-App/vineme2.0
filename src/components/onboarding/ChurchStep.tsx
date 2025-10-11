@@ -12,7 +12,10 @@ import type { OnboardingStepProps } from '@/types/app';
 import type { Church, Service } from '@/types/database';
 import { churchService } from '@/services/churches';
 import { supportService } from '@/services/support';
-import { MissingServiceModal, MissingServiceFormData } from './MissingServiceModal';
+import {
+  MissingServiceModal,
+  MissingServiceFormData,
+} from './MissingServiceModal';
 import { useAuthStore } from '@/stores/auth';
 import { Button } from '@/components/ui/Button';
 import { getFullName } from '@/utils/name';
@@ -35,18 +38,19 @@ export default function ChurchStep({
   const [loading, setLoading] = useState(true);
   const [servicesLoading, setServicesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showMissingServiceModal, setShowMissingServiceModal] =
-    useState(false);
+  const [showMissingServiceModal, setShowMissingServiceModal] = useState(false);
   const [missingServiceSubmitting, setMissingServiceSubmitting] =
     useState(false);
-  const [missingServiceRequestError, setMissingServiceRequestError] =
-    useState<string | null>(null);
-  const [missingServiceSubmitted, setMissingServiceSubmitted] =
-    useState(false);
-  const [missingServiceMode, setMissingServiceMode] =
-    useState<'church' | 'service'>('service');
-  const [missingServiceLastMode, setMissingServiceLastMode] =
-    useState<'church' | 'service' | null>(null);
+  const [missingServiceRequestError, setMissingServiceRequestError] = useState<
+    string | null
+  >(null);
+  const [missingServiceSubmitted, setMissingServiceSubmitted] = useState(false);
+  const [missingServiceMode, setMissingServiceMode] = useState<
+    'church' | 'service'
+  >('service');
+  const [missingServiceLastMode, setMissingServiceLastMode] = useState<
+    'church' | 'service' | null
+  >(null);
 
   const { user } = useAuthStore();
 
@@ -136,9 +140,7 @@ export default function ChurchStep({
     setShowMissingServiceModal(true);
   };
 
-  const handleSubmitMissingService = async (
-    form: MissingServiceFormData
-  ) => {
+  const handleSubmitMissingService = async (form: MissingServiceFormData) => {
     if (missingServiceSubmitting) return;
 
     setMissingServiceSubmitting(true);
@@ -147,7 +149,7 @@ export default function ChurchStep({
     const result = await supportService.submitMissingServiceRequest({
       church_id:
         missingServiceMode === 'service'
-          ? form.churchId ?? selectedChurchId
+          ? (form.churchId ?? selectedChurchId)
           : form.churchId,
       church_name: form.churchName,
       church_location: form.churchLocation,
@@ -194,7 +196,9 @@ export default function ChurchStep({
     const isSelected = selectedChurchId === item.id;
 
     return (
-      <View style={[styles.churchCard, isSelected && styles.churchCardSelected]}>
+      <View
+        style={[styles.churchCard, isSelected && styles.churchCardSelected]}
+      >
         <TouchableOpacity
           style={styles.churchHeader}
           onPress={() => handleChurchSelect(item.id)}
@@ -203,7 +207,10 @@ export default function ChurchStep({
         >
           <View style={styles.churchInfo}>
             <Text
-              style={[styles.churchName, isSelected && styles.churchNameSelected]}
+              style={[
+                styles.churchName,
+                isSelected && styles.churchNameSelected,
+              ]}
             >
               {item.name}
             </Text>
@@ -235,7 +242,9 @@ export default function ChurchStep({
             {servicesLoading ? (
               <View style={styles.serviceLoading}>
                 <LoadingSpinner size="small" />
-                <Text style={styles.serviceLoadingText}>Loading services...</Text>
+                <Text style={styles.serviceLoadingText}>
+                  Loading services...
+                </Text>
               </View>
             ) : services.length > 0 ? (
               services.map((svc) => {
@@ -312,21 +321,22 @@ export default function ChurchStep({
               </View>
             </TouchableOpacity>
 
-            {missingServiceSubmitted && missingServiceLastMode === 'service' && (
-              <View style={styles.infoBanner}>
-                <Text style={styles.infoBannerText}>
-                  Thanks! We received your request and will reach out once the
-                  service is available.
-                </Text>
-              </View>
-            )}
+            {missingServiceSubmitted &&
+              missingServiceLastMode === 'service' && (
+                <View style={styles.infoBanner}>
+                  <Text style={styles.infoBannerText}>
+                    Thanks! We received your request and will reach out once the
+                    service is available.
+                  </Text>
+                </View>
+              )}
             {missingServiceRequestError &&
               missingServiceLastMode === 'service' &&
               !showMissingServiceModal && (
-              <Text style={styles.serviceInlineError}>
-                {missingServiceRequestError}
-              </Text>
-            )}
+                <Text style={styles.serviceInlineError}>
+                  {missingServiceRequestError}
+                </Text>
+              )}
           </View>
         )}
       </View>
@@ -401,8 +411,8 @@ export default function ChurchStep({
               {missingServiceSubmitted &&
                 missingServiceLastMode === 'church' && (
                   <Text style={styles.missingChurchNotice}>
-                    We&apos;re on it! We&apos;ll reach out soon about adding this
-                    church.
+                    We&apos;re on it! We&apos;ll reach out soon about adding
+                    this church.
                   </Text>
                 )}
               {missingServiceRequestError &&
@@ -446,8 +456,8 @@ export default function ChurchStep({
           missingServiceSubmitted &&
           missingServiceLastMode === 'service' && (
             <Text style={styles.pendingNotice}>
-              We&apos;ll email you when the service is ready. You can close the app
-              and return later.
+              We&apos;ll email you when the service is ready. You can close the
+              app and return later.
             </Text>
           )}
       </View>

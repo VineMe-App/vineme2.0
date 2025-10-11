@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { 
-  ComponentMigrationResult, 
-  MigrationConfig, 
-  StyleMigrationOptions 
+import {
+  ComponentMigrationResult,
+  MigrationConfig,
+  StyleMigrationOptions,
 } from './types';
 import { StyleMigrator } from './StyleMigrator';
 
@@ -27,14 +27,16 @@ export class ComponentMigrator {
     try {
       const originalCode = await this.readFile(filePath);
       const result = await this.processComponentCode(originalCode, config);
-      
+
       return {
         originalCode,
         migratedCode: result.code,
         warnings: result.warnings,
         errors: result.errors,
         success: result.errors.length === 0,
-        backupPath: config.preserveOriginalStyles ? await this.createBackup(filePath, originalCode) : undefined,
+        backupPath: config.preserveOriginalStyles
+          ? await this.createBackup(filePath, originalCode)
+          : undefined,
       };
     } catch (error) {
       return {
@@ -66,7 +68,10 @@ export class ComponentMigrator {
       migratedCode = this.addUseThemeHook(migratedCode);
 
       // Step 3: Convert StyleSheet.create to theme-aware styles
-      const styleConversionResult = this.convertStylesToThemeAware(migratedCode, config);
+      const styleConversionResult = this.convertStylesToThemeAware(
+        migratedCode,
+        config
+      );
       migratedCode = styleConversionResult.code;
       warnings.push(...styleConversionResult.warnings);
 
@@ -82,9 +87,10 @@ export class ComponentMigrator {
       if (config.generateTypes) {
         migratedCode = this.addTypeScriptTypes(migratedCode);
       }
-
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : 'Unknown processing error');
+      errors.push(
+        error instanceof Error ? error.message : 'Unknown processing error'
+      );
     }
 
     return { code: migratedCode, warnings, errors };
@@ -96,18 +102,24 @@ export class ComponentMigrator {
   private addThemeImports(code: string): string {
     const imports = [
       "import { useTheme } from '../theme/provider/useTheme';",
-      "import type { Theme } from '../theme/themes/types';"
+      "import type { Theme } from '../theme/themes/types';",
     ];
 
     // Find the last import statement
     const importRegex = /import\s+.*?from\s+['"][^'"]+['"];?\s*$/gm;
     const matches = Array.from(code.matchAll(importRegex));
-    
+
     if (matches.length > 0) {
       const lastImport = matches[matches.length - 1];
       const insertPosition = lastImport.index! + lastImport[0].length;
-      
-      return code.slice(0, insertPosition) + '\n' + imports.join('\n') + '\n' + code.slice(insertPosition);
+
+      return (
+        code.slice(0, insertPosition) +
+        '\n' +
+        imports.join('\n') +
+        '\n' +
+        code.slice(insertPosition)
+      );
     }
 
     // If no imports found, add at the beginning
@@ -119,14 +131,17 @@ export class ComponentMigrator {
    */
   private addUseThemeHook(code: string): string {
     // Find the component function
-    const componentRegex = /export\s+(?:default\s+)?function\s+(\w+)\s*\([^)]*\)\s*\{/;
+    const componentRegex =
+      /export\s+(?:default\s+)?function\s+(\w+)\s*\([^)]*\)\s*\{/;
     const match = code.match(componentRegex);
-    
+
     if (match) {
       const insertPosition = match.index! + match[0].length;
       const themeHook = '\n  const theme = useTheme();\n';
-      
-      return code.slice(0, insertPosition) + themeHook + code.slice(insertPosition);
+
+      return (
+        code.slice(0, insertPosition) + themeHook + code.slice(insertPosition)
+      );
     }
 
     return code;
@@ -140,31 +155,39 @@ export class ComponentMigrator {
     config: MigrationConfig
   ): { code: string; warnings: string[] } {
     const warnings: string[] = [];
-    
+
     // Find StyleSheet.create calls
-    const styleSheetRegex = /const\s+(\w+)\s*=\s*StyleSheet\.create\s*\(\s*\{([\s\S]*?)\}\s*\);?/g;
-    
+    const styleSheetRegex =
+      /const\s+(\w+)\s*=\s*StyleSheet\.create\s*\(\s*\{([\s\S]*?)\}\s*\);?/g;
+
     let migratedCode = code;
     const matches = Array.from(code.matchAll(styleSheetRegex));
-    
-    for (const match of matches.reverse()) { // Reverse to maintain positions
+
+    for (const match of matches.reverse()) {
+      // Reverse to maintain positions
       const [fullMatch, stylesName, stylesContent] = match;
-      
+
       try {
         // Parse the styles object (simplified parsing)
         const parsedStyles = this.parseStylesObject(stylesContent);
-        
+
         // Generate theme-aware styles
-        const themeAwareStyles = this.generateThemeAwareStyles(parsedStyles, stylesName);
-        
+        const themeAwareStyles = this.generateThemeAwareStyles(
+          parsedStyles,
+          stylesName
+        );
+
         // Replace the original StyleSheet.create
-        migratedCode = migratedCode.slice(0, match.index!) + 
-                      themeAwareStyles + 
-                      migratedCode.slice(match.index! + fullMatch.length);
-        
+        migratedCode =
+          migratedCode.slice(0, match.index!) +
+          themeAwareStyles +
+          migratedCode.slice(match.index! + fullMatch.length);
+
         warnings.push(`Converted ${stylesName} to theme-aware styles`);
       } catch (error) {
-        warnings.push(`Failed to convert ${stylesName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        warnings.push(
+          `Failed to convert ${stylesName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
 
@@ -178,27 +201,27 @@ export class ComponentMigrator {
     // This is a simplified parser - in a real implementation, you'd want to use
     // a proper AST parser like @babel/parser
     const styles: Record<string, any> = {};
-    
+
     // Split by style names (looking for pattern: styleName: {)
     const styleRegex = /(\w+):\s*\{([^}]*)\}/g;
     const matches = Array.from(stylesContent.matchAll(styleRegex));
-    
+
     for (const match of matches) {
       const [, styleName, styleProps] = match;
       const props: Record<string, any> = {};
-      
+
       // Parse individual properties
       const propRegex = /(\w+):\s*([^,\n]+)/g;
       const propMatches = Array.from(styleProps.matchAll(propRegex));
-      
+
       for (const propMatch of propMatches) {
         const [, propName, propValue] = propMatch;
         props[propName] = this.parseStyleValue(propValue.trim());
       }
-      
+
       styles[styleName] = props;
     }
-    
+
     return styles;
   }
 
@@ -208,12 +231,12 @@ export class ComponentMigrator {
   private parseStyleValue(value: string): any {
     // Remove quotes and parse value
     const trimmed = value.replace(/['"]/g, '').replace(/,$/, '');
-    
+
     // Try to parse as number
     if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
       return parseFloat(trimmed);
     }
-    
+
     // Return as string
     return trimmed;
   }
@@ -221,26 +244,33 @@ export class ComponentMigrator {
   /**
    * Generate theme-aware styles code
    */
-  private generateThemeAwareStyles(styles: Record<string, any>, stylesName: string): string {
+  private generateThemeAwareStyles(
+    styles: Record<string, any>,
+    stylesName: string
+  ): string {
     const lines: string[] = [];
-    
-    lines.push(`const create${stylesName.charAt(0).toUpperCase() + stylesName.slice(1)} = (theme: Theme) => StyleSheet.create({`);
-    
+
+    lines.push(
+      `const create${stylesName.charAt(0).toUpperCase() + stylesName.slice(1)} = (theme: Theme) => StyleSheet.create({`
+    );
+
     for (const [styleName, styleProps] of Object.entries(styles)) {
       lines.push(`  ${styleName}: {`);
-      
+
       for (const [prop, value] of Object.entries(styleProps)) {
         const themeValue = this.convertPropertyToTheme(prop, value);
         lines.push(`    ${prop}: ${themeValue},`);
       }
-      
+
       lines.push('  },');
     }
-    
+
     lines.push('});');
     lines.push('');
-    lines.push(`const ${stylesName} = create${stylesName.charAt(0).toUpperCase() + stylesName.slice(1)}(theme);`);
-    
+    lines.push(
+      `const ${stylesName} = create${stylesName.charAt(0).toUpperCase() + stylesName.slice(1)}(theme);`
+    );
+
     return lines.join('\n');
   }
 
@@ -253,25 +283,28 @@ export class ComponentMigrator {
       const themeColor = this.mapColorToTheme(value);
       return themeColor || `'${value}'`;
     }
-    
+
     // Spacing properties
     if (this.isSpacingProperty(property) && typeof value === 'number') {
       const themeSpacing = this.mapSpacingToTheme(value);
       return themeSpacing || value.toString();
     }
-    
+
     // Typography properties
     if (this.isTypographyProperty(property)) {
       const themeTypography = this.mapTypographyToTheme(property, value);
-      return themeTypography || (typeof value === 'string' ? `'${value}'` : value.toString());
+      return (
+        themeTypography ||
+        (typeof value === 'string' ? `'${value}'` : value.toString())
+      );
     }
-    
+
     // Border radius
     if (property === 'borderRadius' && typeof value === 'number') {
       const themeBorderRadius = this.mapBorderRadiusToTheme(value);
       return themeBorderRadius || value.toString();
     }
-    
+
     // Default: return as-is
     return typeof value === 'string' ? `'${value}'` : value.toString();
   }
@@ -295,7 +328,7 @@ export class ComponentMigrator {
       '#16a34a': 'theme.colors.success[600]',
       '#ea580c': 'theme.colors.warning[600]',
     };
-    
+
     return colorMappings[color.toLowerCase()] || null;
   }
 
@@ -313,7 +346,7 @@ export class ComponentMigrator {
       24: 'theme.spacing.xl',
       32: 'theme.spacing.xxl',
     };
-    
+
     return spacingMappings[spacing] || null;
   }
 
@@ -332,19 +365,19 @@ export class ComponentMigrator {
       };
       return fontSizeMappings[value] || null;
     }
-    
+
     if (property === 'fontWeight') {
       const fontWeightMappings: Record<string, string> = {
         '400': 'theme.typography.fontWeight.normal',
         '500': 'theme.typography.fontWeight.medium',
         '600': 'theme.typography.fontWeight.semiBold',
         '700': 'theme.typography.fontWeight.bold',
-        'normal': 'theme.typography.fontWeight.normal',
-        'bold': 'theme.typography.fontWeight.bold',
+        normal: 'theme.typography.fontWeight.normal',
+        bold: 'theme.typography.fontWeight.bold',
       };
       return fontWeightMappings[value.toString()] || null;
     }
-    
+
     return null;
   }
 
@@ -360,7 +393,7 @@ export class ComponentMigrator {
       16: 'theme.borderRadius.xl',
       20: 'theme.borderRadius.xxl',
     };
-    
+
     return borderRadiusMappings[radius] || null;
   }
 
@@ -377,18 +410,19 @@ export class ComponentMigrator {
    * Add compatibility layer
    */
   private addCompatibilityLayer(code: string): string {
-    const compatibilityImport = "import { withThemeCompatibility } from '../utils/migration/ThemeCompatibilityLayer';";
-    
+    const compatibilityImport =
+      "import { withThemeCompatibility } from '../utils/migration/ThemeCompatibilityLayer';";
+
     // Add import
     let migratedCode = this.addThemeImports(code);
     migratedCode = compatibilityImport + '\n' + migratedCode;
-    
+
     // Wrap export with compatibility layer
     migratedCode = migratedCode.replace(
       /export\s+(?:default\s+)?(\w+)/,
       'export default withThemeCompatibility($1)'
     );
-    
+
     return migratedCode;
   }
 
@@ -404,22 +438,45 @@ export class ComponentMigrator {
    * Helper methods
    */
   private isColorProperty(property: string): boolean {
-    const colorProperties = ['color', 'backgroundColor', 'borderColor', 'shadowColor', 'tintColor'];
+    const colorProperties = [
+      'color',
+      'backgroundColor',
+      'borderColor',
+      'shadowColor',
+      'tintColor',
+    ];
     return colorProperties.includes(property);
   }
 
   private isSpacingProperty(property: string): boolean {
     const spacingProperties = [
-      'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
-      'marginHorizontal', 'marginVertical', 'padding', 'paddingTop',
-      'paddingRight', 'paddingBottom', 'paddingLeft', 'paddingHorizontal',
-      'paddingVertical', 'gap'
+      'margin',
+      'marginTop',
+      'marginRight',
+      'marginBottom',
+      'marginLeft',
+      'marginHorizontal',
+      'marginVertical',
+      'padding',
+      'paddingTop',
+      'paddingRight',
+      'paddingBottom',
+      'paddingLeft',
+      'paddingHorizontal',
+      'paddingVertical',
+      'gap',
     ];
     return spacingProperties.includes(property);
   }
 
   private isTypographyProperty(property: string): boolean {
-    const typographyProperties = ['fontSize', 'fontWeight', 'fontFamily', 'lineHeight', 'letterSpacing'];
+    const typographyProperties = [
+      'fontSize',
+      'fontWeight',
+      'fontFamily',
+      'lineHeight',
+      'letterSpacing',
+    ];
     return typographyProperties.includes(property);
   }
 
@@ -432,7 +489,10 @@ export class ComponentMigrator {
     });
   }
 
-  private async createBackup(filePath: string, content: string): Promise<string> {
+  private async createBackup(
+    filePath: string,
+    content: string
+  ): Promise<string> {
     const backupPath = `${filePath}.backup.${Date.now()}`;
     return new Promise((resolve, reject) => {
       fs.writeFile(backupPath, content, 'utf8', (err) => {

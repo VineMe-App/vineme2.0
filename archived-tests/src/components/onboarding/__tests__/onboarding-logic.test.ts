@@ -15,14 +15,17 @@ describe('Onboarding Logic', () => {
       const validateName = (name: string): string | null => {
         if (!name.trim()) return 'Name is required';
         if (name.trim().length < 2) return 'Name must be at least 2 characters';
-        if (name.trim().length > 50) return 'Name must be less than 50 characters';
+        if (name.trim().length > 50)
+          return 'Name must be less than 50 characters';
         return null;
       };
 
       expect(validateName('')).toBe('Name is required');
       expect(validateName(' ')).toBe('Name is required');
       expect(validateName('A')).toBe('Name must be at least 2 characters');
-      expect(validateName('A'.repeat(51))).toBe('Name must be less than 50 characters');
+      expect(validateName('A'.repeat(51))).toBe(
+        'Name must be less than 50 characters'
+      );
       expect(validateName('John Doe')).toBeNull();
     });
 
@@ -36,7 +39,9 @@ describe('Onboarding Logic', () => {
       };
 
       expect(validateGroupStatus('')).toBe('Please select your group status');
-      expect(validateGroupStatus('invalid')).toBe('Invalid group status selected');
+      expect(validateGroupStatus('invalid')).toBe(
+        'Invalid group status selected'
+      );
       expect(validateGroupStatus('existing')).toBeNull();
       expect(validateGroupStatus('looking')).toBeNull();
     });
@@ -45,7 +50,10 @@ describe('Onboarding Logic', () => {
   describe('Data Storage', () => {
     it('saves onboarding data to AsyncStorage', async () => {
       const saveOnboardingData = async (data: OnboardingData) => {
-        await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_DATA, JSON.stringify(data));
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.ONBOARDING_DATA,
+          JSON.stringify(data)
+        );
       };
 
       const testData: OnboardingData = {
@@ -68,7 +76,9 @@ describe('Onboarding Logic', () => {
     it('loads onboarding data from AsyncStorage', async () => {
       const loadOnboardingData = async (): Promise<OnboardingData | null> => {
         try {
-          const savedData = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_DATA);
+          const savedData = await AsyncStorage.getItem(
+            STORAGE_KEYS.ONBOARDING_DATA
+          );
           if (savedData) return JSON.parse(savedData);
           return null;
         } catch {
@@ -116,7 +126,10 @@ describe('Onboarding Logic', () => {
 
   describe('Step Navigation', () => {
     it('calculates progress correctly', () => {
-      const calculateProgress = (currentStep: number, totalSteps: number): number => {
+      const calculateProgress = (
+        currentStep: number,
+        totalSteps: number
+      ): number => {
         return ((currentStep + 1) / totalSteps) * 100;
       };
 
@@ -127,7 +140,9 @@ describe('Onboarding Logic', () => {
     });
 
     it('determines newcomer status based on group status', () => {
-      const determineNewcomerStatus = (groupStatus?: 'existing' | 'looking'): boolean => {
+      const determineNewcomerStatus = (
+        groupStatus?: 'existing' | 'looking'
+      ): boolean => {
         return groupStatus === 'looking';
       };
 
@@ -137,7 +152,10 @@ describe('Onboarding Logic', () => {
     });
 
     it('determines if a step is complete', () => {
-      const isStepComplete = (stepId: string, data: OnboardingData): boolean => {
+      const isStepComplete = (
+        stepId: string,
+        data: OnboardingData
+      ): boolean => {
         switch (stepId) {
           case 'name':
             return data.name.trim().length >= 2;
@@ -146,7 +164,10 @@ describe('Onboarding Logic', () => {
           case 'church':
             return Boolean(data.church_id && data.service_id);
           case 'group-status':
-            return data.group_status === 'existing' || data.group_status === 'looking';
+            return (
+              data.group_status === 'existing' ||
+              data.group_status === 'looking'
+            );
           default:
             return false;
         }

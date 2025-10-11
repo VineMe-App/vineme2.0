@@ -8,15 +8,15 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../provider';
 
 export const ThemeExample: React.FC = () => {
-  const { 
-    theme, 
-    colors, 
-    spacing, 
-    typography, 
-    isDark, 
-    themeMode, 
-    toggleTheme, 
-    setThemeMode 
+  const {
+    theme,
+    colors,
+    spacing,
+    typography,
+    isDark,
+    themeMode,
+    toggleTheme,
+    setThemeMode,
   } = useTheme();
 
   const styles = StyleSheet.create({
@@ -100,20 +100,20 @@ export const ThemeExample: React.FC = () => {
           <TouchableOpacity style={styles.button} onPress={toggleTheme}>
             <Text style={styles.buttonText}>Toggle Theme</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.button} 
+          <TouchableOpacity
+            style={styles.button}
             onPress={() => setThemeMode('light')}
           >
             <Text style={styles.buttonText}>Light</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.button} 
+          <TouchableOpacity
+            style={styles.button}
             onPress={() => setThemeMode('dark')}
           >
             <Text style={styles.buttonText}>Dark</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.button} 
+          <TouchableOpacity
+            style={styles.button}
             onPress={() => setThemeMode('system')}
           >
             <Text style={styles.buttonText}>System</Text>
@@ -158,30 +158,36 @@ export const ThemeExample: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Spacing System</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ 
-            width: spacing[2], 
-            height: 20, 
-            backgroundColor: colors.primary[300],
-            marginRight: spacing[2] 
-          }} />
+          <View
+            style={{
+              width: spacing[2],
+              height: 20,
+              backgroundColor: colors.primary[300],
+              marginRight: spacing[2],
+            }}
+          />
           <Text style={styles.infoText}>Spacing 2 ({spacing[2]}px)</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ 
-            width: spacing[4], 
-            height: 20, 
-            backgroundColor: colors.primary[400],
-            marginRight: spacing[2] 
-          }} />
+          <View
+            style={{
+              width: spacing[4],
+              height: 20,
+              backgroundColor: colors.primary[400],
+              marginRight: spacing[2],
+            }}
+          />
           <Text style={styles.infoText}>Spacing 4 ({spacing[4]}px)</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ 
-            width: spacing[8], 
-            height: 20, 
-            backgroundColor: colors.primary[500],
-            marginRight: spacing[2] 
-          }} />
+          <View
+            style={{
+              width: spacing[8],
+              height: 20,
+              backgroundColor: colors.primary[500],
+              marginRight: spacing[2],
+            }}
+          />
           <Text style={styles.infoText}>Spacing 8 ({spacing[8]}px)</Text>
         </View>
       </View>

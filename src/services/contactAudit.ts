@@ -120,7 +120,9 @@ export class ContactAuditService {
 
       const withNames = (data || []).map((log) => ({
         ...log,
-        user: log.user ? { ...log.user, name: getFullName(log.user) } : log.user,
+        user: log.user
+          ? { ...log.user, name: getFullName(log.user) }
+          : log.user,
         accessor: log.accessor
           ? { ...log.accessor, name: getFullName(log.accessor) }
           : log.accessor,
@@ -178,7 +180,9 @@ export class ContactAuditService {
 
       const withNames = (data || []).map((log) => ({
         ...log,
-        user: log.user ? { ...log.user, name: getFullName(log.user) } : log.user,
+        user: log.user
+          ? { ...log.user, name: getFullName(log.user) }
+          : log.user,
         accessor: log.accessor
           ? { ...log.accessor, name: getFullName(log.accessor) }
           : log.accessor,
@@ -255,7 +259,7 @@ export class ContactAuditService {
     try {
       // First try to get existing settings
       const existingResult = await this.getPrivacySettings(userId);
-      
+
       // If we got settings back, return them
       if (existingResult.data) {
         return existingResult;
@@ -293,16 +297,19 @@ export class ContactAuditService {
       // Use upsert to either update existing or create new settings
       const { data, error } = await supabase
         .from('contact_privacy_settings')
-        .upsert({
-          user_id: userId,
-          allow_email_sharing: updates.allow_email_sharing ?? true,
-          allow_phone_sharing: updates.allow_phone_sharing ?? true,
-          allow_contact_by_leaders: updates.allow_contact_by_leaders ?? true,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id',
-          ignoreDuplicates: false,
-        })
+        .upsert(
+          {
+            user_id: userId,
+            allow_email_sharing: updates.allow_email_sharing ?? true,
+            allow_phone_sharing: updates.allow_phone_sharing ?? true,
+            allow_contact_by_leaders: updates.allow_contact_by_leaders ?? true,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id',
+            ignoreDuplicates: false,
+          }
+        )
         .select()
         .single();
 

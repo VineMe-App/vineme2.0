@@ -31,7 +31,9 @@ try {
   PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
 } catch (error) {
   // react-native-maps not available (Expo Go) - will show fallback UI
-  console.log('[LocationPicker] react-native-maps not available - using fallback');
+  console.log(
+    '[LocationPicker] react-native-maps not available - using fallback'
+  );
 }
 
 const DEFAULT_COORDINATES: Coordinates = {
@@ -56,9 +58,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 }) => {
   // Check if MapView is available BEFORE any hooks
   const inExpoGo = !MapView;
-  
+
   const [search, setSearch] = useState<string>(value?.address || '');
-  const [previousSearchLength, setPreviousSearchLength] = useState((value?.address || '').length);
+  const [previousSearchLength, setPreviousSearchLength] = useState(
+    (value?.address || '').length
+  );
   const [region, setRegion] = useState<{
     latitude: number;
     longitude: number;
@@ -75,7 +79,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   );
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
-  const [userZoomLevel, setUserZoomLevel] = useState<{latitudeDelta: number, longitudeDelta: number} | null>(null);
+  const [userZoomLevel, setUserZoomLevel] = useState<{
+    latitudeDelta: number;
+    longitudeDelta: number;
+  } | null>(null);
   const [inputKey, setInputKey] = useState(0);
   const mapRef = useRef<any>(null);
   const inputRef = useRef<any>(null);
@@ -134,23 +141,26 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           console.log('Getting current location...');
           const currentLocation = await locationService.getCurrentLocation();
           console.log('Current location received:', currentLocation);
-          
+
           if (currentLocation) {
             setSelectedCoords(currentLocation);
             const newRegion = {
               latitude: currentLocation.latitude,
               longitude: currentLocation.longitude,
-              latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-              longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
+              latitudeDelta:
+                userZoomLevel?.latitudeDelta || region.latitudeDelta,
+              longitudeDelta:
+                userZoomLevel?.longitudeDelta || region.longitudeDelta,
             };
             setRegion(newRegion);
-            
+
             // Animate map to the new location
             mapRef.current?.animateToRegion(newRegion, 1000);
-            
+
             // Get address for current location
             try {
-              const address = await locationService.reverseGeocode(currentLocation);
+              const address =
+                await locationService.reverseGeocode(currentLocation);
               console.log('Reverse geocoded address:', address);
               if (address?.formattedAddress) {
                 setSearch(address.formattedAddress);
@@ -180,8 +190,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             const newRegion = {
               latitude: DEFAULT_COORDINATES.latitude,
               longitude: DEFAULT_COORDINATES.longitude,
-              latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-              longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
+              latitudeDelta:
+                userZoomLevel?.latitudeDelta || region.latitudeDelta,
+              longitudeDelta:
+                userZoomLevel?.longitudeDelta || region.longitudeDelta,
             };
             setRegion(newRegion);
             setSearch('Default Location');
@@ -198,7 +210,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             latitude: DEFAULT_COORDINATES.latitude,
             longitude: DEFAULT_COORDINATES.longitude,
             latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-            longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
+            longitudeDelta:
+              userZoomLevel?.longitudeDelta || region.longitudeDelta,
           };
           setRegion(newRegion);
           setSearch('Default Location');
@@ -218,82 +231,81 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     initializeLocation();
   }, [value?.coordinates, onChange]);
 
-  const geocode = useMemo(
-    () => {
-      // Create different debounced functions for different delays
-      const standardGeocode = debounce(async (query: string) => {
-        if (!query.trim() || query.trim().length < 3) return;
-        setIsGeocoding(true);
-        try {
-          const coords = await locationService.geocodeAddress(query.trim());
-          if (coords) {
-            setSelectedCoords(coords);
-            const newRegion = {
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-              longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
-            };
-            setRegion(newRegion);
-            mapRef.current?.animateToRegion(newRegion, 600);
-            onChange({ address: query.trim(), coordinates: coords });
-          }
-        } finally {
-          setIsGeocoding(false);
+  const geocode = useMemo(() => {
+    // Create different debounced functions for different delays
+    const standardGeocode = debounce(async (query: string) => {
+      if (!query.trim() || query.trim().length < 3) return;
+      setIsGeocoding(true);
+      try {
+        const coords = await locationService.geocodeAddress(query.trim());
+        if (coords) {
+          setSelectedCoords(coords);
+          const newRegion = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
+            longitudeDelta:
+              userZoomLevel?.longitudeDelta || region.longitudeDelta,
+          };
+          setRegion(newRegion);
+          mapRef.current?.animateToRegion(newRegion, 600);
+          onChange({ address: query.trim(), coordinates: coords });
         }
-      }, 2000); // Standard 2-second delay
+      } finally {
+        setIsGeocoding(false);
+      }
+    }, 2000); // Standard 2-second delay
 
-      const numberGeocode = debounce(async (query: string) => {
-        if (!query.trim() || query.trim().length < 3) return;
-        setIsGeocoding(true);
-        try {
-          const coords = await locationService.geocodeAddress(query.trim());
-          if (coords) {
-            setSelectedCoords(coords);
-            const newRegion = {
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-              longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
-            };
-            setRegion(newRegion);
-            mapRef.current?.animateToRegion(newRegion, 600);
-            onChange({ address: query.trim(), coordinates: coords });
-          }
-        } finally {
-          setIsGeocoding(false);
+    const numberGeocode = debounce(async (query: string) => {
+      if (!query.trim() || query.trim().length < 3) return;
+      setIsGeocoding(true);
+      try {
+        const coords = await locationService.geocodeAddress(query.trim());
+        if (coords) {
+          setSelectedCoords(coords);
+          const newRegion = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
+            longitudeDelta:
+              userZoomLevel?.longitudeDelta || region.longitudeDelta,
+          };
+          setRegion(newRegion);
+          mapRef.current?.animateToRegion(newRegion, 600);
+          onChange({ address: query.trim(), coordinates: coords });
         }
-      }, 3000); // Longer 3-second delay for numbers
+      } finally {
+        setIsGeocoding(false);
+      }
+    }, 3000); // Longer 3-second delay for numbers
 
-      return (query: string) => {
-        // Check if first character is a number
-        const firstChar = query.trim().charAt(0);
-        const isNumber = /^\d/.test(firstChar);
-        
-        if (isNumber) {
-          numberGeocode(query);
-        } else {
-          standardGeocode(query);
-        }
-      };
-    },
-    [onChange, region, userZoomLevel]
-  );
+    return (query: string) => {
+      // Check if first character is a number
+      const firstChar = query.trim().charAt(0);
+      const isNumber = /^\d/.test(firstChar);
+
+      if (isNumber) {
+        numberGeocode(query);
+      } else {
+        standardGeocode(query);
+      }
+    };
+  }, [onChange, region, userZoomLevel]);
 
   const forceInputRecreation = () => {
-    setInputKey(prev => prev + 1);
+    setInputKey((prev) => prev + 1);
   };
 
   const handleSearchChange = (text: string) => {
     setSearch(text);
-    
+
     // Only geocode if:
     // 1. User is actively typing (text length is increasing)
     // 2. Text is at least 3 characters long
     // 3. Text is not empty
     const isTyping = text.length > previousSearchLength;
     setPreviousSearchLength(text.length);
-    
+
     // Only trigger geocoding when actively typing, not when deleting or clearing
     if (isTyping && text.length >= 3) {
       geocode(text);
@@ -309,21 +321,26 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       longitudeDelta: number;
     }) => {
       console.log('Region changed:', newRegion);
-      
+
       // Store the user's zoom level if it's different from our current zoom
-      if (!userZoomLevel || 
-          Math.abs(newRegion.latitudeDelta - userZoomLevel.latitudeDelta) > 0.001 ||
-          Math.abs(newRegion.longitudeDelta - userZoomLevel.longitudeDelta) > 0.001) {
+      if (
+        !userZoomLevel ||
+        Math.abs(newRegion.latitudeDelta - userZoomLevel.latitudeDelta) >
+          0.001 ||
+        Math.abs(newRegion.longitudeDelta - userZoomLevel.longitudeDelta) >
+          0.001
+      ) {
         setUserZoomLevel({
           latitudeDelta: newRegion.latitudeDelta,
           longitudeDelta: newRegion.longitudeDelta,
         });
       }
-      
+
       // Check if the center has changed significantly (not just zoom)
-      const centerChanged = Math.abs(newRegion.latitude - region.latitude) > 0.0001 || 
-                           Math.abs(newRegion.longitude - region.longitude) > 0.0001;
-      
+      const centerChanged =
+        Math.abs(newRegion.latitude - region.latitude) > 0.0001 ||
+        Math.abs(newRegion.longitude - region.longitude) > 0.0001;
+
       if (centerChanged) {
         setRegion(newRegion);
         const coords = {
@@ -412,11 +429,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           <Text style={styles.searchHelper}>Getting your location…</Text>
         )}
         {search.length > 0 && search.length < 3 && (
-          <Text style={styles.searchHelper}>Type at least 3 characters to search</Text>
+          <Text style={styles.searchHelper}>
+            Type at least 3 characters to search
+          </Text>
         )}
         {search.length > 0 && (
-          <TouchableOpacity 
-            style={styles.clearButton} 
+          <TouchableOpacity
+            style={styles.clearButton}
             onPress={() => {
               setSearch('');
               setPreviousSearchLength(0);
@@ -432,18 +451,18 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      
+
       <View style={styles.mapContainer}>
         <MapView
-            ref={mapRef}
-            style={styles.map}
-            provider={PROVIDER_GOOGLE}
-            mapId={GOOGLE_MAPS_MAP_ID}
-            initialRegion={region}
-            onRegionChangeComplete={handleRegionChangeComplete}
-            showsUserLocation
-            showsMyLocationButton={Platform.OS === 'android'}
-            customMapStyle={[
+          ref={mapRef}
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          mapId={GOOGLE_MAPS_MAP_ID}
+          initialRegion={region}
+          onRegionChangeComplete={handleRegionChangeComplete}
+          showsUserLocation
+          showsMyLocationButton={Platform.OS === 'android'}
+          customMapStyle={[
             {
               elementType: 'geometry',
               stylers: [
@@ -603,15 +622,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               ],
             },
           ]}
-          >
-            {console.log('Rendering marker with coordinates:', selectedCoords)}
-            <Marker
-              coordinate={selectedCoords}
-              title="Meeting Location"
-              description="Move the map to adjust location"
-              pinColor="red"
-            />
-          </MapView>
+        >
+          {console.log('Rendering marker with coordinates:', selectedCoords)}
+          <Marker
+            coordinate={selectedCoords}
+            title="Meeting Location"
+            description="Move the map to adjust location"
+            pinColor="red"
+          />
+        </MapView>
       </View>
     </View>
   );

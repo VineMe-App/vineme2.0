@@ -11,11 +11,7 @@ import { ThemeProvider } from '../../../../theme/provider/ThemeProvider';
 // Animated is mocked in test-setup.js
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(
-    <ThemeProvider>
-      {component}
-    </ThemeProvider>
-  );
+  return render(<ThemeProvider>{component}</ThemeProvider>);
 };
 
 describe('Skeleton', () => {
@@ -24,9 +20,7 @@ describe('Skeleton', () => {
   });
 
   it('renders correctly with default props', () => {
-    const { getByTestId } = renderWithTheme(
-      <Skeleton testID="skeleton" />
-    );
+    const { getByTestId } = renderWithTheme(<Skeleton testID="skeleton" />);
 
     expect(getByTestId('skeleton')).toBeTruthy();
   });
@@ -57,10 +51,10 @@ describe('Skeleton', () => {
 
   it('applies custom colors', () => {
     const { getByTestId } = renderWithTheme(
-      <Skeleton 
-        baseColor="#f0f0f0" 
-        highlightColor="#ffffff" 
-        testID="skeleton" 
+      <Skeleton
+        baseColor="#f0f0f0"
+        highlightColor="#ffffff"
+        testID="skeleton"
       />
     );
 
@@ -77,10 +71,7 @@ describe('Skeleton', () => {
 
   it('has proper accessibility attributes', () => {
     const { getByTestId } = renderWithTheme(
-      <Skeleton 
-        testID="skeleton" 
-        accessibilityLabel="Loading user profile"
-      />
+      <Skeleton testID="skeleton" accessibilityLabel="Loading user profile" />
     );
 
     const skeleton = getByTestId('skeleton');
@@ -196,10 +187,10 @@ describe('SkeletonAvatar', () => {
 
   it('passes through other skeleton props', () => {
     const { getByTestId } = renderWithTheme(
-      <SkeletonAvatar 
-        animated={false} 
-        baseColor="#f0f0f0" 
-        testID="skeleton-avatar" 
+      <SkeletonAvatar
+        animated={false}
+        baseColor="#f0f0f0"
+        testID="skeleton-avatar"
       />
     );
 

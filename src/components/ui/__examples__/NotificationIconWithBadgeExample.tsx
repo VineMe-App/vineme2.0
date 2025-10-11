@@ -13,18 +13,23 @@ export const NotificationIconWithBadgeExample: React.FC = () => {
     console.log('Notification icon pressed!');
   };
 
-  const incrementCount = () => setCount(prev => prev + 1);
-  const decrementCount = () => setCount(prev => Math.max(0, prev - 1));
+  const incrementCount = () => setCount((prev) => prev + 1);
+  const decrementCount = () => setCount((prev) => Math.max(0, prev - 1));
   const setHighCount = () => setCount(150);
   const resetCount = () => setCount(0);
 
   return (
     <ScrollView style={styles.container}>
-      <View style={[styles.section, { backgroundColor: theme.colors.surface.primary }]}>
+      <View
+        style={[
+          styles.section,
+          { backgroundColor: theme.colors.surface.primary },
+        ]}
+      >
         <Text variant="h3" style={styles.title}>
           Notification Icon with Badge Examples
         </Text>
-        
+
         {/* Basic Example */}
         <View style={styles.example}>
           <Text variant="h4" style={styles.exampleTitle}>

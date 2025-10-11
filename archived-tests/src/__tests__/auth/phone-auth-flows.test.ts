@@ -111,9 +111,9 @@ describe('Phone Authentication Flows', () => {
 
       expect(supabase.auth.signInWithOtp).toHaveBeenCalledWith({
         email: mockEmail,
-        options: { 
+        options: {
           shouldCreateUser: false,
-          emailRedirectTo: 'vineme://auth/verify-email'
+          emailRedirectTo: 'vineme://auth/verify-email',
         },
       });
       expect(result.success).toBe(true);
@@ -138,11 +138,11 @@ describe('Phone Authentication Flows', () => {
       const mockPhone = '+14155551234';
       const mockCode = '1234';
       const mockUser = { id: 'user-123', phone: mockPhone };
-      const mockSession = { 
-        access_token: 'token', 
-        refresh_token: 'refresh', 
+      const mockSession = {
+        access_token: 'token',
+        refresh_token: 'refresh',
         expires_at: 123456789,
-        user: mockUser 
+        user: mockUser,
       };
 
       (supabase.auth.verifyOtp as jest.Mock).mockResolvedValue({
@@ -165,11 +165,11 @@ describe('Phone Authentication Flows', () => {
       const mockEmail = 'test@example.com';
       const mockCode = '123456';
       const mockUser = { id: 'user-123', email: mockEmail };
-      const mockSession = { 
-        access_token: 'token', 
-        refresh_token: 'refresh', 
+      const mockSession = {
+        access_token: 'token',
+        refresh_token: 'refresh',
         expires_at: 123456789,
-        user: mockUser 
+        user: mockUser,
       };
 
       (supabase.auth.verifyOtp as jest.Mock).mockResolvedValue({
@@ -197,7 +197,11 @@ describe('Phone Authentication Flows', () => {
     });
 
     it('should reject invalid email code length', async () => {
-      const result = await authService.verifyOtp('test@example.com', '12345', 'email');
+      const result = await authService.verifyOtp(
+        'test@example.com',
+        '12345',
+        'email'
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Enter the 6-digit code');
@@ -205,7 +209,11 @@ describe('Phone Authentication Flows', () => {
     });
 
     it('should reject invalid phone format in SMS verifyOtp', async () => {
-      const result = await authService.verifyOtp('invalid-phone', '1234', 'sms');
+      const result = await authService.verifyOtp(
+        'invalid-phone',
+        '1234',
+        'sms'
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Invalid phone number format');
@@ -215,11 +223,7 @@ describe('Phone Authentication Flows', () => {
 
   describe('Phone Normalization', () => {
     it('should accept properly formatted E.164 numbers', async () => {
-      const validPhones = [
-        '+14155551234',
-        '+442071234567',
-        '+33123456789',
-      ];
+      const validPhones = ['+14155551234', '+442071234567', '+33123456789'];
 
       for (const phone of validPhones) {
         (supabase.auth.signInWithOtp as jest.Mock).mockResolvedValue({
@@ -233,11 +237,11 @@ describe('Phone Authentication Flows', () => {
 
     it('should reject invalid phone formats', async () => {
       const invalidPhones = [
-        '4155551234',     // Missing +
-        '+1415555',       // Too short
-        'invalid',        // Not a number
-        '',               // Empty
-        '+',              // Just +
+        '4155551234', // Missing +
+        '+1415555', // Too short
+        'invalid', // Not a number
+        '', // Empty
+        '+', // Just +
       ];
 
       for (const phone of invalidPhones) {
@@ -252,18 +256,20 @@ describe('Phone Authentication Flows', () => {
     it('should link email to authenticated user without verification', async () => {
       const mockEmail = 'test@example.com';
       const mockUser = { id: 'user-123' };
-      
+
       (supabase.auth.updateUser as jest.Mock).mockResolvedValue({
         error: null,
       });
-      
+
       // Mock getCurrentUser
-      jest.spyOn(authService, 'getCurrentUser').mockResolvedValue(mockUser as any);
+      jest
+        .spyOn(authService, 'getCurrentUser')
+        .mockResolvedValue(mockUser as any);
 
       const result = await authService.linkEmail(mockEmail);
 
       expect(supabase.auth.updateUser).toHaveBeenCalledWith({
-        email: mockEmail
+        email: mockEmail,
       });
       expect(result.success).toBe(true);
     });
@@ -271,13 +277,15 @@ describe('Phone Authentication Flows', () => {
     it('should link phone to authenticated user and update public table', async () => {
       const mockPhone = '+14155551234';
       const mockUser = { id: 'user-123' };
-      
+
       (supabase.auth.updateUser as jest.Mock).mockResolvedValue({
         error: null,
       });
-      
+
       // Mock getCurrentUser
-      jest.spyOn(authService, 'getCurrentUser').mockResolvedValue(mockUser as any);
+      jest
+        .spyOn(authService, 'getCurrentUser')
+        .mockResolvedValue(mockUser as any);
 
       const result = await authService.linkPhone(mockPhone);
 

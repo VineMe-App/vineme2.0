@@ -38,16 +38,16 @@ export class ThemeCompatibilityLayer {
     }
 
     const themeStyles = themeAwareStyles(theme);
-    
+
     // Merge legacy styles with theme styles, with theme taking precedence
     const mergedStyles = { ...legacyStyles, ...themeStyles };
-    
+
     if (this.options.showDeprecationWarnings && legacyStyles) {
       this.options.onDeprecationWarning?.(
         'Component is using legacy styles. Consider migrating to theme-aware styles.'
       );
     }
-    
+
     return mergedStyles;
   }
 
@@ -61,14 +61,14 @@ export class ThemeCompatibilityLayer {
     return (theme: Theme) => {
       if (themeAwareStylesFactory) {
         const themeStyles = themeAwareStylesFactory(theme);
-        
+
         if (legacyStyles && this.options.enableLegacyStyles) {
           return this.mergeStyles(legacyStyles, () => themeStyles, theme);
         }
-        
+
         return themeStyles;
       }
-      
+
       if (legacyStyles) {
         if (this.options.showDeprecationWarnings) {
           this.options.onDeprecationWarning?.(
@@ -77,7 +77,7 @@ export class ThemeCompatibilityLayer {
         }
         return legacyStyles;
       }
-      
+
       return {} as T;
     };
   }
@@ -90,11 +90,11 @@ export class ThemeCompatibilityLayer {
     theme: Theme
   ): T {
     const convertedStyles: any = {};
-    
+
     for (const [key, style] of Object.entries(legacyStyleSheet)) {
       convertedStyles[key] = this.convertLegacyStyle(style, theme);
     }
-    
+
     return convertedStyles;
   }
 
@@ -105,50 +105,81 @@ export class ThemeCompatibilityLayer {
     if (!style || typeof style !== 'object') {
       return style;
     }
-    
+
     const convertedStyle: any = { ...style };
-    
+
     // Convert common color properties
     if (convertedStyle.backgroundColor) {
-      convertedStyle.backgroundColor = this.convertColorValue(convertedStyle.backgroundColor, theme);
+      convertedStyle.backgroundColor = this.convertColorValue(
+        convertedStyle.backgroundColor,
+        theme
+      );
     }
-    
+
     if (convertedStyle.color) {
-      convertedStyle.color = this.convertColorValue(convertedStyle.color, theme);
+      convertedStyle.color = this.convertColorValue(
+        convertedStyle.color,
+        theme
+      );
     }
-    
+
     if (convertedStyle.borderColor) {
-      convertedStyle.borderColor = this.convertColorValue(convertedStyle.borderColor, theme);
+      convertedStyle.borderColor = this.convertColorValue(
+        convertedStyle.borderColor,
+        theme
+      );
     }
-    
+
     // Convert spacing properties
     const spacingProps = [
-      'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
-      'marginHorizontal', 'marginVertical', 'padding', 'paddingTop',
-      'paddingRight', 'paddingBottom', 'paddingLeft', 'paddingHorizontal',
-      'paddingVertical'
+      'margin',
+      'marginTop',
+      'marginRight',
+      'marginBottom',
+      'marginLeft',
+      'marginHorizontal',
+      'marginVertical',
+      'padding',
+      'paddingTop',
+      'paddingRight',
+      'paddingBottom',
+      'paddingLeft',
+      'paddingHorizontal',
+      'paddingVertical',
     ];
-    
-    spacingProps.forEach(prop => {
+
+    spacingProps.forEach((prop) => {
       if (convertedStyle[prop] !== undefined) {
-        convertedStyle[prop] = this.convertSpacingValue(convertedStyle[prop], theme);
+        convertedStyle[prop] = this.convertSpacingValue(
+          convertedStyle[prop],
+          theme
+        );
       }
     });
-    
+
     // Convert typography properties
     if (convertedStyle.fontSize) {
-      convertedStyle.fontSize = this.convertFontSizeValue(convertedStyle.fontSize, theme);
+      convertedStyle.fontSize = this.convertFontSizeValue(
+        convertedStyle.fontSize,
+        theme
+      );
     }
-    
+
     if (convertedStyle.fontWeight) {
-      convertedStyle.fontWeight = this.convertFontWeightValue(convertedStyle.fontWeight, theme);
+      convertedStyle.fontWeight = this.convertFontWeightValue(
+        convertedStyle.fontWeight,
+        theme
+      );
     }
-    
+
     // Convert border radius
     if (convertedStyle.borderRadius) {
-      convertedStyle.borderRadius = this.convertBorderRadiusValue(convertedStyle.borderRadius, theme);
+      convertedStyle.borderRadius = this.convertBorderRadiusValue(
+        convertedStyle.borderRadius,
+        theme
+      );
     }
-    
+
     return convertedStyle;
   }
 
@@ -165,7 +196,7 @@ export class ThemeCompatibilityLayer {
       '#666': theme.colors.text.secondary,
       '#888': theme.colors.text.tertiary,
     };
-    
+
     return colorMappings[value.toLowerCase()] || value;
   }
 
@@ -182,7 +213,7 @@ export class ThemeCompatibilityLayer {
       24: 'xl',
       32: 'xxl',
     };
-    
+
     const mappedKey = spacingMappings[value];
     return mappedKey ? theme.spacing[mappedKey] : value;
   }
@@ -191,7 +222,10 @@ export class ThemeCompatibilityLayer {
    * Convert font size value to theme font size if available
    */
   private static convertFontSizeValue(value: number, theme: Theme): number {
-    const fontSizeMappings: Record<number, keyof typeof theme.typography.fontSize> = {
+    const fontSizeMappings: Record<
+      number,
+      keyof typeof theme.typography.fontSize
+    > = {
       12: 'xs',
       14: 'sm',
       16: 'md',
@@ -199,7 +233,7 @@ export class ThemeCompatibilityLayer {
       20: 'xl',
       24: 'xxl',
     };
-    
+
     const mappedKey = fontSizeMappings[value];
     return mappedKey ? theme.typography.fontSize[mappedKey] : value;
   }
@@ -207,32 +241,43 @@ export class ThemeCompatibilityLayer {
   /**
    * Convert font weight value to theme font weight if available
    */
-  private static convertFontWeightValue(value: string | number, theme: Theme): string {
-    const fontWeightMappings: Record<string, keyof typeof theme.typography.fontWeight> = {
+  private static convertFontWeightValue(
+    value: string | number,
+    theme: Theme
+  ): string {
+    const fontWeightMappings: Record<
+      string,
+      keyof typeof theme.typography.fontWeight
+    > = {
       '400': 'normal',
       '500': 'medium',
       '600': 'semiBold',
       '700': 'bold',
-      'normal': 'normal',
-      'bold': 'bold',
+      normal: 'normal',
+      bold: 'bold',
     };
-    
+
     const mappedKey = fontWeightMappings[value.toString()];
-    return mappedKey ? theme.typography.fontWeight[mappedKey] : value.toString();
+    return mappedKey
+      ? theme.typography.fontWeight[mappedKey]
+      : value.toString();
   }
 
   /**
    * Convert border radius value to theme border radius if available
    */
   private static convertBorderRadiusValue(value: number, theme: Theme): number {
-    const borderRadiusMappings: Record<number, keyof typeof theme.borderRadius> = {
+    const borderRadiusMappings: Record<
+      number,
+      keyof typeof theme.borderRadius
+    > = {
       4: 'sm',
       8: 'md',
       12: 'lg',
       16: 'xl',
       20: 'xxl',
     };
-    
+
     const mappedKey = borderRadiusMappings[value];
     return mappedKey ? theme.borderRadius[mappedKey] : value;
   }
@@ -246,18 +291,18 @@ export function withThemeCompatibility<P extends object>(
 ): React.ComponentType<P> {
   const CompatibleComponent = (props: P) => {
     const theme = useTheme();
-    
+
     // Inject theme into component props if it accepts it
     const enhancedProps = {
       ...props,
       theme,
     } as P;
-    
+
     return React.createElement(Component, enhancedProps);
   };
-  
+
   CompatibleComponent.displayName = `withThemeCompatibility(${Component.displayName || Component.name})`;
-  
+
   return CompatibleComponent;
 }
 
@@ -269,13 +314,14 @@ export function useLegacyStyles<T extends Record<string, any>>(
   themeAwareStylesFactory?: (theme: Theme) => T
 ): T {
   const theme = useTheme();
-  
+
   return React.useMemo(() => {
-    const compatibleStylesFactory = ThemeCompatibilityLayer.createCompatibleStyles(
-      legacyStyles,
-      themeAwareStylesFactory
-    );
-    
+    const compatibleStylesFactory =
+      ThemeCompatibilityLayer.createCompatibleStyles(
+        legacyStyles,
+        themeAwareStylesFactory
+      );
+
     return StyleSheet.create(compatibleStylesFactory(theme));
   }, [theme, legacyStyles, themeAwareStylesFactory]);
 }
@@ -289,17 +335,20 @@ export function createMigrationStyles<T extends Record<string, any>>(
 ): (theme: Theme) => T {
   return (theme: Theme) => {
     const result: any = {};
-    
+
     for (const [key, legacyStyle] of Object.entries(legacyStyles)) {
       if (partialThemeStyles?.[key as keyof T]) {
         // Use theme-aware style if available
         result[key] = partialThemeStyles[key as keyof T]!(theme);
       } else {
         // Use converted legacy style
-        result[key] = ThemeCompatibilityLayer.convertLegacyStyleSheet({ [key]: legacyStyle }, theme)[key];
+        result[key] = ThemeCompatibilityLayer.convertLegacyStyleSheet(
+          { [key]: legacyStyle },
+          theme
+        )[key];
       }
     }
-    
+
     return StyleSheet.create(result);
   };
 }

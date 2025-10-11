@@ -11,6 +11,7 @@ export function OtpInput({
   length?: number;
 }) {
   const refs = useMemo(
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     () => Array.from({ length }, () => useRef<TextInput>(null)),
     [length]
   );

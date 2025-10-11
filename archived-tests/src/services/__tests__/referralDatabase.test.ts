@@ -1,4 +1,7 @@
-import { ReferralDatabaseUtils, REFERRAL_SCHEMA_SQL } from '../referralDatabase';
+import {
+  ReferralDatabaseUtils,
+  REFERRAL_SCHEMA_SQL,
+} from '../referralDatabase';
 import { supabase } from '../supabase';
 
 // Mock Supabase
@@ -41,9 +44,9 @@ describe('ReferralDatabaseUtils', () => {
     it('should handle table validation errors', async () => {
       // Mock table query errors
       const mockSelect = jest.fn().mockReturnValue({
-        limit: jest.fn().mockResolvedValue({ 
-          data: null, 
-          error: { message: 'Table does not exist' } 
+        limit: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Table does not exist' },
         }),
       });
 
@@ -65,8 +68,8 @@ describe('ReferralDatabaseUtils', () => {
       const result = await ReferralDatabaseUtils.getSchemaInfo();
 
       expect(result.tables).toHaveLength(2);
-      
-      const referralsTable = result.tables.find(t => t.name === 'referrals');
+
+      const referralsTable = result.tables.find((t) => t.name === 'referrals');
       expect(referralsTable).toBeDefined();
       expect(referralsTable?.columns).toContainEqual({
         name: 'id',
@@ -94,7 +97,9 @@ describe('ReferralDatabaseUtils', () => {
         nullable: false,
       });
 
-      const generalReferralsTable = result.tables.find(t => t.name === 'general_referrals');
+      const generalReferralsTable = result.tables.find(
+        (t) => t.name === 'general_referrals'
+      );
       expect(generalReferralsTable).toBeDefined();
       expect(generalReferralsTable?.columns).toContainEqual({
         name: 'referred_by_user_id',
@@ -156,52 +161,114 @@ describe('ReferralDatabaseUtils', () => {
 
 describe('REFERRAL_SCHEMA_SQL', () => {
   it('should contain all required SQL definitions', () => {
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('CREATE TABLE IF NOT EXISTS referrals');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('group_id UUID REFERENCES groups(id) ON DELETE SET NULL');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('referred_by_user_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('referred_user_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('church_id UUID REFERENCES churches(id) ON DELETE SET NULL');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain("status TEXT NOT NULL DEFAULT 'pending'");
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('CHECK (referred_by_user_id != referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'CREATE TABLE IF NOT EXISTS referrals'
+    );
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'group_id UUID REFERENCES groups(id) ON DELETE SET NULL'
+    );
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'referred_by_user_id UUID NOT NULL REFERENCES users(id)'
+    );
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'referred_user_id UUID NOT NULL REFERENCES users(id)'
+    );
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'church_id UUID REFERENCES churches(id) ON DELETE SET NULL'
+    );
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      "status TEXT NOT NULL DEFAULT 'pending'"
+    );
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'CHECK (referred_by_user_id != referred_user_id)'
+    );
 
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CREATE TABLE IF NOT EXISTS general_referrals');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('referred_by_user_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('referred_user_id UUID NOT NULL REFERENCES users(id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain("status TEXT NOT NULL DEFAULT 'pending'");
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referred_by_user_id != referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'CREATE TABLE IF NOT EXISTS general_referrals'
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'referred_by_user_id UUID NOT NULL REFERENCES users(id)'
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'referred_user_id UUID NOT NULL REFERENCES users(id)'
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      "status TEXT NOT NULL DEFAULT 'pending'"
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'CHECK (referred_by_user_id != referred_user_id)'
+    );
 
-    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_referrals_group_id');
-    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_referrals_referred_user_id');
-    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_referrals_unique_referral');
-    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain('CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_user_id');
+    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_referrals_group_id'
+    );
+    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_referrals_referred_user_id'
+    );
+    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_referrals_unique_referral'
+    );
+    expect(REFERRAL_SCHEMA_SQL.INDEXES).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_user_id'
+    );
 
-    expect(REFERRAL_SCHEMA_SQL.RLS_POLICIES).toContain('ALTER TABLE referrals ENABLE ROW LEVEL SECURITY');
-    expect(REFERRAL_SCHEMA_SQL.RLS_POLICIES).toContain('ALTER TABLE general_referrals ENABLE ROW LEVEL SECURITY');
+    expect(REFERRAL_SCHEMA_SQL.RLS_POLICIES).toContain(
+      'ALTER TABLE referrals ENABLE ROW LEVEL SECURITY'
+    );
+    expect(REFERRAL_SCHEMA_SQL.RLS_POLICIES).toContain(
+      'ALTER TABLE general_referrals ENABLE ROW LEVEL SECURITY'
+    );
 
-    expect(REFERRAL_SCHEMA_SQL.TRIGGERS).toContain('CREATE OR REPLACE FUNCTION update_updated_at_column()');
-    expect(REFERRAL_SCHEMA_SQL.TRIGGERS).toContain('CREATE TRIGGER update_referrals_updated_at');
+    expect(REFERRAL_SCHEMA_SQL.TRIGGERS).toContain(
+      'CREATE OR REPLACE FUNCTION update_updated_at_column()'
+    );
+    expect(REFERRAL_SCHEMA_SQL.TRIGGERS).toContain(
+      'CREATE TRIGGER update_referrals_updated_at'
+    );
   });
 
   it('should have proper foreign key constraints', () => {
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('REFERENCES groups(id) ON DELETE CASCADE');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('REFERENCES users(id) ON DELETE CASCADE');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('REFERENCES users(id) ON DELETE CASCADE');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'REFERENCES groups(id) ON DELETE CASCADE'
+    );
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'REFERENCES users(id) ON DELETE CASCADE'
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'REFERENCES users(id) ON DELETE CASCADE'
+    );
   });
 
   it('should have proper unique constraints', () => {
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('UNIQUE(referred_by_user_id, referred_user_id, group_id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('UNIQUE(referred_by_user_id, referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'UNIQUE(referred_by_user_id, referred_user_id, group_id)'
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'UNIQUE(referred_by_user_id, referred_user_id)'
+    );
   });
 
   it('should have proper check constraints', () => {
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('CHECK (referred_by_user_id != referred_user_id)');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('CHECK (referred_by_user_id != referred_user_id)');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'CHECK (referred_by_user_id != referred_user_id)'
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'CHECK (referred_by_user_id != referred_user_id)'
+    );
   });
 
   it('should have proper timestamp fields', () => {
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()');
-    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain('updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()');
-    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain('updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()');
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()'
+    );
+    expect(REFERRAL_SCHEMA_SQL.REFERRALS_TABLE).toContain(
+      'updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()'
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()'
+    );
+    expect(REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE).toContain(
+      'updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()'
+    );
   });
 });

@@ -21,7 +21,8 @@ export interface ReferralRateLimitInfo {
 }
 
 // Email validation regex - more comprehensive than basic one
-const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+const EMAIL_REGEX =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 // Phone validation regex - supports international formats
 const PHONE_REGEX = /^[\+]?[1-9][\d\s\-\(\)]{8,}$/;
@@ -54,7 +55,9 @@ const SPAM_PATTERNS = [
  * Requirement 4.4: Validate all required fields before processing
  * Requirement 4.5: User-friendly error messages and recovery options
  */
-export function validateReferralForm(data: ReferralFormData): ReferralValidationResult {
+export function validateReferralForm(
+  data: ReferralFormData
+): ReferralValidationResult {
   const errors: Record<string, string> = {};
   const warnings: Record<string, string> = {};
 
@@ -63,16 +66,17 @@ export function validateReferralForm(data: ReferralFormData): ReferralValidation
     errors.email = 'Email address is required';
   } else {
     const email = data.email.trim().toLowerCase();
-    
+
     if (!EMAIL_REGEX.test(email)) {
       errors.email = 'Please enter a valid email address';
     } else {
       // Check for disposable email domains
       const domain = email.split('@')[1];
       if (DISPOSABLE_EMAIL_DOMAINS.includes(domain)) {
-        warnings.email = 'Disposable email addresses may not receive verification emails reliably';
+        warnings.email =
+          'Disposable email addresses may not receive verification emails reliably';
       }
-      
+
       // Check email length
       if (email.length > 254) {
         errors.email = 'Email address is too long (maximum 254 characters)';
@@ -85,10 +89,10 @@ export function validateReferralForm(data: ReferralFormData): ReferralValidation
     errors.phone = 'Phone number is required';
   } else {
     const phone = data.phone.trim();
-    
+
     // Remove formatting for validation
     const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
-    
+
     if (!PHONE_REGEX.test(cleanPhone)) {
       errors.phone = 'Please enter a valid phone number';
     } else {
@@ -129,13 +133,15 @@ export function validateReferralForm(data: ReferralFormData): ReferralValidation
     if (note.length > 500) {
       errors.note = 'Note must be 500 characters or less';
     }
-    
+
     // Check for spam patterns
     const spamScore = calculateSpamScore(note);
     if (spamScore > 3) {
-      errors.note = 'Note contains suspicious content. Please provide a genuine referral reason.';
+      errors.note =
+        'Note contains suspicious content. Please provide a genuine referral reason.';
     } else if (spamScore > 1) {
-      warnings.note = 'Please ensure your note provides genuine context about the referral';
+      warnings.note =
+        'Please ensure your note provides genuine context about the referral';
     }
   }
 
@@ -151,14 +157,14 @@ export function validateReferralForm(data: ReferralFormData): ReferralValidation
  */
 function calculateSpamScore(note: string): number {
   let score = 0;
-  
-  SPAM_PATTERNS.forEach(pattern => {
+
+  SPAM_PATTERNS.forEach((pattern) => {
     const matches = note.match(pattern);
     if (matches) {
       score += matches.length;
     }
   });
-  
+
   return score;
 }
 
@@ -172,7 +178,7 @@ export function validateServerReferralData(
   groupId?: string
 ): ReferralValidationResult {
   const clientValidation = validateReferralForm(data);
-  
+
   if (!clientValidation.isValid) {
     return clientValidation;
   }
@@ -194,7 +200,7 @@ export function validateServerReferralData(
 
   // Additional server-side email validation
   const email = data.email.trim().toLowerCase();
-  
+
   // Check for common typos in email domains
   const commonDomainTypos = {
     'gmail.co': 'gmail.com',
@@ -225,12 +231,12 @@ export function validateServerReferralData(
 export class ReferralRateLimiter {
   private static instance: ReferralRateLimiter;
   private rateLimitMap = new Map<string, ReferralRateLimitInfo[]>();
-  
+
   // Rate limits - TEMPORARILY INCREASED FOR TESTING
   private readonly HOURLY_LIMIT = 100; // 100 referrals per hour (was 5)
   private readonly DAILY_LIMIT = 500; // 500 referrals per day (was 20)
   private readonly WEEKLY_LIMIT = 1000; // 1000 referrals per week (was 50)
-  
+
   private readonly HOUR_MS = 60 * 60 * 1000;
   private readonly DAY_MS = 24 * this.HOUR_MS;
   private readonly WEEK_MS = 7 * this.DAY_MS;
@@ -245,18 +251,28 @@ export class ReferralRateLimiter {
   /**
    * Check if user can make a referral
    */
-  canMakeReferral(userId: string): { allowed: boolean; reason?: string; retryAfter?: number } {
+  canMakeReferral(userId: string): {
+    allowed: boolean;
+    reason?: string;
+    retryAfter?: number;
+  } {
     const now = Date.now();
     const userReferrals = this.rateLimitMap.get(userId) || [];
-    
+
     // Clean up old entries
-    const validReferrals = userReferrals.filter(ref => now - ref.timestamp < this.WEEK_MS);
+    const validReferrals = userReferrals.filter(
+      (ref) => now - ref.timestamp < this.WEEK_MS
+    );
     this.rateLimitMap.set(userId, validReferrals);
-    
+
     // Check hourly limit
-    const hourlyReferrals = validReferrals.filter(ref => now - ref.timestamp < this.HOUR_MS);
+    const hourlyReferrals = validReferrals.filter(
+      (ref) => now - ref.timestamp < this.HOUR_MS
+    );
     if (hourlyReferrals.length >= this.HOURLY_LIMIT) {
-      const oldestHourly = Math.min(...hourlyReferrals.map(ref => ref.timestamp));
+      const oldestHourly = Math.min(
+        ...hourlyReferrals.map((ref) => ref.timestamp)
+      );
       const retryAfter = oldestHourly + this.HOUR_MS - now;
       return {
         allowed: false,
@@ -264,11 +280,15 @@ export class ReferralRateLimiter {
         retryAfter: Math.ceil(retryAfter / 1000 / 60), // minutes
       };
     }
-    
+
     // Check daily limit
-    const dailyReferrals = validReferrals.filter(ref => now - ref.timestamp < this.DAY_MS);
+    const dailyReferrals = validReferrals.filter(
+      (ref) => now - ref.timestamp < this.DAY_MS
+    );
     if (dailyReferrals.length >= this.DAILY_LIMIT) {
-      const oldestDaily = Math.min(...dailyReferrals.map(ref => ref.timestamp));
+      const oldestDaily = Math.min(
+        ...dailyReferrals.map((ref) => ref.timestamp)
+      );
       const retryAfter = oldestDaily + this.DAY_MS - now;
       return {
         allowed: false,
@@ -276,10 +296,12 @@ export class ReferralRateLimiter {
         retryAfter: Math.ceil(retryAfter / 1000 / 60 / 60), // hours
       };
     }
-    
+
     // Check weekly limit
     if (validReferrals.length >= this.WEEKLY_LIMIT) {
-      const oldestWeekly = Math.min(...validReferrals.map(ref => ref.timestamp));
+      const oldestWeekly = Math.min(
+        ...validReferrals.map((ref) => ref.timestamp)
+      );
       const retryAfter = oldestWeekly + this.WEEK_MS - now;
       return {
         allowed: false,
@@ -287,7 +309,7 @@ export class ReferralRateLimiter {
         retryAfter: Math.ceil(retryAfter / 1000 / 60 / 60 / 24), // days
       };
     }
-    
+
     return { allowed: true };
   }
 
@@ -317,13 +339,19 @@ export class ReferralRateLimiter {
   } {
     const now = Date.now();
     const userReferrals = this.rateLimitMap.get(userId) || [];
-    
+
     return {
-      hourlyUsed: userReferrals.filter(ref => now - ref.timestamp < this.HOUR_MS).length,
+      hourlyUsed: userReferrals.filter(
+        (ref) => now - ref.timestamp < this.HOUR_MS
+      ).length,
       hourlyLimit: this.HOURLY_LIMIT,
-      dailyUsed: userReferrals.filter(ref => now - ref.timestamp < this.DAY_MS).length,
+      dailyUsed: userReferrals.filter(
+        (ref) => now - ref.timestamp < this.DAY_MS
+      ).length,
       dailyLimit: this.DAILY_LIMIT,
-      weeklyUsed: userReferrals.filter(ref => now - ref.timestamp < this.WEEK_MS).length,
+      weeklyUsed: userReferrals.filter(
+        (ref) => now - ref.timestamp < this.WEEK_MS
+      ).length,
       weeklyLimit: this.WEEKLY_LIMIT,
     };
   }
@@ -347,14 +375,17 @@ export class ReferralRateLimiter {
  * Validates UUID format
  */
 function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 }
 
 /**
  * Sanitizes user input to prevent XSS and other attacks
  */
-export function sanitizeReferralInput(data: ReferralFormData): ReferralFormData {
+export function sanitizeReferralInput(
+  data: ReferralFormData
+): ReferralFormData {
   return {
     email: data.email.trim().toLowerCase(),
     phone: data.phone.trim(),
@@ -391,7 +422,10 @@ export function createReferralErrorMessage(error: any): {
     };
   }
 
-  if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+  if (
+    error.message?.includes('rate limit') ||
+    error.message?.includes('too many')
+  ) {
     return {
       title: 'Too Many Referrals',
       message: error.message,
@@ -405,7 +439,10 @@ export function createReferralErrorMessage(error: any): {
     };
   }
 
-  if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+  if (
+    error.message?.includes('already exists') ||
+    error.message?.includes('duplicate')
+  ) {
     return {
       title: 'Already Referred',
       message: 'This person has already been referred to this group',
@@ -419,7 +456,10 @@ export function createReferralErrorMessage(error: any): {
     };
   }
 
-  if (error.message?.includes('network') || error.message?.includes('connection')) {
+  if (
+    error.message?.includes('network') ||
+    error.message?.includes('connection')
+  ) {
     return {
       title: 'Connection Problem',
       message: 'Unable to send referral due to network issues',

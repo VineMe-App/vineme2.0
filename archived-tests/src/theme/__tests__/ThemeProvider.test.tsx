@@ -170,9 +170,13 @@ describe('ThemeProvider', () => {
 
       const { result } = renderHook(() => useTheme(), { wrapper });
 
-      expect(result.current.colors.primary[500]).toBe(lightTheme.colors.primary[500]);
+      expect(result.current.colors.primary[500]).toBe(
+        lightTheme.colors.primary[500]
+      );
       expect(result.current.spacing[4]).toBe(lightTheme.spacing[4]);
-      expect(result.current.typography.fontSize.base).toBe(lightTheme.typography.fontSize.base);
+      expect(result.current.typography.fontSize.base).toBe(
+        lightTheme.typography.fontSize.base
+      );
     });
   });
 
@@ -187,7 +191,9 @@ describe('ThemeProvider', () => {
       expect(result.current.theme.name).toBe('light');
       expect(result.current.theme.isDark).toBe(false);
       expect(result.current.isDark).toBe(false);
-      expect(result.current.colors.background.primary).toBe(lightTheme.colors.background.primary);
+      expect(result.current.colors.background.primary).toBe(
+        lightTheme.colors.background.primary
+      );
     });
 
     it('should provide correct theme properties for dark theme', () => {
@@ -200,7 +206,9 @@ describe('ThemeProvider', () => {
       expect(result.current.theme.name).toBe('dark');
       expect(result.current.theme.isDark).toBe(true);
       expect(result.current.isDark).toBe(true);
-      expect(result.current.colors.background.primary).toBe(darkTheme.colors.background.primary);
+      expect(result.current.colors.background.primary).toBe(
+        darkTheme.colors.background.primary
+      );
     });
   });
 });
@@ -208,7 +216,9 @@ describe('ThemeProvider', () => {
 describe('useTheme Hook', () => {
   it('should throw error when used outside ThemeProvider', () => {
     // Suppress console.error for this test
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useTheme());

@@ -71,7 +71,7 @@ describe('StylingSystemExample', () => {
       const { getByTestId, getByText } = renderWithTheme();
 
       const themeToggle = getByTestId('theme-toggle');
-      
+
       // Initially should show Light theme
       expect(getByText('Current Theme: Light')).toBeTruthy();
 
@@ -87,7 +87,7 @@ describe('StylingSystemExample', () => {
       const { getByTestId, getByText } = renderWithTheme();
 
       const themeToggle = getByTestId('theme-toggle');
-      
+
       // Toggle theme and verify components update
       fireEvent(themeToggle, 'valueChange', true);
 
@@ -108,7 +108,10 @@ describe('StylingSystemExample', () => {
       const primaryButton = getByText('Primary');
       fireEvent.press(primaryButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Primary', 'Primary button pressed');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Primary',
+        'Primary button pressed'
+      );
     });
 
     it('handles secondary button press', () => {
@@ -117,7 +120,10 @@ describe('StylingSystemExample', () => {
       const secondaryButton = getByText('Secondary');
       fireEvent.press(secondaryButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Secondary', 'Secondary button pressed');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Secondary',
+        'Secondary button pressed'
+      );
     });
 
     it('handles outline button press', () => {
@@ -126,7 +132,10 @@ describe('StylingSystemExample', () => {
       const outlineButton = getByText('Outline');
       fireEvent.press(outlineButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Outline', 'Outline button pressed');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Outline',
+        'Outline button pressed'
+      );
     });
 
     it('does not trigger disabled button', () => {
@@ -166,7 +175,10 @@ describe('StylingSystemExample', () => {
       });
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Success', 'button1 action completed!');
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Success',
+          'button1 action completed!'
+        );
       });
 
       jest.useRealTimers();
@@ -247,7 +259,10 @@ describe('StylingSystemExample', () => {
       const confirmButton = getByText('Confirm');
       fireEvent.press(confirmButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Modal action confirmed!');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Success',
+        'Modal action confirmed!'
+      );
     });
   });
 
@@ -278,7 +293,10 @@ describe('StylingSystemExample', () => {
       const confirmButton = getByText('Yes, Continue');
       fireEvent.press(confirmButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Confirmed', 'Action was confirmed!');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Confirmed',
+        'Action was confirmed!'
+      );
     });
 
     it('handles confirmation dialog cancel', async () => {
@@ -318,9 +336,13 @@ describe('StylingSystemExample', () => {
     it('renders accessibility input with proper labels', () => {
       const { getByPlaceholderText } = renderWithTheme();
 
-      const accessibilityInput = getByPlaceholderText('Try with screen reader enabled');
+      const accessibilityInput = getByPlaceholderText(
+        'Try with screen reader enabled'
+      );
       expect(accessibilityInput).toBeTruthy();
-      expect(accessibilityInput.props.accessibilityLabel).toBe('Screen reader test input field');
+      expect(accessibilityInput.props.accessibilityLabel).toBe(
+        'Screen reader test input field'
+      );
     });
   });
 
@@ -329,7 +351,11 @@ describe('StylingSystemExample', () => {
       const { getByText } = renderWithTheme();
 
       expect(getByText('No Items Found')).toBeTruthy();
-      expect(getByText('This is an example of an empty state component with proper styling and accessibility.')).toBeTruthy();
+      expect(
+        getByText(
+          'This is an example of an empty state component with proper styling and accessibility.'
+        )
+      ).toBeTruthy();
     });
 
     it('handles empty state action', () => {
@@ -338,7 +364,10 @@ describe('StylingSystemExample', () => {
       const addItemButton = getByText('Add Item');
       fireEvent.press(addItemButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Action', 'Empty state action triggered');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Action',
+        'Empty state action triggered'
+      );
     });
   });
 

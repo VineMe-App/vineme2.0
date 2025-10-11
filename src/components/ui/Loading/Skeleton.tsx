@@ -18,47 +18,47 @@ export interface SkeletonProps {
    * Width of the skeleton
    */
   width?: number | string;
-  
+
   /**
    * Height of the skeleton
    */
   height?: number | string;
-  
+
   /**
    * Border radius of the skeleton
    */
   borderRadius?: number;
-  
+
   /**
    * Whether to show the shimmer animation
    */
   animated?: boolean;
-  
+
   /**
    * Animation duration in milliseconds
    */
   duration?: number;
-  
+
   /**
    * Base color of the skeleton
    */
   baseColor?: string;
-  
+
   /**
    * Highlight color for the shimmer effect
    */
   highlightColor?: string;
-  
+
   /**
    * Additional styles
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Accessibility label
    */
@@ -81,12 +81,17 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
   const { theme } = useTheme();
   const shimmerValue = useRef(new Animated.Value(0)).current;
-  
+
   const animationDuration = duration || theme.animations.timing.skeleton;
-  const skeletonBaseColor = baseColor || (theme.isDark ? theme.colors.neutral[700] : theme.colors.neutral[200]);
-  const skeletonHighlightColor = highlightColor || (theme.isDark ? theme.colors.neutral[600] : theme.colors.neutral[100]);
-  const skeletonBorderRadius = borderRadius !== undefined ? borderRadius : theme.borderRadius.sm;
-  
+  const skeletonBaseColor =
+    baseColor ||
+    (theme.isDark ? theme.colors.neutral[700] : theme.colors.neutral[200]);
+  const skeletonHighlightColor =
+    highlightColor ||
+    (theme.isDark ? theme.colors.neutral[600] : theme.colors.neutral[100]);
+  const skeletonBorderRadius =
+    borderRadius !== undefined ? borderRadius : theme.borderRadius.sm;
+
   useEffect(() => {
     if (!animated) {
       return;
@@ -180,17 +185,17 @@ export interface SkeletonTextProps extends Omit<SkeletonProps, 'height'> {
    * Number of lines to display
    */
   lines?: number;
-  
+
   /**
    * Height of each line
    */
   lineHeight?: number;
-  
+
   /**
    * Spacing between lines
    */
   lineSpacing?: number;
-  
+
   /**
    * Whether the last line should be shorter
    */
@@ -232,12 +237,13 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({
  * Skeleton Avatar Component
  * Pre-configured skeleton for avatar/profile images
  */
-export interface SkeletonAvatarProps extends Omit<SkeletonProps, 'width' | 'height' | 'borderRadius'> {
+export interface SkeletonAvatarProps
+  extends Omit<SkeletonProps, 'width' | 'height' | 'borderRadius'> {
   /**
    * Size of the avatar
    */
   size?: number;
-  
+
   /**
    * Shape of the avatar
    */

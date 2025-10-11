@@ -54,8 +54,7 @@ export function FriendRequestNotifications({
                 <Text style={styles.senderName}>
                   {shortName || fullName || 'Someone'}
                 </Text>{' '}
-                wants to be
-                friends
+                wants to be friends
               </Text>
             </View>
           );

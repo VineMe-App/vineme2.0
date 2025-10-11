@@ -1,4 +1,9 @@
-import { parseDeepLink, handleDeepLink, generateDeepLink, shareReferralLanding } from '../deepLinking';
+import {
+  parseDeepLink,
+  handleDeepLink,
+  generateDeepLink,
+  shareReferralLanding,
+} from '../deepLinking';
 import { Alert, Share } from 'react-native';
 
 // Mock dependencies
@@ -52,7 +57,9 @@ describe('Deep Linking - Referral Integration', () => {
         queryParams: { source: 'share', campaign: 'growth' },
       });
 
-      const result = parseDeepLink('vineme://referral/landing?source=share&campaign=growth');
+      const result = parseDeepLink(
+        'vineme://referral/landing?source=share&campaign=growth'
+      );
 
       expect(result).toEqual({
         type: 'referral',
@@ -147,14 +154,15 @@ describe('Deep Linking - Referral Integration', () => {
     it('should share referral landing page successfully', async () => {
       const mockCreateURL = require('expo-linking').createURL;
       mockCreateURL.mockReturnValue('vineme://');
-      
+
       const mockShare = Share.share as jest.Mock;
       mockShare.mockResolvedValue({ action: 'sharedAction' });
 
       await shareReferralLanding();
 
       expect(mockShare).toHaveBeenCalledWith({
-        message: 'Help connect someone to our community!\n\nUse VineMe to refer friends to Bible study groups: vineme://referral/landing',
+        message:
+          'Help connect someone to our community!\n\nUse VineMe to refer friends to Bible study groups: vineme://referral/landing',
         url: 'vineme://referral/landing',
         title: 'Connect Someone to VineMe',
       });
@@ -163,7 +171,7 @@ describe('Deep Linking - Referral Integration', () => {
     it('should handle share errors gracefully', async () => {
       const mockCreateURL = require('expo-linking').createURL;
       mockCreateURL.mockReturnValue('vineme://');
-      
+
       const mockShare = Share.share as jest.Mock;
       const mockAlert = Alert.alert as jest.Mock;
       mockShare.mockRejectedValue(new Error('Share failed'));
@@ -195,7 +203,7 @@ describe('Deep Linking - Referral Integration', () => {
     it('should meet requirement 1.3 - referral landing page displays decision flow', () => {
       // This validates that the referral landing route is properly configured
       const linkData = parseDeepLink('vineme://referral/landing');
-      
+
       expect(linkData).toEqual({
         type: 'referral',
         id: 'landing',

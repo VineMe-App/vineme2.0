@@ -107,13 +107,16 @@ export const Modal: React.FC<ModalProps> = ({
 
   // Handle back button press
   useEffect(() => {
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (isVisible && closeOnBackPress) {
-        onClose();
-        return true;
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (isVisible && closeOnBackPress) {
+          onClose();
+          return true;
+        }
+        return false;
       }
-      return false;
-    });
+    );
 
     return () => backHandler.remove();
   }, [isVisible, closeOnBackPress, onClose]);
@@ -133,11 +136,14 @@ export const Modal: React.FC<ModalProps> = ({
     }
   }, [closeOnOverlayPress, onClose]);
 
-  const handleEscapeKey = useCallback((event: any) => {
-    if (event.nativeEvent.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose]);
+  const handleEscapeKey = useCallback(
+    (event: any) => {
+      if (event.nativeEvent.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   const getContentPosition = () => {
     if (variant === 'bottom-sheet') {
@@ -251,13 +257,7 @@ export const Modal: React.FC<ModalProps> = ({
       {...modalProps}
     >
       <SafeAreaView style={styles.safeArea}>
-        <View
-          style={[
-            styles.overlay,
-            getContentPosition(),
-            overlayStyle,
-          ]}
-        >
+        <View style={[styles.overlay, getContentPosition(), overlayStyle]}>
           <TouchableOpacity
             style={styles.overlayTouchable}
             activeOpacity={1}
@@ -274,7 +274,11 @@ export const Modal: React.FC<ModalProps> = ({
               <TouchableOpacity
                 activeOpacity={1}
                 onPress={() => {}} // Prevent overlay press when touching content
-                style={variant === 'bottom-sheet' ? styles.bottomSheetContainer : styles.contentContainer}
+                style={
+                  variant === 'bottom-sheet'
+                    ? styles.bottomSheetContainer
+                    : styles.contentContainer
+                }
               >
                 {renderContent()}
               </TouchableOpacity>
@@ -297,121 +301,121 @@ const createStyles = (
   overlayColor: string
 ) =>
   StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: overlayColor,
-  },
-  overlayTouchable: {
-    flex: 1,
-    width: '100%',
-    padding: spacing.md,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-    width: '100%',
-  },
-  contentContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bottomSheetContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'stretch',
-  },
-  content: {
-    backgroundColor: colors.background.primary,
-    borderRadius: borderRadius.lg,
-    ...shadows.lg,
-    maxHeight: '90%',
-    overflow: 'hidden',
-    elevation: 10, // Android shadow
-  },
-  small: {
-    width: Math.min(screenWidth * 0.85, 400),
-    maxWidth: 400,
-  },
-  medium: {
-    width: Math.min(screenWidth * 0.9, 600),
-    maxWidth: 600,
-  },
-  large: {
-    width: Math.min(screenWidth * 0.95, 800),
-    maxWidth: 800,
-  },
-  fullscreen: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 0,
-    maxHeight: '100%',
-  },
-  bottomSheet: {
-    width: '100%',
-    maxHeight: '80%',
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-  },
-  fullscreenContent: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 0,
-    maxHeight: '100%',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.primary,
-    minHeight: 64, // Minimum touch target
-  },
-  title: {
-    flex: 1,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semiBold,
-    color: colors.text.primary,
-    fontFamily: typography.fontFamily.semiBold,
-    lineHeight: typography.lineHeight.lg,
-    paddingLeft: 20, // TODO: make this dynamic. Somehow just putting spacing.xl doesn't work.
-  },
-  closeButton: {
-    padding: spacing.sm,
-    marginLeft: spacing.md,
-    borderRadius: borderRadius.sm,
-    minWidth: 44, // Minimum touch target
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bodyContainer: {
-    width: '100%',
-    maxHeight: '100%',
-    alignSelf: 'stretch',
-    flexShrink: 1,
-  },
-  bodyContent: {
-    width: '100%',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
-    flexShrink: 1,
-  },
-  bodyScroll: {
-    width: '100%',
-    maxHeight: '100%',
-  },
-  bodyScrollContent: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
-  },
-});
+    safeArea: {
+      flex: 1,
+    },
+    overlay: {
+      flex: 1,
+      backgroundColor: overlayColor,
+    },
+    overlayTouchable: {
+      flex: 1,
+      width: '100%',
+      padding: spacing.md,
+    },
+    keyboardAvoidingView: {
+      flex: 1,
+      width: '100%',
+    },
+    contentContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    bottomSheetContainer: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      alignItems: 'stretch',
+    },
+    content: {
+      backgroundColor: colors.background.primary,
+      borderRadius: borderRadius.lg,
+      ...shadows.lg,
+      maxHeight: '90%',
+      overflow: 'hidden',
+      elevation: 10, // Android shadow
+    },
+    small: {
+      width: Math.min(screenWidth * 0.85, 400),
+      maxWidth: 400,
+    },
+    medium: {
+      width: Math.min(screenWidth * 0.9, 600),
+      maxWidth: 600,
+    },
+    large: {
+      width: Math.min(screenWidth * 0.95, 800),
+      maxWidth: 800,
+    },
+    fullscreen: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 0,
+      maxHeight: '100%',
+    },
+    bottomSheet: {
+      width: '100%',
+      maxHeight: '80%',
+      borderTopLeftRadius: borderRadius.xl,
+      borderTopRightRadius: borderRadius.xl,
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0,
+    },
+    fullscreenContent: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 0,
+      maxHeight: '100%',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.primary,
+      minHeight: 64, // Minimum touch target
+    },
+    title: {
+      flex: 1,
+      fontSize: typography.fontSize.lg,
+      fontWeight: typography.fontWeight.semiBold,
+      color: colors.text.primary,
+      fontFamily: typography.fontFamily.semiBold,
+      lineHeight: typography.lineHeight.lg,
+      paddingLeft: 20, // TODO: make this dynamic. Somehow just putting spacing.xl doesn't work.
+    },
+    closeButton: {
+      padding: spacing.sm,
+      marginLeft: spacing.md,
+      borderRadius: borderRadius.sm,
+      minWidth: 44, // Minimum touch target
+      minHeight: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    bodyContainer: {
+      width: '100%',
+      maxHeight: '100%',
+      alignSelf: 'stretch',
+      flexShrink: 1,
+    },
+    bodyContent: {
+      width: '100%',
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.xl,
+      flexShrink: 1,
+    },
+    bodyScroll: {
+      width: '100%',
+      maxHeight: '100%',
+    },
+    bodyScrollContent: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.lg,
+    },
+  });

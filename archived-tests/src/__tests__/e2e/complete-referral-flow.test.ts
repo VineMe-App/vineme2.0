@@ -3,7 +3,14 @@
  * Tests the entire user journey from referral creation to account activation
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from '@jest/globals';
 import { ReferralService } from '../../services/referrals';
 import { AuthService } from '../../services/auth';
 import { EmailVerificationService } from '../../services/emailVerification';
@@ -35,7 +42,7 @@ jest.mock('../../services/emailVerification', () => ({
 describe('Complete Referral Flow E2E Tests', () => {
   let referralService: ReferralService;
   let authService: AuthService;
-  
+
   const mockReferrerUser = {
     id: 'referrer-123',
     email: 'referrer@example.com',
@@ -83,10 +90,13 @@ describe('Complete Referral Flow E2E Tests', () => {
       });
 
       // Mock successful email sending
-      (EmailVerificationService.sendVerificationEmail as jest.Mock).mockResolvedValue(undefined);
+      (
+        EmailVerificationService.sendVerificationEmail as jest.Mock
+      ).mockResolvedValue(undefined);
 
       // Execute the complete referral flow
-      const result = await referralService.createGeneralReferral(mockReferralData);
+      const result =
+        await referralService.createGeneralReferral(mockReferralData);
 
       // Verify the result
       expect(result.success).toBe(true);
@@ -106,10 +116,9 @@ describe('Complete Referral Flow E2E Tests', () => {
       });
 
       // Verify email verification was triggered
-      expect(EmailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(
-        mockCreatedUser.id,
-        mockReferralData.email
-      );
+      expect(
+        EmailVerificationService.sendVerificationEmail
+      ).toHaveBeenCalledWith(mockCreatedUser.id, mockReferralData.email);
     });
 
     it('should handle user creation failure gracefully', async () => {
@@ -120,14 +129,17 @@ describe('Complete Referral Flow E2E Tests', () => {
       });
 
       // Execute the referral flow
-      const result = await referralService.createGeneralReferral(mockReferralData);
+      const result =
+        await referralService.createGeneralReferral(mockReferralData);
 
       // Verify failure handling
       expect(result.success).toBe(false);
       expect(result.error).toContain('Email already exists');
 
       // Verify no further operations were attempted
-      expect(EmailVerificationService.sendVerificationEmail).not.toHaveBeenCalled();
+      expect(
+        EmailVerificationService.sendVerificationEmail
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -159,20 +171,23 @@ describe('Complete Referral Flow E2E Tests', () => {
       });
 
       // Mock successful email sending
-      (EmailVerificationService.sendVerificationEmail as jest.Mock).mockResolvedValue(undefined);
+      (
+        EmailVerificationService.sendVerificationEmail as jest.Mock
+      ).mockResolvedValue(undefined);
 
       // Execute the complete referral flow
-      const result = await referralService.createGroupReferral(mockGroupReferralData);
+      const result = await referralService.createGroupReferral(
+        mockGroupReferralData
+      );
 
       // Verify the result
       expect(result.success).toBe(true);
       expect(result.userId).toBe(mockCreatedUser.id);
 
       // Verify email verification was triggered
-      expect(EmailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(
-        mockCreatedUser.id,
-        mockReferralData.email
-      );
+      expect(
+        EmailVerificationService.sendVerificationEmail
+      ).toHaveBeenCalledWith(mockCreatedUser.id, mockReferralData.email);
     });
   });
 
@@ -197,17 +212,18 @@ describe('Complete Referral Flow E2E Tests', () => {
         single: jest.fn().mockResolvedValue({ data: null, error: null }),
       });
 
-      (EmailVerificationService.sendVerificationEmail as jest.Mock).mockResolvedValue(undefined);
+      (
+        EmailVerificationService.sendVerificationEmail as jest.Mock
+      ).mockResolvedValue(undefined);
 
       // Execute referral creation
       await referralService.createGeneralReferral(mockReferralData);
 
       // Verify database operations were called
       expect(mockInsert).toHaveBeenCalled();
-      expect(EmailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(
-        mockCreatedUser.id,
-        mockReferralData.email
-      );
+      expect(
+        EmailVerificationService.sendVerificationEmail
+      ).toHaveBeenCalledWith(mockCreatedUser.id, mockReferralData.email);
     });
   });
 });

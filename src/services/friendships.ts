@@ -29,7 +29,9 @@ export interface FriendshipStatusDetails {
   friendId: string;
 }
 
-const withDisplayName = <T extends Partial<User> | null | undefined>(user: T) =>
+const withDisplayName = <T extends Partial<User> | null | undefined>(
+  user: T
+) =>
   user
     ? {
         ...user,
@@ -158,7 +160,8 @@ export class FriendshipService {
           });
         }
       } catch (e) {
-        if (__DEV__) console.warn('Friend request accepted notification failed', e);
+        if (__DEV__)
+          console.warn('Friend request accepted notification failed', e);
       }
       return { data, error: null };
     } catch (error) {

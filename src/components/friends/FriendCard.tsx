@@ -23,7 +23,10 @@ export function FriendCard({
     return null;
   }
 
-  const shortName = getDisplayName(friend, { lastInitial: true, fallback: 'full' });
+  const shortName = getDisplayName(friend, {
+    lastInitial: true,
+    fallback: 'full',
+  });
   const fullName = getFullName(friend);
 
   const handleRemoveFriend = () => {

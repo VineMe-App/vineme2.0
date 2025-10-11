@@ -44,7 +44,9 @@ export const Divider: React.FC<DividerProps> = ({
     return (
       <View style={styles.labelContainer} testID={testID}>
         <View style={[dividerStyle, styles.labelDivider]} />
-        <Text weight="medium" style={[styles.label, labelStyle]}>{label}</Text>
+        <Text weight="medium" style={[styles.label, labelStyle]}>
+          {label}
+        </Text>
         <View style={[dividerStyle, styles.labelDivider]} />
       </View>
     );

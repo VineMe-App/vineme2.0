@@ -11,12 +11,16 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { ReferralFormModal, ReferralFormData } from '../components/referrals/ReferralFormModal';
+import {
+  ReferralFormModal,
+  ReferralFormData,
+} from '../components/referrals/ReferralFormModal';
 import { referralService } from '../services/referrals';
 import { useAuth } from '../hooks/useAuth';
 
 export default function ReferralLandingPage() {
-  const [showGeneralReferralModal, setShowGeneralReferralModal] = useState(false);
+  const [showGeneralReferralModal, setShowGeneralReferralModal] =
+    useState(false);
   const { userProfile } = useAuth();
 
   const handleGeneralReferral = useCallback(() => {
@@ -59,7 +63,7 @@ export default function ReferralLandingPage() {
       // Show success message
       Alert.alert(
         'Referral Sent!',
-        'We\'ve created an account for the person you referred and sent them an email to complete their setup. They\'ll be marked as a newcomer so our team can help them find the right group.',
+        "We've created an account for the person you referred and sent them an email to complete their setup. They'll be marked as a newcomer so our team can help them find the right group.",
         [{ text: 'OK' }]
       );
     },
@@ -104,7 +108,8 @@ export default function ReferralLandingPage() {
                     Yes, I know a group that fits
                   </Text>
                   <Text style={styles.optionDescription}>
-                    Browse groups to find the right fit, then use the "Refer a friend" button on the group page to connect them directly
+                    Browse groups to find the right fit, then use the "Refer a
+                    friend" button on the group page to connect them directly
                   </Text>
                 </View>
                 <View style={styles.chevronContainer}>
@@ -131,7 +136,8 @@ export default function ReferralLandingPage() {
                 <View style={styles.optionTextContainer}>
                   <Text style={styles.optionTitle}>No specific group fits</Text>
                   <Text style={styles.optionDescription}>
-                    Connect them to the community and our team will help match them with groups that fit their interests
+                    Connect them to the community and our team will help match
+                    them with groups that fit their interests
                   </Text>
                 </View>
                 <View style={styles.chevronContainer}>
@@ -168,7 +174,8 @@ export default function ReferralLandingPage() {
                 <Text style={styles.instructionNumberText}>1</Text>
               </View>
               <Text style={styles.instructionText}>
-                Choose whether you know a specific group that fits or want a general referral
+                Choose whether you know a specific group that fits or want a
+                general referral
               </Text>
             </View>
             <View style={styles.instructionItem}>
@@ -184,7 +191,8 @@ export default function ReferralLandingPage() {
                 <Text style={styles.instructionNumberText}>3</Text>
               </View>
               <Text style={styles.instructionText}>
-                They'll receive an email to verify their account and complete setup
+                They'll receive an email to verify their account and complete
+                setup
               </Text>
             </View>
           </View>

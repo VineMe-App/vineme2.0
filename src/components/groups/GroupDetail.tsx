@@ -490,13 +490,17 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                   </Text>
                 </View>
                 <Text style={styles.pendingRequestSubtext}>
-                  Group leaders will review your request and get back to you soon.
+                  Group leaders will review your request and get back to you
+                  soon.
                 </Text>
               </View>
               <Button
                 title="Refer a Friend"
                 onPress={() => {
-                  console.log('Refer a Friend button pressed for group:', group.id);
+                  console.log(
+                    'Refer a Friend button pressed for group:',
+                    group.id
+                  );
                   router.push({
                     pathname: '/referral',
                     params: { groupId: group.id, groupName: group.title },

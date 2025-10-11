@@ -210,6 +210,11 @@ function UserSearchItem({
   };
 
   const buttonState = getButtonState();
+  const shortName = getDisplayName(user, {
+    lastInitial: true,
+    fallback: 'full',
+  });
+  const fullName = getFullName(user);
 
   return (
     <View style={styles.userItem}>

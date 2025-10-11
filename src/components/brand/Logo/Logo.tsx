@@ -70,15 +70,23 @@ export const Logo: React.FC<LogoProps> = ({
       }
       return variant;
     }
-    
+
     if (theme === 'light') {
-      return variant === 'full' ? 'light' : variant === 'icon' ? 'light' : variant;
+      return variant === 'full'
+        ? 'light'
+        : variant === 'icon'
+          ? 'light'
+          : variant;
     }
-    
+
     if (theme === 'dark') {
-      return variant === 'full' ? 'dark' : variant === 'icon' ? 'dark' : variant;
+      return variant === 'full'
+        ? 'dark'
+        : variant === 'icon'
+          ? 'dark'
+          : variant;
     }
-    
+
     return variant;
   };
 
@@ -92,7 +100,7 @@ export const Logo: React.FC<LogoProps> = ({
 
   const logoVariant = getLogoVariant();
   const logoSize = getLogoSize();
-  
+
   let logoSource;
   try {
     logoSource = assetManager.getLogo(logoVariant);
@@ -112,7 +120,10 @@ export const Logo: React.FC<LogoProps> = ({
   ].filter(Boolean) as ImageStyle;
 
   return (
-    <View style={[styles.container, containerStyle]} testID={`${testID}-container`}>
+    <View
+      style={[styles.container, containerStyle]}
+      testID={`${testID}-container`}
+    >
       <Image
         source={logoSource}
         style={logoStyle}

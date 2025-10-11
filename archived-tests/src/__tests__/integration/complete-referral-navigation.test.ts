@@ -3,7 +3,11 @@
  * Validates all navigation paths and deep linking functionality
  */
 
-import { parseDeepLink, handleDeepLink, generateDeepLink } from '../../utils/deepLinking';
+import {
+  parseDeepLink,
+  handleDeepLink,
+  generateDeepLink,
+} from '../../utils/deepLinking';
 
 // Mock dependencies
 jest.mock('expo-linking', () => ({
@@ -41,11 +45,23 @@ describe('Complete Referral Navigation Integration', () => {
     it('should ensure proper navigation flow between referral components', () => {
       const navigationFlow = [
         // Home page -> Referral landing
-        { from: 'home', to: '/referral-landing', action: () => mockRouter.push('/referral-landing') },
+        {
+          from: 'home',
+          to: '/referral-landing',
+          action: () => mockRouter.push('/referral-landing'),
+        },
         // Referral landing -> Groups (for group referral)
-        { from: 'referral-landing', to: '/(tabs)/groups', action: () => mockRouter.push('/(tabs)/groups') },
+        {
+          from: 'referral-landing',
+          to: '/(tabs)/groups',
+          action: () => mockRouter.push('/(tabs)/groups'),
+        },
         // Referral landing -> General referral modal (for general referral)
-        { from: 'referral-landing', to: 'modal', action: () => ({ showModal: true }) },
+        {
+          from: 'referral-landing',
+          to: 'modal',
+          action: () => ({ showModal: true }),
+        },
       ];
 
       // Execute navigation flow
@@ -75,7 +91,9 @@ describe('Complete Referral Navigation Integration', () => {
         queryParams: { source: 'share' },
       });
 
-      const parsedLink = parseDeepLink('vineme://referral/landing?source=share');
+      const parsedLink = parseDeepLink(
+        'vineme://referral/landing?source=share'
+      );
 
       expect(parsedLink).toEqual({
         type: 'referral',
@@ -90,7 +108,7 @@ describe('Complete Referral Navigation Integration', () => {
         { path: '/referral-landing', valid: true },
         { path: '/(tabs)/groups', valid: true },
         { path: '/group/123', valid: true },
-        
+
         // Deep link paths
         { deepLink: 'vineme://referral/landing', valid: true },
         { deepLink: 'vineme://group/123', valid: true },
@@ -105,10 +123,13 @@ describe('Complete Referral Navigation Integration', () => {
 
       // Test deep link paths
       const mockParse = require('expo-linking').parse;
-      
+
       // Test referral deep link
       mockParse.mockReturnValue({ path: 'referral/landing', queryParams: {} });
-      const referralResult = handleDeepLink('vineme://referral/landing', mockRouter);
+      const referralResult = handleDeepLink(
+        'vineme://referral/landing',
+        mockRouter
+      );
       expect(referralResult).toBe(true);
 
       // Test group deep link
@@ -218,7 +239,7 @@ describe('Complete Referral Navigation Integration', () => {
 
     it('should maintain backward compatibility with existing deep links', () => {
       const mockParse = require('expo-linking').parse;
-      
+
       // Test existing group deep link still works
       mockParse.mockReturnValue({ path: 'group/123', queryParams: {} });
       const groupResult = handleDeepLink('vineme://group/123', mockRouter);
@@ -232,13 +253,18 @@ describe('Complete Referral Navigation Integration', () => {
       expect(mockRouter.push).toHaveBeenCalledWith('/event/456');
 
       // Test existing auth deep link still works
-      mockParse.mockReturnValue({ 
-        path: 'auth/verify-email', 
-        queryParams: { token: 'abc123' } 
+      mockParse.mockReturnValue({
+        path: 'auth/verify-email',
+        queryParams: { token: 'abc123' },
       });
-      const authResult = handleDeepLink('vineme://auth/verify-email?token=abc123', mockRouter);
+      const authResult = handleDeepLink(
+        'vineme://auth/verify-email?token=abc123',
+        mockRouter
+      );
       expect(authResult).toBe(true);
-      expect(mockRouter.push).toHaveBeenCalledWith('/(auth)/verify-email?token=abc123');
+      expect(mockRouter.push).toHaveBeenCalledWith(
+        '/(auth)/verify-email?token=abc123'
+      );
     });
   });
 
@@ -247,16 +273,16 @@ describe('Complete Referral Navigation Integration', () => {
       const completeFlow = {
         // Step 1: User opens app and navigates to referral landing
         step1: () => mockRouter.push('/referral-landing'),
-        
+
         // Step 2a: User chooses group referral path
         step2a: () => mockRouter.push('/(tabs)/groups'),
-        
+
         // Step 2b: User chooses general referral path
         step2b: () => ({ showGeneralReferralModal: true }),
-        
+
         // Step 3: User completes referral (either path)
         step3: () => ({ referralCompleted: true }),
-        
+
         // Step 4: User can navigate back
         step4: () => mockRouter.back(),
       };
@@ -295,7 +321,7 @@ describe('Complete Referral Navigation Integration', () => {
         '/admin',
       ];
 
-      allNavigationPaths.forEach(path => {
+      allNavigationPaths.forEach((path) => {
         mockRouter.push(path);
         expect(mockRouter.push).toHaveBeenCalledWith(path);
       });

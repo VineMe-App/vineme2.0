@@ -49,10 +49,7 @@ export const Overlay: React.FC<OverlayProps> = ({
 
   return (
     <View
-      style={[
-        styles.overlay,
-        style,
-      ]}
+      style={[styles.overlay, style]}
       pointerEvents={pointerEvents}
       testID={testID}
     >
@@ -68,23 +65,24 @@ export const Overlay: React.FC<OverlayProps> = ({
   );
 };
 
-const createStyles = (zIndex: number, overlayColor: string, opacity: number) => StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: overlayColor,
-    opacity,
-    zIndex,
-    ...Platform.select({
-      android: {
-        elevation: zIndex,
-      },
-    }),
-  },
-  touchable: {
-    flex: 1,
-  },
-});
+const createStyles = (zIndex: number, overlayColor: string, opacity: number) =>
+  StyleSheet.create({
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: overlayColor,
+      opacity,
+      zIndex,
+      ...Platform.select({
+        android: {
+          elevation: zIndex,
+        },
+      }),
+    },
+    touchable: {
+      flex: 1,
+    },
+  });
