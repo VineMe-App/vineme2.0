@@ -194,8 +194,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     ]
   );
 
-  console.log('theme2', theme);
-
   return (
     <ThemeContext.Provider value={contextValue}>
       {children}
