@@ -1,13 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Alert,
   TouchableOpacity,
-  FlatList,
-  Platform,
 } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import {
@@ -16,6 +13,7 @@ import {
 } from '@/utils/accessibility';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
+import { supabase } from '@/services/supabase';
 import { type GroupWithAdminDetails } from '@/services/admin';
 import { adminServiceWrapper } from '@/services/adminServiceWrapper';
 import { ADMIN_CACHE_CONFIGS, ADMIN_QUERY_KEYS } from '@/utils/adminCache';
@@ -279,6 +277,37 @@ export default function ManageGroupsScreen() {
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'pending' | 'approved' | 'closed'
   >('all');
+
+  // Fetch service and church info
+  const { data: serviceInfo } = useQuery({
+    queryKey: [
+      'service-church-info',
+      userProfile?.service_id,
+      userProfile?.church_id,
+    ],
+    queryFn: async () => {
+      if (!userProfile?.service_id || !userProfile?.church_id) return null;
+
+      const [serviceRes, churchRes] = await Promise.all([
+        supabase
+          .from('services')
+          .select('name')
+          .eq('id', userProfile.service_id)
+          .single(),
+        supabase
+          .from('churches')
+          .select('name')
+          .eq('id', userProfile.church_id)
+          .single(),
+      ]);
+
+      return {
+        serviceName: serviceRes.data?.name,
+        churchName: churchRes.data?.name,
+      };
+    },
+    enabled: !!userProfile?.service_id && !!userProfile?.church_id,
+  });
 
   // Get admin notifications
   const { notificationCounts, refreshNotifications } = useAdminNotifications(
@@ -604,6 +633,18 @@ export default function ManageGroupsScreen() {
                 <Text style={styles.refreshButtonText}>🔄 Refresh</Text>
               </TouchableOpacity>
 
+              {/* Service & Church Header */}
+              {serviceInfo && (
+                <View style={styles.headerSection}>
+                  <Text style={styles.headerTitle}>
+                    Groups for {serviceInfo.serviceName}
+                  </Text>
+                  <Text style={styles.headerSubtitle}>
+                    at {serviceInfo.churchName}
+                  </Text>
+                </View>
+              )}
+
               {groups && groups.length > 0 ? (
                 <>
                   <View style={styles.summary}>
@@ -731,6 +772,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#fff',
+  },
+  headerSection: {
+    marginBottom: 20,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1f2937',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6b7280',
+    textAlign: 'center',
   },
   summary: {
     marginBottom: 16,

@@ -1,5 +1,11 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { router } from 'expo-router';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -12,6 +18,8 @@ import {
   useRequestsStats,
 } from '@/hooks/useAdminStats';
 import { useAuthStore } from '@/stores/auth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/services/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
 interface AdminDashboardSummaryProps {
@@ -21,7 +29,35 @@ interface AdminDashboardSummaryProps {
 export function AdminDashboardSummary({
   onRefresh,
 }: AdminDashboardSummaryProps) {
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch service and church info
+  const { data: serviceInfo } = useQuery({
+    queryKey: ['service-church-info', userProfile?.service_id, userProfile?.church_id],
+    queryFn: async () => {
+      if (!userProfile?.service_id || !userProfile?.church_id) return null;
+      
+      const [serviceRes, churchRes] = await Promise.all([
+        supabase
+          .from('services')
+          .select('name')
+          .eq('id', userProfile.service_id)
+          .single(),
+        supabase
+          .from('churches')
+          .select('name')
+          .eq('id', userProfile.church_id)
+          .single(),
+      ]);
+
+      return {
+        serviceName: serviceRes.data?.name,
+        churchName: churchRes.data?.name,
+      };
+    },
+    enabled: !!userProfile?.service_id && !!userProfile?.church_id,
+  });
 
   // Get enhanced unread notifications and derive counts needed for admin
   const { unreadNotifications = [], isLoading: isLoadingNotifications } =
@@ -36,18 +72,45 @@ export function AdminDashboardSummary({
     ).length,
   };
 
-  // Fetch stats
-  const { data: newcomersStats, isLoading: isLoadingNewcomers } =
-    useNewcomersStats();
-  const { data: groupsStats, isLoading: isLoadingGroups } = useGroupsStats();
-  const { data: requestsStats, isLoading: isLoadingRequests } =
-    useRequestsStats();
+  // Fetch stats with refetch functions
+  const {
+    data: newcomersStats,
+    isLoading: isLoadingNewcomers,
+    refetch: refetchNewcomers,
+  } = useNewcomersStats();
+  const {
+    data: groupsStats,
+    isLoading: isLoadingGroups,
+    refetch: refetchGroups,
+  } = useGroupsStats();
+  const {
+    data: requestsStats,
+    isLoading: isLoadingRequests,
+    refetch: refetchRequests,
+  } = useRequestsStats();
 
   const isLoading =
     isLoadingNotifications ||
     isLoadingNewcomers ||
     isLoadingGroups ||
     isLoadingRequests;
+
+  // Handle pull-to-refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchNewcomers(),
+        refetchGroups(),
+        refetchRequests(),
+      ]);
+      onRefresh?.();
+    } catch (error) {
+      console.error('Error refreshing dashboard:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -114,7 +177,23 @@ export function AdminDashboardSummary({
     : [];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+      }
+    >
+      {/* Service & Church Header */}
+      {serviceInfo && (
+        <View style={styles.headerSection}>
+          <Text style={styles.headerTitle}>
+            Stats for {serviceInfo.serviceName}
+          </Text>
+          <Text style={styles.headerSubtitle}>at {serviceInfo.churchName}</Text>
+        </View>
+      )}
+
       {/* Quick Action Buttons at Top */}
       <View style={styles.buttonsSection}>
         <TouchableOpacity
@@ -177,14 +256,14 @@ export function AdminDashboardSummary({
 
         {/* Requests */}
         <View style={styles.statCard}>
-          <Text style={styles.statTitle}>Requests</Text>
+          <Text style={styles.statTitle}>Group Join Requests</Text>
           
           {/* Outstanding Requests Number */}
           <View style={styles.outstandingContainer}>
             <Text style={styles.outstandingNumber}>
               {requestsStats?.outstandingRequests || 0}
             </Text>
-            <Text style={styles.outstandingLabel}>Outstanding Requests</Text>
+            <Text style={styles.outstandingLabel}>Outstanding Group Join Requests</Text>
           </View>
 
           {/* Archived Requests by Reason */}
@@ -220,6 +299,25 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: '#6b7280',
+  },
+
+  // Header Section
+  headerSection: {
+    marginBottom: 20,
+    paddingTop: 4,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#6b7280',
+    textAlign: 'center',
   },
 
   // Buttons Section

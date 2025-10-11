@@ -163,6 +163,21 @@ export class GroupAdminService {
         };
       }
 
+      // Get current user's service ID to filter groups by service
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          data: null,
+          error: new Error('User not authenticated'),
+        };
+      }
+
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('service_id')
+        .eq('id', user.id)
+        .single();
+
       let query = supabase
         .from('groups')
         .select(
@@ -184,6 +199,11 @@ export class GroupAdminService {
         )
         .eq('church_id', churchId)
         .order('created_at', { ascending: false });
+
+      // Filter by service_id if user has one (church admins only see their service's groups)
+      if (userProfile?.service_id) {
+        query = query.eq('service_id', userProfile.service_id);
+      }
 
       if (!includeAll) {
         query = query.in('status', ['pending', 'approved']);
