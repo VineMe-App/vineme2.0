@@ -106,10 +106,18 @@ class LocationService {
           return features.map((feature: any) => ({
             formattedAddress: feature.place_name,
             street: feature.properties?.address || '',
-            city: feature.context?.find((c: any) => c.id.startsWith('place'))?.text || '',
-            region: feature.context?.find((c: any) => c.id.startsWith('region'))?.text || '',
-            postalCode: feature.context?.find((c: any) => c.id.startsWith('postcode'))?.text || '',
-            country: feature.context?.find((c: any) => c.id.startsWith('country'))?.text || '',
+            city:
+              feature.context?.find((c: any) => c.id.startsWith('place'))
+                ?.text || '',
+            region:
+              feature.context?.find((c: any) => c.id.startsWith('region'))
+                ?.text || '',
+            postalCode:
+              feature.context?.find((c: any) => c.id.startsWith('postcode'))
+                ?.text || '',
+            country:
+              feature.context?.find((c: any) => c.id.startsWith('country'))
+                ?.text || '',
           }));
         }
       }
@@ -153,7 +161,7 @@ class LocationService {
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           trimmedAddress
         )}.json?access_token=${MAPBOX_TOKEN}&limit=1&types=${searchTypes}&country=GB`;
-        
+
         const resp = await fetch(url);
         if (resp.ok) {
           const json = await resp.json();

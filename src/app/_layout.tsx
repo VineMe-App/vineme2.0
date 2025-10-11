@@ -152,11 +152,14 @@ function RootLayoutNav() {
           name="referral-landing"
           options={{ headerShown: false }}
         />
-      <Stack.Screen name="admin" options={{ headerShown: false }} />
-      <Stack.Screen name="group" options={{ headerShown: false }} />
-      <Stack.Screen name="event" options={{ headerShown: false }} />
-      <Stack.Screen name="user" options={{ headerShown: false }} />
-      <Stack.Screen name="group-management" options={{ headerShown: false }} />
+        <Stack.Screen name="admin" options={{ headerShown: false }} />
+        <Stack.Screen name="group" options={{ headerShown: false }} />
+        <Stack.Screen name="event" options={{ headerShown: false }} />
+        <Stack.Screen name="user" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="group-management"
+          options={{ headerShown: false }}
+        />
       </Stack>
       {__DEV__ && <DevToolsOverlay />}
     </>

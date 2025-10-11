@@ -1,11 +1,11 @@
 /**
  * Cleanup script to remove duplicate avatar files from profile-images bucket
- * 
+ *
  * This script:
  * 1. Finds all users with avatar_url in the database
  * 2. Lists all files in their profile-images folder
  * 3. Deletes files that don't match their current avatar_url
- * 
+ *
  * Run with: npx ts-node scripts/cleanup-duplicate-avatars.ts
  */
 
@@ -42,7 +42,7 @@ async function cleanupDuplicateAvatars() {
 
     for (const user of users) {
       console.log(`Processing user: ${user.name} (${user.id})`);
-      
+
       // Extract the filename from the avatar_url
       const urlParts = user.avatar_url.split('/');
       const currentFileName = urlParts[urlParts.length - 1];
@@ -75,7 +75,9 @@ async function cleanupDuplicateAvatars() {
         continue;
       }
 
-      console.log(`  🗑️  Deleting ${filesToDelete.length} duplicate(s): ${filesToDelete.join(', ')}`);
+      console.log(
+        `  🗑️  Deleting ${filesToDelete.length} duplicate(s): ${filesToDelete.join(', ')}`
+      );
 
       const { error: deleteError } = await supabase.storage
         .from('profile-images')
@@ -84,15 +86,18 @@ async function cleanupDuplicateAvatars() {
       if (deleteError) {
         console.error(`  ❌ Error deleting files: ${deleteError.message}`);
       } else {
-        console.log(`  ✅ Successfully deleted ${filesToDelete.length} file(s)`);
+        console.log(
+          `  ✅ Successfully deleted ${filesToDelete.length} file(s)`
+        );
         totalDeleted += filesToDelete.length;
       }
 
       console.log(''); // Empty line for readability
     }
 
-    console.log(`\n✨ Cleanup complete! Deleted ${totalDeleted} duplicate avatar files.`);
-
+    console.log(
+      `\n✨ Cleanup complete! Deleted ${totalDeleted} duplicate avatar files.`
+    );
   } catch (error) {
     console.error('❌ Cleanup failed:', error);
     process.exit(1);

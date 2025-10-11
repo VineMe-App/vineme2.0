@@ -10,7 +10,9 @@ try {
   FileSystem = require('expo-file-system');
 } catch (error) {
   // FileSystem not available (likely Expo Go) - will be handled at runtime
-  console.log('[UserService] expo-file-system not available - some features will be disabled');
+  console.log(
+    '[UserService] expo-file-system not available - some features will be disabled'
+  );
 }
 
 export interface UpdateUserProfileData {
@@ -171,10 +173,14 @@ export class UserService {
     try {
       // Check if FileSystem is available (not in Expo Go)
       if (!FileSystem) {
-        console.warn('[uploadAvatar] FileSystem not available - running in Expo Go');
+        console.warn(
+          '[uploadAvatar] FileSystem not available - running in Expo Go'
+        );
         return {
           data: null,
-          error: new Error('Avatar upload requires a development build. This feature is not available in Expo Go.'),
+          error: new Error(
+            'Avatar upload requires a development build. This feature is not available in Expo Go.'
+          ),
         };
       }
 
@@ -467,9 +473,7 @@ export class UserService {
       const { data, error } = await supabase
         .from('users')
         .select('id, first_name, last_name, avatar_url, church_id')
-        .or(
-          `first_name.ilike.${pattern},last_name.ilike.${pattern}`
-        )
+        .or(`first_name.ilike.${pattern},last_name.ilike.${pattern}`)
         .limit(limit);
 
       if (error) {

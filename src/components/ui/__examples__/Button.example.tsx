@@ -9,9 +9,15 @@ import { Button } from '../Button';
 import { ThemeProvider } from '../../../theme/provider/ThemeProvider';
 
 // Example icons (you can replace these with actual icon components)
-const PlusIcon = () => <Text style={{ fontSize: 16, color: 'inherit' }}>+</Text>;
-const ArrowIcon = () => <Text style={{ fontSize: 16, color: 'inherit' }}>→</Text>;
-const HeartIcon = () => <Text style={{ fontSize: 16, color: 'inherit' }}>♥</Text>;
+const PlusIcon = () => (
+  <Text style={{ fontSize: 16, color: 'inherit' }}>+</Text>
+);
+const ArrowIcon = () => (
+  <Text style={{ fontSize: 16, color: 'inherit' }}>→</Text>
+);
+const HeartIcon = () => (
+  <Text style={{ fontSize: 16, color: 'inherit' }}>♥</Text>
+);
 
 export const ButtonExample: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -27,7 +33,10 @@ export const ButtonExample: React.FC = () => {
 
   return (
     <ThemeProvider initialTheme="light">
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
         <Text style={styles.sectionTitle}>Button Variants</Text>
         <View style={styles.section}>
           <Button title="Primary" variant="primary" onPress={handlePress} />
@@ -51,117 +60,109 @@ export const ButtonExample: React.FC = () => {
         <View style={styles.section}>
           <Button title="Normal" onPress={handlePress} />
           <Button title="Disabled" disabled onPress={handlePress} />
-          <Button 
-            title="Loading" 
-            loading={loading} 
-            onPress={handleLoadingPress} 
+          <Button
+            title="Loading"
+            loading={loading}
+            onPress={handleLoadingPress}
           />
         </View>
 
         <Text style={styles.sectionTitle}>Buttons with Icons</Text>
         <View style={styles.section}>
-          <Button 
-            title="Add Item" 
-            icon={<PlusIcon />} 
-            onPress={handlePress} 
+          <Button title="Add Item" icon={<PlusIcon />} onPress={handlePress} />
+          <Button
+            title="Continue"
+            iconRight={<ArrowIcon />}
+            onPress={handlePress}
           />
-          <Button 
-            title="Continue" 
-            iconRight={<ArrowIcon />} 
-            onPress={handlePress} 
-          />
-          <Button 
-            title="Favorite" 
-            icon={<HeartIcon />} 
-            iconRight={<ArrowIcon />} 
+          <Button
+            title="Favorite"
+            icon={<HeartIcon />}
+            iconRight={<ArrowIcon />}
             variant="outline"
-            onPress={handlePress} 
+            onPress={handlePress}
           />
         </View>
 
         <Text style={styles.sectionTitle}>Loading Variants</Text>
         <View style={styles.section}>
-          <Button 
-            title="Circular" 
-            loading 
-            loadingVariant="circular" 
-            onPress={handlePress} 
+          <Button
+            title="Circular"
+            loading
+            loadingVariant="circular"
+            onPress={handlePress}
           />
-          <Button 
-            title="Dots" 
-            loading 
-            loadingVariant="dots" 
+          <Button
+            title="Dots"
+            loading
+            loadingVariant="dots"
             variant="secondary"
-            onPress={handlePress} 
+            onPress={handlePress}
           />
-          <Button 
-            title="Pulse" 
-            loading 
-            loadingVariant="pulse" 
+          <Button
+            title="Pulse"
+            loading
+            loadingVariant="pulse"
             variant="success"
-            onPress={handlePress} 
+            onPress={handlePress}
           />
-          <Button 
-            title="Bars" 
-            loading 
-            loadingVariant="bars" 
+          <Button
+            title="Bars"
+            loading
+            loadingVariant="bars"
             variant="outline"
-            onPress={handlePress} 
+            onPress={handlePress}
           />
         </View>
 
         <Text style={styles.sectionTitle}>Full Width Buttons</Text>
         <View style={styles.section}>
-          <Button 
-            title="Full Width Primary" 
-            fullWidth 
-            onPress={handlePress} 
-          />
-          <Button 
-            title="Full Width with Icon" 
-            fullWidth 
-            icon={<PlusIcon />} 
+          <Button title="Full Width Primary" fullWidth onPress={handlePress} />
+          <Button
+            title="Full Width with Icon"
+            fullWidth
+            icon={<PlusIcon />}
             variant="secondary"
-            onPress={handlePress} 
+            onPress={handlePress}
           />
         </View>
 
         <Text style={styles.sectionTitle}>Custom Styled Buttons</Text>
         <View style={styles.section}>
-          <Button 
-            title="Custom Background" 
+          <Button
+            title="Custom Background"
             style={{ backgroundColor: '#FF6B6B' }}
             textStyle={{ color: 'white', fontWeight: 'bold' }}
-            onPress={handlePress} 
+            onPress={handlePress}
           />
-          <Button 
-            title="Custom Border" 
+          <Button
+            title="Custom Border"
             variant="outline"
-            style={{ 
-              borderColor: '#4ECDC4', 
+            style={{
+              borderColor: '#4ECDC4',
               borderWidth: 2,
-              borderRadius: 20 
+              borderRadius: 20,
             }}
             textStyle={{ color: '#4ECDC4' }}
-            onPress={handlePress} 
+            onPress={handlePress}
           />
         </View>
 
         <Text style={styles.sectionTitle}>Accessibility Features</Text>
         <View style={styles.section}>
-          <Button 
-            title="Accessible Button" 
+          <Button
+            title="Accessible Button"
             accessibilityLabel="This button has custom accessibility features"
             accessibilityHint="Tap to perform an action with accessibility support"
-            onPress={handlePress} 
+            onPress={handlePress}
           />
-          <Button 
-            title="Screen Reader Friendly" 
+          <Button
+            title="Screen Reader Friendly"
             icon={<HeartIcon />}
             accessibilityLabel="Add to favorites button"
             accessibilityHint="Double tap to add this item to your favorites"
             variant="outline"
-            onPress={handlePress} 
+            onPress={handlePress}
           />
         </View>
       </ScrollView>

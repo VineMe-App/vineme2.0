@@ -283,7 +283,7 @@ export function useAdminBatchOperation<T = any>(
 
   const executeBatch = useCallback(
     async (
-      operations: Array<() => Promise<T>>,
+      operations: (() => Promise<T>)[],
       context?: Record<string, any>
     ): Promise<{ results: T[]; errors: AppError[] }> => {
       setBatchState({

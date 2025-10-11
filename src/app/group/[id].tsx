@@ -39,7 +39,9 @@ export default function GroupDetailScreen() {
   const canManageGroup = React.useMemo(() => {
     if (!group || !userProfile) return false;
 
-    const isLeader = membershipData?.membership?.role === 'leader' || membershipData?.membership?.role === 'admin';
+    const isLeader =
+      membershipData?.membership?.role === 'leader' ||
+      membershipData?.membership?.role === 'admin';
 
     const isChurchAdminForService = Boolean(
       userProfile.roles?.includes('church_admin') &&
@@ -77,13 +79,21 @@ export default function GroupDetailScreen() {
                 onPress={() => router.back()}
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 6,
+                }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="chevron-back" size={18} color="#000" />
-                <Text style={{ fontSize: 14, marginLeft: 2, color: '#000' }}>Back</Text>
+                <Text style={{ fontSize: 14, marginLeft: 2, color: '#000' }}>
+                  Back
+                </Text>
               </TouchableOpacity>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+              >
                 {canManageGroup && (
                   <TouchableOpacity
                     onPress={() => router.push(`/group-management/${group.id}`)}
@@ -91,10 +101,17 @@ export default function GroupDetailScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Open group management"
                   >
-                    <Ionicons name="settings-outline" size={20} color="#374151" />
+                    <Ionicons
+                      name="settings-outline"
+                      size={20}
+                      color="#374151"
+                    />
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity onPress={handleShare} style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
+                <TouchableOpacity
+                  onPress={handleShare}
+                  style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+                >
                   <Ionicons name="share-outline" size={20} color="#374151" />
                 </TouchableOpacity>
               </View>

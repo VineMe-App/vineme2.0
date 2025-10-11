@@ -8,9 +8,7 @@ import { lightTheme } from '../../../theme/themes/light';
 // Mock the theme provider
 const renderWithTheme = (component: React.ReactElement) => {
   return render(
-    <ThemeProvider initialTheme="light">
-      {component}
-    </ThemeProvider>
+    <ThemeProvider initialTheme="light">{component}</ThemeProvider>
   );
 };
 
@@ -20,10 +18,8 @@ const MockIcon = () => <Text testID="mock-icon">Icon</Text>;
 describe('Input Component', () => {
   describe('Basic Rendering', () => {
     it('renders correctly with minimal props', () => {
-      const { getByTestId } = renderWithTheme(
-        <Input testID="test-input" />
-      );
-      
+      const { getByTestId } = renderWithTheme(<Input testID="test-input" />);
+
       expect(getByTestId('test-input')).toBeTruthy();
     });
 
@@ -31,7 +27,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input label="Test Label" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input-label')).toBeTruthy();
       expect(getByTestId('test-input-label')).toHaveTextContent('Test Label');
     });
@@ -40,15 +36,17 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input label="Required Field" required testID="test-input" />
       );
-      
-      expect(getByTestId('test-input-label')).toHaveTextContent('Required Field *');
+
+      expect(getByTestId('test-input-label')).toHaveTextContent(
+        'Required Field *'
+      );
     });
 
     it('renders with placeholder', () => {
       const { getByPlaceholderText } = renderWithTheme(
         <Input placeholder="Enter text here" testID="test-input" />
       );
-      
+
       expect(getByPlaceholderText('Enter text here')).toBeTruthy();
     });
   });
@@ -58,27 +56,33 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input error="This field is required" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input-message')).toBeTruthy();
-      expect(getByTestId('test-input-message')).toHaveTextContent('This field is required');
+      expect(getByTestId('test-input-message')).toHaveTextContent(
+        'This field is required'
+      );
     });
 
     it('displays success message when successMessage prop is provided', () => {
       const { getByTestId } = renderWithTheme(
         <Input successMessage="Input is valid" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input-message')).toBeTruthy();
-      expect(getByTestId('test-input-message')).toHaveTextContent('Input is valid');
+      expect(getByTestId('test-input-message')).toHaveTextContent(
+        'Input is valid'
+      );
     });
 
     it('displays helper text when no error or success message', () => {
       const { getByTestId } = renderWithTheme(
         <Input helperText="This is helper text" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input-message')).toBeTruthy();
-      expect(getByTestId('test-input-message')).toHaveTextContent('This is helper text');
+      expect(getByTestId('test-input-message')).toHaveTextContent(
+        'This is helper text'
+      );
     });
 
     it('prioritizes error message over success message and helper text', () => {
@@ -90,8 +94,10 @@ describe('Input Component', () => {
           testID="test-input"
         />
       );
-      
-      expect(getByTestId('test-input-message')).toHaveTextContent('Error message');
+
+      expect(getByTestId('test-input-message')).toHaveTextContent(
+        'Error message'
+      );
     });
 
     it('prioritizes success message over helper text when no error', () => {
@@ -102,8 +108,10 @@ describe('Input Component', () => {
           testID="test-input"
         />
       );
-      
-      expect(getByTestId('test-input-message')).toHaveTextContent('Success message');
+
+      expect(getByTestId('test-input-message')).toHaveTextContent(
+        'Success message'
+      );
     });
   });
 
@@ -112,7 +120,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input leftIcon={<MockIcon />} testID="test-input" />
       );
-      
+
       expect(getByTestId('mock-icon')).toBeTruthy();
     });
 
@@ -120,7 +128,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input rightIcon={<MockIcon />} testID="test-input" />
       );
-      
+
       expect(getByTestId('mock-icon')).toBeTruthy();
     });
 
@@ -133,7 +141,7 @@ describe('Input Component', () => {
           testID="test-input"
         />
       );
-      
+
       fireEvent.press(getByTestId('mock-icon').parent!);
       expect(mockPress).toHaveBeenCalledTimes(1);
     });
@@ -144,7 +152,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input variant="default" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input')).toBeTruthy();
     });
 
@@ -152,7 +160,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input variant="filled" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input')).toBeTruthy();
     });
 
@@ -160,7 +168,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input variant="outlined" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input')).toBeTruthy();
     });
   });
@@ -170,7 +178,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input size="small" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input')).toBeTruthy();
     });
 
@@ -178,7 +186,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input size="medium" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input')).toBeTruthy();
     });
 
@@ -186,7 +194,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input size="large" testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input')).toBeTruthy();
     });
   });
@@ -201,22 +209,18 @@ describe('Input Component', () => {
           testID="test-input"
         />
       );
-      
+
       expect(getByTestId('test-input-message')).toHaveTextContent('5/100');
     });
 
     it('updates character count when text changes', () => {
       const { getByTestId } = renderWithTheme(
-        <Input
-          showCharacterCount
-          maxLength={100}
-          testID="test-input"
-        />
+        <Input showCharacterCount maxLength={100} testID="test-input" />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       fireEvent.changeText(input, 'Hello World');
-      
+
       expect(getByTestId('test-input-message')).toHaveTextContent('11/100');
     });
   });
@@ -227,10 +231,10 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input onFocus={mockFocus} testID="test-input" />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       fireEvent(input, 'focus');
-      
+
       expect(mockFocus).toHaveBeenCalledTimes(1);
     });
 
@@ -239,10 +243,10 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input onBlur={mockBlur} testID="test-input" />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       fireEvent(input, 'blur');
-      
+
       expect(mockBlur).toHaveBeenCalledTimes(1);
     });
   });
@@ -253,10 +257,10 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input onChangeText={mockChangeText} testID="test-input" />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       fireEvent.changeText(input, 'Hello');
-      
+
       expect(mockChangeText).toHaveBeenCalledWith('Hello');
     });
 
@@ -264,7 +268,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input maxLength={5} testID="test-input" />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       expect(input.props.maxLength).toBe(5);
     });
@@ -280,7 +284,7 @@ describe('Input Component', () => {
           testID="test-input"
         />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       expect(input.props.accessibilityLabel).toBe('Email');
       expect(input.props.accessibilityRequired).toBe(true);
@@ -291,16 +295,14 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input error="Invalid input" testID="test-input" />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       expect(input.props.accessibilityInvalid).toBe(true);
     });
 
     it('sets accessibilityInvalid to false when no error', () => {
-      const { getByTestId } = renderWithTheme(
-        <Input testID="test-input" />
-      );
-      
+      const { getByTestId } = renderWithTheme(<Input testID="test-input" />);
+
       const input = getByTestId('test-input').findByType('TextInput');
       expect(input.props.accessibilityInvalid).toBe(false);
     });
@@ -309,7 +311,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input helperText="Helper text" testID="test-input" />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       expect(input.props.accessibilityDescribedBy).toBe('test-input-message');
     });
@@ -321,7 +323,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input containerStyle={customStyle} testID="test-input" />
       );
-      
+
       // The container style is applied to the main container View
       expect(getByTestId('test-input')).toBeTruthy();
     });
@@ -331,7 +333,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input inputStyle={customStyle} testID="test-input" />
       );
-      
+
       const input = getByTestId('test-input').findByType('TextInput');
       // Just verify the input exists and can receive custom styles
       expect(input).toBeTruthy();
@@ -346,7 +348,7 @@ describe('Input Component', () => {
           testID="test-input"
         />
       );
-      
+
       // Just verify the label exists and can receive custom styles
       expect(getByTestId('test-input-label')).toBeTruthy();
     });
@@ -354,10 +356,8 @@ describe('Input Component', () => {
 
   describe('Full Width', () => {
     it('applies full width by default', () => {
-      const { getByTestId } = renderWithTheme(
-        <Input testID="test-input" />
-      );
-      
+      const { getByTestId } = renderWithTheme(<Input testID="test-input" />);
+
       // Just verify the input renders with full width prop
       expect(getByTestId('test-input')).toBeTruthy();
     });
@@ -366,7 +366,7 @@ describe('Input Component', () => {
       const { getByTestId } = renderWithTheme(
         <Input fullWidth={false} testID="test-input" />
       );
-      
+
       expect(getByTestId('test-input')).not.toHaveStyle({ width: '100%' });
     });
   });
@@ -380,7 +380,7 @@ describe('Input Component', () => {
           testID="test-input"
         />
       );
-      
+
       expect(getByTestId('test-input')).toBeTruthy();
       expect(getByTestId('test-input-message')).toBeTruthy();
     });
@@ -393,8 +393,10 @@ describe('Input Component', () => {
           testID="test-input"
         />
       );
-      
-      expect(getByTestId('test-input-message')).toHaveTextContent('Error message');
+
+      expect(getByTestId('test-input-message')).toHaveTextContent(
+        'Error message'
+      );
     });
   });
 });

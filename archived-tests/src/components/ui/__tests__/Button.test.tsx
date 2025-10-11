@@ -24,9 +24,7 @@ jest.mock('../Loading/Spinner', () => {
 
 // Test wrapper with theme provider
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider initialTheme="light">
-    {children}
-  </ThemeProvider>
+  <ThemeProvider initialTheme="light">{children}</ThemeProvider>
 );
 
 describe('Button Component', () => {
@@ -73,7 +71,16 @@ describe('Button Component', () => {
   });
 
   describe('Variants', () => {
-    const variants = ['primary', 'secondary', 'success', 'warning', 'error', 'info', 'ghost', 'outline'] as const;
+    const variants = [
+      'primary',
+      'secondary',
+      'success',
+      'warning',
+      'error',
+      'info',
+      'ghost',
+      'outline',
+    ] as const;
 
     variants.forEach((variant) => {
       it(`renders ${variant} variant correctly`, () => {
@@ -141,7 +148,7 @@ describe('Button Component', () => {
       const button = getByRole('button');
       // Check that the button is actually disabled
       expect(button.props.disabled).toBe(true);
-      
+
       // Even if we try to press it, it should not call onPress due to disabled state
       // Note: fireEvent.press doesn't respect disabled prop, but the actual component does
       if (!button.props.disabled) {
@@ -161,7 +168,7 @@ describe('Button Component', () => {
       const button = getByRole('button');
       // Check that the button is actually disabled when loading
       expect(button.props.disabled).toBe(true);
-      
+
       // Even if we try to press it, it should not call onPress due to loading state
       if (!button.props.disabled) {
         fireEvent.press(button);
@@ -198,10 +205,10 @@ describe('Button Component', () => {
     it('renders with both left and right icons', () => {
       const { getAllByText } = render(
         <TestWrapper>
-          <Button 
-            {...defaultProps} 
-            icon={<TestIcon />} 
-            iconRight={<TestIcon />} 
+          <Button
+            {...defaultProps}
+            icon={<TestIcon />}
+            iconRight={<TestIcon />}
           />
         </TestWrapper>
       );
@@ -385,7 +392,8 @@ describe('Button Component', () => {
     });
 
     it('handles very long titles', () => {
-      const longTitle = 'This is a very long button title that should be handled gracefully';
+      const longTitle =
+        'This is a very long button title that should be handled gracefully';
       const { getByText } = render(
         <TestWrapper>
           <Button {...defaultProps} title={longTitle} />
@@ -407,7 +415,7 @@ describe('Button Component', () => {
       fireEvent.press(button);
       fireEvent.press(button);
       fireEvent.press(button);
-      
+
       expect(onPress).toHaveBeenCalledTimes(3);
     });
   });
@@ -415,12 +423,14 @@ describe('Button Component', () => {
   describe('Theme Integration', () => {
     it('renders without theme provider (should throw error)', () => {
       // This test verifies that the component requires a theme provider
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       expect(() => {
         render(<Button {...defaultProps} />);
       }).toThrow('useTheme must be used within a ThemeProvider');
-      
+
       consoleSpy.mockRestore();
     });
   });

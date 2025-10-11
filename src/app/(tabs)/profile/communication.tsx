@@ -169,7 +169,7 @@ export default function CommunicationAndSecurityScreen() {
       Alert.alert('Error', 'Please enter the complete 6-digit code');
       return;
     }
-    
+
     const result = await verifyOtp(fullPhone, phoneCode, 'sms');
     if (result.success) {
       setPhoneStep('idle');

@@ -49,7 +49,7 @@ export { Select } from './Select';
 export { ErrorMessage } from './ErrorMessage';
 
 // Text components
-export { 
+export {
   Text,
   Heading1,
   Heading2,

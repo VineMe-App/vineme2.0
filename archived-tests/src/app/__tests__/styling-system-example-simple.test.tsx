@@ -61,7 +61,7 @@ describe('StylingSystemExampleSimple', () => {
       const { getByTestId, getByText } = renderWithTheme();
 
       const themeToggle = getByTestId('theme-toggle');
-      
+
       // Initially should show Light theme
       expect(getByText('Current Theme: Light')).toBeTruthy();
 
@@ -77,7 +77,7 @@ describe('StylingSystemExampleSimple', () => {
       const { getByTestId, getByText } = renderWithTheme();
 
       const themeToggle = getByTestId('theme-toggle');
-      
+
       // Toggle theme and verify components update
       fireEvent(themeToggle, 'valueChange', true);
 
@@ -98,7 +98,10 @@ describe('StylingSystemExampleSimple', () => {
       const primaryButton = getByText('Primary');
       fireEvent.press(primaryButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Primary', 'Primary button pressed');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Primary',
+        'Primary button pressed'
+      );
     });
 
     it('handles secondary button press', () => {
@@ -107,7 +110,10 @@ describe('StylingSystemExampleSimple', () => {
       const secondaryButton = getByText('Secondary');
       fireEvent.press(secondaryButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Secondary', 'Secondary button pressed');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Secondary',
+        'Secondary button pressed'
+      );
     });
 
     it('handles outline button press', () => {
@@ -116,7 +122,10 @@ describe('StylingSystemExampleSimple', () => {
       const outlineButton = getByText('Outline');
       fireEvent.press(outlineButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Outline', 'Outline button pressed');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Outline',
+        'Outline button pressed'
+      );
     });
 
     it('handles ghost button press', () => {
@@ -134,7 +143,10 @@ describe('StylingSystemExampleSimple', () => {
       const dangerButton = getByText('Danger');
       fireEvent.press(dangerButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Danger', 'Danger button pressed');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Danger',
+        'Danger button pressed'
+      );
     });
 
     it('does not trigger disabled button', () => {
@@ -162,7 +174,9 @@ describe('StylingSystemExampleSimple', () => {
 
       expect(getByPlaceholderText('Enter your full name')).toBeTruthy();
       expect(getByPlaceholderText('Enter your email')).toBeTruthy();
-      expect(getByPlaceholderText('This input shows success state')).toBeTruthy();
+      expect(
+        getByPlaceholderText('This input shows success state')
+      ).toBeTruthy();
       expect(getByPlaceholderText('This input is disabled')).toBeTruthy();
       expect(getByText('Please enter a valid email address')).toBeTruthy();
     });
@@ -182,7 +196,10 @@ describe('StylingSystemExampleSimple', () => {
       const interactiveButton = getByText('Interactive Demo');
       fireEvent.press(interactiveButton);
 
-      expect(Alert.alert).toHaveBeenCalledWith('Interactive', 'Interactive component demo');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Interactive',
+        'Interactive component demo'
+      );
     });
   });
 
@@ -202,9 +219,13 @@ describe('StylingSystemExampleSimple', () => {
     it('renders accessibility input with proper labels', () => {
       const { getByPlaceholderText } = renderWithTheme();
 
-      const accessibilityInput = getByPlaceholderText('Try with screen reader enabled');
+      const accessibilityInput = getByPlaceholderText(
+        'Try with screen reader enabled'
+      );
       expect(accessibilityInput).toBeTruthy();
-      expect(accessibilityInput.props.accessibilityLabel).toBe('Screen reader test input field');
+      expect(accessibilityInput.props.accessibilityLabel).toBe(
+        'Screen reader test input field'
+      );
     });
   });
 
@@ -233,7 +254,9 @@ describe('StylingSystemExampleSimple', () => {
       const { getByText } = renderWithTheme();
 
       expect(getByText('Color System')).toBeTruthy();
-      expect(getByText('Theme-aware color system with semantic naming')).toBeTruthy();
+      expect(
+        getByText('Theme-aware color system with semantic naming')
+      ).toBeTruthy();
       expect(getByText('Primary')).toBeTruthy();
       expect(getByText('Secondary')).toBeTruthy();
       expect(getByText('Success')).toBeTruthy();
@@ -257,14 +280,16 @@ describe('StylingSystemExampleSimple', () => {
 
       // Verify that themed components are rendered
       expect(getByText('Styling System Demo')).toBeTruthy();
-      expect(getByText('Comprehensive showcase of theme features and components')).toBeTruthy();
+      expect(
+        getByText('Comprehensive showcase of theme features and components')
+      ).toBeTruthy();
     });
 
     it('handles theme switching without errors', async () => {
       const { getByTestId, getByText } = renderWithTheme();
 
       const themeToggle = getByTestId('theme-toggle');
-      
+
       // Multiple theme switches
       fireEvent(themeToggle, 'valueChange', true);
       await waitFor(() => {

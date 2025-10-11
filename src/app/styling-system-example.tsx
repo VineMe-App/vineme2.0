@@ -77,7 +77,7 @@ export default function StylingSystemExample() {
   // Simulate loading progress
   React.useEffect(() => {
     const interval = setInterval(() => {
-      setLoadingStates(prev => ({
+      setLoadingStates((prev) => ({
         ...prev,
         progress: prev.progress >= 100 ? 0 : prev.progress + 10,
       }));
@@ -86,20 +86,15 @@ export default function StylingSystemExample() {
   }, []);
 
   const handleLoadingButton = (buttonKey: 'button1' | 'button2') => {
-    setLoadingStates(prev => ({ ...prev, [buttonKey]: true }));
+    setLoadingStates((prev) => ({ ...prev, [buttonKey]: true }));
     setTimeout(() => {
-      setLoadingStates(prev => ({ ...prev, [buttonKey]: false }));
+      setLoadingStates((prev) => ({ ...prev, [buttonKey]: false }));
       Alert.alert('Success', `${buttonKey} action completed!`);
     }, 2000);
   };
 
   // Simplified options for demo
-  const categoryOptions = [
-    'Technology',
-    'Design', 
-    'Business',
-    'Marketing',
-  ];
+  const categoryOptions = ['Technology', 'Design', 'Business', 'Marketing'];
 
   const styles = createStyles(colors, spacing, isDark);
 
@@ -137,7 +132,9 @@ export default function StylingSystemExample() {
               testID="theme-toggle"
             />
           </View>
-          <Caption>Toggle between light and dark themes to see real-time updates</Caption>
+          <Caption>
+            Toggle between light and dark themes to see real-time updates
+          </Caption>
         </Card>
 
         {/* Typography Section */}
@@ -169,7 +166,9 @@ export default function StylingSystemExample() {
               <Button
                 title="Secondary"
                 variant="secondary"
-                onPress={() => Alert.alert('Secondary', 'Secondary button pressed')}
+                onPress={() =>
+                  Alert.alert('Secondary', 'Secondary button pressed')
+                }
               />
               <Button
                 title="Outline"
@@ -249,7 +248,9 @@ export default function StylingSystemExample() {
               label="Full Name"
               placeholder="Enter your full name"
               value={inputStates.normal}
-              onChangeText={(text) => setInputStates(prev => ({ ...prev, normal: text }))}
+              onChangeText={(text) =>
+                setInputStates((prev) => ({ ...prev, normal: text }))
+              }
             />
 
             <Input
@@ -258,7 +259,9 @@ export default function StylingSystemExample() {
               keyboardType="email-address"
               error="Please enter a valid email address"
               value={inputStates.error}
-              onChangeText={(text) => setInputStates(prev => ({ ...prev, error: text }))}
+              onChangeText={(text) =>
+                setInputStates((prev) => ({ ...prev, error: text }))
+              }
             />
 
             <Input
@@ -266,7 +269,9 @@ export default function StylingSystemExample() {
               placeholder="This input shows success state"
               validationState="success"
               value={inputStates.success}
-              onChangeText={(text) => setInputStates(prev => ({ ...prev, success: text }))}
+              onChangeText={(text) =>
+                setInputStates((prev) => ({ ...prev, success: text }))
+              }
             />
 
             <Input
@@ -280,14 +285,22 @@ export default function StylingSystemExample() {
             <View style={styles.checkboxRow}>
               <Switch
                 value={formData.notifications}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, notifications: value }))}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, notifications: value }))
+                }
                 trackColor={{
                   false: colors.neutral[300],
                   true: colors.primary[500],
                 }}
-                thumbColor={formData.notifications ? colors.primary[200] : colors.neutral[50]}
+                thumbColor={
+                  formData.notifications
+                    ? colors.primary[200]
+                    : colors.neutral[50]
+                }
               />
-              <BodyText style={styles.checkboxLabel}>Enable notifications</BodyText>
+              <BodyText style={styles.checkboxLabel}>
+                Enable notifications
+              </BodyText>
             </View>
           </View>
         </Card>
@@ -295,11 +308,12 @@ export default function StylingSystemExample() {
         {/* Interactive Components */}
         <Card variant="outlined" style={styles.section}>
           <Heading2>Interactive Components</Heading2>
-          
+
           <View style={styles.interactiveGrid}>
             <Caption>Interactive elements showcase</Caption>
             <BodyText>
-              This section demonstrates various interactive components with proper theming and accessibility.
+              This section demonstrates various interactive components with
+              proper theming and accessibility.
             </BodyText>
           </View>
 
@@ -322,17 +336,23 @@ export default function StylingSystemExample() {
         <Card variant="elevated" style={styles.section}>
           <Heading2>Accessibility Features</Heading2>
           <BodyText>
-            All components include proper accessibility labels, roles, and keyboard navigation support.
+            All components include proper accessibility labels, roles, and
+            keyboard navigation support.
           </BodyText>
-          
+
           <View style={styles.accessibilityGrid}>
             <Button
               title="High Contrast Test"
               variant="primary"
-              onPress={() => Alert.alert('Accessibility', 'This button meets WCAG contrast requirements')}
+              onPress={() =>
+                Alert.alert(
+                  'Accessibility',
+                  'This button meets WCAG contrast requirements'
+                )
+              }
               accessibilityHint="Tests high contrast accessibility compliance"
             />
-            
+
             <Input
               label="Screen Reader Test"
               placeholder="Try with screen reader enabled"
@@ -348,7 +368,9 @@ export default function StylingSystemExample() {
             title="No Items Found"
             description="This is an example of an empty state component with proper styling and accessibility."
             actionText="Add Item"
-            onAction={() => Alert.alert('Action', 'Empty state action triggered')}
+            onAction={() =>
+              Alert.alert('Action', 'Empty state action triggered')
+            }
           />
         </Card>
 
@@ -356,29 +378,66 @@ export default function StylingSystemExample() {
         <Card style={styles.section}>
           <Heading2>Color System</Heading2>
           <BodyText>Theme-aware color system with hex values</BodyText>
-          
+
           <View style={styles.colorGrid}>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.primary[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.primary[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Primary</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.primary[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.primary[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.secondary[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.secondary[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Secondary</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.secondary[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.secondary[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.blue[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.blue[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Blue</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.blue[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.blue[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.green[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.green[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Green</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.green[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.green[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.orange[500] }]}>
+            <View
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: colors.orange[500] },
+              ]}
+            >
               <ThemedText style={styles.colorLabel}>Orange</ThemedText>
-              <ThemedText style={styles.colorHex}>{colors.orange[500]}</ThemedText>
+              <ThemedText style={styles.colorHex}>
+                {colors.orange[500]}
+              </ThemedText>
             </View>
-            <View style={[styles.colorSwatch, { backgroundColor: colors.red[500] }]}>
+            <View
+              style={[styles.colorSwatch, { backgroundColor: colors.red[500] }]}
+            >
               <ThemedText style={styles.colorLabel}>Red</ThemedText>
               <ThemedText style={styles.colorHex}>{colors.red[500]}</ThemedText>
             </View>
@@ -389,25 +448,37 @@ export default function StylingSystemExample() {
         <Card style={styles.section}>
           <Heading2>Spacing System</Heading2>
           <BodyText>Consistent spacing scale with pixel measurements</BodyText>
-          
+
           <View style={styles.spacingGrid}>
             <View style={[styles.spacingExample, { padding: spacing[1] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[1] = {spacing[1]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[1] = {spacing[1]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[2] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[2] = {spacing[2]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[2] = {spacing[2]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[4] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[4] = {spacing[4]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[4] = {spacing[4]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[6] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[6] = {spacing[6]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[6] = {spacing[6]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[8] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[8] = {spacing[8]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[8] = {spacing[8]}px
+              </ThemedText>
             </View>
             <View style={[styles.spacingExample, { padding: spacing[12] }]}>
-              <ThemedText style={styles.spacingLabel}>spacing[12] = {spacing[12]}px</ThemedText>
+              <ThemedText style={styles.spacingLabel}>
+                spacing[12] = {spacing[12]}px
+              </ThemedText>
             </View>
           </View>
         </Card>
@@ -421,7 +492,8 @@ export default function StylingSystemExample() {
       >
         <View style={styles.modalContent}>
           <BodyText>
-            This is an example modal with theme-aware styling and proper accessibility features.
+            This is an example modal with theme-aware styling and proper
+            accessibility features.
           </BodyText>
           <Divider style={styles.modalDivider} />
           <View style={styles.modalActions}>

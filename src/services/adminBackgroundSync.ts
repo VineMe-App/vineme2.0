@@ -7,6 +7,9 @@ import { AppState, AppStateStatus } from 'react-native';
 import { adminServiceWrapper } from './adminServiceWrapper';
 import { ADMIN_QUERY_KEYS, createAdminCacheManager } from '../utils/adminCache';
 
+// Fix missing import
+import React from 'react';
+
 export interface BackgroundSyncOptions {
   interval: number; // Sync interval in milliseconds
   enabledWhenInactive?: boolean; // Continue syncing when app is in background
@@ -460,6 +463,3 @@ export function useAdminBackgroundSync(churchId?: string) {
     isAvailable: !!globalBackgroundSync,
   };
 }
-
-// Fix missing import
-import React from 'react';

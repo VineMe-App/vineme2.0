@@ -4,7 +4,13 @@
  */
 
 import React from 'react';
-import { render, screen, act, waitFor, fireEvent } from '@testing-library/react-native';
+import {
+  render,
+  screen,
+  act,
+  waitFor,
+  fireEvent,
+} from '@testing-library/react-native';
 import { ThemeProvider } from '../../../theme/provider/ThemeProvider';
 import { useTheme } from '../../../theme/provider/useTheme';
 import { Button } from '../../../components/ui/Button';
@@ -19,7 +25,9 @@ import { LoadingSpinner as Spinner } from '../../../components/ui/LoadingSpinner
 // Complete app simulation for E2E testing
 const CompleteAppSimulation: React.FC = () => {
   const { theme, toggleTheme, isDark, updateAssets } = useTheme();
-  const [currentView, setCurrentView] = React.useState<'home' | 'profile' | 'settings'>('home');
+  const [currentView, setCurrentView] = React.useState<
+    'home' | 'profile' | 'settings'
+  >('home');
   const [modalVisible, setModalVisible] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [formData, setFormData] = React.useState({
@@ -31,22 +39,24 @@ const CompleteAppSimulation: React.FC = () => {
   const handleSave = async () => {
     setLoading(true);
     // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setLoading(false);
     setModalVisible(false);
   };
 
   const renderHomeView = () => (
     <>
-      <Text testID="home-title" variant="h1">Welcome Home</Text>
+      <Text testID="home-title" variant="h1">
+        Welcome Home
+      </Text>
       <Logo testID="app-logo" variant="full" />
-      
+
       <Card testID="stats-card" variant="elevated">
         <Text variant="h3">Your Stats</Text>
         <Badge testID="status-badge" variant="success" text="Active" />
         <Text variant="body">You have 5 new notifications</Text>
       </Card>
-      
+
       <Button
         testID="view-profile-btn"
         title="View Profile"
@@ -58,21 +68,23 @@ const CompleteAppSimulation: React.FC = () => {
 
   const renderProfileView = () => (
     <>
-      <Text testID="profile-title" variant="h1">Your Profile</Text>
-      
+      <Text testID="profile-title" variant="h1">
+        Your Profile
+      </Text>
+
       <Card testID="profile-card">
         <Text variant="h3">{formData.name || 'John Doe'}</Text>
         <Text variant="body">{formData.email || 'john@example.com'}</Text>
         <Text variant="caption">{formData.bio || 'No bio provided'}</Text>
       </Card>
-      
+
       <Button
         testID="edit-profile-btn"
         title="Edit Profile"
         onPress={() => setModalVisible(true)}
         variant="secondary"
       />
-      
+
       <Button
         testID="back-home-btn"
         title="Back to Home"
@@ -84,13 +96,15 @@ const CompleteAppSimulation: React.FC = () => {
 
   const renderSettingsView = () => (
     <>
-      <Text testID="settings-title" variant="h1">Settings</Text>
-      
+      <Text testID="settings-title" variant="h1">
+        Settings
+      </Text>
+
       <Card testID="theme-settings-card">
         <Text variant="h3">Appearance</Text>
         <Text variant="body">Current theme: {theme.name}</Text>
         <Text variant="body">Dark mode: {isDark ? 'On' : 'Off'}</Text>
-        
+
         <Button
           testID="toggle-theme-btn"
           title={`Switch to ${isDark ? 'Light' : 'Dark'} Theme`}
@@ -98,7 +112,7 @@ const CompleteAppSimulation: React.FC = () => {
           variant="primary"
         />
       </Card>
-      
+
       <Button
         testID="back-home-from-settings-btn"
         title="Back to Home"
@@ -150,27 +164,33 @@ const CompleteAppSimulation: React.FC = () => {
           testID="name-input"
           label="Name"
           value={formData.name}
-          onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+          onChangeText={(text) =>
+            setFormData((prev) => ({ ...prev, name: text }))
+          }
           placeholder="Enter your name"
         />
-        
+
         <Input
           testID="email-input"
           label="Email"
           value={formData.email}
-          onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
+          onChangeText={(text) =>
+            setFormData((prev) => ({ ...prev, email: text }))
+          }
           placeholder="Enter your email"
         />
-        
+
         <Input
           testID="bio-input"
           label="Bio"
           value={formData.bio}
-          onChangeText={(text) => setFormData(prev => ({ ...prev, bio: text }))}
+          onChangeText={(text) =>
+            setFormData((prev) => ({ ...prev, bio: text }))
+          }
           placeholder="Tell us about yourself"
           multiline
         />
-        
+
         {loading ? (
           <Spinner testID="save-spinner" size="medium" />
         ) : (
@@ -208,7 +228,9 @@ describe('Complete Styling System E2E Tests', () => {
       );
 
       // Start on home view
-      expect(screen.getByTestId('home-title')).toHaveTextContent('Welcome Home');
+      expect(screen.getByTestId('home-title')).toHaveTextContent(
+        'Welcome Home'
+      );
       expect(screen.getByTestId('app-logo')).toBeDefined();
 
       // Navigate to profile
@@ -217,7 +239,9 @@ describe('Complete Styling System E2E Tests', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('profile-title')).toHaveTextContent('Your Profile');
+        expect(screen.getByTestId('profile-title')).toHaveTextContent(
+          'Your Profile'
+        );
       });
 
       // Navigate to settings
@@ -226,7 +250,9 @@ describe('Complete Styling System E2E Tests', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('settings-title')).toHaveTextContent('Settings');
+        expect(screen.getByTestId('settings-title')).toHaveTextContent(
+          'Settings'
+        );
       });
 
       // Toggle theme from settings
@@ -244,7 +270,9 @@ describe('Complete Styling System E2E Tests', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('home-title')).toHaveTextContent('Welcome Home');
+        expect(screen.getByTestId('home-title')).toHaveTextContent(
+          'Welcome Home'
+        );
       });
     });
   });
@@ -311,9 +339,12 @@ describe('Complete Styling System E2E Tests', () => {
       });
 
       // Wait for save to complete
-      await waitFor(() => {
-        expect(screen.queryByTestId('save-spinner')).toBeNull();
-      }, { timeout: 2000 });
+      await waitFor(
+        () => {
+          expect(screen.queryByTestId('save-spinner')).toBeNull();
+        },
+        { timeout: 2000 }
+      );
 
       // Profile should be updated
       expect(screen.getByTestId('profile-card')).toBeDefined();
@@ -336,16 +367,16 @@ describe('Complete Styling System E2E Tests', () => {
         act(() => {
           screen.getByTestId('nav-profile-btn').props.onPress();
         });
-        
+
         act(() => {
           screen.getByTestId('nav-settings-btn').props.onPress();
         });
-        
+
         // Toggle theme
         act(() => {
           screen.getByTestId('toggle-theme-btn').props.onPress();
         });
-        
+
         act(() => {
           screen.getByTestId('nav-home-btn').props.onPress();
         });
@@ -358,7 +389,9 @@ describe('Complete Styling System E2E Tests', () => {
       expect(totalTime).toBeLessThan(1000);
 
       // App should still be functional
-      expect(screen.getByTestId('home-title')).toHaveTextContent('Welcome Home');
+      expect(screen.getByTestId('home-title')).toHaveTextContent(
+        'Welcome Home'
+      );
     });
   });
 
@@ -366,11 +399,11 @@ describe('Complete Styling System E2E Tests', () => {
     it('should recover gracefully from component errors while maintaining theme', async () => {
       const ErrorComponent: React.FC = () => {
         const [shouldError, setShouldError] = React.useState(false);
-        
+
         if (shouldError) {
           throw new Error('Test error');
         }
-        
+
         return (
           <Button
             testID="error-trigger-btn"

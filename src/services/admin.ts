@@ -94,7 +94,9 @@ export interface UpdateGroupData {
   image_url?: string;
 }
 
-const withDisplayName = <T extends { first_name?: string | null; last_name?: string | null }>(
+const withDisplayName = <
+  T extends { first_name?: string | null; last_name?: string | null },
+>(
   user: (T & { name?: string | null }) | null | undefined
 ) =>
   user

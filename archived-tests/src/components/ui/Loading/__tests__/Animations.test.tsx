@@ -6,23 +6,19 @@ import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
 import { Animated } from 'react-native';
-import { 
-  FadeIn, 
-  SlideIn, 
-  ScaleIn, 
-  Pulse, 
-  StaggeredAnimation 
+import {
+  FadeIn,
+  SlideIn,
+  ScaleIn,
+  Pulse,
+  StaggeredAnimation,
 } from '../Animations';
 import { ThemeProvider } from '../../../../theme/provider/ThemeProvider';
 
 // Animated is mocked in test-setup.js
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(
-    <ThemeProvider>
-      {component}
-    </ThemeProvider>
-  );
+  return render(<ThemeProvider>{component}</ThemeProvider>);
 };
 
 const TestChild = () => <Text testID="test-child">Test Content</Text>;
@@ -55,7 +51,7 @@ describe('FadeIn', () => {
 
   it('calls onComplete when animation finishes', () => {
     const onComplete = jest.fn();
-    
+
     renderWithTheme(
       <FadeIn onComplete={onComplete}>
         <TestChild />
@@ -107,8 +103,11 @@ describe('SlideIn', () => {
   });
 
   it('handles different directions', () => {
-    const directions: Array<'up' | 'down' | 'left' | 'right'> = [
-      'up', 'down', 'left', 'right'
+    const directions: ('up' | 'down' | 'left' | 'right')[] = [
+      'up',
+      'down',
+      'left',
+      'right',
     ];
 
     directions.forEach((direction) => {
@@ -144,7 +143,7 @@ describe('SlideIn', () => {
 
   it('calls onComplete when animation finishes', () => {
     const onComplete = jest.fn();
-    
+
     renderWithTheme(
       <SlideIn onComplete={onComplete}>
         <TestChild />
@@ -193,7 +192,7 @@ describe('ScaleIn', () => {
 
   it('calls onComplete when animation finishes', () => {
     const onComplete = jest.fn();
-    
+
     renderWithTheme(
       <ScaleIn onComplete={onComplete}>
         <TestChild />
@@ -279,15 +278,19 @@ describe('StaggeredAnimation', () => {
 
   it('renders multiple children correctly', () => {
     const children = [
-      <Text key="1" testID="child-1">Child 1</Text>,
-      <Text key="2" testID="child-2">Child 2</Text>,
-      <Text key="3" testID="child-3">Child 3</Text>,
+      <Text key="1" testID="child-1">
+        Child 1
+      </Text>,
+      <Text key="2" testID="child-2">
+        Child 2
+      </Text>,
+      <Text key="3" testID="child-3">
+        Child 3
+      </Text>,
     ];
 
     const { getByTestId } = renderWithTheme(
-      <StaggeredAnimation testID="staggered">
-        {children}
-      </StaggeredAnimation>
+      <StaggeredAnimation testID="staggered">{children}</StaggeredAnimation>
     );
 
     expect(getByTestId('staggered')).toBeTruthy();
@@ -302,14 +305,16 @@ describe('StaggeredAnimation', () => {
       <Text key="2">Child 2</Text>,
     ];
 
-    const animationTypes: Array<'fadeIn' | 'slideIn' | 'scaleIn'> = [
-      'fadeIn', 'slideIn', 'scaleIn'
+    const animationTypes: ('fadeIn' | 'slideIn' | 'scaleIn')[] = [
+      'fadeIn',
+      'slideIn',
+      'scaleIn',
     ];
 
     animationTypes.forEach((animationType) => {
       const { getByTestId } = renderWithTheme(
-        <StaggeredAnimation 
-          animationType={animationType} 
+        <StaggeredAnimation
+          animationType={animationType}
           testID={`staggered-${animationType}`}
         >
           {children}

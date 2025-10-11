@@ -6,6 +6,9 @@ import React, { Suspense, ComponentType } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
+// Fix missing import
+import { Animated } from 'react-native';
+
 export interface LazyLoadingOptions {
   fallback?: React.ComponentType;
   errorBoundary?: React.ComponentType<{ error: Error; retry: () => void }>;
@@ -16,26 +19,28 @@ export interface LazyLoadingOptions {
 /**
  * Default loading fallback component
  */
-const DefaultLoadingFallback: React.FC<{ message?: string }> = ({ 
-  message = 'Loading...' 
-}) => (
-  <View style={styles.loadingContainer}>
-    <LoadingSpinner size="large" />
-    <Text style={styles.loadingText}>{message}</Text>
-  </View>
-);
+const DefaultLoadingFallback: React.FC<{ message?: string }> = ({
+  message = 'Loading...',
+}) => {
+  return (
+    <View style={styles.loadingContainer}>
+      <LoadingSpinner size="large" />
+      <Text style={styles.loadingText}> {message} </Text>
+    </View>
+  );
+};
 
 /**
  * Default error boundary component
  */
-const DefaultErrorBoundary: React.FC<{ 
-  error: Error; 
+const DefaultErrorBoundary: React.FC<{
+  error: Error;
   retry: () => void;
   message?: string;
 }> = ({ error, retry, message = 'Failed to load component' }) => (
   <View style={styles.errorContainer}>
-    <Text style={styles.errorTitle}>{message}</Text>
-    <Text style={styles.errorMessage}>{error.message}</Text>
+    <Text style={styles.errorTitle}> {message} </Text>
+    <Text style={styles.errorMessage}> {error.message} </Text>
     <Text style={styles.retryButton} onPress={retry}>
       Tap to retry
     </Text>
@@ -58,11 +63,12 @@ export function createLazyComponent<T extends ComponentType<any>>(
 
   const LazyComponent = React.lazy(() => {
     const importPromise = importFn();
-    
+
     // Add artificial delay if specified
-    const delayPromise = delay > 0 
-      ? new Promise(resolve => setTimeout(resolve, delay))
-      : Promise.resolve();
+    const delayPromise =
+      delay > 0
+        ? new Promise((resolve) => setTimeout(resolve, delay))
+        : Promise.resolve();
 
     // Add timeout handling
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -81,7 +87,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
 
     const retry = React.useCallback(() => {
       setError(null);
-      setRetryKey(prev => prev + 1);
+      setRetryKey((prev) => prev + 1);
     }, []);
 
     if (error) {
@@ -132,12 +138,12 @@ export function useLazyData<T>(
     setError(null);
 
     loadFn()
-      .then(result => {
+      .then((result) => {
         if (!cancelled) {
           setData(result);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error('Loading failed'));
         }
@@ -230,7 +236,10 @@ export function VirtualList<T>({
 }: VirtualListProps<T>) {
   const [scrollOffset, setScrollOffset] = React.useState(0);
 
-  const visibleStart = Math.max(0, Math.floor(scrollOffset / itemHeight) - overscan);
+  const visibleStart = Math.max(
+    0,
+    Math.floor(scrollOffset / itemHeight) - overscan
+  );
   const visibleEnd = Math.min(
     data.length,
     Math.ceil((scrollOffset + containerHeight) / itemHeight) + overscan
@@ -240,18 +249,22 @@ export function VirtualList<T>({
   const totalHeight = data.length * itemHeight;
   const offsetY = visibleStart * itemHeight;
 
-  const handleScroll = React.useCallback((event: any) => {
-    const newScrollOffset = event.nativeEvent.contentOffset.y;
-    setScrollOffset(newScrollOffset);
+  const handleScroll = React.useCallback(
+    (event: any) => {
+      const newScrollOffset = event.nativeEvent.contentOffset.y;
+      setScrollOffset(newScrollOffset);
 
-    // Check if we should load more data
-    if (onEndReached && onEndReachedThreshold) {
-      const scrollPercentage = (newScrollOffset + containerHeight) / totalHeight;
-      if (scrollPercentage >= onEndReachedThreshold) {
-        onEndReached();
+      // Check if we should load more data
+      if (onEndReached && onEndReachedThreshold) {
+        const scrollPercentage =
+          (newScrollOffset + containerHeight) / totalHeight;
+        if (scrollPercentage >= onEndReachedThreshold) {
+          onEndReached();
+        }
       }
-    }
-  }, [containerHeight, totalHeight, onEndReached, onEndReachedThreshold]);
+    },
+    [containerHeight, totalHeight, onEndReached, onEndReachedThreshold]
+  );
 
   return (
     <View style={{ height: containerHeight }}>
@@ -281,11 +294,11 @@ export const ProgressiveLoader: React.FC<{
   placeholder?: React.ReactNode;
   delay?: number;
   fadeIn?: boolean;
-}> = ({ 
-  children, 
-  placeholder = <DefaultLoadingFallback />, 
+}> = ({
+  children,
+  placeholder = <DefaultLoadingFallback />,
   delay = 100,
-  fadeIn = true 
+  fadeIn = true,
 }) => {
   const [loaded, setLoaded] = React.useState(false);
   const [opacity] = React.useState(new Animated.Value(0));
@@ -306,31 +319,27 @@ export const ProgressiveLoader: React.FC<{
   }, [delay, fadeIn, opacity]);
 
   if (!loaded) {
-    return <>{placeholder}</>;
+    return <>{placeholder} </>;
   }
 
   if (fadeIn) {
-    return (
-      <Animated.View style={{ opacity }}>
-        {children}
-      </Animated.View>
-    );
+    return <Animated.View style={{ opacity }}>{children}</Animated.View>;
   }
 
-  return <>{children}</>;
+  return <>{children} </>;
 };
 
 /**
  * Batch loader for multiple async operations
  */
 export class BatchLoader<T> {
-  private queue: Array<{
+  private queue: {
     id: string;
     loadFn: () => Promise<T>;
     resolve: (value: T) => void;
     reject: (error: Error) => void;
-  }> = [];
-  
+  }[] = [];
+
   private processing = false;
   private batchSize: number;
   private delay: number;
@@ -354,7 +363,7 @@ export class BatchLoader<T> {
 
     while (this.queue.length > 0) {
       const batch = this.queue.splice(0, this.batchSize);
-      
+
       try {
         await Promise.all(
           batch.map(async ({ loadFn, resolve, reject }) => {
@@ -372,7 +381,7 @@ export class BatchLoader<T> {
 
       // Add delay between batches
       if (this.queue.length > 0) {
-        await new Promise(resolve => setTimeout(resolve, this.delay));
+        await new Promise((resolve) => setTimeout(resolve, this.delay));
       }
     }
 
@@ -430,6 +439,3 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
-
-// Fix missing import
-import { Animated } from 'react-native';

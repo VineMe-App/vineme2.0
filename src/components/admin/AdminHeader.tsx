@@ -128,7 +128,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
  * Breadcrumb Navigation Component
  */
 interface BreadcrumbProps {
-  items: Array<{ label: string; route?: string }>;
+  items: { label: string; route?: string }[];
 }
 
 export const AdminBreadcrumb: React.FC<BreadcrumbProps> = ({ items }) => {
@@ -182,7 +182,7 @@ interface AdminPageLayoutProps {
   onHelpPress?: () => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
-  breadcrumbs?: Array<{ label: string; route?: string }>;
+  breadcrumbs?: { label: string; route?: string }[];
   rightActions?: React.ReactNode;
   children: React.ReactNode;
 }

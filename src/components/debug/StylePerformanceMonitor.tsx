@@ -5,10 +5,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { 
-  StylePerformanceDebugger, 
+import {
+  StylePerformanceDebugger,
   PerformanceStyleUtils,
-  ThemeSwitchingOptimizer 
+  ThemeSwitchingOptimizer,
 } from '../../utils/performanceStyleUtils';
 import { useTheme } from '../../theme/provider/useTheme';
 import { Button } from '../ui/Button';
@@ -19,13 +19,14 @@ interface StylePerformanceMonitorProps {
   onClose?: () => void;
 }
 
-export const StylePerformanceMonitor: React.FC<StylePerformanceMonitorProps> = ({
-  visible = false,
-  onClose,
-}) => {
+export const StylePerformanceMonitor: React.FC<
+  StylePerformanceMonitorProps
+> = ({ visible = false, onClose }) => {
   const { theme } = useTheme();
   const [performanceData, setPerformanceData] = useState<any>(null);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   // Refresh performance data
   const refreshData = useCallback(() => {
@@ -39,7 +40,7 @@ export const StylePerformanceMonitor: React.FC<StylePerformanceMonitorProps> = (
       refreshData();
       const interval = setInterval(refreshData, 2000); // Refresh every 2 seconds
       setRefreshInterval(interval);
-      
+
       return () => {
         if (interval) clearInterval(interval);
       };
@@ -260,23 +261,25 @@ export const StylePerformanceMonitor: React.FC<StylePerformanceMonitorProps> = (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Most Accessed Styles</Text>
             <Card>
-              {stats.cache.mostAccessed.slice(0, 5).map((item: any, index: number) => (
-                <View key={index} style={styles.performanceItem}>
-                  <Text style={styles.performanceKey} numberOfLines={1}>
-                    {item.key}
-                  </Text>
-                  <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>Access Count</Text>
-                    <Text style={styles.performanceValue}>{item.count}</Text>
-                  </View>
-                  <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>Creation Time</Text>
-                    <Text style={styles.performanceValue}>
-                      {item.creationTime.toFixed(2)} ms
+              {stats.cache.mostAccessed
+                .slice(0, 5)
+                .map((item: any, index: number) => (
+                  <View key={index} style={styles.performanceItem}>
+                    <Text style={styles.performanceKey} numberOfLines={1}>
+                      {item.key}
                     </Text>
+                    <View style={styles.statRow}>
+                      <Text style={styles.statLabel}>Access Count</Text>
+                      <Text style={styles.performanceValue}>{item.count}</Text>
+                    </View>
+                    <View style={styles.statRow}>
+                      <Text style={styles.statLabel}>Creation Time</Text>
+                      <Text style={styles.performanceValue}>
+                        {item.creationTime.toFixed(2)} ms
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                ))}
             </Card>
           </View>
         )}
@@ -286,16 +289,18 @@ export const StylePerformanceMonitor: React.FC<StylePerformanceMonitorProps> = (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Slowest Style Creations</Text>
             <Card>
-              {stats.cache.performanceMetrics.slowestCreations.map((item: any, index: number) => (
-                <View key={index} style={styles.performanceItem}>
-                  <Text style={styles.performanceKey} numberOfLines={1}>
-                    {item.key}
-                  </Text>
-                  <Text style={styles.performanceValue}>
-                    {item.time.toFixed(2)} ms
-                  </Text>
-                </View>
-              ))}
+              {stats.cache.performanceMetrics.slowestCreations.map(
+                (item: any, index: number) => (
+                  <View key={index} style={styles.performanceItem}>
+                    <Text style={styles.performanceKey} numberOfLines={1}>
+                      {item.key}
+                    </Text>
+                    <Text style={styles.performanceValue}>
+                      {item.time.toFixed(2)} ms
+                    </Text>
+                  </View>
+                )
+              )}
             </Card>
           </View>
         )}
@@ -369,7 +374,7 @@ export function useStylePerformanceMonitor() {
   }, []);
 
   const toggleMonitor = useCallback(() => {
-    setIsVisible(prev => !prev);
+    setIsVisible((prev) => !prev);
   }, []);
 
   return {
@@ -377,7 +382,9 @@ export function useStylePerformanceMonitor() {
     showMonitor,
     hideMonitor,
     toggleMonitor,
-    StylePerformanceMonitor: (props: Omit<StylePerformanceMonitorProps, 'visible' | 'onClose'>) => (
+    StylePerformanceMonitor: (
+      props: Omit<StylePerformanceMonitorProps, 'visible' | 'onClose'>
+    ) => (
       <StylePerformanceMonitor
         {...props}
         visible={isVisible}

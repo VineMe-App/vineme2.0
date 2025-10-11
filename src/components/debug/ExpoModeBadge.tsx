@@ -42,9 +42,7 @@ export const ExpoModeBadge: React.FC<ExpoModeBadgeProps> = ({
       <Text style={styles.modeText}>
         {inExpoGo ? '📱 Expo Go' : '🚀 Dev Client'}
       </Text>
-      <Text style={styles.featureText}>
-        Maps: {nativeFeatures ? '✓' : '✗'}
-      </Text>
+      <Text style={styles.featureText}>Maps: {nativeFeatures ? '✓' : '✗'}</Text>
     </View>
   );
 };
@@ -83,4 +81,3 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
 });
-

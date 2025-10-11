@@ -59,7 +59,8 @@ export default function ProfileDetailsStep({
     type: 'camera' | 'library'
   ): Promise<boolean> => {
     if (type === 'library') {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
           'Permission needed',
@@ -123,10 +124,8 @@ export default function ProfileDetailsStep({
       const response = await fetch(uri);
       const blob = await response.blob();
 
-      const { data: uploadedUrl, error: uploadError } = await userService.uploadAvatar(
-        user.id,
-        blob
-      );
+      const { data: uploadedUrl, error: uploadError } =
+        await userService.uploadAvatar(user.id, blob);
 
       if (uploadError || !uploadedUrl) {
         throw uploadError || new Error('Upload failed');

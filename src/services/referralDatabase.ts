@@ -2,7 +2,7 @@
  * Database operations and schema definitions for referral system
  * This file contains SQL schema definitions and database utilities
  * for the referral tracking system.
- * 
+ *
  * Requirements addressed:
  * - 6.1: Store referrer's ID and referral details for general referrals
  * - 6.2: Store referrer's ID, group ID, and referral details in referrals table
@@ -181,24 +181,25 @@ export class ReferralDatabaseUtils {
       }
 
       // Check if general_referrals table exists
-      const { data: generalTableData, error: generalTableError } = await supabase
-        .from('general_referrals')
-        .select('id')
-        .limit(1);
+      const { data: generalTableData, error: generalTableError } =
+        await supabase.from('general_referrals').select('id').limit(1);
 
       if (!generalTableError) {
         generalReferralsExists = true;
       } else {
-        errors.push(`General referrals table issue: ${generalTableError.message}`);
+        errors.push(
+          `General referrals table issue: ${generalTableError.message}`
+        );
       }
 
       // Note: Index and constraint validation would require admin access
       // In a production environment, these would be checked via database admin tools
       indexesExist = true; // Assume indexes exist if tables exist
       constraintsValid = true; // Assume constraints are valid if tables exist
-
     } catch (error) {
-      errors.push(`Database validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Database validation error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     return {
@@ -214,10 +215,10 @@ export class ReferralDatabaseUtils {
    * Get database schema information for referral tables
    */
   static async getSchemaInfo(): Promise<{
-    tables: Array<{
+    tables: {
       name: string;
-      columns: Array<{ name: string; type: string; nullable: boolean }>;
-    }>;
+      columns: { name: string; type: string; nullable: boolean }[];
+    }[];
     error?: string;
   }> {
     try {
@@ -235,8 +236,16 @@ export class ReferralDatabaseUtils {
               { name: 'church_id', type: 'uuid', nullable: true },
               { name: 'status', type: 'text', nullable: false },
               { name: 'note', type: 'text', nullable: true },
-              { name: 'created_at', type: 'timestamp with time zone', nullable: false },
-              { name: 'updated_at', type: 'timestamp with time zone', nullable: false },
+              {
+                name: 'created_at',
+                type: 'timestamp with time zone',
+                nullable: false,
+              },
+              {
+                name: 'updated_at',
+                type: 'timestamp with time zone',
+                nullable: false,
+              },
             ],
           },
           {
@@ -248,8 +257,16 @@ export class ReferralDatabaseUtils {
               { name: 'church_id', type: 'uuid', nullable: true },
               { name: 'status', type: 'text', nullable: false },
               { name: 'note', type: 'text', nullable: true },
-              { name: 'created_at', type: 'timestamp with time zone', nullable: false },
-              { name: 'updated_at', type: 'timestamp with time zone', nullable: false },
+              {
+                name: 'created_at',
+                type: 'timestamp with time zone',
+                nullable: false,
+              },
+              {
+                name: 'updated_at',
+                type: 'timestamp with time zone',
+                nullable: false,
+              },
             ],
           },
         ],
@@ -257,7 +274,8 @@ export class ReferralDatabaseUtils {
     } catch (error) {
       return {
         tables: [],
-        error: error instanceof Error ? error.message : 'Failed to get schema info',
+        error:
+          error instanceof Error ? error.message : 'Failed to get schema info',
       };
     }
   }
@@ -286,7 +304,9 @@ export class ReferralDatabaseUtils {
         .limit(100);
 
       if (orphanedError) {
-        errors.push(`Error checking orphaned records: ${orphanedError.message}`);
+        errors.push(
+          `Error checking orphaned records: ${orphanedError.message}`
+        );
       } else {
         orphanedRecordsFound = orphanedGroupRefs?.length || 0;
       }
@@ -295,9 +315,10 @@ export class ReferralDatabaseUtils {
       // In a production environment, these would be scheduled as database maintenance tasks
       vacuumCompleted = true; // Assume maintenance is handled at database level
       statisticsUpdated = true; // Assume statistics are updated regularly
-
     } catch (error) {
-      errors.push(`Maintenance error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Maintenance error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     return {

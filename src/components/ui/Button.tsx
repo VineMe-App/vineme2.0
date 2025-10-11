@@ -18,72 +18,80 @@ export interface ButtonProps {
    * Button text content
    */
   title: string;
-  
+
   /**
    * Function to call when button is pressed
    */
   onPress: () => void;
-  
+
   /**
    * Visual variant of the button
    */
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'ghost' | 'outline';
-  
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'info'
+    | 'ghost'
+    | 'outline';
+
   /**
    * Size of the button
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Whether the button is disabled
    */
   disabled?: boolean;
-  
+
   /**
    * Whether the button is in loading state
    */
   loading?: boolean;
-  
+
   /**
    * Icon to display before the text
    */
   icon?: React.ReactNode;
-  
+
   /**
    * Icon to display after the text
    */
   iconRight?: React.ReactNode;
-  
+
   /**
    * Whether the button should take full width
    */
   fullWidth?: boolean;
-  
+
   /**
    * Custom loading spinner variant
    */
   loadingVariant?: 'circular' | 'dots' | 'pulse' | 'bars';
-  
+
   /**
    * Custom styles for the button container
    */
   style?: ViewStyle;
-  
+
   /**
    * Custom styles for the button text
    */
   textStyle?: TextStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Accessibility label
    */
   accessibilityLabel?: string;
-  
+
   /**
    * Accessibility hint
    */
@@ -110,12 +118,18 @@ export const Button: React.FC<ButtonProps> = ({
   const { theme } = useTheme();
   const scaleValue = useRef(new Animated.Value(1)).current;
   const focusValue = useRef(new Animated.Value(0)).current;
-  
+
   const isDisabled = disabled || loading;
   const hasIcon = icon || iconRight;
 
   // Generate dynamic styles based on theme
-  const buttonStyles = getButtonStyles(theme, variant, size, fullWidth, isDisabled);
+  const buttonStyles = getButtonStyles(
+    theme,
+    variant,
+    size,
+    fullWidth,
+    isDisabled
+  );
   const textStyles = getTextStyles(theme, variant, size);
   const loadingColor = getLoadingColor(theme, variant);
 
@@ -167,13 +181,18 @@ export const Button: React.FC<ButtonProps> = ({
       return (
         <View style={styles.loadingContainer}>
           <Spinner
-            size={size === 'small' ? 'small' : size === 'large' ? 'medium' : 'small'}
+            size={
+              size === 'small' ? 'small' : size === 'large' ? 'medium' : 'small'
+            }
             color={loadingColor}
             variant={loadingVariant}
             accessibilityLabel={`Loading ${title}`}
           />
           {Platform.OS === 'ios' && (
-            <Text weight="medium" style={[textStyles, styles.loadingText, textStyle]}>
+            <Text
+              weight="medium"
+              style={[textStyles, styles.loadingText, textStyle]}
+            >
               {title}
             </Text>
           )}
@@ -182,11 +201,11 @@ export const Button: React.FC<ButtonProps> = ({
     }
 
     return (
-      <View style={[styles.contentContainer, hasIcon && styles.contentWithIcon]}>
+      <View
+        style={[styles.contentContainer, hasIcon && styles.contentWithIcon]}
+      >
         {icon && (
-          <View style={[styles.iconContainer, styles.iconLeft]}>
-            {icon}
-          </View>
+          <View style={[styles.iconContainer, styles.iconLeft]}>{icon}</View>
         )}
         <Text weight="medium" style={[textStyles, textStyle]} numberOfLines={1}>
           {title}
@@ -213,7 +232,10 @@ export const Button: React.FC<ButtonProps> = ({
           {
             borderColor: focusValue.interpolate({
               inputRange: [0, 1],
-              outputRange: [buttonStyles.borderColor || 'transparent', theme.colors.primary[500]],
+              outputRange: [
+                buttonStyles.borderColor || 'transparent',
+                theme.colors.primary[500],
+              ],
             }) as any,
             shadowOpacity: focusValue.interpolate({
               inputRange: [0, 1],
@@ -231,7 +253,7 @@ export const Button: React.FC<ButtonProps> = ({
         activeOpacity={0.8}
         testID={testID}
         accessibilityRole="button"
-        accessibilityState={{ 
+        accessibilityState={{
           disabled: isDisabled,
           busy: loading,
         }}
@@ -349,7 +371,11 @@ const getButtonStyles = (
 /**
  * Get text styles based on theme, variant, and size
  */
-const getTextStyles = (theme: any, variant: string, size: string): TextStyle => {
+const getTextStyles = (
+  theme: any,
+  variant: string,
+  size: string
+): TextStyle => {
   const baseStyles: TextStyle = {
     textAlign: 'center',
     includeFontPadding: false,

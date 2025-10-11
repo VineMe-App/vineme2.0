@@ -47,7 +47,7 @@ export const Backdrop: React.FC<BackdropProps> = ({
   const { colors, animations } = useTheme();
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1.1)).current;
-  
+
   const duration = animationDuration || animations.duration.normal;
   const backdropColor = color || colors.surface.overlay;
   const { width, height } = Dimensions.get('window');
@@ -102,7 +102,8 @@ export const Backdrop: React.FC<BackdropProps> = ({
       style={[
         styles.backdrop,
         {
-          opacity: animationType === 'none' ? (isVisible ? opacity : 0) : opacityAnim,
+          opacity:
+            animationType === 'none' ? (isVisible ? opacity : 0) : opacityAnim,
           transform: [{ scale: scaleAnim }],
         },
         style,
@@ -122,32 +123,40 @@ export const Backdrop: React.FC<BackdropProps> = ({
   );
 };
 
-const createStyles = (zIndex: number, backdropColor: string, width: number, height: number, blur: boolean) => StyleSheet.create({
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width,
-    height,
-    backgroundColor: backdropColor,
-    zIndex,
-    ...Platform.select({
-      android: {
-        elevation: zIndex,
-      },
-    }),
-    ...(blur && Platform.OS === 'ios' && {
-      backdropFilter: 'blur(10px)',
-    }),
-  },
-  touchArea: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+const createStyles = (
+  zIndex: number,
+  backdropColor: string,
+  width: number,
+  height: number,
+  blur: boolean
+) =>
+  StyleSheet.create({
+    backdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width,
+      height,
+      backgroundColor: backdropColor,
+      zIndex,
+      ...Platform.select({
+        android: {
+          elevation: zIndex,
+        },
+      }),
+      ...(blur &&
+        Platform.OS === 'ios' && {
+          backdropFilter: 'blur(10px)',
+        }),
+    },
+    touchArea: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });

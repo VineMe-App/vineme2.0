@@ -24,9 +24,15 @@ jest.mock('../../services/referrals');
 jest.mock('../../stores/auth');
 jest.mock('../../utils/performance');
 
-const mockReferralService = referralService as jest.Mocked<typeof referralService>;
-const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
-const mockPerformanceMonitor = performanceMonitor as jest.Mocked<typeof performanceMonitor>;
+const mockReferralService = referralService as jest.Mocked<
+  typeof referralService
+>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<
+  typeof useAuthStore
+>;
+const mockPerformanceMonitor = performanceMonitor as jest.Mocked<
+  typeof performanceMonitor
+>;
 
 // Mock data
 const mockUser = {
@@ -126,7 +132,9 @@ describe('useReferrals hooks', () => {
 
       expect(result.current.data).toEqual(mockReferralsData);
       expect(result.current.error).toBeNull();
-      expect(mockReferralService.getReferralsByUser).toHaveBeenCalledWith('user-123');
+      expect(mockReferralService.getReferralsByUser).toHaveBeenCalledWith(
+        'user-123'
+      );
       expect(mockPerformanceMonitor.recordQueryPerformance).toHaveBeenCalled();
     });
 
@@ -176,7 +184,9 @@ describe('useReferrals hooks', () => {
 
       expect(result.current.data).toEqual([mockGroupReferral]);
       expect(result.current.error).toBeNull();
-      expect(mockReferralService.getReferralsForGroup).toHaveBeenCalledWith('group-123');
+      expect(mockReferralService.getReferralsForGroup).toHaveBeenCalledWith(
+        'group-123'
+      );
     });
 
     it('should handle errors when fetching group referrals', async () => {
@@ -248,9 +258,9 @@ describe('useReferrals hooks', () => {
         note: 'Great person',
       };
 
-      await expect(
-        result.current.mutateAsync(referralData)
-      ).rejects.toThrow('Email already exists');
+      await expect(result.current.mutateAsync(referralData)).rejects.toThrow(
+        'Email already exists'
+      );
     });
 
     it('should throw error when user is not authenticated', async () => {
@@ -274,9 +284,9 @@ describe('useReferrals hooks', () => {
         note: 'Great person',
       };
 
-      await expect(
-        result.current.mutateAsync(referralData)
-      ).rejects.toThrow('User must be authenticated');
+      await expect(result.current.mutateAsync(referralData)).rejects.toThrow(
+        'User must be authenticated'
+      );
     });
   });
 
@@ -318,9 +328,9 @@ describe('useReferrals hooks', () => {
         note: 'Great person',
       };
 
-      await expect(
-        result.current.mutateAsync(referralData)
-      ).rejects.toThrow('Group ID is required for group referrals');
+      await expect(result.current.mutateAsync(referralData)).rejects.toThrow(
+        'Group ID is required for group referrals'
+      );
     });
   });
 
@@ -459,7 +469,9 @@ describe('useReferrals hooks', () => {
       const response = await result.current.createGeneralReferral(referralData);
 
       expect(response.success).toBe(true);
-      expect(response.message).toContain('General referral created successfully');
+      expect(response.message).toContain(
+        'General referral created successfully'
+      );
     });
 
     it('should provide feedback methods with error messages', async () => {
@@ -506,7 +518,9 @@ describe('useReferrals hooks', () => {
       });
 
       expect(result.current.data).toEqual(mockUserReferrals);
-      expect(mockReferralService.getReferralsForUser).toHaveBeenCalledWith('user-456');
+      expect(mockReferralService.getReferralsForUser).toHaveBeenCalledWith(
+        'user-456'
+      );
     });
 
     it('should not fetch when userId is not provided', () => {
@@ -526,7 +540,9 @@ describe('useReferrals hooks', () => {
         groupReferrals: 6,
         generalReferrals: 4,
         referralsByMonth: [{ month: '2024-01', count: 5 }],
-        topReferrers: [{ referrer_id: 'user-123', referrer_name: 'Test User', count: 3 }],
+        topReferrers: [
+          { referrer_id: 'user-123', referrer_name: 'Test User', count: 3 },
+        ],
       };
 
       mockReferralService.getReferralStatistics.mockResolvedValue({
@@ -534,16 +550,22 @@ describe('useReferrals hooks', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useReferralStatistics('2024-01-01', '2024-12-31'), {
-        wrapper: createWrapper(),
-      });
+      const { result } = renderHook(
+        () => useReferralStatistics('2024-01-01', '2024-12-31'),
+        {
+          wrapper: createWrapper(),
+        }
+      );
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
 
       expect(result.current.data).toEqual(mockStats);
-      expect(mockReferralService.getReferralStatistics).toHaveBeenCalledWith('2024-01-01', '2024-12-31');
+      expect(mockReferralService.getReferralStatistics).toHaveBeenCalledWith(
+        '2024-01-01',
+        '2024-12-31'
+      );
     });
   });
 
@@ -569,7 +591,9 @@ describe('useReferrals hooks', () => {
       });
 
       expect(result.current.data).toEqual(mockCounts);
-      expect(mockReferralService.getReferralCountsByReferrer).toHaveBeenCalledWith('user-123');
+      expect(
+        mockReferralService.getReferralCountsByReferrer
+      ).toHaveBeenCalledWith('user-123');
     });
   });
 
@@ -604,7 +628,7 @@ describe('useReferrals hooks', () => {
       });
 
       expect(mockReferralService.createBatchReferrals).toHaveBeenCalledWith(
-        referralsData.map(r => ({ ...r, referrerId: 'user-123' }))
+        referralsData.map((r) => ({ ...r, referrerId: 'user-123' }))
       );
     });
   });
@@ -617,12 +641,16 @@ describe('useReferrals hooks', () => {
 
       // Test email validation
       expect(result.current.validateEmail('test@example.com')).toBeNull();
-      expect(result.current.validateEmail('invalid-email')).toBe('Invalid email format');
+      expect(result.current.validateEmail('invalid-email')).toBe(
+        'Invalid email format'
+      );
       expect(result.current.validateEmail('')).toBe('Email is required');
 
       // Test phone validation
       expect(result.current.validatePhone('+1234567890')).toBeNull();
-      expect(result.current.validatePhone('123')).toBe('Invalid phone number format');
+      expect(result.current.validatePhone('123')).toBe(
+        'Invalid phone number format'
+      );
       expect(result.current.validatePhone('')).toBe('Phone number is required');
 
       // Test referral data validation
@@ -653,9 +681,12 @@ describe('useReferrals hooks', () => {
         userId: 'user-456',
       });
 
-      const { result } = renderHook(() => useGroupReferralOperations('group-123'), {
-        wrapper: createWrapper(),
-      });
+      const { result } = renderHook(
+        () => useGroupReferralOperations('group-123'),
+        {
+          wrapper: createWrapper(),
+        }
+      );
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -681,9 +712,12 @@ describe('useReferrals hooks', () => {
     });
 
     it('should handle validation errors', async () => {
-      const { result } = renderHook(() => useGroupReferralOperations('group-123'), {
-        wrapper: createWrapper(),
-      });
+      const { result } = renderHook(
+        () => useGroupReferralOperations('group-123'),
+        {
+          wrapper: createWrapper(),
+        }
+      );
 
       const invalidReferralData = {
         email: 'invalid-email',

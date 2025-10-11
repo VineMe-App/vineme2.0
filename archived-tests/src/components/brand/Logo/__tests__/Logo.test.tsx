@@ -41,10 +41,10 @@ jest.mock('react-native', () => ({
 const mockAssetManager = assetManager as jest.Mocked<typeof assetManager>;
 
 // Test wrapper with theme provider
-const TestWrapper: React.FC<{ children: React.ReactNode; isDark?: boolean }> = ({ 
-  children, 
-  isDark = false 
-}) => (
+const TestWrapper: React.FC<{
+  children: React.ReactNode;
+  isDark?: boolean;
+}> = ({ children, isDark = false }) => (
   <ThemeProvider initialTheme={isDark ? 'dark' : 'light'}>
     {children}
   </ThemeProvider>
@@ -117,11 +117,16 @@ describe('Logo Component', () => {
     });
 
     it('should handle all logo variants', () => {
-      const variants: Array<keyof typeof mockAssetManager.getLogo> = ['full', 'icon', 'light', 'dark'];
-      
+      const variants: (keyof typeof mockAssetManager.getLogo)[] = [
+        'full',
+        'icon',
+        'light',
+        'dark',
+      ];
+
       variants.forEach((variant) => {
         mockAssetManager.getLogo.mockClear();
-        
+
         render(
           <TestWrapper>
             <Logo variant={variant as any} />
@@ -251,7 +256,7 @@ describe('Logo Component', () => {
   describe('Style Customization', () => {
     it('should apply custom image style', () => {
       const customStyle = { borderRadius: 8, opacity: 0.8 };
-      
+
       render(
         <TestWrapper>
           <Logo style={customStyle} />
@@ -259,14 +264,12 @@ describe('Logo Component', () => {
       );
 
       const logo = screen.getByTestId('logo');
-      expect(logo.props.style).toEqual(
-        expect.objectContaining(customStyle)
-      );
+      expect(logo.props.style).toEqual(expect.objectContaining(customStyle));
     });
 
     it('should apply custom container style', () => {
       const customContainerStyle = { backgroundColor: 'red', padding: 10 };
-      
+
       render(
         <TestWrapper>
           <Logo containerStyle={customContainerStyle} />
@@ -275,9 +278,7 @@ describe('Logo Component', () => {
 
       const container = screen.getByTestId('logo-container');
       expect(container.props.style).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining(customContainerStyle)
-        ])
+        expect.arrayContaining([expect.objectContaining(customContainerStyle)])
       );
     });
 

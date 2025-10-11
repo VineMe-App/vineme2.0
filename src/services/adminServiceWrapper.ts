@@ -265,10 +265,10 @@ export class AdminServiceWrapper {
     options: ServiceWrapperOptions = {}
   ): Promise<{
     successful: string[];
-    failed: Array<{ groupId: string; error: AppError }>;
+    failed: { groupId: string; error: AppError }[];
   }> {
     const successful: string[] = [];
-    const failed: Array<{ groupId: string; error: AppError }> = [];
+    const failed: { groupId: string; error: AppError }[] = [];
 
     for (const groupId of groupIds) {
       const result = await this.approveGroup(groupId, adminId, undefined, {
@@ -296,10 +296,10 @@ export class AdminServiceWrapper {
     options: ServiceWrapperOptions = {}
   ): Promise<{
     successful: string[];
-    failed: Array<{ groupId: string; error: AppError }>;
+    failed: { groupId: string; error: AppError }[];
   }> {
     const successful: string[] = [];
-    const failed: Array<{ groupId: string; error: AppError }> = [];
+    const failed: { groupId: string; error: AppError }[] = [];
 
     for (const groupId of groupIds) {
       const result = await this.declineGroup(groupId, adminId, reason, {

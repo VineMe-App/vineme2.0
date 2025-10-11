@@ -19,97 +19,97 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
    * Input label text
    */
   label?: string;
-  
+
   /**
    * Error message to display
    */
   error?: string;
-  
+
   /**
    * Helper text to display below input
    */
   helperText?: string;
-  
+
   /**
    * Success message to display
    */
   successMessage?: string;
-  
+
   /**
    * Whether the field is required
    */
   required?: boolean;
-  
+
   /**
    * Icon to display on the left side
    */
   leftIcon?: React.ReactNode;
-  
+
   /**
    * Icon to display on the right side
    */
   rightIcon?: React.ReactNode;
-  
+
   /**
    * Function to call when right icon is pressed
    */
   onRightIconPress?: () => void;
-  
+
   /**
    * Visual variant of the input
    */
   variant?: 'default' | 'filled' | 'outlined';
-  
+
   /**
    * Size of the input
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Validation state of the input
    */
   validationState?: 'default' | 'error' | 'success' | 'warning';
-  
+
   /**
    * Whether the input should take full width
    */
   fullWidth?: boolean;
-  
+
   /**
    * Whether to show character count
    */
   showCharacterCount?: boolean;
-  
+
   /**
    * Maximum character count
    */
   maxLength?: number;
-  
+
   /**
    * Custom styles for the container
    */
   containerStyle?: ViewStyle;
-  
+
   /**
    * Custom styles for the input
    */
   inputStyle?: TextStyle;
-  
+
   /**
    * Custom styles for the label
    */
   labelStyle?: TextStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Accessibility label
    */
   accessibilityLabel?: string;
-  
+
   /**
    * Accessibility hint
    */
@@ -147,10 +147,14 @@ export const Input: React.FC<InputProps> = ({
   const [characterCount, setCharacterCount] = useState(value?.length || 0);
   const focusAnimation = useRef(new Animated.Value(0)).current;
   const borderAnimation = useRef(new Animated.Value(0)).current;
-  
+
   // Determine validation state from props
-  const currentValidationState = error ? 'error' : successMessage ? 'success' : validationState;
-  
+  const currentValidationState = error
+    ? 'error'
+    : successMessage
+      ? 'success'
+      : validationState;
+
   // Generate dynamic styles based on theme
   const containerStyles = getContainerStyles(theme, fullWidth);
   const inputContainerStyles = getInputContainerStyles(
@@ -167,7 +171,7 @@ export const Input: React.FC<InputProps> = ({
   // Handle focus animations
   const handleFocus = (event: any) => {
     setIsFocused(true);
-    
+
     if (Animated.parallel) {
       Animated.parallel([
         Animated.timing(focusAnimation, {
@@ -182,13 +186,13 @@ export const Input: React.FC<InputProps> = ({
         }),
       ]).start();
     }
-    
+
     onFocus?.(event);
   };
 
   const handleBlur = (event: any) => {
     setIsFocused(false);
-    
+
     if (Animated.parallel) {
       Animated.parallel([
         Animated.timing(focusAnimation, {
@@ -203,7 +207,7 @@ export const Input: React.FC<InputProps> = ({
         }),
       ]).start();
     }
-    
+
     onBlur?.(event);
   };
 
@@ -235,13 +239,14 @@ export const Input: React.FC<InputProps> = ({
     accessibilityHint: accessibilityHint,
     accessibilityRequired: required,
     accessibilityInvalid: !!error,
-    accessibilityDescribedBy: error || helperText || successMessage ? `${testID}-message` : undefined,
+    accessibilityDescribedBy:
+      error || helperText || successMessage ? `${testID}-message` : undefined,
   };
 
   const renderMessage = () => {
     const message = error || successMessage || helperText;
     const hasCharacterCount = showCharacterCount && maxLength;
-    
+
     if (!message && !hasCharacterCount) return null;
 
     return (
@@ -256,7 +261,7 @@ export const Input: React.FC<InputProps> = ({
           </Text>
         )}
         {hasCharacterCount && (
-          <Text 
+          <Text
             style={[messageStyles, styles.characterCount]}
             testID={`${testID}-character-count`}
           >
@@ -270,7 +275,8 @@ export const Input: React.FC<InputProps> = ({
   const animatedBorderColor = borderAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [
-      (inputContainerStyles.borderColor as string) || theme.colors.border.primary,
+      (inputContainerStyles.borderColor as string) ||
+        theme.colors.border.primary,
       theme.colors.border.focus,
     ],
   });
@@ -286,11 +292,14 @@ export const Input: React.FC<InputProps> = ({
         <Text style={[labelStyles, labelStyle]} testID={`${testID}-label`}>
           {label}
           {required && (
-            <Text style={[labelStyles, { color: theme.colors.error[500] }]}> *</Text>
+            <Text style={[labelStyles, { color: theme.colors.error[500] }]}>
+              {' '}
+              *
+            </Text>
           )}
         </Text>
       )}
-      
+
       <Animated.View
         style={[
           inputContainerStyles,
@@ -305,7 +314,7 @@ export const Input: React.FC<InputProps> = ({
             {leftIcon}
           </View>
         )}
-        
+
         <TextInput
           style={[inputStyles, inputStyle]}
           placeholderTextColor={theme.colors.text.tertiary}
@@ -317,7 +326,7 @@ export const Input: React.FC<InputProps> = ({
           {...accessibilityProps}
           {...props}
         />
-        
+
         {rightIcon && (
           <TouchableOpacity
             style={[styles.iconContainer, styles.rightIcon]}
@@ -330,7 +339,7 @@ export const Input: React.FC<InputProps> = ({
           </TouchableOpacity>
         )}
       </Animated.View>
-      
+
       {renderMessage()}
     </View>
   );
@@ -463,7 +472,11 @@ const getInputStyles = (theme: any, size: string): TextStyle => {
 /**
  * Get label styles based on theme, size, and required state
  */
-const getLabelStyles = (theme: any, size: string, _required: boolean): TextStyle => {
+const getLabelStyles = (
+  theme: any,
+  size: string,
+  _required: boolean
+): TextStyle => {
   const baseStyles: TextStyle = {
     fontFamily: theme.typography.fontFamily.medium,
     color: theme.colors.text.primary,

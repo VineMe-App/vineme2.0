@@ -22,6 +22,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { locationService, Coordinates } from '../../services/location';
 import { MapViewFallback } from './MapViewFallback';
+import {
+  MapClusterer,
+  MapViewportOptimizer,
+  MapPerformanceMonitor,
+  type Cluster,
+  type ClusterPoint,
+} from '../../utils/mapClustering';
+import { Button } from '../ui';
+import { GroupCard } from './GroupCard';
+import type { GroupWithDetails } from '../../types/database';
+import { useGroupMembership, useGroupMembers } from '../../hooks/useGroups';
+import { useFriends } from '../../hooks/useFriendships';
+import { useAuthStore } from '../../stores/auth';
 
 // Dynamically import MapView - not available in Expo Go
 // Using try-catch to gracefully handle when the module isn't available
@@ -36,21 +49,10 @@ try {
   PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
 } catch (error) {
   // react-native-maps not available (Expo Go) - will show fallback UI
-  console.log('[GroupsMapView] react-native-maps not available - using fallback');
+  console.log(
+    '[GroupsMapView] react-native-maps not available - using fallback'
+  );
 }
-import {
-  MapClusterer,
-  MapViewportOptimizer,
-  MapPerformanceMonitor,
-  type Cluster,
-  type ClusterPoint,
-} from '../../utils/mapClustering';
-import { Button } from '../ui';
-import { GroupCard } from './GroupCard';
-import type { GroupWithDetails } from '../../types/database';
-import { useGroupMembership, useGroupMembers } from '../../hooks/useGroups';
-import { useFriends } from '../../hooks/useFriendships';
-import { useAuthStore } from '../../stores/auth';
 
 interface GroupsMapViewProps {
   groups: GroupWithDetails[];
@@ -189,7 +191,8 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   // Always declare hooks first (Rules of Hooks)
   const [markers, setMarkers] = useState<GroupMarker[]>([]);
   const [region, setRegion] = useState<typeof DEFAULT_REGION>(DEFAULT_REGION);
-  const [currentRegion, setCurrentRegion] = useState<typeof DEFAULT_REGION>(DEFAULT_REGION);
+  const [currentRegion, setCurrentRegion] =
+    useState<typeof DEFAULT_REGION>(DEFAULT_REGION);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [locationPermissionDenied, setLocationPermissionDenied] =
     useState(false);
@@ -229,11 +232,14 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
   // Create clusterer instance only if we have MapView
   const clusterer = useMemo(
-    () => MapView ? new MapClusterer({
-        radius: clusterRadius,
-        minZoom: 0,
-        maxZoom: 16,
-      }) : null,
+    () =>
+      MapView
+        ? new MapClusterer({
+            radius: clusterRadius,
+            minZoom: 0,
+            maxZoom: 16,
+          })
+        : null,
     [clusterRadius]
   );
 
@@ -377,7 +383,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       setIsLoadingLocation(false);
       return;
     }
-    
+
     setIsLoadingLocation(true);
 
     try {
@@ -461,7 +467,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     if (!MapView) {
       return;
     }
-    
+
     const groupMarkers: GroupMarker[] = [];
 
     for (const group of groups) {

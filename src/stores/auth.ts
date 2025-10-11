@@ -13,10 +13,20 @@ interface AuthState {
   error: string | null;
 
   // Actions - password authentication removed
-  signUpWithPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
-  signInWithPhone: (phone: string) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
-  signInWithEmail: (email: string) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
-  verifyOtp: (phoneOrEmail: string, code: string, type: 'sms' | 'email') => Promise<{ success: boolean; error?: string; user?: User }>;
+  signUpWithPhone: (
+    phone: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  signInWithPhone: (
+    phone: string
+  ) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
+  signInWithEmail: (
+    email: string
+  ) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
+  verifyOtp: (
+    phoneOrEmail: string,
+    code: string,
+    type: 'sms' | 'email'
+  ) => Promise<{ success: boolean; error?: string; user?: User }>;
   linkEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
   linkPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -54,7 +64,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Phone sign up failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Phone sign up failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -70,7 +81,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Phone sign in failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Phone sign in failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -86,13 +98,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Email sign in failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Email sign in failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
   },
 
-  verifyOtp: async (phoneOrEmail: string, code: string, type: 'sms' | 'email') => {
+  verifyOtp: async (
+    phoneOrEmail: string,
+    code: string,
+    type: 'sms' | 'email'
+  ) => {
     set({ isLoading: true, error: null });
     try {
       const result = await authService.verifyOtp(phoneOrEmail, code, type);
@@ -126,7 +143,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'OTP verification failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -142,7 +160,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Email linking failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Email linking failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -161,7 +180,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Phone linking failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Phone linking failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }

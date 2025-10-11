@@ -103,20 +103,28 @@ describe('Referral System Navigation Integration', () => {
     });
 
     it('should meet requirement 1.3 - display decision flow question', () => {
-      const questionText = 'Do you want to connect/refer someone else to a group?';
+      const questionText =
+        'Do you want to connect/refer someone else to a group?';
       const yesOption = 'Yes, I know a group that fits';
       const noOption = 'No specific group fits';
 
-      expect(questionText).toBe('Do you want to connect/refer someone else to a group?');
+      expect(questionText).toBe(
+        'Do you want to connect/refer someone else to a group?'
+      );
       expect(yesOption).toBe('Yes, I know a group that fits');
       expect(noOption).toBe('No specific group fits');
     });
 
     it('should meet requirement 2.1 - provide general referral path', () => {
-      const generalReferralDescription = 'Connect them to the community and our team will help match them with groups that fit their interests';
-      
-      expect(generalReferralDescription).toContain('Connect them to the community');
-      expect(generalReferralDescription).toContain('help match them with groups');
+      const generalReferralDescription =
+        'Connect them to the community and our team will help match them with groups that fit their interests';
+
+      expect(generalReferralDescription).toContain(
+        'Connect them to the community'
+      );
+      expect(generalReferralDescription).toContain(
+        'help match them with groups'
+      );
     });
   });
 
@@ -135,9 +143,12 @@ describe('Referral System Navigation Integration', () => {
     });
 
     it('should meet requirement 3.1 - group referral instructions', () => {
-      const groupReferralInstructions = 'Browse groups to find the right fit, then use the "Refer a friend" button on the group page to connect them directly';
-      
-      expect(groupReferralInstructions).toContain('Browse groups to find the right fit');
+      const groupReferralInstructions =
+        'Browse groups to find the right fit, then use the "Refer a friend" button on the group page to connect them directly';
+
+      expect(groupReferralInstructions).toContain(
+        'Browse groups to find the right fit'
+      );
       expect(groupReferralInstructions).toContain('Refer a friend');
       expect(groupReferralInstructions).toContain('connect them directly');
     });
@@ -230,7 +241,10 @@ describe('Referral System Navigation Integration', () => {
         try {
           mockRouterWithError.push('/referral-landing');
         } catch (error) {
-          mockAlert.alert('Navigation Error', 'Failed to navigate to referral page');
+          mockAlert.alert(
+            'Navigation Error',
+            'Failed to navigate to referral page'
+          );
         }
       };
 
