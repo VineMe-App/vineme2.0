@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text } from '../ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '../ui/Modal';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
+import { MembershipNotesSection } from './MembershipNotesSection';
 import type { GroupMembershipWithUser } from '../../types/database';
 import { getDisplayName, getFullName } from '@/utils/name';
 
@@ -12,6 +13,8 @@ interface MemberManagementModalProps {
   visible: boolean;
   member: GroupMembershipWithUser | null;
   isLastLeader: boolean;
+  groupId: string;
+  leaderId: string;
   onClose: () => void;
   onPromoteToLeader: () => void;
   onDemoteFromLeader: () => void;
@@ -23,6 +26,8 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
   visible,
   member,
   isLastLeader,
+  groupId,
+  leaderId,
   onClose,
   onPromoteToLeader,
   onDemoteFromLeader,
@@ -38,6 +43,7 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
 
   return (
     <Modal isVisible={visible} onClose={onClose} title="Manage Member">
+      <ScrollView style={styles.scrollView}>
         <View style={styles.container}>
           {/* Member Info */}
           <View style={styles.memberInfo}>
@@ -62,6 +68,16 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
             </View>
             <Text style={styles.joinDate}>Joined {joinDate}</Text>
           </View>
+        </View>
+
+        {/* Notes Section */}
+        <View style={styles.notesContainer}>
+          <MembershipNotesSection
+            membershipId={member.id}
+            groupId={groupId}
+            userId={member.user_id}
+            leaderId={leaderId}
+          />
         </View>
 
         {/* Actions */}
@@ -118,22 +134,23 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
           )}
         </View>
 
-        {/* Info Section */}
-        <View style={styles.infoSection}>
-          <View style={styles.infoItem}>
-            <Ionicons
-              name="information-circle-outline"
-              size={16}
-              color="#666"
-            />
-            <Text style={styles.infoText}>
-              {isLeader
-                ? 'Leaders can edit group details and manage members.'
-                : 'Members can participate in group activities and discussions.'}
-            </Text>
+          {/* Info Section */}
+          <View style={styles.infoSection}>
+            <View style={styles.infoItem}>
+              <Ionicons
+                name="information-circle-outline"
+                size={16}
+                color="#666"
+              />
+              <Text style={styles.infoText}>
+                {isLeader
+                  ? 'Leaders can edit group details and manage members.'
+                  : 'Members can participate in group activities and discussions.'}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       <View style={styles.footer}>
         <Button
@@ -148,8 +165,15 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
 };
 
 const styles = StyleSheet.create({
+  scrollView: {
+    maxHeight: 600,
+  },
   container: {
     padding: 16,
+  },
+  notesContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   memberInfo: {
     flexDirection: 'row',

@@ -138,7 +138,53 @@ export const useApproveJoinRequest = () => {
 };
 
 /**
- * Hook to decline a join request
+ * Hook to archive a join request with reason
+ */
+export const useArchiveJoinRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      requestId,
+      declinerId,
+      groupId,
+      reason,
+      notes,
+    }: {
+      requestId: string;
+      declinerId: string;
+      groupId: string;
+      reason?: string;
+      notes?: string;
+    }) => {
+      const { data, error } = await joinRequestService.archiveJoinRequest(
+        requestId,
+        declinerId,
+        reason,
+        notes
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate join requests queries
+      queryClient.invalidateQueries({
+        queryKey: joinRequestKeys.byGroup(variables.groupId),
+      });
+
+      // Invalidate group data to update pending requests count
+      queryClient.invalidateQueries({
+        queryKey: ['groups', 'byId', variables.groupId],
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to archive join request:', error);
+    },
+  });
+};
+
+/**
+ * Hook to decline a join request (deprecated - use useArchiveJoinRequest)
  */
 export const useDeclineJoinRequest = () => {
   const queryClient = useQueryClient();

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
+import { groupMembershipNotesService } from './groupMembershipNotes';
 import { triggerJoinRequestReceivedNotification } from './notifications';
 import { getFullName } from '../utils/name';
 
@@ -339,6 +340,21 @@ export class GroupService {
         };
       }
 
+      // Get membership record before updating
+      const { data: membership, error: fetchError } = await supabase
+        .from('group_memberships')
+        .select('id, status')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !membership) {
+        return {
+          data: null,
+          error: new Error('Membership not found'),
+        };
+      }
+
       const { error } = await supabase
         .from('group_memberships')
         .update({ status: 'inactive' })
@@ -347,6 +363,26 @@ export class GroupService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Create note for the member leaving
+      if (membership.status === 'active') {
+        try {
+          await groupMembershipNotesService.createStatusChangeNote(
+            {
+              membership_id: membership.id,
+              group_id: groupId,
+              user_id: userId,
+              note_type: 'member_left',
+              previous_status: 'active',
+              new_status: 'inactive',
+            },
+            userId
+          );
+        } catch (noteError) {
+          if (__DEV__)
+            console.warn('Failed to create member left note:', noteError);
+        }
       }
 
       return { data: true, error: null };
