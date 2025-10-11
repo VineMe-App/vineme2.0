@@ -54,11 +54,18 @@ const styles = StyleSheet.create({
       // Mock file operations for testing
       const originalReadFile = (migrator as any).readFile;
       const originalCreateBackup = (migrator as any).createBackup;
-      
-      (migrator as any).readFile = jest.fn().mockResolvedValue(sampleComponentCode);
-      (migrator as any).createBackup = jest.fn().mockResolvedValue('backup-path');
 
-      const result = await migrator.migrateComponent('test-component.tsx', config);
+      (migrator as any).readFile = jest
+        .fn()
+        .mockResolvedValue(sampleComponentCode);
+      (migrator as any).createBackup = jest
+        .fn()
+        .mockResolvedValue('backup-path');
+
+      const result = await migrator.migrateComponent(
+        'test-component.tsx',
+        config
+      );
 
       expect(result.success).toBe(true);
       expect(result.migratedCode).toContain('useTheme');
@@ -90,15 +97,18 @@ const styles = StyleSheet.create({
         },
       });
 
-      const compatibleStylesFactory = ThemeCompatibilityLayer.createCompatibleStyles(
-        legacyStyles,
-        themeAwareStyles
-      );
+      const compatibleStylesFactory =
+        ThemeCompatibilityLayer.createCompatibleStyles(
+          legacyStyles,
+          themeAwareStyles
+        );
 
       const styles = compatibleStylesFactory(lightTheme);
 
       // Theme values should take precedence
-      expect(styles.container.backgroundColor).toBe(lightTheme.colors.background.primary);
+      expect(styles.container.backgroundColor).toBe(
+        lightTheme.colors.background.primary
+      );
       expect(styles.container.padding).toBe(lightTheme.spacing.lg);
       expect(styles.container.borderRadius).toBe(lightTheme.borderRadius.md);
     });
@@ -118,35 +128,41 @@ const styles = StyleSheet.create({
         }),
       };
 
-      const migrationStylesFactory = ThemeCompatibilityLayer.createCompatibleStyles(
-        legacyStyles,
-        (theme) => {
-          const result: any = {};
-          
-          // Apply theme styles where available
-          if (partialThemeStyles.container) {
-            result.container = partialThemeStyles.container(theme);
+      const migrationStylesFactory =
+        ThemeCompatibilityLayer.createCompatibleStyles(
+          legacyStyles,
+          (theme) => {
+            const result: any = {};
+
+            // Apply theme styles where available
+            if (partialThemeStyles.container) {
+              result.container = partialThemeStyles.container(theme);
+            }
+
+            // Convert remaining legacy styles
+            const convertedLegacy =
+              ThemeCompatibilityLayer.convertLegacyStyleSheet(
+                { header: legacyStyles.header, footer: legacyStyles.footer },
+                theme
+              );
+
+            return { ...result, ...convertedLegacy };
           }
-          
-          // Convert remaining legacy styles
-          const convertedLegacy = ThemeCompatibilityLayer.convertLegacyStyleSheet(
-            { header: legacyStyles.header, footer: legacyStyles.footer },
-            theme
-          );
-          
-          return { ...result, ...convertedLegacy };
-        }
-      );
+        );
 
       const styles = migrationStylesFactory(lightTheme);
 
       // Container should use theme styles
-      expect(styles.container.backgroundColor).toBe(lightTheme.colors.background.primary);
+      expect(styles.container.backgroundColor).toBe(
+        lightTheme.colors.background.primary
+      );
       expect(styles.container.padding).toBe(lightTheme.spacing.lg);
 
       // Header and footer should use converted legacy styles
       expect(styles.header.fontSize).toBe(lightTheme.typography.fontSize.lg);
-      expect(styles.header.fontWeight).toBe(lightTheme.typography.fontWeight.bold);
+      expect(styles.header.fontWeight).toBe(
+        lightTheme.typography.fontWeight.bold
+      );
       expect(styles.footer.color).toBe(lightTheme.colors.text.secondary);
     });
   });
@@ -204,10 +220,23 @@ const styles = StyleSheet.create({
         generateTypes: true,
       };
 
-      const docs = migrationHelpers.generateMigrationDocs('TestComponent', mappings, config);
-      const example = migrationHelpers.generateExampleUsage('TestComponent', lightTheme);
-      const tests = migrationHelpers.generateMigrationTests('TestComponent', mappings);
-      const checklist = migrationHelpers.generateMigrationChecklist('TestComponent', mappings);
+      const docs = migrationHelpers.generateMigrationDocs(
+        'TestComponent',
+        mappings,
+        config
+      );
+      const example = migrationHelpers.generateExampleUsage(
+        'TestComponent',
+        lightTheme
+      );
+      const tests = migrationHelpers.generateMigrationTests(
+        'TestComponent',
+        mappings
+      );
+      const checklist = migrationHelpers.generateMigrationChecklist(
+        'TestComponent',
+        mappings
+      );
 
       expect(docs).toContain('TestComponent');
       expect(example).toContain('TestComponent');
@@ -245,8 +274,16 @@ const styles = StyleSheet.create({
         },
       ];
 
-      const goodResult = migrationHelpers.validateMigration(originalCode, goodMigratedCode, mappings);
-      const badResult = migrationHelpers.validateMigration(originalCode, badMigratedCode, mappings);
+      const goodResult = migrationHelpers.validateMigration(
+        originalCode,
+        goodMigratedCode,
+        mappings
+      );
+      const badResult = migrationHelpers.validateMigration(
+        originalCode,
+        badMigratedCode,
+        mappings
+      );
 
       expect(goodResult.isValid).toBe(true);
       expect(badResult.isValid).toBe(false);
@@ -331,11 +368,19 @@ const styles = StyleSheet.create({
       );
 
       expect(convertedStyles.container.flex).toBe(1);
-      expect(convertedStyles.container.backgroundColor).toBe(lightTheme.colors.background.secondary);
+      expect(convertedStyles.container.backgroundColor).toBe(
+        lightTheme.colors.background.secondary
+      );
       expect(convertedStyles.header.padding).toBe(lightTheme.spacing.xl);
-      expect(convertedStyles.header.backgroundColor).toBe(lightTheme.colors.background.primary);
-      expect(convertedStyles.title.fontSize).toBe(lightTheme.typography.fontSize.xxl);
-      expect(convertedStyles.title.fontWeight).toBe(lightTheme.typography.fontWeight.bold);
+      expect(convertedStyles.header.backgroundColor).toBe(
+        lightTheme.colors.background.primary
+      );
+      expect(convertedStyles.title.fontSize).toBe(
+        lightTheme.typography.fontSize.xxl
+      );
+      expect(convertedStyles.title.fontWeight).toBe(
+        lightTheme.typography.fontWeight.bold
+      );
     });
 
     it('should handle components with conditional styles', () => {
@@ -356,15 +401,20 @@ const styles = StyleSheet.create({
         },
       });
 
-      const compatibleStylesFactory = ThemeCompatibilityLayer.createCompatibleStyles(
-        legacyStyles,
-        themeAwareStyles
-      );
+      const compatibleStylesFactory =
+        ThemeCompatibilityLayer.createCompatibleStyles(
+          legacyStyles,
+          themeAwareStyles
+        );
 
       const styles = compatibleStylesFactory(lightTheme);
 
-      expect(styles.button.backgroundColor).toBe(lightTheme.colors.primary[600]);
-      expect(styles.buttonDisabled.backgroundColor).toBe(lightTheme.colors.neutral[400]);
+      expect(styles.button.backgroundColor).toBe(
+        lightTheme.colors.primary[600]
+      );
+      expect(styles.buttonDisabled.backgroundColor).toBe(
+        lightTheme.colors.neutral[400]
+      );
       expect(styles.button.padding).toBe(lightTheme.spacing.md);
     });
   });

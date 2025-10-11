@@ -5,10 +5,10 @@
 
 import { performance } from 'perf_hooks';
 import { lightTheme, darkTheme } from '../../../theme/themes';
-import { 
-  ThemeSwitchingOptimizer, 
+import {
+  ThemeSwitchingOptimizer,
   StylePerformanceDebugger,
-  PerformanceStyleUtils
+  PerformanceStyleUtils,
 } from '../../../utils/performanceStyleUtils';
 
 // Mock performance.now for consistent testing
@@ -26,13 +26,13 @@ describe('Theme Operations Performance Tests', () => {
     it('should complete theme switching within performance budget', async () => {
       const startTime = 0;
       const endTime = 16; // 16ms budget for 60fps
-      
+
       mockPerformanceNow
         .mockReturnValueOnce(startTime)
         .mockReturnValueOnce(endTime);
 
       const mockCallback = jest.fn();
-      
+
       await ThemeSwitchingOptimizer.optimizeThemeSwitch(
         lightTheme,
         darkTheme,
@@ -40,7 +40,7 @@ describe('Theme Operations Performance Tests', () => {
       );
 
       expect(mockCallback).toHaveBeenCalled();
-      
+
       // Verify performance was measured
       expect(mockPerformanceNow).toHaveBeenCalledTimes(2);
     });
@@ -54,19 +54,15 @@ describe('Theme Operations Performance Tests', () => {
 
       const startTime = 0;
       const endTime = 10;
-      
+
       mockPerformanceNow
         .mockReturnValueOnce(startTime)
         .mockReturnValueOnce(endTime);
 
       // Test batching through the optimizer
-      ThemeSwitchingOptimizer.optimizeThemeSwitch(
-        lightTheme,
-        darkTheme,
-        () => {
-          updates.forEach(update => update());
-        }
-      );
+      ThemeSwitchingOptimizer.optimizeThemeSwitch(lightTheme, darkTheme, () => {
+        updates.forEach((update) => update());
+      });
 
       // All updates should be batched and executed
       expect(mockPerformanceNow).toHaveBeenCalledTimes(2);
@@ -96,7 +92,8 @@ describe('Theme Operations Performance Tests', () => {
         },
       }));
 
-      const memoizedCreator = PerformanceStyleUtils.createMemoizedStyleFunction(styleCreator);
+      const memoizedCreator =
+        PerformanceStyleUtils.createMemoizedStyleFunction(styleCreator);
 
       // First call should execute the function
       const styles1 = memoizedCreator(lightTheme);
@@ -123,43 +120,54 @@ describe('Theme Operations Performance Tests', () => {
         .mockReturnValueOnce(endTime);
 
       const styles = [];
-      
-      StylePerformanceDebugger.log('bulk_style_creation', 'Creating styles for components');
-      
+
+      StylePerformanceDebugger.log(
+        'bulk_style_creation',
+        'Creating styles for components'
+      );
+
       for (let i = 0; i < componentCount; i++) {
-        styles.push(PerformanceStyleUtils.createOptimizedThemedStyles(
-          (theme) => ({
-            container: {
-              backgroundColor: theme.colors.background.primary,
-              padding: theme.spacing[2],
-            },
-          }),
-          lightTheme,
-          `component-${i}`
-        ));
+        styles.push(
+          PerformanceStyleUtils.createOptimizedThemedStyles(
+            (theme) => ({
+              container: {
+                backgroundColor: theme.colors.background.primary,
+                padding: theme.spacing[2],
+              },
+            }),
+            lightTheme,
+            `component-${i}`
+          )
+        );
       }
 
       expect(styles).toHaveLength(componentCount);
-      
+
       const logs = StylePerformanceDebugger.getLog();
       expect(logs[0].type).toBe('bulk_style_creation');
     });
 
     it('should handle memory efficiently during style operations', () => {
       const initialMemory = process.memoryUsage?.() || { heapUsed: 0 };
-      
+
       // Create many style objects
       const styles = [];
       for (let i = 0; i < 1000; i++) {
-        styles.push(PerformanceStyleUtils.createOptimizedThemedStyles(
-          () => ({ container: { backgroundColor: `#${i.toString(16).padStart(6, '0')}` } }),
-          lightTheme,
-          `style-${i}`
-        ));
+        styles.push(
+          PerformanceStyleUtils.createOptimizedThemedStyles(
+            () => ({
+              container: {
+                backgroundColor: `#${i.toString(16).padStart(6, '0')}`,
+              },
+            }),
+            lightTheme,
+            `style-${i}`
+          )
+        );
       }
 
       const finalMemory = process.memoryUsage?.() || { heapUsed: 0 };
-      
+
       // Memory increase should be reasonable (less than 10MB for 1000 styles)
       const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed;
       expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024); // 10MB
@@ -187,10 +195,13 @@ describe('Theme Operations Performance Tests', () => {
 
     it('should provide performance recommendations', () => {
       // Simulate slow theme switching
-      StylePerformanceDebugger.log('theme_switch', 'Slow theme switch detected');
+      StylePerformanceDebugger.log(
+        'theme_switch',
+        'Slow theme switch detected'
+      );
 
       const analysis = StylePerformanceDebugger.analyzePerformance();
-      
+
       expect(analysis.recommendations).toBeDefined();
       expect(analysis.warnings).toBeDefined();
     });
@@ -198,11 +209,11 @@ describe('Theme Operations Performance Tests', () => {
     it('should clear performance logs when requested', () => {
       StylePerformanceDebugger.log('test1', 'Message 1');
       StylePerformanceDebugger.log('test2', 'Message 2');
-      
+
       expect(StylePerformanceDebugger.getLog()).toHaveLength(2);
-      
+
       StylePerformanceDebugger.clearLog();
-      
+
       expect(StylePerformanceDebugger.getLog()).toHaveLength(0);
     });
   });

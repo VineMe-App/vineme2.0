@@ -84,44 +84,44 @@ export const spacing: ThemeSpacing = {
 export const semanticSpacing = {
   // Component internal spacing
   componentPadding: {
-    xs: spacing[1],      // 4px
-    sm: spacing[2],      // 8px
-    md: spacing[3],      // 12px
-    lg: spacing[4],      // 16px
-    xl: spacing[6],      // 24px
+    xs: spacing[1], // 4px
+    sm: spacing[2], // 8px
+    md: spacing[3], // 12px
+    lg: spacing[4], // 16px
+    xl: spacing[6], // 24px
   },
 
   // Margins between components
   componentMargin: {
-    xs: spacing[2],      // 8px
-    sm: spacing[3],      // 12px
-    md: spacing[4],      // 16px
-    lg: spacing[6],      // 24px
-    xl: spacing[8],      // 32px
+    xs: spacing[2], // 8px
+    sm: spacing[3], // 12px
+    md: spacing[4], // 16px
+    lg: spacing[6], // 24px
+    xl: spacing[8], // 32px
   },
 
   // Section spacing
   sectionSpacing: {
-    xs: spacing[4],      // 16px
-    sm: spacing[6],      // 24px
-    md: spacing[8],      // 32px
-    lg: spacing[12],     // 48px
-    xl: spacing[16],     // 64px
+    xs: spacing[4], // 16px
+    sm: spacing[6], // 24px
+    md: spacing[8], // 32px
+    lg: spacing[12], // 48px
+    xl: spacing[16], // 64px
   },
 
   // Layout spacing
   layoutSpacing: {
-    xs: spacing[2],      // 8px
-    sm: spacing[4],      // 16px
-    md: spacing[6],      // 24px
-    lg: spacing[8],      // 32px
-    xl: spacing[12],     // 48px
+    xs: spacing[2], // 8px
+    sm: spacing[4], // 16px
+    md: spacing[6], // 24px
+    lg: spacing[8], // 32px
+    xl: spacing[12], // 48px
   },
 
   // Touch target sizes (minimum 44px for accessibility)
   touchTarget: {
     sm: 32,
-    md: 44,              // Minimum recommended
+    md: 44, // Minimum recommended
     lg: 56,
     xl: 64,
   },
@@ -191,13 +191,16 @@ export const spacingUtils = {
   /**
    * Get multiple spacing values
    */
-  getMultiple: (...keys: (keyof ThemeSpacing)[]): number[] => 
-    keys.map(key => spacing[key]),
+  getMultiple: (...keys: (keyof ThemeSpacing)[]): number[] =>
+    keys.map((key) => spacing[key]),
 
   /**
    * Create symmetric padding/margin
    */
-  symmetric: (horizontal: keyof ThemeSpacing, vertical: keyof ThemeSpacing) => ({
+  symmetric: (
+    horizontal: keyof ThemeSpacing,
+    vertical: keyof ThemeSpacing
+  ) => ({
     paddingHorizontal: spacing[horizontal],
     paddingVertical: spacing[vertical],
   }),

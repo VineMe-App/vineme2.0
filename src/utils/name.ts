@@ -4,8 +4,7 @@ export interface NameLike {
   name?: string | null;
 }
 
-const trimOrEmpty = (value?: string | null): string =>
-  (value ?? '').trim();
+const trimOrEmpty = (value?: string | null): string => (value ?? '').trim();
 
 export const getFullName = (user?: NameLike | null): string => {
   if (!user) return '';

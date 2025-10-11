@@ -35,7 +35,7 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
 }) => {
   const { theme } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   const {
     notifications: allNotifications,
     unreadCount,
@@ -60,10 +60,11 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(notification => 
-        notification.title.toLowerCase().includes(query) ||
-        notification.body.toLowerCase().includes(query) ||
-        notification.type.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (notification) =>
+          notification.title.toLowerCase().includes(query) ||
+          notification.body.toLowerCase().includes(query) ||
+          notification.type.toLowerCase().includes(query)
       );
     }
 
@@ -73,46 +74,57 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
   // Group notifications if needed
   const groupedNotifications = React.useMemo(() => {
     if (groupBy === 'none') {
-      return [{ key: 'all', title: null, notifications: filteredNotifications }];
+      return [
+        { key: 'all', title: null, notifications: filteredNotifications },
+      ];
     }
 
     if (groupBy === 'type') {
-      const groups = filteredNotifications.reduce((acc, notification) => {
-        const type = notification.type;
-        if (!acc[type]) {
-          acc[type] = [];
-        }
-        acc[type].push(notification);
-        return acc;
-      }, {} as Record<NotificationType, Notification[]>);
+      const groups = filteredNotifications.reduce(
+        (acc, notification) => {
+          const type = notification.type;
+          if (!acc[type]) {
+            acc[type] = [];
+          }
+          acc[type].push(notification);
+          return acc;
+        },
+        {} as Record<NotificationType, Notification[]>
+      );
 
       return Object.entries(groups).map(([type, notifications]) => ({
         key: type,
         title: formatNotificationType(type),
-        notifications: notifications.sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        notifications: notifications.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         ),
       }));
     }
 
     if (groupBy === 'date') {
-      const groups = filteredNotifications.reduce((acc, notification) => {
-        const date = new Date(notification.created_at);
-        const dateKey = getDateGroupKey(date);
-        if (!acc[dateKey]) {
-          acc[dateKey] = [];
-        }
-        acc[dateKey].push(notification);
-        return acc;
-      }, {} as Record<string, Notification[]>);
+      const groups = filteredNotifications.reduce(
+        (acc, notification) => {
+          const date = new Date(notification.created_at);
+          const dateKey = getDateGroupKey(date);
+          if (!acc[dateKey]) {
+            acc[dateKey] = [];
+          }
+          acc[dateKey].push(notification);
+          return acc;
+        },
+        {} as Record<string, Notification[]>
+      );
 
       return Object.entries(groups)
         .sort(([a], [b]) => getDateGroupSortOrder(a) - getDateGroupSortOrder(b))
         .map(([dateKey, notifications]) => ({
           key: dateKey,
           title: dateKey,
-          notifications: notifications.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          notifications: notifications.sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
           ),
         }));
     }
@@ -126,13 +138,15 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
   const formatNotificationType = (type: string): string => {
     return type
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
   const getDateGroupKey = (date: Date): string => {
     const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    const diffInDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     if (diffInDays === 0) return 'Today';
     if (diffInDays === 1) return 'Yesterday';
@@ -142,7 +156,13 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
   };
 
   const getDateGroupSortOrder = (dateKey: string): number => {
-    const order = { 'Today': 0, 'Yesterday': 1, 'This Week': 2, 'This Month': 3, 'Older': 4 };
+    const order = {
+      Today: 0,
+      Yesterday: 1,
+      'This Week': 2,
+      'This Month': 3,
+      Older: 4,
+    };
     return order[dateKey as keyof typeof order] ?? 5;
   };
 
@@ -153,16 +173,23 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
   const [groupBy, setGroupBy] = useState<'none' | 'type' | 'date'>('none');
 
   // Handle scroll to load more notifications
-  const handleScroll = useCallback((event: any) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 20;
-    
-    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
-      if (hasNextPage && !isLoadingMore) {
-        loadMore();
+  const handleScroll = useCallback(
+    (event: any) => {
+      const { layoutMeasurement, contentOffset, contentSize } =
+        event.nativeEvent;
+      const paddingToBottom = 20;
+
+      if (
+        layoutMeasurement.height + contentOffset.y >=
+        contentSize.height - paddingToBottom
+      ) {
+        if (hasNextPage && !isLoadingMore) {
+          loadMore();
+        }
       }
-    }
-  }, [hasNextPage, isLoadingMore, loadMore]);
+    },
+    [hasNextPage, isLoadingMore, loadMore]
+  );
 
   // Handle mark all as read
   const handleMarkAllAsRead = useCallback(() => {
@@ -173,7 +200,12 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
 
   // Render panel header
   const renderHeader = () => (
-    <View style={[styles.header, { borderBottomColor: theme.colors.border.primary }]}>
+    <View
+      style={[
+        styles.header,
+        { borderBottomColor: theme.colors.border.primary },
+      ]}
+    >
       <View style={styles.headerLeft}>
         <Text variant="h6" weight="semiBold" style={styles.headerTitle}>
           Notifications
@@ -188,17 +220,27 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
             <Text
               variant="caption"
               weight="bold"
-              style={[styles.unreadBadgeText, { color: theme.colors.text.inverse }]}
+              style={[
+                styles.unreadBadgeText,
+                { color: theme.colors.text.inverse },
+              ]}
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Text>
           </View>
         )}
       </View>
-      
+
       <View style={styles.headerRight}>
         <TouchableOpacity
-          style={[styles.filterButton, { backgroundColor: showSearch ? theme.colors.primary[100] : 'transparent' }]}
+          style={[
+            styles.filterButton,
+            {
+              backgroundColor: showSearch
+                ? theme.colors.primary[100]
+                : 'transparent',
+            },
+          ]}
           onPress={() => setShowSearch(!showSearch)}
           accessibilityRole="button"
           accessibilityLabel="Toggle notification search"
@@ -207,12 +249,23 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
           <Ionicons
             name="search-outline"
             size={20}
-            color={showSearch ? theme.colors.primary[600] : theme.colors.text.secondary}
+            color={
+              showSearch
+                ? theme.colors.primary[600]
+                : theme.colors.text.secondary
+            }
           />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.filterButton, { backgroundColor: showFilters ? theme.colors.primary[100] : 'transparent' }]}
+          style={[
+            styles.filterButton,
+            {
+              backgroundColor: showFilters
+                ? theme.colors.primary[100]
+                : 'transparent',
+            },
+          ]}
           onPress={() => setShowFilters(!showFilters)}
           accessibilityRole="button"
           accessibilityLabel="Toggle notification filters"
@@ -221,13 +274,20 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
           <Ionicons
             name="filter-outline"
             size={20}
-            color={showFilters ? theme.colors.primary[600] : theme.colors.text.secondary}
+            color={
+              showFilters
+                ? theme.colors.primary[600]
+                : theme.colors.text.secondary
+            }
           />
         </TouchableOpacity>
 
         {unreadCount > 0 && (
           <TouchableOpacity
-            style={[styles.markAllButton, { backgroundColor: theme.colors.primary[50] }]}
+            style={[
+              styles.markAllButton,
+              { backgroundColor: theme.colors.primary[50] },
+            ]}
             onPress={handleMarkAllAsRead}
             disabled={isMarkingAllAsRead}
             accessibilityRole="button"
@@ -237,13 +297,16 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
             <Text
               variant="caption"
               weight="medium"
-              style={[styles.markAllButtonText, { color: theme.colors.primary[600] }]}
+              style={[
+                styles.markAllButtonText,
+                { color: theme.colors.primary[600] },
+              ]}
             >
               {isMarkingAllAsRead ? 'Marking...' : 'Mark all read'}
             </Text>
           </TouchableOpacity>
         )}
-        
+
         <TouchableOpacity
           style={styles.closeButton}
           onPress={onClose}
@@ -267,8 +330,20 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
     if (!showFilters) return null;
 
     return (
-      <View style={[styles.filtersContainer, { backgroundColor: theme.colors.background.secondary, borderBottomColor: theme.colors.border.primary }]}>
-        <Text variant="caption" weight="medium" style={[styles.filtersLabel, { color: theme.colors.text.secondary }]}>
+      <View
+        style={[
+          styles.filtersContainer,
+          {
+            backgroundColor: theme.colors.background.secondary,
+            borderBottomColor: theme.colors.border.primary,
+          },
+        ]}
+      >
+        <Text
+          variant="caption"
+          weight="medium"
+          style={[styles.filtersLabel, { color: theme.colors.text.secondary }]}
+        >
           Filter by:
         </Text>
         <View style={styles.filterButtons}>
@@ -278,12 +353,14 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
               style={[
                 styles.filterChip,
                 {
-                  backgroundColor: filterType === filter 
-                    ? theme.colors.primary[500] 
-                    : theme.colors.background.primary,
-                  borderColor: filterType === filter 
-                    ? theme.colors.primary[500] 
-                    : theme.colors.border.primary,
+                  backgroundColor:
+                    filterType === filter
+                      ? theme.colors.primary[500]
+                      : theme.colors.background.primary,
+                  borderColor:
+                    filterType === filter
+                      ? theme.colors.primary[500]
+                      : theme.colors.border.primary,
                 },
               ]}
               onPress={() => setFilter(filter)}
@@ -297,9 +374,10 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
                 style={[
                   styles.filterChipText,
                   {
-                    color: filterType === filter 
-                      ? theme.colors.text.inverse 
-                      : theme.colors.text.primary,
+                    color:
+                      filterType === filter
+                        ? theme.colors.text.inverse
+                        : theme.colors.text.primary,
                   },
                 ]}
               >
@@ -319,19 +397,21 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
         case 'unread':
           return {
             title: 'No unread notifications',
-            message: 'All caught up! You have no unread notifications at the moment.',
+            message:
+              'All caught up! You have no unread notifications at the moment.',
             icon: 'checkmark-circle-outline' as keyof typeof Ionicons.glyphMap,
           };
         case 'read':
           return {
             title: 'No read notifications',
-            message: 'You haven\'t read any notifications yet.',
+            message: "You haven't read any notifications yet.",
             icon: 'eye-outline' as keyof typeof Ionicons.glyphMap,
           };
         default:
           return {
             title: 'No notifications yet',
-            message: 'When you receive notifications, they\'ll appear here. Stay connected with your community!',
+            message:
+              "When you receive notifications, they'll appear here. Stay connected with your community!",
             icon: 'notifications-outline' as keyof typeof Ionicons.glyphMap,
           };
       }
@@ -365,11 +445,7 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
         color={theme.colors.primary[500]}
         accessibilityLabel="Loading notifications"
       />
-      <Text
-        variant="body"
-        color="secondary"
-        style={styles.loadingText}
-      >
+      <Text variant="body" color="secondary" style={styles.loadingText}>
         Loading notifications...
       </Text>
     </View>
@@ -391,7 +467,10 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
         Please check your connection and try again.
       </Text>
       <TouchableOpacity
-        style={[styles.retryButton, { backgroundColor: theme.colors.primary[500] }]}
+        style={[
+          styles.retryButton,
+          { backgroundColor: theme.colors.primary[500] },
+        ]}
         onPress={onRefresh}
         accessibilityRole="button"
         accessibilityLabel="Retry loading notifications"
@@ -446,7 +525,7 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
           ))}
         </View>
       )}
-      
+
       {/* Load more indicator */}
       {hasNextPage && (
         <View style={styles.loadMoreContainer}>
@@ -467,17 +546,16 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
             </>
           ) : (
             <TouchableOpacity
-              style={[styles.loadMoreButton, { borderColor: theme.colors.border.primary }]}
+              style={[
+                styles.loadMoreButton,
+                { borderColor: theme.colors.border.primary },
+              ]}
               onPress={loadMore}
               accessibilityRole="button"
               accessibilityLabel="Load more notifications"
               accessibilityHint="Loads additional notifications"
             >
-              <Text
-                variant="body"
-                color="primary"
-                weight="medium"
-              >
+              <Text variant="body" color="primary" weight="medium">
                 Load More
               </Text>
             </TouchableOpacity>
@@ -488,11 +566,7 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
       {/* End of list indicator */}
       {notifications.length > 0 && !hasNextPage && (
         <View style={styles.endOfListContainer}>
-          <Text
-            variant="caption"
-            color="tertiary"
-            style={styles.endOfListText}
-          >
+          <Text variant="caption" color="tertiary" style={styles.endOfListText}>
             You're all caught up!
           </Text>
         </View>
@@ -505,15 +579,15 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
     if (error) {
       return renderErrorState();
     }
-    
+
     if (isLoading && notifications.length === 0) {
       return renderLoadingState();
     }
-    
+
     if (notifications.length === 0) {
       return renderEmptyState();
     }
-    
+
     return renderNotificationList();
   };
 
@@ -533,15 +607,11 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
       <SafeAreaView style={styles.container}>
         {renderHeader()}
         {renderFilters()}
-        <View style={styles.content}>
-          {renderContent()}
-        </View>
+        <View style={styles.content}>{renderContent()}</View>
       </SafeAreaView>
     </Modal>
   );
 };
-
-
 
 const { height: screenHeight } = Dimensions.get('window');
 

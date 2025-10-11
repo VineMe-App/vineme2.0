@@ -46,7 +46,7 @@ export default function PhoneSignUpScreen() {
       Alert.alert('Error', 'Please enter the complete 6-digit code');
       return;
     }
-    
+
     const result = await verifyOtp(fullPhone, code, 'sms');
 
     if (result.success) {

@@ -1,5 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react-native';
 import { NotificationsPanel } from '../NotificationsPanel';
 import { ThemeProvider } from '@/theme/provider/ThemeProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -17,7 +22,7 @@ jest.mock('@expo/vector-icons', () => ({
 
 // Mock the Modal component
 jest.mock('../Modal', () => ({
-  Modal: ({ children, isVisible, onClose, testID }: any) => 
+  Modal: ({ children, isVisible, onClose, testID }: any) =>
     isVisible ? (
       <div data-testid={testID} onClick={onClose}>
         {children}
@@ -25,7 +30,9 @@ jest.mock('../Modal', () => ({
     ) : null,
 }));
 
-const mockUseNotificationPanel = useNotificationPanel as jest.MockedFunction<typeof useNotificationPanel>;
+const mockUseNotificationPanel = useNotificationPanel as jest.MockedFunction<
+  typeof useNotificationPanel
+>;
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -37,9 +44,7 @@ const createWrapper = () => {
 
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        {children}
-      </ThemeProvider>
+      <ThemeProvider>{children}</ThemeProvider>
     </QueryClientProvider>
   );
 };
@@ -75,7 +80,7 @@ describe('NotificationsPanel', () => {
 
   it('renders correctly when visible', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -88,7 +93,7 @@ describe('NotificationsPanel', () => {
 
   it('does not render when not visible', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} visible={false} />
@@ -105,7 +110,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -122,7 +127,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -139,7 +144,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -151,7 +156,7 @@ describe('NotificationsPanel', () => {
 
   it('hides mark all read button when there are no unread notifications', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -170,7 +175,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -188,7 +193,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -200,7 +205,7 @@ describe('NotificationsPanel', () => {
 
   it('shows empty state when there are no notifications', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -209,7 +214,11 @@ describe('NotificationsPanel', () => {
 
     expect(screen.getByTestId('notifications-empty-state')).toBeTruthy();
     expect(screen.getByText('No notifications yet')).toBeTruthy();
-    expect(screen.getByText("When you receive notifications, they'll appear here. Stay connected with your community!")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "When you receive notifications, they'll appear here. Stay connected with your community!"
+      )
+    ).toBeTruthy();
   });
 
   it('shows error state when there is an error', () => {
@@ -219,7 +228,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -227,7 +236,9 @@ describe('NotificationsPanel', () => {
     );
 
     expect(screen.getByText('Unable to load notifications')).toBeTruthy();
-    expect(screen.getByText('Please check your connection and try again.')).toBeTruthy();
+    expect(
+      screen.getByText('Please check your connection and try again.')
+    ).toBeTruthy();
     expect(screen.getByText('Try Again')).toBeTruthy();
   });
 
@@ -240,7 +251,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -283,7 +294,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -314,7 +325,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -327,7 +338,7 @@ describe('NotificationsPanel', () => {
   it('calls onClose when close button is pressed', () => {
     const mockOnClose = jest.fn();
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} onClose={mockOnClose} />
@@ -341,7 +352,7 @@ describe('NotificationsPanel', () => {
 
   it('has proper accessibility labels', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -359,7 +370,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -371,7 +382,7 @@ describe('NotificationsPanel', () => {
 
   it('shows filter button and toggles filter visibility', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -396,7 +407,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -404,7 +415,11 @@ describe('NotificationsPanel', () => {
     );
 
     expect(screen.getByText('No unread notifications')).toBeTruthy();
-    expect(screen.getByText('All caught up! You have no unread notifications at the moment.')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'All caught up! You have no unread notifications at the moment.'
+      )
+    ).toBeTruthy();
   });
 
   it('shows load more button when there are more pages', () => {
@@ -428,7 +443,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -461,7 +476,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />
@@ -492,7 +507,7 @@ describe('NotificationsPanel', () => {
     });
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationsPanel {...defaultProps} />

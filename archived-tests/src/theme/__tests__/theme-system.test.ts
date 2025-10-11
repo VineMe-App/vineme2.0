@@ -35,7 +35,7 @@ describe('Theme System Foundation', () => {
     it('should provide accessibility utilities', () => {
       const contrastRatio = colorUtils.getContrastRatio('#ffffff', '#000000');
       expect(contrastRatio).toBeGreaterThan(1);
-      
+
       const meetsWCAG = colorUtils.meetsWCAGAA('#ffffff', '#000000');
       expect(meetsWCAG).toBe(true);
     });
@@ -56,9 +56,15 @@ describe('Theme System Foundation', () => {
     });
 
     it('should have proper font size scale', () => {
-      expect(lightTheme.typography.fontSize.xs).toBeLessThan(lightTheme.typography.fontSize.sm);
-      expect(lightTheme.typography.fontSize.sm).toBeLessThan(lightTheme.typography.fontSize.base);
-      expect(lightTheme.typography.fontSize.base).toBeLessThan(lightTheme.typography.fontSize.lg);
+      expect(lightTheme.typography.fontSize.xs).toBeLessThan(
+        lightTheme.typography.fontSize.sm
+      );
+      expect(lightTheme.typography.fontSize.sm).toBeLessThan(
+        lightTheme.typography.fontSize.base
+      );
+      expect(lightTheme.typography.fontSize.base).toBeLessThan(
+        lightTheme.typography.fontSize.lg
+      );
     });
   });
 
@@ -139,8 +145,12 @@ describe('Theme System Foundation', () => {
     });
 
     it('should have different background colors for light and dark themes', () => {
-      expect(lightTheme.colors.background.primary).not.toBe(darkTheme.colors.background.primary);
-      expect(lightTheme.colors.text.primary).not.toBe(darkTheme.colors.text.primary);
+      expect(lightTheme.colors.background.primary).not.toBe(
+        darkTheme.colors.background.primary
+      );
+      expect(lightTheme.colors.text.primary).not.toBe(
+        darkTheme.colors.text.primary
+      );
     });
 
     it('should have consistent structure across themes', () => {

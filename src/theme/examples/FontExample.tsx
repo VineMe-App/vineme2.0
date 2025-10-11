@@ -10,18 +10,42 @@ export function FontExample() {
   const { theme } = useTheme();
 
   const fontWeights = [
-    { key: 'regular', label: 'Regular (400)', fontFamily: theme.typography.fontFamily.regular },
-    { key: 'medium', label: 'Medium (500)', fontFamily: theme.typography.fontFamily.medium },
-    { key: 'semiBold', label: 'SemiBold (600)', fontFamily: theme.typography.fontFamily.semiBold },
-    { key: 'bold', label: 'Bold (700)', fontFamily: theme.typography.fontFamily.bold },
+    {
+      key: 'regular',
+      label: 'Regular (400)',
+      fontFamily: theme.typography.fontFamily.regular,
+    },
+    {
+      key: 'medium',
+      label: 'Medium (500)',
+      fontFamily: theme.typography.fontFamily.medium,
+    },
+    {
+      key: 'semiBold',
+      label: 'SemiBold (600)',
+      fontFamily: theme.typography.fontFamily.semiBold,
+    },
+    {
+      key: 'bold',
+      label: 'Bold (700)',
+      fontFamily: theme.typography.fontFamily.bold,
+    },
   ];
 
   const fontSizes = [
-    { key: 'xs', label: 'Extra Small (12px)', size: theme.typography.fontSize.xs },
+    {
+      key: 'xs',
+      label: 'Extra Small (12px)',
+      size: theme.typography.fontSize.xs,
+    },
     { key: 'sm', label: 'Small (14px)', size: theme.typography.fontSize.sm },
     { key: 'base', label: 'Base (16px)', size: theme.typography.fontSize.base },
     { key: 'lg', label: 'Large (18px)', size: theme.typography.fontSize.lg },
-    { key: 'xl', label: 'Extra Large (20px)', size: theme.typography.fontSize.xl },
+    {
+      key: 'xl',
+      label: 'Extra Large (20px)',
+      size: theme.typography.fontSize.xl,
+    },
     { key: '2xl', label: '2XL (24px)', size: theme.typography.fontSize['2xl'] },
     { key: '3xl', label: '3XL (30px)', size: theme.typography.fontSize['3xl'] },
   ];
@@ -31,7 +55,8 @@ export function FontExample() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Manrope Font Family</Text>
         <Text style={styles.description}>
-          This example demonstrates the Manrope font family across different weights and sizes.
+          This example demonstrates the Manrope font family across different
+          weights and sizes.
         </Text>
       </View>
 
@@ -61,38 +86,70 @@ export function FontExample() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Typography Variants</Text>
-        
+
         <View style={styles.fontExample}>
           <Text style={styles.fontLabel}>Display 1</Text>
-          <Text style={[styles.fontText, { fontFamily: theme.typography.fontFamily.bold, fontSize: 48 }]}>
+          <Text
+            style={[
+              styles.fontText,
+              { fontFamily: theme.typography.fontFamily.bold, fontSize: 48 },
+            ]}
+          >
             Display Heading
           </Text>
         </View>
 
         <View style={styles.fontExample}>
           <Text style={styles.fontLabel}>Heading 1</Text>
-          <Text style={[styles.fontText, { fontFamily: theme.typography.fontFamily.bold, fontSize: 36 }]}>
+          <Text
+            style={[
+              styles.fontText,
+              { fontFamily: theme.typography.fontFamily.bold, fontSize: 36 },
+            ]}
+          >
             Main Heading
           </Text>
         </View>
 
         <View style={styles.fontExample}>
           <Text style={styles.fontLabel}>Heading 2</Text>
-          <Text style={[styles.fontText, { fontFamily: theme.typography.fontFamily.semiBold, fontSize: 30 }]}>
+          <Text
+            style={[
+              styles.fontText,
+              {
+                fontFamily: theme.typography.fontFamily.semiBold,
+                fontSize: 30,
+              },
+            ]}
+          >
             Section Heading
           </Text>
         </View>
 
         <View style={styles.fontExample}>
           <Text style={styles.fontLabel}>Body Text</Text>
-          <Text style={[styles.fontText, { fontFamily: theme.typography.fontFamily.regular, fontSize: 16 }]}>
-            This is body text using the Manrope font family. It provides excellent readability and a modern appearance.
+          <Text
+            style={[
+              styles.fontText,
+              { fontFamily: theme.typography.fontFamily.regular, fontSize: 16 },
+            ]}
+          >
+            This is body text using the Manrope font family. It provides
+            excellent readability and a modern appearance.
           </Text>
         </View>
 
         <View style={styles.fontExample}>
           <Text style={styles.fontLabel}>Button Text</Text>
-          <Text style={[styles.fontText, { fontFamily: theme.typography.fontFamily.semiBold, fontSize: 16 }]}>
+          <Text
+            style={[
+              styles.fontText,
+              {
+                fontFamily: theme.typography.fontFamily.semiBold,
+                fontSize: 16,
+              },
+            ]}
+          >
             Button Text
           </Text>
         </View>

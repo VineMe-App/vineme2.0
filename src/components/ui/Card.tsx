@@ -7,7 +7,11 @@ import {
   TouchableOpacityProps,
 } from 'react-native';
 import { useTheme } from '../../theme/provider/useTheme';
-import { ThemeSpacing, ThemeBorderRadius, ThemeShadows } from '../../theme/tokens';
+import {
+  ThemeSpacing,
+  ThemeBorderRadius,
+  ThemeShadows,
+} from '../../theme/tokens';
 
 export interface CardProps {
   children: React.ReactNode;
@@ -21,7 +25,10 @@ export interface CardProps {
   style?: ViewStyle;
   onPress?: () => void;
   onLongPress?: () => void;
-  touchableProps?: Omit<TouchableOpacityProps, 'style' | 'onPress' | 'onLongPress'>;
+  touchableProps?: Omit<
+    TouchableOpacityProps,
+    'style' | 'onPress' | 'onLongPress'
+  >;
   testID?: string;
   accessibilityLabel?: string;
   accessibilityHint?: string;
@@ -49,34 +56,46 @@ export const Card: React.FC<CardProps> = ({
   const { theme } = useTheme();
 
   // Determine if card should be interactive (not interactive if disabled)
-  const isInteractive = !disabled && (interactive || !!onPress || !!onLongPress);
+  const isInteractive =
+    !disabled && (interactive || !!onPress || !!onLongPress);
 
   // Generate card styles based on theme and props
   const cardStyles = useMemo(() => {
     const baseStyles: ViewStyle = {
-      borderRadius: borderRadius ? theme.borderRadius[borderRadius] : theme.borderRadius.lg,
+      borderRadius: borderRadius
+        ? theme.borderRadius[borderRadius]
+        : theme.borderRadius.lg,
     };
 
     // Size-based padding
     const sizeStyles: ViewStyle = {
-      padding: padding ? theme.spacing[padding] : getSizePadding(size, theme.spacing),
+      padding: padding
+        ? theme.spacing[padding]
+        : getSizePadding(size, theme.spacing),
     };
 
     // Variant-based styles
     const variantStyles = getVariantStyles(variant, theme, disabled);
 
     // Shadow styles
-    const shadowStyles = shadow ? theme.shadows[shadow] : getVariantShadow(variant, theme);
+    const shadowStyles = shadow
+      ? theme.shadows[shadow]
+      : getVariantShadow(variant, theme);
 
     // Interactive styles
-    const interactiveStyles: ViewStyle = isInteractive && !disabled ? {
-      opacity: 1,
-    } : {};
+    const interactiveStyles: ViewStyle =
+      isInteractive && !disabled
+        ? {
+            opacity: 1,
+          }
+        : {};
 
     // Disabled styles
-    const disabledStyles: ViewStyle = disabled ? {
-      opacity: 0.6,
-    } : {};
+    const disabledStyles: ViewStyle = disabled
+      ? {
+          opacity: 0.6,
+        }
+      : {};
 
     return [
       baseStyles,
@@ -87,14 +106,24 @@ export const Card: React.FC<CardProps> = ({
       disabledStyles,
       style,
     ];
-  }, [variant, size, padding, borderRadius, shadow, theme, disabled, isInteractive, style]);
+  }, [
+    variant,
+    size,
+    padding,
+    borderRadius,
+    shadow,
+    theme,
+    disabled,
+    isInteractive,
+    style,
+  ]);
 
   // Accessibility props
   const accessibilityProps = {
     accessible: true,
     accessibilityLabel,
     accessibilityHint,
-    accessibilityRole: isInteractive ? (accessibilityRole || 'button') : 'none',
+    accessibilityRole: isInteractive ? accessibilityRole || 'button' : 'none',
     accessibilityState: {
       disabled,
     },
@@ -126,7 +155,10 @@ export const Card: React.FC<CardProps> = ({
 };
 
 // Helper functions
-function getSizePadding(size: 'sm' | 'md' | 'lg', spacing: ThemeSpacing): number {
+function getSizePadding(
+  size: 'sm' | 'md' | 'lg',
+  spacing: ThemeSpacing
+): number {
   switch (size) {
     case 'sm':
       return spacing[3]; // 12px
@@ -139,7 +171,11 @@ function getSizePadding(size: 'sm' | 'md' | 'lg', spacing: ThemeSpacing): number
   }
 }
 
-function getVariantStyles(variant: string, theme: any, disabled: boolean): ViewStyle {
+function getVariantStyles(
+  variant: string,
+  theme: any,
+  disabled: boolean
+): ViewStyle {
   const { colors } = theme;
 
   switch (variant) {
@@ -184,5 +220,3 @@ function getVariantShadow(variant: string, theme: any): ViewStyle {
       return shadows.sm;
   }
 }
-
-

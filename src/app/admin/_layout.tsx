@@ -30,33 +30,33 @@ export default function AdminLayout() {
             },
           }}
         >
-          <Stack.Screen 
-            name="index" 
-            options={{ 
+          <Stack.Screen
+            name="index"
+            options={{
               headerShown: false,
-              title: "Admin Dashboard"
-            }} 
+              title: 'Admin Dashboard',
+            }}
           />
-          <Stack.Screen 
-            name="manage-groups" 
-            options={{ 
+          <Stack.Screen
+            name="manage-groups"
+            options={{
               headerShown: false,
-              title: "Manage Groups"
-            }} 
+              title: 'Manage Groups',
+            }}
           />
-          <Stack.Screen 
-            name="manage-users" 
-            options={{ 
+          <Stack.Screen
+            name="manage-users"
+            options={{
               headerShown: false,
-              title: "Manage Users"
-            }} 
+              title: 'Manage Users',
+            }}
           />
-          <Stack.Screen 
-            name="notifications" 
-            options={{ 
+          <Stack.Screen
+            name="notifications"
+            options={{
               headerShown: false,
-              title: "Notifications"
-            }} 
+              title: 'Notifications',
+            }}
           />
         </Stack>
       </AdminErrorBoundary>

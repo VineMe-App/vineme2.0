@@ -11,11 +11,7 @@ import { ThemeProvider } from '../../../../theme/provider/ThemeProvider';
 // Animated is mocked in test-setup.js
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(
-    <ThemeProvider>
-      {component}
-    </ThemeProvider>
-  );
+  return render(<ThemeProvider>{component}</ThemeProvider>);
 };
 
 describe('Spinner', () => {
@@ -24,9 +20,7 @@ describe('Spinner', () => {
   });
 
   it('renders correctly with default props', () => {
-    const { getByTestId } = renderWithTheme(
-      <Spinner testID="spinner" />
-    );
+    const { getByTestId } = renderWithTheme(<Spinner testID="spinner" />);
 
     expect(getByTestId('spinner')).toBeTruthy();
   });
@@ -48,11 +42,11 @@ describe('Spinner', () => {
   });
 
   it('renders different variants', () => {
-    const variants: Array<'circular' | 'dots' | 'pulse' | 'bars'> = [
+    const variants: ('circular' | 'dots' | 'pulse' | 'bars')[] = [
       'circular',
-      'dots', 
+      'dots',
       'pulse',
-      'bars'
+      'bars',
     ];
 
     variants.forEach((variant) => {
@@ -90,10 +84,7 @@ describe('Spinner', () => {
 
   it('has proper accessibility attributes', () => {
     const { getByTestId } = renderWithTheme(
-      <Spinner 
-        testID="spinner" 
-        accessibilityLabel="Custom loading message"
-      />
+      <Spinner testID="spinner" accessibilityLabel="Custom loading message" />
     );
 
     const spinner = getByTestId('spinner');

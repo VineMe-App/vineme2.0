@@ -102,9 +102,13 @@ export function MissingServiceModal({
     });
   };
 
-  const showError = useMemo(() => validationError || error, [validationError, error]);
+  const showError = useMemo(
+    () => validationError || error,
+    [validationError, error]
+  );
 
-  const title = mode === 'church' ? 'Request New Church' : 'Request New Service';
+  const title =
+    mode === 'church' ? 'Request New Church' : 'Request New Service';
   const description =
     mode === 'church'
       ? "Let us know about the church or campus you're part of. Share the details below and we'll reach out to get it added."
@@ -205,7 +209,9 @@ export function MissingServiceModal({
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Anything else we should know? (optional)</Text>
+            <Text style={styles.label}>
+              Anything else we should know? (optional)
+            </Text>
             <TextInput
               style={[styles.input, styles.multiline]}
               value={additionalInfo}

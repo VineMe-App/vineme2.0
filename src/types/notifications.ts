@@ -1,12 +1,12 @@
 /**
  * Enhanced Notifications System Types
- * 
+ *
  * This file contains comprehensive type definitions for the enhanced notifications system,
  * including trigger data interfaces, notification models, settings, and aggregation types.
  */
 
 // Core notification types
-export type NotificationType = 
+export type NotificationType =
   | 'friend_request_received'
   | 'friend_request_accepted'
   | 'group_request_submitted'
@@ -44,13 +44,13 @@ export interface NotificationTriggerData {
     toUserId: string;
     fromUserName: string;
   };
-  
+
   friendRequestAccepted: {
     acceptedByUserId: string;
     acceptedByUserName: string;
     originalRequesterId: string;
   };
-  
+
   // Group request notifications
   groupRequestSubmitted: {
     groupId: string;
@@ -59,14 +59,14 @@ export interface NotificationTriggerData {
     creatorName: string;
     churchId: string;
   };
-  
+
   groupRequestApproved: {
     groupId: string;
     groupTitle: string;
     leaderId: string;
     approvedByName: string;
   };
-  
+
   groupRequestDenied: {
     groupId: string;
     groupTitle: string;
@@ -74,7 +74,7 @@ export interface NotificationTriggerData {
     deniedByName: string;
     reason?: string;
   };
-  
+
   // Join request notifications
   joinRequestReceived: {
     groupId: string;
@@ -83,28 +83,28 @@ export interface NotificationTriggerData {
     requesterName: string;
     leaderIds: string[];
   };
-  
+
   joinRequestApproved: {
     groupId: string;
     groupTitle: string;
     requesterId: string;
     approvedByName: string;
   };
-  
+
   joinRequestDenied: {
     groupId: string;
     groupTitle: string;
     requesterId: string;
     deniedByName: string;
   };
-  
+
   // Referral notifications
   referralAccepted: {
     referrerId: string;
     referredUserId: string;
     referredUserName: string;
   };
-  
+
   referralJoinedGroup: {
     referrerId: string;
     referredUserId: string;
@@ -255,11 +255,14 @@ export interface NotificationMetrics {
   opened: number;
   dismissed: number;
   actionTaken: number;
-  byType: Record<NotificationType, {
-    sent: number;
-    opened: number;
-    dismissed: number;
-  }>;
+  byType: Record<
+    NotificationType,
+    {
+      sent: number;
+      opened: number;
+      dismissed: number;
+    }
+  >;
 }
 
 export interface NotificationAnalytics {
@@ -368,49 +371,49 @@ export type {
   Notification,
   NotificationTriggerData,
   NotificationSettings,
-  
+
   // Aggregation types
   NotificationGroup,
   NotificationSummary,
   NotificationWithDetails,
-  
+
   // Input types
   CreateNotificationInput,
   BatchCreateNotificationInput,
-  
+
   // Query types
   NotificationQueryOptions,
   NotificationFilterOptions,
-  
+
   // Interaction types
   NotificationAction,
   NotificationInteraction,
-  
+
   // Subscription types
   NotificationSubscription,
   NotificationSubscriptionManager,
-  
+
   // Analytics types
   NotificationMetrics,
   NotificationAnalytics,
-  
+
   // Error handling types
   NotificationError,
   NotificationResult,
   BatchNotificationResult,
-  
+
   // Queue types
   QueuedNotification,
   NotificationQueue,
-  
+
   // Push notification types
   PushNotificationPayload,
   PushNotificationToken,
-  
+
   // Template types
   NotificationTemplate,
   NotificationTemplateData,
-  
+
   // Validation types
   NotificationValidationRule,
   NotificationValidationSchema,

@@ -58,11 +58,7 @@ export function FriendRequestCard({
         accessibilityRole="button"
         accessibilityLabel={`View ${fullName || 'user'}'s profile`}
       >
-        <Avatar
-          imageUrl={displayUser.avatar_url}
-          name={fullName}
-          size={50}
-        />
+        <Avatar imageUrl={displayUser.avatar_url} name={fullName} size={50} />
         <View style={styles.textContainer}>
           <Text style={styles.name}>{shortName || fullName || 'User'}</Text>
           <Text style={styles.email}>{displayUser.email}</Text>

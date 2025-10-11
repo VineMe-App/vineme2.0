@@ -35,7 +35,9 @@ jest.mock('../../utils/referralValidation', () => ({
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 const mockAuthService = authService as jest.Mocked<typeof authService>;
-const mockEmailVerificationService = emailVerificationService as jest.Mocked<typeof emailVerificationService>;
+const mockEmailVerificationService = emailVerificationService as jest.Mocked<
+  typeof emailVerificationService
+>;
 
 describe('ReferralService Edge Cases', () => {
   const mockReferralData: CreateReferralData = {
@@ -71,14 +73,14 @@ describe('ReferralService Edge Cases', () => {
       } as any);
 
       // Create multiple concurrent referrals
-      const promises = Array(5).fill(null).map(() => 
-        referralService.createReferral(mockReferralData)
-      );
+      const promises = Array(5)
+        .fill(null)
+        .map(() => referralService.createReferral(mockReferralData));
 
       const results = await Promise.all(promises);
 
       // All should succeed (in real scenario, some might fail due to race conditions)
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.success).toBe(true);
       });
     });
@@ -99,10 +101,12 @@ describe('ReferralService Edge Cases', () => {
   describe('Memory and Performance Edge Cases', () => {
     it('should handle large batch referral operations', async () => {
       // Create a large batch of referrals
-      const largeBatch = Array(100).fill(null).map((_, index) => ({
-        ...mockReferralData,
-        email: `user${index}@example.com`,
-      }));
+      const largeBatch = Array(100)
+        .fill(null)
+        .map((_, index) => ({
+          ...mockReferralData,
+          email: `user${index}@example.com`,
+        }));
 
       // Mock successful operations
       mockAuthService.createReferredUser.mockResolvedValue({
@@ -218,7 +222,9 @@ describe('ReferralService Edge Cases', () => {
       // Mock group exists initially
       const mockSelect = jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: { id: 'group-123' }, error: null }),
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: { id: 'group-123' }, error: null }),
         }),
       });
 
@@ -234,11 +240,11 @@ describe('ReferralService Edge Cases', () => {
       });
 
       // Mock foreign key constraint violation (group was deleted)
-      const mockInsert = jest.fn().mockResolvedValue({ 
-        error: { 
+      const mockInsert = jest.fn().mockResolvedValue({
+        error: {
           message: 'insert or update on table violates foreign key constraint',
-          code: '23503'
-        } 
+          code: '23503',
+        },
       });
 
       mockSupabase.from.mockReturnValue({
@@ -246,7 +252,8 @@ describe('ReferralService Edge Cases', () => {
         select: mockSelect,
       } as any);
 
-      const result = await referralService.createGroupReferral(groupReferralData);
+      const result =
+        await referralService.createGroupReferral(groupReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Group not found or has been deleted');
@@ -263,11 +270,11 @@ describe('ReferralService Edge Cases', () => {
         success: true,
       });
 
-      const mockInsert = jest.fn().mockResolvedValue({ 
-        error: { 
+      const mockInsert = jest.fn().mockResolvedValue({
+        error: {
           message: 'deadlock detected',
-          code: '40P01'
-        } 
+          code: '40P01',
+        },
       });
 
       mockSupabase.from.mockReturnValue({
@@ -374,8 +381,8 @@ describe('ReferralService Edge Cases', () => {
       });
 
       // Mock database failure after user creation
-      const mockInsert = jest.fn().mockResolvedValue({ 
-        error: { message: 'Database connection lost', code: '08006' } 
+      const mockInsert = jest.fn().mockResolvedValue({
+        error: { message: 'Database connection lost', code: '08006' },
       });
 
       mockSupabase.from.mockReturnValue({
@@ -393,7 +400,7 @@ describe('ReferralService Edge Cases', () => {
   describe('Performance Monitoring Edge Cases', () => {
     it('should handle slow database responses', async () => {
       // Mock slow response
-      const slowPromise = new Promise(resolve => {
+      const slowPromise = new Promise((resolve) => {
         setTimeout(() => resolve({ userId: 'user-123', error: null }), 5000);
       });
 
@@ -414,11 +421,13 @@ describe('ReferralService Edge Cases', () => {
 
     it('should handle memory pressure scenarios', async () => {
       // Create a scenario that might cause memory pressure
-      const largeDataSet = Array(1000).fill(null).map((_, index) => ({
-        ...mockReferralData,
-        email: `user${index}@example.com`,
-        note: 'a'.repeat(1000), // Large notes
-      }));
+      const largeDataSet = Array(1000)
+        .fill(null)
+        .map((_, index) => ({
+          ...mockReferralData,
+          email: `user${index}@example.com`,
+          note: 'a'.repeat(1000), // Large notes
+        }));
 
       // Mock successful operations
       mockAuthService.createReferredUser.mockResolvedValue({

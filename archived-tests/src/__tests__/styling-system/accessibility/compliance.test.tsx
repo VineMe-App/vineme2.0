@@ -10,44 +10,44 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
 import { Text } from '../../../components/ui/Text';
-import { 
-  getContrastRatio, 
-  isAccessibleContrast, 
-  getAccessibleColor 
+import {
+  getContrastRatio,
+  isAccessibleContrast,
+  getAccessibleColor,
 } from '../../../utils/colors';
 import { lightTheme, darkTheme } from '../../../theme/themes';
 
 // Test component for accessibility testing
 const AccessibilityTestApp: React.FC = () => {
   const [modalVisible, setModalVisible] = React.useState(false);
-  
+
   return (
     <>
       <Text testID="heading" variant="h1">
         Main Heading
       </Text>
-      
+
       <Button
         testID="primary-button"
         title="Primary Action"
         onPress={() => setModalVisible(true)}
         variant="primary"
       />
-      
+
       <Button
         testID="secondary-button"
         title="Secondary Action"
         onPress={() => {}}
         variant="secondary"
       />
-      
+
       <Input
         testID="text-input"
         label="Email Address"
         placeholder="Enter your email"
         accessibilityHint="Enter your email address to continue"
       />
-      
+
       <Input
         testID="error-input"
         label="Password"
@@ -55,16 +55,14 @@ const AccessibilityTestApp: React.FC = () => {
         error="Password is required"
         accessibilityHint="Enter a secure password"
       />
-      
+
       <Modal
         testID="test-modal"
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         title="Confirmation"
       >
-        <Text testID="modal-content">
-          Are you sure you want to continue?
-        </Text>
+        <Text testID="modal-content">Are you sure you want to continue?</Text>
         <Button
           testID="confirm-button"
           title="Confirm"
@@ -124,10 +122,10 @@ describe('Accessibility Compliance Tests', () => {
     it('should provide accessible color alternatives', () => {
       const testColor = '#ff0000'; // Red
       const backgroundColor = '#ffffff'; // White
-      
+
       const accessibleColor = getAccessibleColor(testColor, backgroundColor);
       const contrast = getContrastRatio(accessibleColor, backgroundColor);
-      
+
       expect(isAccessibleContrast(contrast)).toBe(true);
     });
   });

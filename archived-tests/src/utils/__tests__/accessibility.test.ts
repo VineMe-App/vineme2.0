@@ -64,7 +64,7 @@ describe('WCAG Accessibility Compliance', () => {
       // Color that meets AA Large but not AA Normal
       const borderlineColor = '#949494';
       const background = '#ffffff';
-      
+
       expect(meetsWCAGAALarge(borderlineColor, background)).toBe(true);
       expect(meetsWCAGAA(borderlineColor, background)).toBe(false);
     });
@@ -86,7 +86,7 @@ describe('WCAG Accessibility Compliance', () => {
       // Test AAA large text requirements
       const color = '#767676';
       const background = '#ffffff';
-      
+
       expect(meetsWCAGAAALarge(color, background)).toBe(true);
       expect(meetsWCAGAAA(color, background)).toBe(false);
     });
@@ -102,19 +102,35 @@ describe('WCAG Accessibility Compliance', () => {
 
   describe('Accessible Color Finding', () => {
     const lightPalette = [
-      '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd',
-      '#6c757d', '#495057', '#343a40', '#212529', '#000000'
+      '#f8f9fa',
+      '#e9ecef',
+      '#dee2e6',
+      '#ced4da',
+      '#adb5bd',
+      '#6c757d',
+      '#495057',
+      '#343a40',
+      '#212529',
+      '#000000',
     ];
 
     const darkPalette = [
-      '#ffffff', '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da',
-      '#adb5bd', '#6c757d', '#495057', '#343a40', '#212529'
+      '#ffffff',
+      '#f8f9fa',
+      '#e9ecef',
+      '#dee2e6',
+      '#ced4da',
+      '#adb5bd',
+      '#6c757d',
+      '#495057',
+      '#343a40',
+      '#212529',
     ];
 
     it('should find accessible color for light backgrounds', () => {
       const lightBg = '#ffffff';
       const accessibleColor = findAccessibleColor(lightBg, lightPalette, 'AA');
-      
+
       expect(accessibleColor).not.toBeNull();
       if (accessibleColor) {
         expect(meetsWCAGAA(accessibleColor, lightBg)).toBe(true);
@@ -124,7 +140,7 @@ describe('WCAG Accessibility Compliance', () => {
     it('should find accessible color for dark backgrounds', () => {
       const darkBg = '#000000';
       const accessibleColor = findAccessibleColor(darkBg, darkPalette, 'AA');
-      
+
       expect(accessibleColor).not.toBeNull();
       if (accessibleColor) {
         expect(meetsWCAGAA(accessibleColor, darkBg)).toBe(true);
@@ -133,8 +149,12 @@ describe('WCAG Accessibility Compliance', () => {
 
     it('should respect AAA standards when requested', () => {
       const background = '#ffffff';
-      const accessibleColor = findAccessibleColor(background, lightPalette, 'AAA');
-      
+      const accessibleColor = findAccessibleColor(
+        background,
+        lightPalette,
+        'AAA'
+      );
+
       if (accessibleColor) {
         expect(meetsWCAGAAA(accessibleColor, background)).toBe(true);
       }
@@ -143,7 +163,7 @@ describe('WCAG Accessibility Compliance', () => {
     it('should return null when no accessible color exists', () => {
       const similarColors = ['#f0f0f0', '#f5f5f5', '#fafafa'];
       const background = '#ffffff';
-      
+
       const result = findAccessibleColor(background, similarColors, 'AA');
       expect(result).toBeNull();
     });
@@ -152,8 +172,8 @@ describe('WCAG Accessibility Compliance', () => {
   describe('Accessible Text Color Generation', () => {
     it('should return dark text for light backgrounds', () => {
       const lightBackgrounds = ['#ffffff', '#f8f9fa', '#e9ecef'];
-      
-      lightBackgrounds.forEach(bg => {
+
+      lightBackgrounds.forEach((bg) => {
         const textColor = getAccessibleTextColor(bg);
         expect(textColor).toBe('#000000');
         expect(meetsWCAGAA(textColor, bg)).toBe(true);
@@ -162,8 +182,8 @@ describe('WCAG Accessibility Compliance', () => {
 
     it('should return light text for dark backgrounds', () => {
       const darkBackgrounds = ['#000000', '#212529', '#343a40'];
-      
-      darkBackgrounds.forEach(bg => {
+
+      darkBackgrounds.forEach((bg) => {
         const textColor = getAccessibleTextColor(bg);
         expect(textColor).toBe('#ffffff');
         expect(meetsWCAGAA(textColor, bg)).toBe(true);
@@ -174,8 +194,12 @@ describe('WCAG Accessibility Compliance', () => {
       const background = '#ffffff';
       const customLight = '#f0f0f0';
       const customDark = '#333333';
-      
-      const textColor = getAccessibleTextColor(background, customLight, customDark);
+
+      const textColor = getAccessibleTextColor(
+        background,
+        customLight,
+        customDark
+      );
       expect([customLight, customDark]).toContain(textColor);
     });
   });
@@ -184,18 +208,21 @@ describe('WCAG Accessibility Compliance', () => {
     it('should adjust inaccessible colors to meet standards', () => {
       const inaccessibleColor = '#cccccc';
       const background = '#ffffff';
-      
+
       // Verify it's initially inaccessible
       expect(meetsWCAGAA(inaccessibleColor, background)).toBe(false);
-      
-      const adjustedColor = ensureAccessibleColor(inaccessibleColor, background);
+
+      const adjustedColor = ensureAccessibleColor(
+        inaccessibleColor,
+        background
+      );
       expect(meetsWCAGAA(adjustedColor, background)).toBe(true);
     });
 
     it('should not modify already accessible colors', () => {
       const accessibleColor = '#000000';
       const background = '#ffffff';
-      
+
       const result = ensureAccessibleColor(accessibleColor, background);
       expect(result).toBe(accessibleColor);
     });
@@ -204,15 +231,21 @@ describe('WCAG Accessibility Compliance', () => {
       const color = '#767676';
       const background = '#ffffff';
       const customRatio = 7; // AAA standard
-      
-      const adjustedColor = ensureAccessibleColor(color, background, customRatio);
-      expect(getContrastRatio(adjustedColor, background)).toBeGreaterThanOrEqual(customRatio);
+
+      const adjustedColor = ensureAccessibleColor(
+        color,
+        background,
+        customRatio
+      );
+      expect(
+        getContrastRatio(adjustedColor, background)
+      ).toBeGreaterThanOrEqual(customRatio);
     });
 
     it('should work with dark backgrounds', () => {
       const lightColor = '#cccccc';
       const darkBackground = '#000000';
-      
+
       const adjustedColor = ensureAccessibleColor(lightColor, darkBackground);
       expect(meetsWCAGAA(adjustedColor, darkBackground)).toBe(true);
     });
@@ -225,18 +258,18 @@ describe('WCAG Accessibility Compliance', () => {
         secondary: '#6b7280',
         success: '#10b981',
       };
-      
+
       const backgrounds = ['#ffffff', '#f8fafc', '#1e293b'];
       const palette = generateAccessiblePalette(baseColors, backgrounds);
-      
+
       expect(palette).toHaveProperty('primary');
       expect(palette).toHaveProperty('secondary');
       expect(palette).toHaveProperty('success');
-      
+
       // Verify that each color has accessible variants for at least one background
       Object.entries(palette).forEach(([colorName, colorVariants]) => {
-        const hasAccessibleCombination = backgrounds.some(bg => 
-          Object.values(colorVariants).some(variant => 
+        const hasAccessibleCombination = backgrounds.some((bg) =>
+          Object.values(colorVariants).some((variant) =>
             meetsWCAGAA(variant, bg)
           )
         );

@@ -3,13 +3,13 @@
  * Tests for style performance optimizations and benchmarks
  */
 
-import { 
-  StyleSheetCache, 
-  StyleMemoization, 
+import {
+  StyleSheetCache,
+  StyleMemoization,
   StyleOptimizer,
   ThemeSwitchingOptimizer,
   StylePerformanceDebugger,
-  PerformanceStyleUtils 
+  PerformanceStyleUtils,
 } from '../performanceStyleUtils';
 import { lightTheme, darkTheme } from '../../theme/themes';
 
@@ -210,14 +210,14 @@ describe('ThemeSwitchingOptimizer', () => {
 
   it('should optimize theme switching with caching', () => {
     const callback = jest.fn();
-    
+
     // Mock requestAnimationFrame for synchronous testing
     const originalRAF = global.requestAnimationFrame;
     global.requestAnimationFrame = (cb: FrameRequestCallback) => {
       cb(0);
       return 0;
     };
-    
+
     try {
       // First theme switch
       ThemeSwitchingOptimizer.optimizeThemeSwitch(
@@ -243,7 +243,7 @@ describe('ThemeSwitchingOptimizer', () => {
 
   it('should provide theme switching statistics', () => {
     const stats = ThemeSwitchingOptimizer.getThemeSwitchingStats();
-    
+
     expect(stats).toHaveProperty('cachedTransitions');
     expect(stats).toHaveProperty('isTransitioning');
     expect(stats).toHaveProperty('queuedUpdates');
@@ -251,7 +251,7 @@ describe('ThemeSwitchingOptimizer', () => {
 
   it('should queue component updates during transitions', (done) => {
     const updateFn = jest.fn();
-    
+
     // Start a theme transition to enable queuing
     const callback = jest.fn();
     ThemeSwitchingOptimizer.optimizeThemeSwitch(
@@ -259,10 +259,10 @@ describe('ThemeSwitchingOptimizer', () => {
       darkTheme,
       callback
     );
-    
+
     // Queue an update during transition
     ThemeSwitchingOptimizer.queueComponentUpdate(updateFn);
-    
+
     // Allow async operations to complete
     setTimeout(() => {
       // When not transitioning, updates should execute immediately
@@ -281,13 +281,12 @@ describe('StylePerformanceDebugger', () => {
 
   it('should log performance information when enabled', () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    
+
     StylePerformanceDebugger.log('test', 'Test message', { data: 'test' });
-    
-    expect(consoleSpy).toHaveBeenCalledWith(
-      '[StylePerf:test] Test message',
-      { data: 'test' }
-    );
+
+    expect(consoleSpy).toHaveBeenCalledWith('[StylePerf:test] Test message', {
+      data: 'test',
+    });
 
     consoleSpy.mockRestore();
   });
@@ -295,9 +294,9 @@ describe('StylePerformanceDebugger', () => {
   it('should not log when disabled', () => {
     StylePerformanceDebugger.setEnabled(false);
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    
+
     StylePerformanceDebugger.log('test', 'Test message');
-    
+
     expect(consoleSpy).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
@@ -305,9 +304,9 @@ describe('StylePerformanceDebugger', () => {
   it('should analyze performance and provide recommendations', () => {
     // Create some cached styles to analyze
     StyleSheetCache.create({ container: { flex: 1 } }, 'test');
-    
+
     const analysis = StylePerformanceDebugger.analyzePerformance();
-    
+
     expect(analysis).toHaveProperty('recommendations');
     expect(analysis).toHaveProperty('warnings');
     expect(analysis).toHaveProperty('stats');
@@ -317,7 +316,7 @@ describe('StylePerformanceDebugger', () => {
 
   it('should generate performance report', () => {
     const report = StylePerformanceDebugger.generateReport();
-    
+
     expect(typeof report).toBe('string');
     expect(report).toContain('Style Performance Report');
     expect(report).toContain('Cache Statistics');
@@ -327,7 +326,7 @@ describe('StylePerformanceDebugger', () => {
   it('should manage debug log entries', () => {
     StylePerformanceDebugger.log('test1', 'Message 1');
     StylePerformanceDebugger.log('test2', 'Message 2');
-    
+
     const log = StylePerformanceDebugger.getLog();
     expect(log).toHaveLength(2);
     expect(log[0].type).toBe('test1');
@@ -363,13 +362,12 @@ describe('PerformanceStyleUtils Integration', () => {
       return { backgroundColor: color };
     };
 
-    const memoizedStyleFunction = PerformanceStyleUtils.createMemoizedStyleFunction(
-      styleFunction
-    );
+    const memoizedStyleFunction =
+      PerformanceStyleUtils.createMemoizedStyleFunction(styleFunction);
 
     memoizedStyleFunction('red');
     memoizedStyleFunction('red');
-    
+
     expect(callCount).toBe(1);
   });
 
@@ -381,7 +379,7 @@ describe('PerformanceStyleUtils Integration', () => {
     ];
 
     const results = PerformanceStyleUtils.batchStyleOperations(operations);
-    
+
     expect(results).toHaveLength(3);
     expect(results[0]).toEqual({ flex: 1 });
     expect(results[1]).toEqual({ backgroundColor: 'red' });
@@ -391,7 +389,9 @@ describe('PerformanceStyleUtils Integration', () => {
   it('should preload critical styles', () => {
     const criticalStyles = [
       {
-        factory: (theme: any) => ({ button: { backgroundColor: theme.colors.primary[500] } }),
+        factory: (theme: any) => ({
+          button: { backgroundColor: theme.colors.primary[500] },
+        }),
         theme: lightTheme,
         key: 'button-styles',
       },
@@ -406,12 +406,12 @@ describe('PerformanceStyleUtils Integration', () => {
     // Create some cached data
     PerformanceStyleUtils.cache.create({ test: { flex: 1 } }, 'test');
     PerformanceStyleUtils.memoization.memoize(() => ({}))();
-    
+
     PerformanceStyleUtils.cleanup();
-    
+
     const cacheStats = PerformanceStyleUtils.cache.getStats();
     const memoStats = PerformanceStyleUtils.memoization.getMemoStats();
-    
+
     expect(cacheStats.size).toBe(0);
     expect(memoStats.size).toBe(0);
   });
@@ -435,30 +435,30 @@ describe('Performance Benchmarks', () => {
 
   it('should benchmark style creation performance', () => {
     const largeStyles = createLargeStyleObject();
-    
+
     const startTime = performance.now();
     StyleSheetCache.create(largeStyles, 'benchmark-test');
     const endTime = performance.now();
-    
+
     const duration = endTime - startTime;
-    
+
     // Performance should be reasonable (less than 50ms for large style objects)
     expect(duration).toBeLessThan(50);
   });
 
   it('should benchmark cache hit performance', () => {
     const styles = createLargeStyleObject();
-    
+
     // First call (cache miss)
     StyleSheetCache.create(styles, 'cache-benchmark');
-    
+
     // Benchmark cache hit
     const startTime = performance.now();
     StyleSheetCache.create(styles, 'cache-benchmark');
     const endTime = performance.now();
-    
+
     const duration = endTime - startTime;
-    
+
     // Cache hits should be very fast (less than 1ms)
     expect(duration).toBeLessThan(1);
   });
@@ -474,27 +474,27 @@ describe('Performance Benchmarks', () => {
     };
 
     const memoizedFunction = StyleMemoization.memoize(expensiveFunction);
-    
+
     // First call (expensive)
     const startTime1 = performance.now();
     memoizedFunction(1000);
     const endTime1 = performance.now();
-    
+
     // Second call (memoized)
     const startTime2 = performance.now();
     memoizedFunction(1000);
     const endTime2 = performance.now();
-    
+
     const firstCallDuration = endTime1 - startTime1;
     const secondCallDuration = endTime2 - startTime2;
-    
+
     // Memoized call should be significantly faster
     expect(secondCallDuration).toBeLessThan(firstCallDuration * 0.1);
   });
 
   it('should benchmark theme switching performance', () => {
     const callback = jest.fn();
-    
+
     const startTime = performance.now();
     ThemeSwitchingOptimizer.optimizeThemeSwitch(
       lightTheme,
@@ -502,9 +502,9 @@ describe('Performance Benchmarks', () => {
       callback
     );
     const endTime = performance.now();
-    
+
     const duration = endTime - startTime;
-    
+
     // Theme switching should be fast (less than 10ms)
     expect(duration).toBeLessThan(10);
   });

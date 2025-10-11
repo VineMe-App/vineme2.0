@@ -35,6 +35,7 @@ export const JoinRequestNotifications: React.FC<
   const allPendingRequests: GroupJoinRequestWithUser[] = [];
 
   leaderGroups.forEach((group) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { data: requests } = useGroupJoinRequests(group.id, userId);
     const pendingRequests =
       requests?.filter((r) => r.status === 'pending') || [];

@@ -38,18 +38,18 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
 
   return (
     <Modal isVisible={visible} onClose={onClose} title="Manage Member">
-        <View style={styles.container}>
-          {/* Member Info */}
-          <View style={styles.memberInfo}>
-            <Avatar
-              size={60}
-              imageUrl={member.user?.avatar_url}
-              name={fullName || 'Unknown'}
-            />
-            <View style={styles.memberDetails}>
-              <Text style={styles.memberName}>
-                {shortName || fullName || 'Unknown'}
-              </Text>
+      <View style={styles.container}>
+        {/* Member Info */}
+        <View style={styles.memberInfo}>
+          <Avatar
+            size={60}
+            imageUrl={member.user?.avatar_url}
+            name={fullName || 'Unknown'}
+          />
+          <View style={styles.memberDetails}>
+            <Text style={styles.memberName}>
+              {shortName || fullName || 'Unknown'}
+            </Text>
             <View style={styles.roleContainer}>
               <Ionicons
                 name={isLeader ? 'star' : 'person'}

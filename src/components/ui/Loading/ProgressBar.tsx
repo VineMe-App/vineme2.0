@@ -19,87 +19,87 @@ export interface ProgressBarProps {
    * Progress value between 0 and 100
    */
   progress: number;
-  
+
   /**
    * Width of the progress bar
    */
   width?: number | string;
-  
+
   /**
    * Height of the progress bar
    */
   height?: number;
-  
+
   /**
    * Color of the progress fill
    */
   color?: string;
-  
+
   /**
    * Background color of the progress bar
    */
   backgroundColor?: string;
-  
+
   /**
    * Border radius of the progress bar
    */
   borderRadius?: number;
-  
+
   /**
    * Whether to animate progress changes
    */
   animated?: boolean;
-  
+
   /**
    * Animation duration in milliseconds
    */
   duration?: number;
-  
+
   /**
    * Whether to show progress text
    */
   showText?: boolean;
-  
+
   /**
    * Custom text to display instead of percentage
    */
   text?: string;
-  
+
   /**
    * Text color
    */
   textColor?: string;
-  
+
   /**
    * Text style
    */
   textStyle?: ViewStyle;
-  
+
   /**
    * Variant of the progress bar
    */
   variant?: 'default' | 'thin' | 'thick' | 'rounded';
-  
+
   /**
    * Additional styles for the container
    */
   style?: ViewStyle;
-  
+
   /**
    * Additional styles for the progress fill
    */
   fillStyle?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Accessibility label
    */
   accessibilityLabel?: string;
-  
+
   /**
    * Callback when progress animation completes
    */
@@ -136,34 +136,40 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const { theme } = useTheme();
   const progressValue = useRef(new Animated.Value(0)).current;
   const previousProgress = useRef(0);
-  
+
   const animationDuration = duration || theme.animations.timing.progress;
   const progressColor = color || theme.colors.primary[500];
-  const progressBackgroundColor = backgroundColor || (theme.isDark ? theme.colors.neutral[700] : theme.colors.neutral[200]);
+  const progressBackgroundColor =
+    backgroundColor ||
+    (theme.isDark ? theme.colors.neutral[700] : theme.colors.neutral[200]);
   const progressHeight = height || VARIANT_HEIGHTS[variant];
-  const progressBorderRadius = borderRadius !== undefined ? borderRadius : 
-    variant === 'rounded' ? progressHeight / 2 : theme.borderRadius.sm;
+  const progressBorderRadius =
+    borderRadius !== undefined
+      ? borderRadius
+      : variant === 'rounded'
+        ? progressHeight / 2
+        : theme.borderRadius.sm;
   const progressTextColor = textColor || theme.colors.text.primary;
-  
+
   // Clamp progress between 0 and 100
   const clampedProgress = Math.max(0, Math.min(100, progress));
-  
+
   useEffect(() => {
     const targetValue = clampedProgress / 100;
-    
+
     if (animated) {
       const animation = Animated.timing(progressValue, {
         toValue: targetValue,
         duration: animationDuration,
         useNativeDriver: false,
       });
-      
+
       animation.start(({ finished }) => {
         if (finished && clampedProgress === 100 && onComplete) {
           onComplete();
         }
       });
-      
+
       return () => {
         animation.stop();
       };
@@ -178,7 +184,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   // Announce progress changes to screen readers
   useEffect(() => {
     const progressDiff = Math.abs(clampedProgress - previousProgress.current);
-    if (progressDiff >= 10) { // Only announce significant changes
+    if (progressDiff >= 10) {
+      // Only announce significant changes
       const announcement = text || `${Math.round(clampedProgress)}% complete`;
       AccessibilityInfo.announceForAccessibility(announcement);
       previousProgress.current = clampedProgress;
@@ -204,7 +211,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         ]}
         accessible={true}
         accessibilityRole="progressbar"
-        accessibilityLabel={accessibilityLabel || `Progress: ${getProgressText()}`}
+        accessibilityLabel={
+          accessibilityLabel || `Progress: ${getProgressText()}`
+        }
         accessibilityValue={{
           min: 0,
           max: 100,
@@ -228,7 +237,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           ]}
         />
       </View>
-      
+
       {showText && (
         <Text
           style={[
@@ -257,62 +266,62 @@ export interface CircularProgressProps {
    * Progress value between 0 and 100
    */
   progress: number;
-  
+
   /**
    * Size of the circular progress
    */
   size?: number;
-  
+
   /**
    * Stroke width of the progress circle
    */
   strokeWidth?: number;
-  
+
   /**
    * Color of the progress stroke
    */
   color?: string;
-  
+
   /**
    * Background color of the progress circle
    */
   backgroundColor?: string;
-  
+
   /**
    * Whether to animate progress changes
    */
   animated?: boolean;
-  
+
   /**
    * Animation duration in milliseconds
    */
   duration?: number;
-  
+
   /**
    * Whether to show progress text in the center
    */
   showText?: boolean;
-  
+
   /**
    * Custom text to display instead of percentage
    */
   text?: string;
-  
+
   /**
    * Text color
    */
   textColor?: string;
-  
+
   /**
    * Additional styles
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Accessibility label
    */
@@ -336,21 +345,23 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
 }) => {
   const { theme } = useTheme();
   const progressValue = useRef(new Animated.Value(0)).current;
-  
+
   const animationDuration = duration || theme.animations.timing.progress;
   const progressColor = color || theme.colors.primary[500];
-  const progressBackgroundColor = backgroundColor || (theme.isDark ? theme.colors.neutral[700] : theme.colors.neutral[200]);
+  const progressBackgroundColor =
+    backgroundColor ||
+    (theme.isDark ? theme.colors.neutral[700] : theme.colors.neutral[200]);
   const progressTextColor = textColor || theme.colors.text.primary;
-  
+
   // Clamp progress between 0 and 100
   const clampedProgress = Math.max(0, Math.min(100, progress));
-  
+
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  
+
   useEffect(() => {
     const targetValue = clampedProgress / 100;
-    
+
     if (animated) {
       Animated.timing(progressValue, {
         toValue: targetValue,
@@ -380,7 +391,9 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
       testID={testID}
       accessible={true}
       accessibilityRole="progressbar"
-      accessibilityLabel={accessibilityLabel || `Circular progress: ${getProgressText()}`}
+      accessibilityLabel={
+        accessibilityLabel || `Circular progress: ${getProgressText()}`
+      }
       accessibilityValue={{
         min: 0,
         max: 100,
@@ -400,7 +413,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           },
         ]}
       />
-      
+
       {/* Progress circle */}
       <Animated.View
         style={[
@@ -423,7 +436,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           },
         ]}
       />
-      
+
       {showText && (
         <View style={styles.circularTextContainer}>
           <Text

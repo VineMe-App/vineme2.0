@@ -1,6 +1,6 @@
 /**
  * Example: Basic Component Migration
- * 
+ *
  * This example shows how to migrate a simple component from legacy styles
  * to the new theme system using the migration utilities.
  */
@@ -8,7 +8,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ComponentMigrator } from '../ComponentMigrator';
-import { ThemeCompatibilityLayer, useLegacyStyles } from '../ThemeCompatibilityLayer';
+import {
+  ThemeCompatibilityLayer,
+  useLegacyStyles,
+} from '../ThemeCompatibilityLayer';
 import { useTheme } from '../../../theme/provider/useTheme';
 import type { Theme } from '../../../theme/themes/types';
 
@@ -29,7 +32,12 @@ function LegacyButton({ title, onPress, disabled }: LegacyButtonProps) {
       onPress={onPress}
       disabled={disabled}
     >
-      <Text style={[legacyStyles.buttonText, disabled && legacyStyles.buttonTextDisabled]}>
+      <Text
+        style={[
+          legacyStyles.buttonText,
+          disabled && legacyStyles.buttonTextDisabled,
+        ]}
+      >
         {title}
       </Text>
     </TouchableOpacity>
@@ -87,29 +95,30 @@ function ThemeAwareButton({ title, onPress, disabled }: ThemeAwareButtonProps) {
   );
 }
 
-const createThemeAwareStyles = (theme: Theme) => StyleSheet.create({
-  button: {
-    backgroundColor: theme.colors.primary[600],
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-  },
-  buttonDisabled: {
-    backgroundColor: theme.colors.neutral[400],
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: theme.colors.text.inverse,
-    fontSize: theme.typography.fontSize.md,
-    fontWeight: theme.typography.fontWeight.semiBold,
-  },
-  buttonTextDisabled: {
-    color: theme.colors.text.inverse,
-  },
-});
+const createThemeAwareStyles = (theme: Theme) =>
+  StyleSheet.create({
+    button: {
+      backgroundColor: theme.colors.primary[600],
+      paddingHorizontal: theme.spacing.lg,
+      paddingVertical: theme.spacing.md,
+      borderRadius: theme.borderRadius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 44,
+    },
+    buttonDisabled: {
+      backgroundColor: theme.colors.neutral[400],
+      opacity: 0.6,
+    },
+    buttonText: {
+      color: theme.colors.text.inverse,
+      fontSize: theme.typography.fontSize.md,
+      fontWeight: theme.typography.fontWeight.semiBold,
+    },
+    buttonTextDisabled: {
+      color: theme.colors.text.inverse,
+    },
+  });
 
 // ============================================================================
 // MIGRATION WITH COMPATIBILITY LAYER
@@ -160,7 +169,11 @@ function CompatibleButton({ title, onPress, disabled }: CompatibleButtonProps) {
   const styles = useLegacyStyles(legacyButtonStyles, themeAwareButtonStyles);
 
   return (
-    <TouchableOpacity style={styles.button} onPress={onPress} disabled={disabled}>
+    <TouchableOpacity
+      style={styles.button}
+      onPress={onPress}
+      disabled={disabled}
+    >
       <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
   );
@@ -216,7 +229,9 @@ const styles = StyleSheet.create({
   try {
     // Mock the file reading for this example
     const originalReadFile = (migrator as any).readFile;
-    (migrator as any).readFile = jest.fn().mockResolvedValue(sampleComponentCode);
+    (migrator as any).readFile = jest
+      .fn()
+      .mockResolvedValue(sampleComponentCode);
 
     const result = await migrator.migrateComponent('SampleCard.tsx', {
       preserveOriginalStyles: true,
@@ -279,9 +294,8 @@ function GradualMigrationCard({ title, content }: GradualMigrationCardProps) {
   };
 
   // Use compatibility layer to merge both approaches
-  const compatibleStylesFactory = ThemeCompatibilityLayer.createCompatibleStyles(
-    legacyStyles,
-    (theme) => ({
+  const compatibleStylesFactory =
+    ThemeCompatibilityLayer.createCompatibleStyles(legacyStyles, (theme) => ({
       container: {
         backgroundColor: theme.colors.background.primary,
         padding: theme.spacing.lg,
@@ -294,8 +308,7 @@ function GradualMigrationCard({ title, content }: GradualMigrationCardProps) {
         shadowRadius: 4,
         elevation: 2,
       },
-    })
-  );
+    }));
 
   const styles = StyleSheet.create({
     ...compatibleStylesFactory(theme),

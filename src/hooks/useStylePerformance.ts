@@ -5,10 +5,10 @@
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { ViewStyle, TextStyle, ImageStyle } from 'react-native';
-import { 
-  PerformanceStyleUtils, 
+import {
+  PerformanceStyleUtils,
   StylePerformanceDebugger,
-  ThemeSwitchingOptimizer 
+  ThemeSwitchingOptimizer,
 } from '../utils/performanceStyleUtils';
 import { useTheme } from '../theme/provider/useTheme';
 import { Theme } from '../theme/themes/types';
@@ -44,7 +44,7 @@ export function useOptimizedStyles<T extends Record<string, StyleValue>>(
   // Track render count for performance monitoring
   useEffect(() => {
     renderCountRef.current += 1;
-    
+
     if (enableMonitoring) {
       StylePerformanceDebugger.log(
         'component_render',
@@ -79,7 +79,7 @@ export function useOptimizedStyles<T extends Record<string, StyleValue>>(
   // Create optimized styles with caching and performance monitoring
   const styles = useMemo(() => {
     const finalCacheKey = cacheKey || componentName;
-    
+
     return PerformanceStyleUtils.createOptimizedThemedStyles(
       styleFactory,
       theme,
@@ -106,10 +106,9 @@ export function useOptimizedStyles<T extends Record<string, StyleValue>>(
 /**
  * Hook for memoized style calculations
  */
-export function useMemoizedStyleCalculation<T extends (...args: any[]) => StyleValue>(
-  styleCalculation: T,
-  dependencies: any[] = []
-): T {
+export function useMemoizedStyleCalculation<
+  T extends (...args: any[]) => StyleValue,
+>(styleCalculation: T, dependencies: any[] = []): T {
   return useMemo(() => {
     return PerformanceStyleUtils.createMemoizedStyleFunction(styleCalculation);
   }, dependencies);
@@ -129,7 +128,7 @@ export function useStylePerformanceMonitor(componentName: string) {
   const endRenderMeasurement = useCallback(() => {
     if (renderStartTime.current > 0) {
       const renderTime = performance.now() - renderStartTime.current;
-      
+
       StylePerformanceDebugger.log(
         'render_performance',
         `${componentName} render time`,
@@ -139,7 +138,7 @@ export function useStylePerformanceMonitor(componentName: string) {
           isDark: theme.isDark,
         }
       );
-      
+
       renderStartTime.current = 0;
     }
   }, [componentName, theme]);
@@ -149,7 +148,7 @@ export function useStylePerformanceMonitor(componentName: string) {
       const startTime = performance.now();
       const result = operation();
       const endTime = performance.now();
-      
+
       StylePerformanceDebugger.log(
         'style_operation',
         `${componentName} - ${operationName}`,
@@ -158,7 +157,7 @@ export function useStylePerformanceMonitor(componentName: string) {
           themeName: theme.name,
         }
       );
-      
+
       return result;
     },
     [componentName, theme]
@@ -180,15 +179,11 @@ export function useOptimizedThemeSwitch() {
 
   const optimizedToggleTheme = useCallback(() => {
     const previousTheme = previousThemeRef.current;
-    
-    ThemeSwitchingOptimizer.optimizeThemeSwitch(
-      previousTheme,
-      theme,
-      () => {
-        toggleTheme();
-        previousThemeRef.current = theme;
-      }
-    );
+
+    ThemeSwitchingOptimizer.optimizeThemeSwitch(previousTheme, theme, () => {
+      toggleTheme();
+      previousThemeRef.current = theme;
+    });
   }, [theme, toggleTheme]);
 
   const queueStyleUpdate = useCallback((updateFn: () => void) => {
@@ -198,7 +193,8 @@ export function useOptimizedThemeSwitch() {
   return {
     optimizedToggleTheme,
     queueStyleUpdate,
-    isTransitioning: ThemeSwitchingOptimizer.getThemeSwitchingStats().isTransitioning,
+    isTransitioning:
+      ThemeSwitchingOptimizer.getThemeSwitchingStats().isTransitioning,
   };
 }
 
@@ -206,14 +202,14 @@ export function useOptimizedThemeSwitch() {
  * Hook for batch style operations
  */
 export function useBatchedStyleOperations() {
-  const batchOperations = useCallback(<T>(operations: Array<() => T>): T[] => {
+  const batchOperations = useCallback(<T>(operations: (() => T)[]): T[] => {
     return PerformanceStyleUtils.batchStyleOperations(operations);
   }, []);
 
-  const batchStyleUpdates = useCallback((updates: Array<() => void>) => {
+  const batchStyleUpdates = useCallback((updates: (() => void)[]) => {
     // Use requestAnimationFrame to batch updates
     requestAnimationFrame(() => {
-      updates.forEach(update => update());
+      updates.forEach((update) => update());
     });
   }, []);
 
@@ -263,8 +259,9 @@ export function withStylePerformanceMonitoring<T extends Record<string, any>>(
   componentName: string
 ): () => T {
   return function useMonitoredStyles(): T {
-    const { startRenderMeasurement, endRenderMeasurement } = useStylePerformanceMonitor(componentName);
-    
+    const { startRenderMeasurement, endRenderMeasurement } =
+      useStylePerformanceMonitor(componentName);
+
     useEffect(() => {
       startRenderMeasurement();
       return endRenderMeasurement;
@@ -278,10 +275,10 @@ export function withStylePerformanceMonitoring<T extends Record<string, any>>(
  * Hook for critical style preloading
  */
 export function useCriticalStylePreloader(
-  criticalStyles: Array<{
+  criticalStyles: {
     factory: StyleFactory<any>;
     key: string;
-  }>
+  }[]
 ) {
   const { theme } = useTheme();
 
@@ -308,15 +305,18 @@ export function useStyleCacheManagement() {
     return PerformanceStyleUtils.cache.getStats();
   }, []);
 
-  const preloadStyles = useCallback((
-    styles: Array<{
-      factory: StyleFactory<any>;
-      theme: Theme;
-      key: string;
-    }>
-  ) => {
-    PerformanceStyleUtils.preloadCriticalStyles(styles);
-  }, []);
+  const preloadStyles = useCallback(
+    (
+      styles: {
+        factory: StyleFactory<any>;
+        theme: Theme;
+        key: string;
+      }[]
+    ) => {
+      PerformanceStyleUtils.preloadCriticalStyles(styles);
+    },
+    []
+  );
 
   return {
     clearCache,
