@@ -10,6 +10,7 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
+import * as Font from 'expo-font';
 import { Appearance, ColorSchemeName } from 'react-native';
 import { ThemeContext } from './ThemeContext';
 import { lightTheme, darkTheme } from '../themes';
@@ -33,6 +34,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
   initialTheme = 'system',
 }) => {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>(initialTheme);
   const [systemColorScheme, setSystemColorScheme] = useState<ColorSchemeName>(
     Appearance.getColorScheme()
@@ -191,6 +193,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       updateAssets,
     ]
   );
+
+  console.log('theme2', theme);
 
   return (
     <ThemeContext.Provider value={contextValue}>
