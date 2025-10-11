@@ -5,6 +5,7 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import {
@@ -263,6 +264,7 @@ export default function ManageGroupsScreen() {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [confirmationDialog, setConfirmationDialog] = useState<{
     visible: boolean;
     type: 'approve' | 'decline' | 'close' | null;
@@ -335,6 +337,18 @@ export default function ManageGroupsScreen() {
     enabled: !!userProfile?.church_id,
     ...ADMIN_CACHE_CONFIGS.CHURCH_GROUPS,
   });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      await refreshNotifications();
+    } catch (err) {
+      console.error('Failed to refresh groups', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Derive visible groups from status filter
   const visibleGroups = React.useMemo(() => {
@@ -621,18 +635,13 @@ export default function ManageGroupsScreen() {
             <ScrollView
               style={styles.content}
               showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                />
+              }
             >
-              {/* Simple refresh button instead of RefreshControl */}
-              <TouchableOpacity
-                style={styles.refreshButton}
-                onPress={() => {
-                  refetch();
-                  refreshNotifications();
-                }}
-              >
-                <Text style={styles.refreshButtonText}>🔄 Refresh</Text>
-              </TouchableOpacity>
-
               {/* Service & Church Header */}
               {serviceInfo && (
                 <View style={styles.headerSection}>
@@ -758,20 +767,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
-  },
-  refreshButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  refreshButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
+    padding: 20,
   },
   headerSection: {
     marginBottom: 20,
@@ -792,15 +788,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   summary: {
-    marginBottom: 16,
+    marginBottom: 20,
     padding: 16,
     backgroundColor: '#f8f9fa',
-    borderRadius: 8,
+    borderRadius: 10,
+    alignItems: 'center',
   },
   summaryText: {
-    fontSize: 14,
-    color: '#6c757d',
-    fontWeight: '500',
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '600',
     marginBottom: 4,
   },
   groupCard: {
