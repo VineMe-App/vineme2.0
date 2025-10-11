@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Text } from '../ui/Text';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -19,6 +19,31 @@ const ARCHIVE_REASONS = [
   'Group at capacity',
   'Not suitable for group',
 ];
+
+const FooterButtons: React.FC<{
+  onCancel: () => void;
+  onArchive: () => void;
+  loading: boolean;
+  disabled: boolean;
+}> = ({ onCancel, onArchive, loading, disabled }) => (
+  <View style={styles.footer}>
+    <Button
+      title="Cancel"
+      onPress={onCancel}
+      variant="secondary"
+      disabled={loading}
+      style={styles.cancelButton}
+    />
+    <Button
+      title="Archive"
+      onPress={onArchive}
+      variant="danger"
+      loading={loading}
+      disabled={disabled}
+      style={styles.archiveButton}
+    />
+  </View>
+);
 
 export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
   visible,
@@ -51,7 +76,13 @@ export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
   };
 
   return (
-    <Modal isVisible={visible} onClose={handleClose} title="Archive Newcomer">
+    <Modal
+      isVisible={visible}
+      onClose={handleClose}
+      title="Archive Newcomer"
+      size="large"
+      scrollable={true}
+    >
       <View style={styles.container}>
         <Text style={styles.subtitle}>
           Archiving {requesterName}'s request
@@ -59,7 +90,7 @@ export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
 
         <View style={styles.formSection}>
           <Text style={styles.label}>Reason for archiving</Text>
-          
+
           {/* Reason Selector */}
           <TouchableOpacity
             style={styles.reasonSelector}
@@ -130,24 +161,12 @@ export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
         </View>
       </View>
 
-      {/* Footer Buttons */}
-      <View style={styles.footer}>
-        <Button
-          title="Cancel"
-          onPress={handleClose}
-          variant="secondary"
-          disabled={loading}
-          style={styles.cancelButton}
-        />
-        <Button
-          title="Archive"
-          onPress={handleArchive}
-          variant="danger"
-          loading={loading}
-          disabled={!selectedReason || loading}
-          style={styles.archiveButton}
-        />
-      </View>
+      <FooterButtons
+        onCancel={handleClose}
+        onArchive={handleArchive}
+        loading={loading}
+        disabled={!selectedReason || loading}
+      />
     </Modal>
   );
 };
@@ -244,6 +263,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     backgroundColor: '#fff',
+    marginTop: 8,
   },
   cancelButton: {
     flex: 1,
@@ -252,4 +272,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-
