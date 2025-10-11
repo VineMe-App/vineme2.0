@@ -10,7 +10,6 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
-import * as Font from 'expo-font';
 import { Appearance, ColorSchemeName } from 'react-native';
 import { ThemeContext } from './ThemeContext';
 import { lightTheme, darkTheme } from '../themes';
