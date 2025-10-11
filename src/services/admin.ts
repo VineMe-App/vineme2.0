@@ -860,6 +860,82 @@ export class GroupAdminService {
       console.error('Failed to log group action:', error);
     }
   }
+
+  /**
+   * Get all pending join requests for a specific service
+   */
+  async getServiceJoinRequests(
+    serviceId: string
+  ): Promise<AdminServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      // Check permission to manage church groups
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_groups'
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to view join requests'
+          ),
+        };
+      }
+
+      // Get all groups for this service
+      const { data: serviceGroups, error: groupsError } = await supabase
+        .from('groups')
+        .select('id')
+        .eq('service_id', serviceId);
+
+      if (groupsError) {
+        return { data: null, error: new Error(groupsError.message) };
+      }
+
+      const groupIds = serviceGroups?.map((g) => g.id) || [];
+
+      if (groupIds.length === 0) {
+        return { data: [], error: null };
+      }
+
+      // Get all pending join requests for these groups
+      const { data: requests, error: requestsError } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, first_name, last_name, avatar_url),
+          group:groups(
+            id,
+            title,
+            service_id,
+            memberships:group_memberships!inner(
+              user_id,
+              role,
+              status,
+              user:users(id, first_name, last_name, avatar_url)
+            )
+          )
+        `
+        )
+        .in('group_id', groupIds)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (requestsError) {
+        return { data: null, error: new Error(requestsError.message) };
+      }
+
+      return { data: requests || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get service join requests'),
+      };
+    }
+  }
 }
 
 /**

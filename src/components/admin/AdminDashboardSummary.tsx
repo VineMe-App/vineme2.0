@@ -34,10 +34,14 @@ export function AdminDashboardSummary({
 
   // Fetch service and church info
   const { data: serviceInfo } = useQuery({
-    queryKey: ['service-church-info', userProfile?.service_id, userProfile?.church_id],
+    queryKey: [
+      'service-church-info',
+      userProfile?.service_id,
+      userProfile?.church_id,
+    ],
     queryFn: async () => {
       if (!userProfile?.service_id || !userProfile?.church_id) return null;
-      
+
       const [serviceRes, churchRes] = await Promise.all([
         supabase
           .from('services')
@@ -224,7 +228,7 @@ export function AdminDashboardSummary({
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => router.push('/(tabs)/groups')}
+          onPress={() => router.push('/admin/join-requests')}
         >
           <View style={styles.buttonContent}>
             <Ionicons name="mail-outline" size={20} color="#007AFF" />
@@ -257,13 +261,15 @@ export function AdminDashboardSummary({
         {/* Requests */}
         <View style={styles.statCard}>
           <Text style={styles.statTitle}>Group Join Requests</Text>
-          
+
           {/* Outstanding Requests Number */}
           <View style={styles.outstandingContainer}>
             <Text style={styles.outstandingNumber}>
               {requestsStats?.outstandingRequests || 0}
             </Text>
-            <Text style={styles.outstandingLabel}>Outstanding Group Join Requests</Text>
+            <Text style={styles.outstandingLabel}>
+              Outstanding Group Join Requests
+            </Text>
           </View>
 
           {/* Archived Requests by Reason */}

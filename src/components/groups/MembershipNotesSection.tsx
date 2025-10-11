@@ -20,6 +20,7 @@ interface MembershipNotesSectionProps {
   groupId: string;
   userId: string;
   leaderId: string;
+  readOnly?: boolean;
 }
 
 export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
@@ -27,6 +28,7 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
   groupId,
   userId,
   leaderId,
+  readOnly = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
@@ -188,7 +190,7 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
             <Text style={styles.emptyText}>No notes yet</Text>
           )}
 
-          {!showAddNote ? (
+          {!readOnly && !showAddNote ? (
             <TouchableOpacity
               style={styles.addNoteButton}
               onPress={() => setShowAddNote(true)}
@@ -196,7 +198,7 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
               <Ionicons name="add-circle-outline" size={18} color="#2563eb" />
               <Text style={styles.addNoteButtonText}>Add a note</Text>
             </TouchableOpacity>
-          ) : (
+          ) : !readOnly ? (
             <View style={styles.addNoteForm}>
               <TextInput
                 style={styles.noteInput}
@@ -230,7 +232,7 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
                 />
               </View>
             </View>
-          )}
+          ) : null}
         </View>
       )}
     </View>
