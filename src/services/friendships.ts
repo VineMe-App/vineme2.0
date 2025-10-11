@@ -17,7 +17,17 @@ export interface FriendshipServiceResponse<T = any> {
   error: Error | null;
 }
 
-export type FriendshipStatus = 'pending' | 'accepted' | 'rejected' | 'blocked';
+export type FriendshipStatus = 'pending' | 'accepted' | 'rejected';
+
+export type FriendshipDirection = 'incoming' | 'outgoing';
+
+export interface FriendshipStatusDetails {
+  status: FriendshipStatus;
+  direction: FriendshipDirection;
+  friendshipId: string;
+  userId: string;
+  friendId: string;
+}
 
 const withDisplayName = <T extends Partial<User> | null | undefined>(user: T) =>
   user
@@ -163,6 +173,44 @@ export class FriendshipService {
   }
 
   /**
+   * Accept a previously rejected incoming friend request
+   * recipientId: the current user (was friend_id)
+   * senderId: the original requester (was user_id)
+   */
+  async acceptRejectedFriendRequest(
+    recipientId: string,
+    senderId: string
+  ): Promise<FriendshipServiceResponse<DatabaseFriendship>> {
+    try {
+      const { data, error } = await supabase
+        .from('friendships')
+        .update({
+          status: 'accepted',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', senderId)
+        .eq('friend_id', recipientId)
+        .eq('status', 'rejected')
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to accept rejected request'),
+      };
+    }
+  }
+
+  /**
    * Reject a friend request
    */
   async rejectFriendRequest(
@@ -198,75 +246,17 @@ export class FriendshipService {
     }
   }
 
-  /**
-   * Block a user
-   */
-  async blockUser(
-    userId: string,
-    friendId: string
-  ): Promise<FriendshipServiceResponse<DatabaseFriendship>> {
-    try {
-      // First, check if there's an existing friendship
-      const { data: existing } = await supabase
-        .from('friendships')
-        .select('*')
-        .or(
-          `and(user_id.eq.${userId},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${userId})`
-        )
-        .single();
-
-      if (existing) {
-        // Update existing friendship to blocked
-        const { data, error } = await supabase
-          .from('friendships')
-          .update({
-            status: 'blocked',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existing.id)
-          .select()
-          .single();
-
-        if (error) {
-          return { data: null, error: new Error(error.message) };
-        }
-
-        return { data, error: null };
-      } else {
-        // Create new blocked friendship
-        const { data, error } = await supabase
-          .from('friendships')
-          .insert({
-            user_id: userId,
-            friend_id: friendId,
-            status: 'blocked',
-          })
-          .select()
-          .single();
-
-        if (error) {
-          return { data: null, error: new Error(error.message) };
-        }
-
-        return { data, error: null };
-      }
-    } catch (error) {
-      return {
-        data: null,
-        error:
-          error instanceof Error ? error : new Error('Failed to block user'),
-      };
-    }
-  }
+  // blockUser removed per product decision
 
   /**
-   * Remove/unfriend a user
+   * Remove/unfriend a user: delete any existing friendship row in either direction
    */
   async removeFriend(
     userId: string,
     friendId: string
   ): Promise<FriendshipServiceResponse<boolean>> {
     try {
+      // Delete rows in both possible directions
       const { error } = await supabase
         .from('friendships')
         .delete()
@@ -356,7 +346,7 @@ export class FriendshipService {
         `
         )
         .eq('user_id', userId)
-        .eq('status', 'pending');
+        .in('status', ['pending', 'rejected']);
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -424,11 +414,11 @@ export class FriendshipService {
   async getFriendshipStatus(
     userId: string,
     friendId: string
-  ): Promise<FriendshipServiceResponse<FriendshipStatus | null>> {
+  ): Promise<FriendshipServiceResponse<FriendshipStatusDetails | null>> {
     try {
       const { data, error } = await supabase
         .from('friendships')
-        .select('status')
+        .select('id, user_id, friend_id, status')
         .or(
           `and(user_id.eq.${userId},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${userId})`
         )
@@ -439,7 +429,22 @@ export class FriendshipService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data?.status || null, error: null };
+      if (!data) {
+        return { data: null, error: null };
+      }
+
+      const direction: FriendshipDirection = data.user_id === userId ? 'outgoing' : 'incoming';
+
+      return {
+        data: {
+          status: data.status as FriendshipStatus,
+          direction,
+          friendshipId: data.id,
+          userId: data.user_id,
+          friendId: data.friend_id,
+        },
+        error: null,
+      };
     } catch (error) {
       return {
         data: null,

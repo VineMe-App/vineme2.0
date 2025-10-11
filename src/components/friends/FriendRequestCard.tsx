@@ -10,7 +10,7 @@ interface FriendRequestCardProps {
   type: 'sent' | 'received';
   onAccept?: (friendshipId: string) => void;
   onReject?: (friendshipId: string) => void;
-  onCancel?: (friendshipId: string) => void;
+  onCancel?: (friendship: FriendshipWithUser) => void;
   isLoading?: boolean;
 }
 
@@ -45,8 +45,11 @@ export function FriendRequestCard({
   };
 
   const handleCancel = () => {
-    onCancel?.(friendship.id);
+    onCancel?.(friendship);
   };
+
+  const showCancel =
+    type === 'sent' && friendship.status === 'pending' && !!onCancel;
 
   return (
     <View style={styles.container}>
@@ -91,13 +94,15 @@ export function FriendRequestCard({
             </TouchableOpacity>
           </>
         ) : (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.cancelButton]}
-            onPress={handleCancel}
-            disabled={isLoading}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+          showCancel && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.cancelButton]}
+              onPress={handleCancel}
+              disabled={isLoading}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          )
         )}
       </View>
     </View>

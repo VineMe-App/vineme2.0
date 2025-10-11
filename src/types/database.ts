@@ -122,7 +122,7 @@ export interface Friendship {
   id: string;
   user_id: string;
   friend_id: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'blocked';
+  status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at?: string;
 }
