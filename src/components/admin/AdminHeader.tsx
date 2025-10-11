@@ -75,7 +75,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             </Text>
             {(notificationCount ?? 0) > 0 && (
               <NotificationBadge
-                count={notificationCount}
+                count={notificationCount ?? 0}
                 size="small"
                 style={styles.titleBadge}
               />
@@ -158,7 +158,7 @@ export const AdminBreadcrumb: React.FC<BreadcrumbProps> = ({ items }) => {
             <Text
               style={[
                 styles.breadcrumbText,
-                !item.route && styles.breadcrumbTextCurrent,
+                ...(item.route ? [] : [styles.breadcrumbTextCurrent]),
               ]}
             >
               {item.label}
@@ -277,8 +277,8 @@ const styles = StyleSheet.create({
   },
   titleBadge: {
     position: 'absolute',
-    top: -8,
-    right: -16,
+    top: -14, // Half of 28px small badge height for proper positioning
+    right: -24, // Half of 48px large badge height for proper positioning
   },
   subtitle: {
     fontSize: 14,

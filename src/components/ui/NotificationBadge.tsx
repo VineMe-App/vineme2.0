@@ -34,29 +34,35 @@ export function NotificationBadge({
 
   const sizeStyles = {
     small: {
-      minWidth: 16,
-      height: 16,
-      borderRadius: 8,
-      paddingHorizontal: 4,
+      minWidth: 28, // Doubled from 16
+      height: 28, // Doubled from 16
+      borderRadius: 14, // Half of height for perfect circle
+      paddingHorizontal: 6, // Doubled from 4
     },
     medium: {
-      minWidth: 20,
-      height: 20,
-      borderRadius: 10,
-      paddingHorizontal: 6,
+      minWidth: 40, // Doubled from 20
+      height: 40, // Doubled from 20
+      borderRadius: 20, // Half of height for perfect circle
+      paddingHorizontal: 12, // Doubled from 6
     },
     large: {
-      minWidth: 24,
-      height: 24,
-      borderRadius: 12,
-      paddingHorizontal: 8,
+      minWidth: 48, // Doubled from 24
+      height: 48, // Doubled from 24
+      borderRadius: 24, // Half of height for perfect circle
+      paddingHorizontal: 16, // Doubled from 8
     },
   };
 
   const textSizes = {
-    small: 10,
-    medium: 12,
-    large: 14,
+    small: 14, // Increased for better readability in larger badge
+    medium: 16, // Increased for better readability in larger badge
+    large: 18, // Increased for better readability in larger badge
+  };
+
+  const lineHeights = {
+    small: 28, // Match actual container height for perfect centering
+    medium: 40, // Match actual container height for perfect centering
+    large: 48, // Match actual container height for perfect centering
   };
 
   return (
@@ -77,7 +83,11 @@ export function NotificationBadge({
         weight="bold"
         style={[
           styles.badgeText,
-          { color: textColor, fontSize: textSizes[size] },
+          {
+            color: textColor,
+            fontSize: textSizes[size],
+            lineHeight: lineHeights[size],
+          },
         ]}
         accessibilityElementsHidden={true}
         importantForAccessibility="no-hide-descendants"
@@ -93,11 +103,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',
-    top: -8,
-    right: -8,
+    top: -10, // Half of 28px small badge height for proper positioning
+    right: -10, // Half of 28px small badge height for proper positioning
     zIndex: 1,
   },
   badgeText: {
     textAlign: 'center',
+    // Remove includeFontPadding to allow default font padding for better centering
+    textAlignVertical: 'center',
+    // Add minimal padding to ensure perfect centering within container
+    paddingVertical: 0,
   },
 });
