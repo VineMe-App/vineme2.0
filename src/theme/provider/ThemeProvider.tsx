@@ -34,7 +34,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
   initialTheme = 'system',
 }) => {
-  const [fontsLoaded, setFontsLoaded] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>(initialTheme);
   const [systemColorScheme, setSystemColorScheme] = useState<ColorSchemeName>(
     Appearance.getColorScheme()
