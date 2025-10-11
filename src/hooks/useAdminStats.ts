@@ -235,4 +235,3 @@ export const useRequestsStats = () => {
     staleTime: 30000,
   });
 };
-

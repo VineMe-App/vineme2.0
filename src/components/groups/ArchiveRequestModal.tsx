@@ -84,9 +84,7 @@ export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
       scrollable={true}
     >
       <View style={styles.container}>
-        <Text style={styles.subtitle}>
-          Archiving {requesterName}'s request
-        </Text>
+        <Text style={styles.subtitle}>Archiving {requesterName}'s request</Text>
 
         <View style={styles.formSection}>
           <Text style={styles.label}>Reason for archiving</Text>
@@ -127,7 +125,8 @@ export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
                   <Text
                     style={[
                       styles.dropdownItemText,
-                      selectedReason === reason && styles.dropdownItemTextSelected,
+                      selectedReason === reason &&
+                        styles.dropdownItemTextSelected,
                     ]}
                   >
                     {reason}
@@ -154,9 +153,7 @@ export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
               textAlignVertical="top"
               editable={!loading}
             />
-            <Text style={styles.characterCount}>
-              {notes.length}/500
-            </Text>
+            <Text style={styles.characterCount}>{notes.length}/500</Text>
           </View>
         </View>
       </View>

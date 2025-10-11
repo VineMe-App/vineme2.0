@@ -37,7 +37,8 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   // Inline actions on each card
   const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
   const [showArchiveModal, setShowArchiveModal] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<GroupMembershipWithUser | null>(null);
+  const [selectedMember, setSelectedMember] =
+    useState<GroupMembershipWithUser | null>(null);
   const [showMemberModal, setShowMemberModal] = useState(false);
 
   const { data: members, isLoading: membersLoading } = useGroupMembers(
@@ -301,7 +302,9 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           onPress={handleToggleCapacity}
           style={[
             styles.capacityToggle,
-            group.at_capacity ? styles.capacityToggleFull : styles.capacityToggleAvailable,
+            group.at_capacity
+              ? styles.capacityToggleFull
+              : styles.capacityToggleAvailable,
           ]}
           disabled={toggleGroupCapacityMutation.isPending}
         >
@@ -310,14 +313,20 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           ) : (
             <>
               <Ionicons
-                name={group.at_capacity ? 'checkmark-circle-outline' : 'close-circle-outline'}
+                name={
+                  group.at_capacity
+                    ? 'checkmark-circle-outline'
+                    : 'close-circle-outline'
+                }
                 size={16}
                 color={group.at_capacity ? '#10b981' : '#f97316'}
               />
               <Text
                 style={[
                   styles.capacityToggleText,
-                  group.at_capacity ? styles.capacityToggleTextAvailable : styles.capacityToggleTextFull,
+                  group.at_capacity
+                    ? styles.capacityToggleTextAvailable
+                    : styles.capacityToggleTextFull,
                 ]}
               >
                 {group.at_capacity ? 'Mark as Available' : 'Mark as Full'}

@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
+  Alert,
+} from 'react-native';
 import { Text } from '../ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '../ui/Modal';
@@ -9,7 +16,10 @@ import { Badge } from '../ui/Badge';
 import { MembershipNotesSection } from './MembershipNotesSection';
 import type { GroupMembershipWithUser } from '../../types/database';
 import { getDisplayName, getFullName } from '@/utils/name';
-import { useGetContactInfo, useInitiateContactAction } from '../../hooks/useJoinRequests';
+import {
+  useGetContactInfo,
+  useInitiateContactAction,
+} from '../../hooks/useJoinRequests';
 
 interface MemberManagementModalProps {
   visible: boolean;
@@ -42,7 +52,7 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
   loading,
 }) => {
   const [showContactInfo, setShowContactInfo] = useState(false);
-  
+
   // All hooks must be called before any conditional returns
   const hasContactConsent = member?.contact_consent === true;
   const { data: contactInfo } = useGetContactInfo(
@@ -50,7 +60,7 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
     leaderId
   );
   const initiateContactMutation = useInitiateContactAction();
-  
+
   if (!member) return null;
 
   const isLeader = member.role === 'leader';
@@ -58,10 +68,7 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
   const fullName = getFullName(member.user);
   const shortName = getDisplayName(member.user, { fallback: 'full' });
 
-  const handleContactPress = async (
-    type: 'phone' | 'email',
-    value: string
-  ) => {
+  const handleContactPress = async (type: 'phone' | 'email', value: string) => {
     try {
       await initiateContactMutation.mutateAsync({
         requestId: member.id,
@@ -110,147 +117,154 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
               <Text style={styles.memberName}>
                 {shortName || fullName || 'Unknown'}
               </Text>
-            <View style={styles.roleContainer}>
-              <Ionicons
-                name={isLeader ? 'star' : 'person'}
-                size={16}
-                color={isLeader ? '#f57c00' : '#666'}
-              />
-              <Text style={[styles.memberRole, isLeader && styles.leaderRole]}>
-                {isLeader ? 'Leader' : 'Member'}
-              </Text>
+              <View style={styles.roleContainer}>
+                <Ionicons
+                  name={isLeader ? 'star' : 'person'}
+                  size={16}
+                  color={isLeader ? '#f57c00' : '#666'}
+                />
+                <Text
+                  style={[styles.memberRole, isLeader && styles.leaderRole]}
+                >
+                  {isLeader ? 'Leader' : 'Member'}
+                </Text>
+              </View>
+              <Text style={styles.joinDate}>Joined {joinDate}</Text>
             </View>
-            <Text style={styles.joinDate}>Joined {joinDate}</Text>
           </View>
-        </View>
 
-        {/* Contact Section */}
-        <View style={styles.contactSection}>
-          <View style={styles.contactHeader}>
-            <Text style={styles.contactTitle}>Contact details</Text>
-            <Badge
-              variant={hasContactConsent ? 'success' : 'secondary'}
-              style={styles.badge}
-            >
-              {hasContactConsent ? 'Contact allowed' : 'No consent'}
-            </Badge>
-          </View>
-          {hasContactConsent ? (
-            <TouchableOpacity
-              onPress={() => setShowContactInfo(!showContactInfo)}
-              style={styles.contactToggle}
-            >
-              <Text style={styles.contactToggleText}>
-                {showContactInfo ? 'Hide contact info' : 'Show contact info'}
+          {/* Contact Section */}
+          <View style={styles.contactSection}>
+            <View style={styles.contactHeader}>
+              <Text style={styles.contactTitle}>Contact details</Text>
+              <Badge
+                variant={hasContactConsent ? 'success' : 'secondary'}
+                style={styles.badge}
+              >
+                {hasContactConsent ? 'Contact allowed' : 'No consent'}
+              </Badge>
+            </View>
+            {hasContactConsent ? (
+              <TouchableOpacity
+                onPress={() => setShowContactInfo(!showContactInfo)}
+                style={styles.contactToggle}
+              >
+                <Text style={styles.contactToggleText}>
+                  {showContactInfo ? 'Hide contact info' : 'Show contact info'}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={styles.noContactText}>
+                This member has not shared their contact details with leaders.
               </Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={styles.noContactText}>
-              This member has not shared their contact details with leaders.
-            </Text>
-          )}
-        </View>
-
-        {showContactInfo && contactInfo && (
-          <View style={styles.contactInfo}>
-            {contactInfo.email && (
-              <View style={styles.contactItem}>
-                <TouchableOpacity
-                  onPress={() =>
-                    contactInfo.email &&
-                    handleContactPress('email', contactInfo.email)
-                  }
-                  style={styles.contactMain}
-                  disabled={initiateContactMutation.isPending}
-                >
-                  <Ionicons name="mail-outline" size={20} color="#007AFF" />
-                  <Text style={styles.contactValue}>{contactInfo.email}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            {contactInfo.phone_number && (
-              <View style={styles.contactItem}>
-                <TouchableOpacity
-                  onPress={() =>
-                    contactInfo.phone_number &&
-                    handleContactPress('phone', contactInfo.phone_number)
-                  }
-                  style={styles.contactMain}
-                  disabled={initiateContactMutation.isPending}
-                >
-                  <Ionicons name="call-outline" size={20} color="#007AFF" />
-                  <Text style={styles.contactValue}>
-                    {contactInfo.phone_number}
-                  </Text>
-                </TouchableOpacity>
-              </View>
             )}
           </View>
-        )}
 
-        {/* Notes Section */}
-        <View style={styles.notesContainer}>
-          <MembershipNotesSection
-            membershipId={member.id}
-            groupId={groupId}
-            userId={member.user_id}
-            leaderId={leaderId}
-          />
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          {isLeader ? (
-            <>
-              <Button
-                title="Demote to Member"
-                onPress={onDemoteFromLeader}
-                variant="secondary"
-                loading={loading}
-                disabled={loading || isLastLeader}
-                style={styles.actionButton}
-                icon={<Ionicons name="arrow-down" size={16} color="#666" />}
-              />
-              {isLastLeader && (
-                <View style={styles.warningContainer}>
-                  <Ionicons name="warning-outline" size={16} color="#ff9800" />
-                  <Text style={styles.warningText}>
-                    Cannot demote the last leader. Promote another member first.
-                  </Text>
+          {showContactInfo && contactInfo && (
+            <View style={styles.contactInfo}>
+              {contactInfo.email && (
+                <View style={styles.contactItem}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      contactInfo.email &&
+                      handleContactPress('email', contactInfo.email)
+                    }
+                    style={styles.contactMain}
+                    disabled={initiateContactMutation.isPending}
+                  >
+                    <Ionicons name="mail-outline" size={20} color="#007AFF" />
+                    <Text style={styles.contactValue}>{contactInfo.email}</Text>
+                  </TouchableOpacity>
                 </View>
               )}
-            </>
-          ) : (
-            <Button
-              title="Promote to Leader"
-              onPress={onPromoteToLeader}
-              variant="primary"
-              loading={loading}
-              disabled={loading}
-              style={styles.actionButton}
-              icon={<Ionicons name="arrow-up" size={16} color="#fff" />}
-            />
-          )}
-
-          <Button
-            title="Remove from Group"
-            onPress={onRemoveMember}
-            variant="danger"
-            loading={loading}
-            disabled={loading || isLastLeader}
-            style={styles.actionButton}
-            icon={<Ionicons name="person-remove" size={16} color="#fff" />}
-          />
-
-          {isLastLeader && (
-            <View style={styles.warningContainer}>
-              <Ionicons name="warning-outline" size={16} color="#ff9800" />
-              <Text style={styles.warningText}>
-                Cannot remove the last leader. Promote another member first.
-              </Text>
+              {contactInfo.phone_number && (
+                <View style={styles.contactItem}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      contactInfo.phone_number &&
+                      handleContactPress('phone', contactInfo.phone_number)
+                    }
+                    style={styles.contactMain}
+                    disabled={initiateContactMutation.isPending}
+                  >
+                    <Ionicons name="call-outline" size={20} color="#007AFF" />
+                    <Text style={styles.contactValue}>
+                      {contactInfo.phone_number}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           )}
-        </View>
+
+          {/* Notes Section */}
+          <View style={styles.notesContainer}>
+            <MembershipNotesSection
+              membershipId={member.id}
+              groupId={groupId}
+              userId={member.user_id}
+              leaderId={leaderId}
+            />
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actions}>
+            {isLeader ? (
+              <>
+                <Button
+                  title="Demote to Member"
+                  onPress={onDemoteFromLeader}
+                  variant="secondary"
+                  loading={loading}
+                  disabled={loading || isLastLeader}
+                  style={styles.actionButton}
+                  icon={<Ionicons name="arrow-down" size={16} color="#666" />}
+                />
+                {isLastLeader && (
+                  <View style={styles.warningContainer}>
+                    <Ionicons
+                      name="warning-outline"
+                      size={16}
+                      color="#ff9800"
+                    />
+                    <Text style={styles.warningText}>
+                      Cannot demote the last leader. Promote another member
+                      first.
+                    </Text>
+                  </View>
+                )}
+              </>
+            ) : (
+              <Button
+                title="Promote to Leader"
+                onPress={onPromoteToLeader}
+                variant="primary"
+                loading={loading}
+                disabled={loading}
+                style={styles.actionButton}
+                icon={<Ionicons name="arrow-up" size={16} color="#fff" />}
+              />
+            )}
+
+            <Button
+              title="Remove from Group"
+              onPress={onRemoveMember}
+              variant="danger"
+              loading={loading}
+              disabled={loading || isLastLeader}
+              style={styles.actionButton}
+              icon={<Ionicons name="person-remove" size={16} color="#fff" />}
+            />
+
+            {isLastLeader && (
+              <View style={styles.warningContainer}>
+                <Ionicons name="warning-outline" size={16} color="#ff9800" />
+                <Text style={styles.warningText}>
+                  Cannot remove the last leader. Promote another member first.
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* Info Section */}
           <View style={styles.infoSection}>

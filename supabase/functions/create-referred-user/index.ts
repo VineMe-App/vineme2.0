@@ -239,15 +239,18 @@ serve(async (req) => {
       // Create default privacy settings for the new user
       const { error: privacyError } = await supabase
         .from('contact_privacy_settings')
-        .upsert({
-          user_id: userId,
-          allow_email_sharing: true,
-          allow_phone_sharing: true,
-          allow_contact_by_leaders: true,
-        }, {
-          onConflict: 'user_id',
-          ignoreDuplicates: false,
-        });
+        .upsert(
+          {
+            user_id: userId,
+            allow_email_sharing: true,
+            allow_phone_sharing: true,
+            allow_contact_by_leaders: true,
+          },
+          {
+            onConflict: 'user_id',
+            ignoreDuplicates: false,
+          }
+        );
 
       if (privacyError) {
         console.log('Failed to create privacy settings:', privacyError.message);
@@ -270,7 +273,6 @@ serve(async (req) => {
         console.log('Updated existing user profile with church info');
       }
     }
-
 
     // Create referral record
     const { data: referralRow, error: referralError } = await supabase

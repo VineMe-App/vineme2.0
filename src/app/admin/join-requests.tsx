@@ -44,10 +44,11 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
   const fullName = getFullName(request.user);
   const hasContactConsent = request.user?.contact_consent === true;
 
-  const { data: contactInfo, isLoading: isLoadingContactInfo } = useGetContactInfo(
-    showContactInfo && hasContactConsent ? request.id : undefined,
-    userProfile?.id
-  );
+  const { data: contactInfo, isLoading: isLoadingContactInfo } =
+    useGetContactInfo(
+      showContactInfo && hasContactConsent ? request.id : undefined,
+      userProfile?.id
+    );
 
   const handleContactPress = async (type: 'email' | 'phone', value: string) => {
     let url: string;
@@ -69,7 +70,10 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
             text: 'Copy to Clipboard',
             onPress: async () => {
               await Clipboard.setStringAsync(value);
-              Alert.alert('Copied', `${type === 'email' ? 'Email' : 'Phone number'} copied to clipboard`);
+              Alert.alert(
+                'Copied',
+                `${type === 'email' ? 'Email' : 'Phone number'} copied to clipboard`
+              );
             },
           },
         ]
@@ -115,16 +119,11 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
     <View style={styles.requestCard}>
       {/* User Info */}
       <View style={styles.userSection}>
-        <Avatar
-          imageUrl={request.user?.avatar_url}
-          name={fullName}
-          size={48}
-        />
+        <Avatar imageUrl={request.user?.avatar_url} name={fullName} size={48} />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{userName}</Text>
           <Text style={styles.requestDate}>
-            Requested{' '}
-            {new Date(request.created_at || '').toLocaleDateString()}
+            Requested {new Date(request.created_at || '').toLocaleDateString()}
           </Text>
         </View>
       </View>
@@ -182,10 +181,10 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
       <View style={styles.contactSection}>
         <View style={styles.contactHeader}>
           <Text style={styles.contactTitle}>Contact Details</Text>
-          <Badge
-            variant={hasContactConsent ? 'success' : 'secondary'}
-          >
-            <Text style={{color: 'white'}}>{hasContactConsent ? 'Contact Allowed' : 'No Consent'}</Text>
+          <Badge variant={hasContactConsent ? 'success' : 'secondary'}>
+            <Text style={{ color: 'white' }}>
+              {hasContactConsent ? 'Contact Allowed' : 'No Consent'}
+            </Text>
           </Badge>
         </View>
         {hasContactConsent ? (
@@ -210,28 +209,61 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
               <>
                 {contactInfo?.email && (
                   <View style={styles.contactItem}>
-                    <TouchableOpacity onPress={() => handleContactPress('email', contactInfo.email)} style={styles.contactMain}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleContactPress('email', contactInfo.email)
+                      }
+                      style={styles.contactMain}
+                    >
                       <Text style={styles.contactLabel}>Email</Text>
-                      <Text style={styles.contactValue}>{contactInfo.email}</Text>
+                      <Text style={styles.contactValue}>
+                        {contactInfo.email}
+                      </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={async () => { await Clipboard.setStringAsync(contactInfo.email); Alert.alert('Copied');}} style={styles.copyButton}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        await Clipboard.setStringAsync(contactInfo.email);
+                        Alert.alert('Copied');
+                      }}
+                      style={styles.copyButton}
+                    >
                       <Ionicons name="copy-outline" size={18} color="#6b7280" />
                     </TouchableOpacity>
                   </View>
                 )}
                 {contactInfo?.phone && (
                   <View style={styles.contactItem}>
-                     <TouchableOpacity onPress={() => handleContactPress('phone', formatPhoneNumber(contactInfo.phone))} style={styles.contactMain}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleContactPress(
+                          'phone',
+                          formatPhoneNumber(contactInfo.phone)
+                        )
+                      }
+                      style={styles.contactMain}
+                    >
                       <Text style={styles.contactLabel}>Phone</Text>
-                      <Text style={styles.contactValue}>{formatPhoneNumber(contactInfo.phone)}</Text>
+                      <Text style={styles.contactValue}>
+                        {formatPhoneNumber(contactInfo.phone)}
+                      </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={async () => { await Clipboard.setStringAsync(formatPhoneNumber(contactInfo.phone)); Alert.alert('Copied');}} style={styles.copyButton}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        await Clipboard.setStringAsync(
+                          formatPhoneNumber(contactInfo.phone)
+                        );
+                        Alert.alert('Copied');
+                      }}
+                      style={styles.copyButton}
+                    >
                       <Ionicons name="copy-outline" size={18} color="#6b7280" />
                     </TouchableOpacity>
                   </View>
                 )}
                 {!contactInfo?.email && !contactInfo?.phone && (
-                  <Text style={styles.noContactText}>Contact information not available.</Text>
+                  <Text style={styles.noContactText}>
+                    Contact information not available.
+                  </Text>
                 )}
               </>
             )}
@@ -372,7 +404,10 @@ export default function JoinRequestsScreen() {
             style={styles.content}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+              />
             }
           >
             {/* Service & Church Header */}

@@ -164,7 +164,9 @@ export class GroupAdminService {
       }
 
       // Get current user's service ID to filter groups by service
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         return {
           data: null,

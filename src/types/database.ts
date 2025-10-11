@@ -90,13 +90,13 @@ export interface GroupJoinRequest {
   journey_status?: MembershipJourneyStatus | null;
 }
 
-export type GroupMembershipNoteType = 
-  | 'manual'                    // Manual note by group leader
-  | 'request_approved'          // pending -> active (approved to join)
-  | 'request_archived'          // pending -> archived (rejected before joining)
-  | 'member_left'               // active -> inactive (left or removed)
-  | 'journey_status_change'     // Journey status updated (1, 2, 3) while pending
-  | 'role_change';              // Role changed while active
+export type GroupMembershipNoteType =
+  | 'manual' // Manual note by group leader
+  | 'request_approved' // pending -> active (approved to join)
+  | 'request_archived' // pending -> archived (rejected before joining)
+  | 'member_left' // active -> inactive (left or removed)
+  | 'journey_status_change' // Journey status updated (1, 2, 3) while pending
+  | 'role_change'; // Role changed while active
 
 export interface GroupMembershipNote {
   id: string;
@@ -106,7 +106,7 @@ export interface GroupMembershipNote {
   created_by_user_id: string;
   note_type: GroupMembershipNoteType;
   note_text?: string | null;
-  
+
   // Change tracking
   previous_status?: 'active' | 'inactive' | 'pending' | 'archived' | null;
   new_status?: 'active' | 'inactive' | 'pending' | 'archived' | null;
@@ -114,10 +114,10 @@ export interface GroupMembershipNote {
   new_journey_status?: MembershipJourneyStatus | null;
   previous_role?: 'member' | 'leader' | 'admin' | null;
   new_role?: 'member' | 'leader' | 'admin' | null;
-  
+
   // Reason (for archiving or leaving)
   reason?: string | null;
-  
+
   created_at: string;
 }
 

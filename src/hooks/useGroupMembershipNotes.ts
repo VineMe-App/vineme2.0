@@ -18,17 +18,21 @@ export const noteKeys = {
 /**
  * Get notes for a specific membership
  */
-export function useMembershipNotes(membershipId: string | undefined, leaderId: string | undefined) {
+export function useMembershipNotes(
+  membershipId: string | undefined,
+  leaderId: string | undefined
+) {
   return useQuery({
     queryKey: noteKeys.membership(membershipId || ''),
     queryFn: async () => {
       if (!membershipId || !leaderId) {
         throw new Error('Membership ID and leader ID are required');
       }
-      const { data, error } = await groupMembershipNotesService.getMembershipNotes(
-        membershipId,
-        leaderId
-      );
+      const { data, error } =
+        await groupMembershipNotesService.getMembershipNotes(
+          membershipId,
+          leaderId
+        );
       if (error) throw error;
       return data || [];
     },
@@ -40,7 +44,10 @@ export function useMembershipNotes(membershipId: string | undefined, leaderId: s
 /**
  * Get notes for a group
  */
-export function useGroupNotes(groupId: string | undefined, leaderId: string | undefined) {
+export function useGroupNotes(
+  groupId: string | undefined,
+  leaderId: string | undefined
+) {
   return useQuery({
     queryKey: noteKeys.group(groupId || ''),
     queryFn: async () => {
@@ -73,10 +80,8 @@ export function useCreateManualNote() {
       noteData: CreateManualNoteData;
       leaderId: string;
     }) => {
-      const { data, error } = await groupMembershipNotesService.createManualNote(
-        noteData,
-        leaderId
-      );
+      const { data, error } =
+        await groupMembershipNotesService.createManualNote(noteData, leaderId);
       if (error) throw error;
       return data;
     },
@@ -107,10 +112,11 @@ export function useCreateStatusChangeNote() {
       noteData: CreateStatusChangeNoteData;
       leaderId: string;
     }) => {
-      const { data, error } = await groupMembershipNotesService.createStatusChangeNote(
-        noteData,
-        leaderId
-      );
+      const { data, error } =
+        await groupMembershipNotesService.createStatusChangeNote(
+          noteData,
+          leaderId
+        );
       if (error) throw error;
       return data;
     },
@@ -141,10 +147,11 @@ export function useCreateJourneyChangeNote() {
       noteData: CreateJourneyChangeNoteData;
       leaderId: string;
     }) => {
-      const { data, error } = await groupMembershipNotesService.createJourneyChangeNote(
-        noteData,
-        leaderId
-      );
+      const { data, error } =
+        await groupMembershipNotesService.createJourneyChangeNote(
+          noteData,
+          leaderId
+        );
       if (error) throw error;
       return data;
     },
@@ -175,10 +182,11 @@ export function useCreateRoleChangeNote() {
       noteData: CreateRoleChangeNoteData;
       leaderId: string;
     }) => {
-      const { data, error } = await groupMembershipNotesService.createRoleChangeNote(
-        noteData,
-        leaderId
-      );
+      const { data, error } =
+        await groupMembershipNotesService.createRoleChangeNote(
+          noteData,
+          leaderId
+        );
       if (error) throw error;
       return data;
     },
@@ -224,4 +232,3 @@ export function useDeleteNote() {
     },
   });
 }
-

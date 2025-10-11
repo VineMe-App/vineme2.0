@@ -53,7 +53,7 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
         },
         leaderId,
       });
-      
+
       setNoteText('');
       setShowAddNote(false);
       Alert.alert('Success', 'Note added successfully');
@@ -162,11 +162,7 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
                 return (
                   <View key={note.id} style={styles.noteItem}>
                     <View style={styles.noteIconContainer}>
-                      <Ionicons
-                        name={icon.name}
-                        size={16}
-                        color={icon.color}
-                      />
+                      <Ionicons name={icon.name} size={16} color={icon.color} />
                     </View>
                     <View style={styles.noteContent}>
                       <Text style={styles.noteText}>
@@ -386,4 +382,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 });
-

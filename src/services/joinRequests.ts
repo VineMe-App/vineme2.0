@@ -90,7 +90,7 @@ export class JoinRequestService {
                 existingMembership.status === 'inactive'
                   ? 'member_left'
                   : 'request_archived';
-              
+
               await groupMembershipNotesService.createStatusChangeNote(
                 {
                   membership_id: existingMembership.id,
@@ -390,8 +390,7 @@ export class JoinRequestService {
           approverId
         );
       } catch (noteError) {
-        if (__DEV__)
-          console.warn('Failed to create approval note:', noteError);
+        if (__DEV__) console.warn('Failed to create approval note:', noteError);
       }
 
       // Notify requester of approval
@@ -584,8 +583,7 @@ export class JoinRequestService {
           declinerId
         );
       } catch (noteError) {
-        if (__DEV__)
-          console.warn('Failed to create archived note:', noteError);
+        if (__DEV__) console.warn('Failed to create archived note:', noteError);
       }
 
       // Notify requester of denial

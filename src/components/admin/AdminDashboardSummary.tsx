@@ -410,6 +410,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '700',
     color: '#8b5cf6',
+    lineHeight: 44,
   },
   outstandingLabel: {
     fontSize: 13,

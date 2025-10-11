@@ -42,7 +42,7 @@ export const SimplePieChart: React.FC<SimplePieChartProps> = ({
   return (
     <View style={styles.container}>
       {title && <Text style={styles.title}>{title}</Text>}
-      
+
       {/* Total number */}
       <View style={styles.totalContainer}>
         <Text style={styles.totalNumber}>{total}</Text>
@@ -114,6 +114,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '700',
     color: '#1f2937',
+    lineHeight: 44,
   },
   totalLabel: {
     fontSize: 13,
@@ -180,4 +181,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

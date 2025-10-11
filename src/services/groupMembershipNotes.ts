@@ -390,7 +390,9 @@ export class GroupMembershipNotesService {
       return {
         data: null,
         error:
-          error instanceof Error ? error : new Error('Failed to get group notes'),
+          error instanceof Error
+            ? error
+            : new Error('Failed to get group notes'),
       };
     }
   }
@@ -461,4 +463,3 @@ export class GroupMembershipNotesService {
 
 // Export singleton instance
 export const groupMembershipNotesService = new GroupMembershipNotesService();
-

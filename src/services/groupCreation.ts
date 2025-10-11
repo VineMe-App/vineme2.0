@@ -549,8 +549,7 @@ export class GroupCreationService {
           demoterId
         );
       } catch (noteError) {
-        if (__DEV__)
-          console.warn('Failed to create demotion note:', noteError);
+        if (__DEV__) console.warn('Failed to create demotion note:', noteError);
       }
 
       return { data, error: null };
@@ -798,13 +797,13 @@ export class GroupCreationService {
               const { groupMembershipNotesService } = await import(
                 './groupMembershipNotes'
               );
-              
+
               // Use appropriate note_type based on previous status
               const noteType: 'request_archived' | 'member_left' =
                 existingMembership.status === 'inactive'
                   ? 'member_left'
                   : 'request_archived';
-              
+
               await groupMembershipNotesService.createStatusChangeNote(
                 {
                   membership_id: existingMembership.id,
