@@ -3,11 +3,11 @@ import * as path from 'path';
 import { glob } from 'glob';
 import { ComponentMigrator } from './ComponentMigrator';
 import { migrationHelpers } from './migrationHelpers';
-import { 
-  MigrationScriptConfig, 
-  MigrationReport, 
+import {
+  MigrationScriptConfig,
+  MigrationReport,
   ComponentMigrationResult,
-  MigrationConfig 
+  MigrationConfig,
 } from './types';
 
 /**
@@ -23,7 +23,9 @@ export class MigrationScripts {
   /**
    * Run migration on multiple components
    */
-  async runBatchMigration(config: MigrationScriptConfig): Promise<MigrationReport> {
+  async runBatchMigration(
+    config: MigrationScriptConfig
+  ): Promise<MigrationReport> {
     const report: MigrationReport = {
       totalComponents: 0,
       successfulMigrations: 0,
@@ -44,14 +46,17 @@ export class MigrationScripts {
       // Process each component
       for (const filePath of componentFiles) {
         console.log(`Migrating: ${filePath}`);
-        
+
         try {
-          const result = await this.migrator.migrateComponent(filePath, config.migrationOptions);
+          const result = await this.migrator.migrateComponent(
+            filePath,
+            config.migrationOptions
+          );
           report.componentResults[filePath] = result;
 
           if (result.success) {
             report.successfulMigrations++;
-            
+
             if (!config.dryRun) {
               await this.writeFile(filePath, result.migratedCode);
               await this.generateMigrationArtifacts(filePath, result, config);
@@ -65,11 +70,10 @@ export class MigrationScripts {
             report.componentsWithWarnings++;
             console.warn(`Warnings for ${filePath}:`, result.warnings);
           }
-
         } catch (error) {
           report.failedMigrations++;
           console.error(`Error migrating ${filePath}:`, error);
-          
+
           report.componentResults[filePath] = {
             originalCode: '',
             migratedCode: '',
@@ -82,23 +86,26 @@ export class MigrationScripts {
 
       // Generate summary
       report.summary = this.generateSummary(report);
-      
+
       // Write migration report
       if (!config.dryRun) {
         await this.writeMigrationReport(report, config);
       }
 
       return report;
-
     } catch (error) {
-      throw new Error(`Batch migration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Batch migration failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Find all component files matching the patterns
    */
-  private async findComponentFiles(config: MigrationScriptConfig): Promise<string[]> {
+  private async findComponentFiles(
+    config: MigrationScriptConfig
+  ): Promise<string[]> {
     const allFiles: string[] = [];
 
     for (const pattern of config.includePatterns) {
@@ -106,16 +113,18 @@ export class MigrationScripts {
         cwd: config.sourceDir,
         ignore: config.excludePatterns,
       });
-      
-      allFiles.push(...files.map(file => path.join(config.sourceDir, file)));
+
+      allFiles.push(...files.map((file) => path.join(config.sourceDir, file)));
     }
 
     // Remove duplicates and filter out excluded components
     const uniqueFiles = Array.from(new Set(allFiles));
-    
-    return uniqueFiles.filter(file => {
+
+    return uniqueFiles.filter((file) => {
       const componentName = path.basename(file, path.extname(file));
-      return !config.migrationOptions.excludeComponents?.includes(componentName);
+      return !config.migrationOptions.excludeComponents?.includes(
+        componentName
+      );
     });
   }
 
@@ -136,29 +145,47 @@ export class MigrationScripts {
       [], // TODO: Extract mappings from result
       config.migrationOptions
     );
-    
+
     const docsPath = path.join(componentDir, `${componentName}.migration.md`);
     await this.writeFile(docsPath, migrationDocs);
 
     // Generate example usage
-    const exampleUsage = migrationHelpers.generateExampleUsage(componentName, {} as any); // TODO: Pass actual theme
-    const examplePath = path.join(componentDir, '__examples__', `${componentName}.example.tsx`);
+    const exampleUsage = migrationHelpers.generateExampleUsage(
+      componentName,
+      {} as any
+    ); // TODO: Pass actual theme
+    const examplePath = path.join(
+      componentDir,
+      '__examples__',
+      `${componentName}.example.tsx`
+    );
     await this.ensureDirectoryExists(path.dirname(examplePath));
     await this.writeFile(examplePath, exampleUsage);
 
     // Generate migration tests
-    const migrationTests = migrationHelpers.generateMigrationTests(componentName, []);
-    const testPath = path.join(componentDir, '__tests__', `${componentName}.migration.test.tsx`);
+    const migrationTests = migrationHelpers.generateMigrationTests(
+      componentName,
+      []
+    );
+    const testPath = path.join(
+      componentDir,
+      '__tests__',
+      `${componentName}.migration.test.tsx`
+    );
     await this.ensureDirectoryExists(path.dirname(testPath));
     await this.writeFile(testPath, migrationTests);
 
     // Generate rollback instructions
     if (result.backupPath) {
-      const rollbackInstructions = migrationHelpers.generateRollbackInstructions(
-        componentName,
-        result.backupPath
+      const rollbackInstructions =
+        migrationHelpers.generateRollbackInstructions(
+          componentName,
+          result.backupPath
+        );
+      const rollbackPath = path.join(
+        componentDir,
+        `${componentName}.rollback.md`
       );
-      const rollbackPath = path.join(componentDir, `${componentName}.rollback.md`);
       await this.writeFile(rollbackPath, rollbackInstructions);
     }
   }
@@ -168,54 +195,59 @@ export class MigrationScripts {
    */
   private generateSummary(report: MigrationReport): string {
     const lines: string[] = [];
-    
+
     lines.push('# Migration Summary');
     lines.push('');
     lines.push(`- **Total Components**: ${report.totalComponents}`);
     lines.push(`- **Successful Migrations**: ${report.successfulMigrations}`);
     lines.push(`- **Failed Migrations**: ${report.failedMigrations}`);
-    lines.push(`- **Components with Warnings**: ${report.componentsWithWarnings}`);
+    lines.push(
+      `- **Components with Warnings**: ${report.componentsWithWarnings}`
+    );
     lines.push('');
-    
-    const successRate = report.totalComponents > 0 
-      ? Math.round((report.successfulMigrations / report.totalComponents) * 100)
-      : 0;
-    
+
+    const successRate =
+      report.totalComponents > 0
+        ? Math.round(
+            (report.successfulMigrations / report.totalComponents) * 100
+          )
+        : 0;
+
     lines.push(`**Success Rate**: ${successRate}%`);
     lines.push('');
-    
+
     if (report.failedMigrations > 0) {
       lines.push('## Failed Migrations');
       lines.push('');
-      
+
       Object.entries(report.componentResults).forEach(([filePath, result]) => {
         if (!result.success) {
           lines.push(`- **${filePath}**:`);
-          result.errors.forEach(error => {
+          result.errors.forEach((error) => {
             lines.push(`  - ${error}`);
           });
         }
       });
-      
+
       lines.push('');
     }
-    
+
     if (report.componentsWithWarnings > 0) {
       lines.push('## Components with Warnings');
       lines.push('');
-      
+
       Object.entries(report.componentResults).forEach(([filePath, result]) => {
         if (result.warnings.length > 0) {
           lines.push(`- **${filePath}**:`);
-          result.warnings.forEach(warning => {
+          result.warnings.forEach((warning) => {
             lines.push(`  - ${warning}`);
           });
         }
       });
-      
+
       lines.push('');
     }
-    
+
     return lines.join('\n');
   }
 
@@ -226,11 +258,17 @@ export class MigrationScripts {
     report: MigrationReport,
     config: MigrationScriptConfig
   ): Promise<void> {
-    const reportPath = path.join(config.outputDir || config.sourceDir, 'migration-report.md');
+    const reportPath = path.join(
+      config.outputDir || config.sourceDir,
+      'migration-report.md'
+    );
     await this.writeFile(reportPath, report.summary);
-    
+
     // Also write detailed JSON report
-    const jsonReportPath = path.join(config.outputDir || config.sourceDir, 'migration-report.json');
+    const jsonReportPath = path.join(
+      config.outputDir || config.sourceDir,
+      'migration-report.json'
+    );
     await this.writeFile(jsonReportPath, JSON.stringify(report, null, 2));
   }
 
@@ -239,7 +277,7 @@ export class MigrationScripts {
    */
   private async writeFile(filePath: string, content: string): Promise<void> {
     await this.ensureDirectoryExists(path.dirname(filePath));
-    
+
     return new Promise((resolve, reject) => {
       fs.writeFile(filePath, content, 'utf8', (err) => {
         if (err) reject(err);
@@ -261,7 +299,9 @@ export class MigrationScripts {
 /**
  * Create and configure a migration script
  */
-export function createMigrationScript(config: Partial<MigrationScriptConfig> = {}): MigrationScripts {
+export function createMigrationScript(
+  config: Partial<MigrationScriptConfig> = {}
+): MigrationScripts {
   const defaultConfig: MigrationScriptConfig = {
     sourceDir: 'src/components',
     includePatterns: ['**/*.tsx', '**/*.ts'],
@@ -277,9 +317,9 @@ export function createMigrationScript(config: Partial<MigrationScriptConfig> = {
 
   // Merge with provided config
   const finalConfig = { ...defaultConfig, ...config };
-  
+
   const migrationScript = new MigrationScripts();
-  
+
   // Add convenience methods
   return Object.assign(migrationScript, {
     /**
@@ -293,14 +333,20 @@ export function createMigrationScript(config: Partial<MigrationScriptConfig> = {
      * Run dry run migration
      */
     async dryRun(): Promise<MigrationReport> {
-      return migrationScript.runBatchMigration({ ...finalConfig, dryRun: true });
+      return migrationScript.runBatchMigration({
+        ...finalConfig,
+        dryRun: true,
+      });
     },
 
     /**
      * Configure migration options
      */
     configure(options: Partial<MigrationConfig>): typeof migrationScript {
-      finalConfig.migrationOptions = { ...finalConfig.migrationOptions, ...options };
+      finalConfig.migrationOptions = {
+        ...finalConfig.migrationOptions,
+        ...options,
+      };
       return this;
     },
 
@@ -345,53 +391,63 @@ export const migrationPresets = {
   /**
    * Migrate all components in src/components
    */
-  allComponents: () => createMigrationScript({
-    sourceDir: 'src/components',
-    includePatterns: ['**/*.tsx'],
-    excludePatterns: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**', '**/__examples__/**'],
-  }),
+  allComponents: () =>
+    createMigrationScript({
+      sourceDir: 'src/components',
+      includePatterns: ['**/*.tsx'],
+      excludePatterns: [
+        '**/*.test.*',
+        '**/*.spec.*',
+        '**/__tests__/**',
+        '**/__examples__/**',
+      ],
+    }),
 
   /**
    * Migrate only UI components
    */
-  uiComponents: () => createMigrationScript({
-    sourceDir: 'src/components/ui',
-    includePatterns: ['*.tsx'],
-    excludePatterns: ['**/*.test.*', '**/*.spec.*'],
-  }),
+  uiComponents: () =>
+    createMigrationScript({
+      sourceDir: 'src/components/ui',
+      includePatterns: ['*.tsx'],
+      excludePatterns: ['**/*.test.*', '**/*.spec.*'],
+    }),
 
   /**
    * Migrate specific component types
    */
-  componentType: (type: string) => createMigrationScript({
-    sourceDir: `src/components/${type}`,
-    includePatterns: ['*.tsx'],
-    excludePatterns: ['**/*.test.*', '**/*.spec.*'],
-  }),
+  componentType: (type: string) =>
+    createMigrationScript({
+      sourceDir: `src/components/${type}`,
+      includePatterns: ['*.tsx'],
+      excludePatterns: ['**/*.test.*', '**/*.spec.*'],
+    }),
 
   /**
    * Safe migration with full backups and compatibility
    */
-  safeMigration: () => createMigrationScript({
-    migrationOptions: {
-      preserveOriginalStyles: true,
-      addCompatibilityLayer: true,
-      generateTypes: true,
-    },
-    createBackups: true,
-    dryRun: false,
-  }),
+  safeMigration: () =>
+    createMigrationScript({
+      migrationOptions: {
+        preserveOriginalStyles: true,
+        addCompatibilityLayer: true,
+        generateTypes: true,
+      },
+      createBackups: true,
+      dryRun: false,
+    }),
 
   /**
    * Aggressive migration with minimal compatibility
    */
-  aggressiveMigration: () => createMigrationScript({
-    migrationOptions: {
-      preserveOriginalStyles: false,
-      addCompatibilityLayer: false,
-      generateTypes: true,
-    },
-    createBackups: true,
-    dryRun: false,
-  }),
+  aggressiveMigration: () =>
+    createMigrationScript({
+      migrationOptions: {
+        preserveOriginalStyles: false,
+        addCompatibilityLayer: false,
+        generateTypes: true,
+      },
+      createBackups: true,
+      dryRun: false,
+    }),
 };

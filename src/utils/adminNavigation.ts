@@ -135,8 +135,8 @@ export class AdminNavigation {
    */
   static getBreadcrumbs(
     currentRoute: string
-  ): Array<{ label: string; route?: string }> {
-    const breadcrumbs: Array<{ label: string; route?: string }> = [];
+  ): { label: string; route?: string }[] {
+    const breadcrumbs: { label: string; route?: string }[] = [];
 
     if (currentRoute.startsWith('/admin/')) {
       breadcrumbs.push({ label: 'Profile', route: '/(tabs)/profile' });

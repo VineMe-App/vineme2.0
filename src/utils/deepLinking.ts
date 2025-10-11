@@ -39,7 +39,11 @@ export const shareGroup = async (groupId: string, groupTitle: string) => {
       title: groupTitle,
     });
     // Use a web URL for messaging apps like WhatsApp so links are clickable
-    const webUrl = generateWebUrl({ type: 'group', id: groupId, title: groupTitle });
+    const webUrl = generateWebUrl({
+      type: 'group',
+      id: groupId,
+      title: groupTitle,
+    });
 
     const shareOptions = {
       message: `Check out this Bible study group: ${groupTitle}\n\nOpen on the web: ${webUrl}`,
@@ -100,20 +104,20 @@ export const parseDeepLink = (url: string): DeepLinkData | null => {
     // Handle auth links: vineme://auth/verify-email
     if (segments.length >= 2 && segments[0] === 'auth') {
       const [, id] = segments;
-      return { 
-        type: 'auth', 
+      return {
+        type: 'auth',
         id,
-        params: queryParams 
+        params: queryParams,
       };
     }
 
     // Handle referral landing page: vineme://referral/landing
     if (segments.length >= 2 && segments[0] === 'referral') {
       const [, id] = segments;
-      return { 
-        type: 'referral', 
+      return {
+        type: 'referral',
         id,
-        params: queryParams 
+        params: queryParams,
       };
     }
 
@@ -161,7 +165,7 @@ export const handleDeepLink = (url: string, router: any) => {
             });
           }
           const queryString = params.toString();
-          const route = queryString 
+          const route = queryString
             ? `/(auth)/verify-email?${queryString}`
             : '/(auth)/verify-email';
           router.push(route);

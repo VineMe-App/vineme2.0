@@ -100,12 +100,23 @@ export class GroupCreationService {
       // Debug diagnostics to validate auth context and derived values
       try {
         const [userRes, svcRes, jwtRes] = await Promise.all([
-          supabase.from('users').select('id, service_id, church_id, roles').eq('id', creatorId).single(),
-          supabase.from('services').select('id, church_id').eq('id', groupData.service_id).single(),
+          supabase
+            .from('users')
+            .select('id, service_id, church_id, roles')
+            .eq('id', creatorId)
+            .single(),
+          supabase
+            .from('services')
+            .select('id, church_id')
+            .eq('id', groupData.service_id)
+            .single(),
           supabase.auth.getSession(),
         ]);
         if (__DEV__) {
-          console.log('[CreateGroupDebug] session uid:', jwtRes?.data?.session?.user?.id);
+          console.log(
+            '[CreateGroupDebug] session uid:',
+            jwtRes?.data?.session?.user?.id
+          );
           console.log('[CreateGroupDebug] user row:', userRes.data);
           console.log('[CreateGroupDebug] svc row:', svcRes.data);
           console.log('[CreateGroupDebug] payload:', {
@@ -116,7 +127,8 @@ export class GroupCreationService {
           });
         }
       } catch (e) {
-        if (__DEV__) console.warn('[CreateGroupDebug] pre-insert diagnostics failed', e);
+        if (__DEV__)
+          console.warn('[CreateGroupDebug] pre-insert diagnostics failed', e);
       }
 
       // Create the group with pending status (service_id will be enforced server-side)
@@ -158,17 +170,16 @@ export class GroupCreationService {
           .select('roles')
           .eq('id', creatorId)
           .single();
-        const isChurchAdmin = Array.isArray(me?.roles) && me.roles.includes('church_admin');
+        const isChurchAdmin =
+          Array.isArray(me?.roles) && me.roles.includes('church_admin');
         if (isChurchAdmin) {
-          const result = await supabase
-            .from('group_memberships')
-            .insert({
-              group_id: group.id,
-              user_id: creatorId,
-              role: 'leader',
-              status: 'active',
-              joined_at: new Date().toISOString(),
-            });
+          const result = await supabase.from('group_memberships').insert({
+            group_id: group.id,
+            user_id: creatorId,
+            role: 'leader',
+            status: 'active',
+            joined_at: new Date().toISOString(),
+          });
           membershipError = result.error;
         }
       } catch {}

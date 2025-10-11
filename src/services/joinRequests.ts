@@ -236,12 +236,13 @@ export class JoinRequestService {
 
       const normalizedRequests = (data || []).map((item) => ({
         ...item,
-        user: item.user ? { ...item.user, name: getFullName(item.user) } : item.user,
+        user: item.user
+          ? { ...item.user, name: getFullName(item.user) }
+          : item.user,
       })) as GroupJoinRequestWithUser[];
 
-      const requestsWithConsent = await this.attachContactConsent(
-        normalizedRequests
-      );
+      const requestsWithConsent =
+        await this.attachContactConsent(normalizedRequests);
 
       return { data: requestsWithConsent, error: null };
     } catch (error) {
@@ -606,8 +607,7 @@ export class JoinRequestService {
             .eq('id', declinerId)
             .single(),
         ]);
-        const deniedByName =
-          getFullName(declinerRes?.data) || 'A group leader';
+        const deniedByName = getFullName(declinerRes?.data) || 'A group leader';
         if (groupRes.data && userRes.data) {
           await triggerJoinRequestDeniedNotification({
             groupId: groupRes.data.id,
@@ -929,7 +929,7 @@ export class JoinRequestService {
   }
 
   private async attachContactConsent<
-    T extends { user_id: string; contact_consent?: boolean | null }
+    T extends { user_id: string; contact_consent?: boolean | null },
   >(records: T[]): Promise<T[]> {
     if (!records || records.length === 0) {
       return records;
@@ -961,11 +961,12 @@ export class JoinRequestService {
         error
       );
 
-      return records.map((record) =>
-        ({
-          ...record,
-          contact_consent: false,
-        } as T)
+      return records.map(
+        (record) =>
+          ({
+            ...record,
+            contact_consent: false,
+          }) as T
       );
     }
 

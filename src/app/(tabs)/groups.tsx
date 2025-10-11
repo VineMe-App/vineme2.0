@@ -255,16 +255,30 @@ export default function GroupsScreen() {
         </Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
+            style={[
+              styles.iconButton,
+              { backgroundColor: theme.colors.secondary[100] },
+            ]}
             onPress={() => setShowSearch((s) => !s)}
           >
-            <Ionicons name="search-outline" size={20} color={theme.colors.primary[500]} />
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color={theme.colors.primary[500]}
+            />
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
+            style={[
+              styles.iconButton,
+              { backgroundColor: theme.colors.secondary[100] },
+            ]}
             onPress={() => setShowFilterPanel(true)}
           >
-            <Ionicons name="funnel-outline" size={20} color={theme.colors.primary[500]} />
+            <Ionicons
+              name="funnel-outline"
+              size={20}
+              color={theme.colors.primary[500]}
+            />
             {getActiveFiltersCount(filters) > 0 && (
               <View style={styles.badge}>
                 <Text
@@ -281,7 +295,7 @@ export default function GroupsScreen() {
             style={[
               styles.iconButton,
               {
-                backgroundColor: sortByDistance 
+                backgroundColor: sortByDistance
                   ? theme.colors.primary[500] // Pink when toggled
                   : theme.colors.secondary[100], // Green when not toggled
               },
@@ -296,21 +310,30 @@ export default function GroupsScreen() {
             }}
             accessibilityLabel="Sort by distance"
           >
-            <Ionicons 
-              name="navigate-outline" 
-              size={20} 
-              color={sortByDistance 
-                ? theme.colors.secondary[100] // Green when toggled
-                : theme.colors.primary[500]} // Pink when not toggled
+            <Ionicons
+              name="navigate-outline"
+              size={20}
+              color={
+                sortByDistance
+                  ? theme.colors.secondary[100] // Green when toggled
+                  : theme.colors.primary[500]
+              } // Pink when not toggled
             />
           </TouchableOpacity>
           {userProfile?.church_id && (
             <TouchableOpacity
-              style={[styles.iconButton, { backgroundColor: theme.colors.secondary[100] }]}
+              style={[
+                styles.iconButton,
+                { backgroundColor: theme.colors.secondary[100] },
+              ]}
               onPress={handleCreateGroup}
               accessibilityLabel="Create group"
             >
-              <Ionicons name="add-outline" size={22} color={theme.colors.primary[500]} />
+              <Ionicons
+                name="add-outline"
+                size={22}
+                color={theme.colors.primary[500]}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -326,12 +349,12 @@ export default function GroupsScreen() {
         {currentView === 'list' ? renderListView() : renderMapView()}
       </View>
 
-              <FilterPanel
-          isVisible={showFilterPanel}
-          onClose={() => setShowFilterPanel(false)}
-        />
-      </SafeAreaView>
-    );
+      <FilterPanel
+        isVisible={showFilterPanel}
+        onClose={() => setShowFilterPanel(false)}
+      />
+    </SafeAreaView>
+  );
 }
 
 // Component to handle membership status for each group
@@ -347,6 +370,8 @@ const GroupItemWithMembership: React.FC<{
   );
   const { data: members } = useGroupMembers(group.id);
   const friendsQuery = useFriends(userProfile?.id);
+
+  const router = useRouter();
 
   const membershipStatus = membershipData?.membership?.role || null;
 

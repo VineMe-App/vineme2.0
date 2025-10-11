@@ -84,25 +84,25 @@ export function DevToolsOverlay() {
         <View style={styles.header}>
           <Text style={styles.title}>DevTools</Text>
           <View style={styles.tabs}>
-            {([
-              'build',
-              'state',
-              'logs',
-              'errors',
-              'queries',
-              'notifs',
-              'styles',
-            ] as const).map(
-              (t) => (
-                <TouchableOpacity
-                  key={t}
-                  onPress={() => setTab(t)}
-                  style={[styles.tab, tab === t && styles.tabActive]}
-                >
-                  <Text style={styles.tabText}>{t.toUpperCase()}</Text>
-                </TouchableOpacity>
-              )
-            )}
+            {(
+              [
+                'build',
+                'state',
+                'logs',
+                'errors',
+                'queries',
+                'notifs',
+                'styles',
+              ] as const
+            ).map((t) => (
+              <TouchableOpacity
+                key={t}
+                onPress={() => setTab(t)}
+                style={[styles.tab, tab === t && styles.tabActive]}
+              >
+                <Text style={styles.tabText}>{t.toUpperCase()}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
           <View style={styles.headerActions}>
             {user && (
@@ -158,7 +158,9 @@ export function DevToolsOverlay() {
             </View>
           )}
           {tab === 'notifs' && <NotificationsPanel />}
-          {tab === 'styles' && <StyleGuidePanel router={router} onClose={() => setOpen(false)} />}
+          {tab === 'styles' && (
+            <StyleGuidePanel router={router} onClose={() => setOpen(false)} />
+          )}
         </ScrollView>
       </Modal>
     </>
@@ -411,7 +413,13 @@ const styles = StyleSheet.create({
   },
 });
 
-function StyleGuidePanel({ router, onClose }: { router: any; onClose: () => void }) {
+function StyleGuidePanel({
+  router,
+  onClose,
+}: {
+  router: any;
+  onClose: () => void;
+}) {
   const navigateToStyleGuide = (path: string) => {
     onClose();
     router.push(path);
@@ -450,7 +458,7 @@ function StyleGuidePanel({ router, onClose }: { router: any; onClose: () => void
       <Text style={{ marginBottom: 16, color: '#6b7280', fontSize: 14 }}>
         Navigate to different style guide pages to test and develop components
       </Text>
-      
+
       {styleGuidePages.map((page, index) => (
         <TouchableOpacity
           key={index}
@@ -467,10 +475,12 @@ function StyleGuidePanel({ router, onClose }: { router: any; onClose: () => void
       ))}
 
       <View style={styles.quickActionsSection}>
-        <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>
+        <Text
+          style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}
+        >
           Quick Actions
         </Text>
-        
+
         <View style={styles.quickActionsGrid}>
           <TouchableOpacity
             style={styles.quickActionBtn}
@@ -478,13 +488,15 @@ function StyleGuidePanel({ router, onClose }: { router: any; onClose: () => void
               // Open the styling system README
               console.log('📖 Styling System Guide: src/theme/README.md');
               console.log('📖 Quick Reference: src/theme/QUICK_REFERENCE.md');
-              console.log('📖 Component Examples: src/components/ui/__examples__/');
+              console.log(
+                '📖 Component Examples: src/components/ui/__examples__/'
+              );
             }}
           >
             <Text style={styles.quickActionIcon}>📖</Text>
             <Text style={styles.quickActionText}>Docs</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.quickActionBtn}
             onPress={() => {
@@ -496,19 +508,21 @@ function StyleGuidePanel({ router, onClose }: { router: any; onClose: () => void
             <Text style={styles.quickActionIcon}>🎨</Text>
             <Text style={styles.quickActionText}>Theme Info</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.quickActionBtn}
             onPress={() => {
               // Log component locations
               console.log('🧩 UI Components: src/components/ui/');
-              console.log('🧩 Component examples: src/components/ui/__examples__/');
+              console.log(
+                '🧩 Component examples: src/components/ui/__examples__/'
+              );
             }}
           >
             <Text style={styles.quickActionIcon}>🧩</Text>
             <Text style={styles.quickActionText}>Components</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.quickActionBtn}
             onPress={() => {

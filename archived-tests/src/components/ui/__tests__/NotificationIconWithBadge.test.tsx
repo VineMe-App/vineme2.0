@@ -18,9 +18,7 @@ jest.mock('@expo/vector-icons', () => ({
 
 // Mock the theme provider
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider theme={lightTheme}>
-    {children}
-  </ThemeProvider>
+  <ThemeProvider theme={lightTheme}>{children}</ThemeProvider>
 );
 
 describe('NotificationIconWithBadge', () => {
@@ -33,10 +31,7 @@ describe('NotificationIconWithBadge', () => {
   it('renders notification icon without badge when unreadCount is 0', () => {
     const { getByTestId, queryByText } = render(
       <TestWrapper>
-        <NotificationIconWithBadge
-          onPress={mockOnPress}
-          unreadCount={0}
-        />
+        <NotificationIconWithBadge onPress={mockOnPress} unreadCount={0} />
       </TestWrapper>
     );
 
@@ -47,10 +42,7 @@ describe('NotificationIconWithBadge', () => {
   it('renders notification icon with badge when unreadCount > 0', () => {
     const { getByTestId, getByLabelText } = render(
       <TestWrapper>
-        <NotificationIconWithBadge
-          onPress={mockOnPress}
-          unreadCount={5}
-        />
+        <NotificationIconWithBadge onPress={mockOnPress} unreadCount={5} />
       </TestWrapper>
     );
 
@@ -61,10 +53,7 @@ describe('NotificationIconWithBadge', () => {
   it('displays 99+ for counts over 99', () => {
     const { getByLabelText } = render(
       <TestWrapper>
-        <NotificationIconWithBadge
-          onPress={mockOnPress}
-          unreadCount={150}
-        />
+        <NotificationIconWithBadge onPress={mockOnPress} unreadCount={150} />
       </TestWrapper>
     );
 
@@ -74,10 +63,7 @@ describe('NotificationIconWithBadge', () => {
   it('calls onPress when tapped', () => {
     const { getByTestId } = render(
       <TestWrapper>
-        <NotificationIconWithBadge
-          onPress={mockOnPress}
-          unreadCount={3}
-        />
+        <NotificationIconWithBadge onPress={mockOnPress} unreadCount={3} />
       </TestWrapper>
     );
 
@@ -103,10 +89,7 @@ describe('NotificationIconWithBadge', () => {
   it('has proper accessibility labels', () => {
     const { getByTestId } = render(
       <TestWrapper>
-        <NotificationIconWithBadge
-          onPress={mockOnPress}
-          unreadCount={3}
-        />
+        <NotificationIconWithBadge onPress={mockOnPress} unreadCount={3} />
       </TestWrapper>
     );
 
@@ -118,10 +101,7 @@ describe('NotificationIconWithBadge', () => {
   it('has proper accessibility labels for single notification', () => {
     const { getByTestId } = render(
       <TestWrapper>
-        <NotificationIconWithBadge
-          onPress={mockOnPress}
-          unreadCount={1}
-        />
+        <NotificationIconWithBadge onPress={mockOnPress} unreadCount={1} />
       </TestWrapper>
     );
 
@@ -132,10 +112,7 @@ describe('NotificationIconWithBadge', () => {
   it('has proper accessibility labels for no notifications', () => {
     const { getByTestId } = render(
       <TestWrapper>
-        <NotificationIconWithBadge
-          onPress={mockOnPress}
-          unreadCount={0}
-        />
+        <NotificationIconWithBadge onPress={mockOnPress} unreadCount={0} />
       </TestWrapper>
     );
 

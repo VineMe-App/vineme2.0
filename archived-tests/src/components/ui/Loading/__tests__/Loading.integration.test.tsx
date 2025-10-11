@@ -6,27 +6,23 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { View, Text } from 'react-native';
-import { 
-  Spinner, 
-  Skeleton, 
-  SkeletonText, 
+import {
+  Spinner,
+  Skeleton,
+  SkeletonText,
   SkeletonAvatar,
-  ProgressBar, 
+  ProgressBar,
   CircularProgress,
   FadeIn,
   SlideIn,
-  StaggeredAnimation
+  StaggeredAnimation,
 } from '../index';
 import { ThemeProvider } from '../../../../theme/provider/ThemeProvider';
 
 // Animated is mocked in test-setup.js
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(
-    <ThemeProvider>
-      {component}
-    </ThemeProvider>
-  );
+  return render(<ThemeProvider>{component}</ThemeProvider>);
 };
 
 describe('Loading Components Integration', () => {
@@ -72,7 +68,7 @@ describe('Loading Components Integration', () => {
         <View>
           {/* Header skeleton */}
           <SkeletonText lines={1} lineHeight={24} testID="header-skeleton" />
-          
+
           {/* Avatar and content skeleton */}
           <View style={{ flexDirection: 'row', marginTop: 16 }}>
             <SkeletonAvatar size={50} testID="avatar-skeleton" />
@@ -80,15 +76,15 @@ describe('Loading Components Integration', () => {
               <SkeletonText lines={2} testID="content-skeleton" />
             </View>
           </View>
-          
+
           {/* Progress indicator */}
-          <ProgressBar 
-            progress={45} 
-            showText 
-            text="Loading content..." 
+          <ProgressBar
+            progress={45}
+            showText
+            text="Loading content..."
             testID="loading-progress"
           />
-          
+
           {/* Loading spinner */}
           <Spinner variant="dots" testID="loading-spinner" />
         </View>
@@ -114,8 +110,8 @@ describe('Loading Components Integration', () => {
       ];
 
       return (
-        <StaggeredAnimation 
-          animationType="slideIn" 
+        <StaggeredAnimation
+          animationType="slideIn"
           staggerDelay={150}
           testID="animated-sequence"
         >
@@ -175,10 +171,10 @@ describe('Loading Components Integration', () => {
         {/* Header with progress */}
         <View>
           <SkeletonText lines={1} lineHeight={28} testID="dashboard-title" />
-          <ProgressBar 
-            progress={33} 
-            variant="thin" 
-            showText 
+          <ProgressBar
+            progress={33}
+            variant="thin"
+            showText
             testID="dashboard-progress"
           />
         </View>
@@ -195,13 +191,20 @@ describe('Loading Components Integration', () => {
         {/* Chart area */}
         <View style={{ marginTop: 20 }}>
           <SkeletonText lines={1} lineHeight={20} testID="chart-title" />
-          <Skeleton height={200} style={{ marginTop: 8 }} testID="chart-skeleton" />
+          <Skeleton
+            height={200}
+            style={{ marginTop: 8 }}
+            testID="chart-skeleton"
+          />
         </View>
 
         {/* List items */}
         <View style={{ marginTop: 20 }}>
           {[1, 2, 3, 4].map((index) => (
-            <View key={index} style={{ flexDirection: 'row', marginBottom: 12 }}>
+            <View
+              key={index}
+              style={{ flexDirection: 'row', marginBottom: 12 }}
+            >
               <SkeletonAvatar size={40} testID={`list-avatar-${index}`} />
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <SkeletonText lines={2} testID={`list-content-${index}`} />
@@ -212,7 +215,11 @@ describe('Loading Components Integration', () => {
 
         {/* Loading indicator */}
         <View style={{ alignItems: 'center', marginTop: 20 }}>
-          <CircularProgress progress={67} size={50} testID="dashboard-circular" />
+          <CircularProgress
+            progress={67}
+            size={50}
+            testID="dashboard-circular"
+          />
         </View>
       </View>
     );
@@ -231,23 +238,23 @@ describe('Loading Components Integration', () => {
   it('handles accessibility across all components', () => {
     const AccessibleLoadingScreen = () => (
       <View>
-        <Spinner 
-          accessibilityLabel="Loading user data" 
-          testID="accessible-spinner" 
+        <Spinner
+          accessibilityLabel="Loading user data"
+          testID="accessible-spinner"
         />
-        <Skeleton 
-          accessibilityLabel="Loading profile image" 
-          testID="accessible-skeleton" 
+        <Skeleton
+          accessibilityLabel="Loading profile image"
+          testID="accessible-skeleton"
         />
-        <ProgressBar 
-          progress={75} 
-          accessibilityLabel="Upload progress" 
-          testID="accessible-progress" 
+        <ProgressBar
+          progress={75}
+          accessibilityLabel="Upload progress"
+          testID="accessible-progress"
         />
-        <CircularProgress 
-          progress={50} 
-          accessibilityLabel="Download progress" 
-          testID="accessible-circular" 
+        <CircularProgress
+          progress={50}
+          accessibilityLabel="Download progress"
+          testID="accessible-circular"
         />
       </View>
     );
@@ -269,7 +276,7 @@ describe('Loading Components Integration', () => {
       <View testID="many-components">
         {/* Multiple spinners */}
         {['circular', 'dots', 'pulse', 'bars'].map((variant, index) => (
-          <Spinner 
+          <Spinner
             key={`spinner-${variant}`}
             variant={variant as any}
             testID={`spinner-${index}`}
@@ -278,18 +285,18 @@ describe('Loading Components Integration', () => {
 
         {/* Multiple skeletons */}
         {Array.from({ length: 10 }, (_, index) => (
-          <Skeleton 
+          <Skeleton
             key={`skeleton-${index}`}
-            height={20} 
+            height={20}
             testID={`skeleton-${index}`}
           />
         ))}
 
         {/* Multiple progress bars */}
         {Array.from({ length: 5 }, (_, index) => (
-          <ProgressBar 
+          <ProgressBar
             key={`progress-${index}`}
-            progress={index * 20} 
+            progress={index * 20}
             testID={`progress-${index}`}
           />
         ))}

@@ -36,7 +36,9 @@ jest.mock('../../utils/referralValidation', () => ({
 
 const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 const mockAuthService = authService as jest.Mocked<typeof authService>;
-const mockEmailVerificationService = emailVerificationService as jest.Mocked<typeof emailVerificationService>;
+const mockEmailVerificationService = emailVerificationService as jest.Mocked<
+  typeof emailVerificationService
+>;
 
 describe('ReferralService', () => {
   const mockReferralData: CreateReferralData = {
@@ -102,7 +104,9 @@ describe('ReferralService', () => {
       // Mock group exists check
       const mockSelect = jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: { id: 'group-123' }, error: null }),
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: { id: 'group-123' }, error: null }),
         }),
       });
 
@@ -166,7 +170,8 @@ describe('ReferralService', () => {
         insert: mockInsert,
       } as any);
 
-      const result = await referralService.createGeneralReferral(mockReferralData);
+      const result =
+        await referralService.createGeneralReferral(mockReferralData);
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe('user-123');
@@ -185,7 +190,8 @@ describe('ReferralService', () => {
         error: 'Auth error',
       });
 
-      const result = await referralService.createGeneralReferral(mockReferralData);
+      const result =
+        await referralService.createGeneralReferral(mockReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Failed to create user account');
@@ -204,14 +210,15 @@ describe('ReferralService', () => {
       });
 
       // Mock database insertion failure
-      const mockInsert = jest.fn().mockResolvedValue({ 
-        error: { message: 'Database error', code: '23505' } 
+      const mockInsert = jest.fn().mockResolvedValue({
+        error: { message: 'Database error', code: '23505' },
       });
       mockSupabase.from.mockReturnValue({
         insert: mockInsert,
       } as any);
 
-      const result = await referralService.createGeneralReferral(mockReferralData);
+      const result =
+        await referralService.createGeneralReferral(mockReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('This user has already been referred by you');
@@ -236,7 +243,8 @@ describe('ReferralService', () => {
         insert: mockInsert,
       } as any);
 
-      const result = await referralService.createGeneralReferral(mockReferralData);
+      const result =
+        await referralService.createGeneralReferral(mockReferralData);
 
       // Should still succeed even if email fails
       expect(result.success).toBe(true);
@@ -251,7 +259,9 @@ describe('ReferralService', () => {
       // Mock group exists check
       const mockSelect = jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: { id: 'group-123' }, error: null }),
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: { id: 'group-123' }, error: null }),
         }),
       });
 
@@ -273,7 +283,8 @@ describe('ReferralService', () => {
         select: mockSelect,
       } as any);
 
-      const result = await referralService.createGroupReferral(groupReferralData);
+      const result =
+        await referralService.createGroupReferral(groupReferralData);
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe('user-123');
@@ -296,7 +307,9 @@ describe('ReferralService', () => {
       // Mock group not found
       const mockSelect = jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: null, error: { message: 'Not found' } }),
         }),
       });
 
@@ -304,14 +317,16 @@ describe('ReferralService', () => {
         select: mockSelect,
       } as any);
 
-      const result = await referralService.createGroupReferral(groupReferralData);
+      const result =
+        await referralService.createGroupReferral(groupReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Group not found');
     });
 
     it('should fail when groupId is missing', async () => {
-      const result = await referralService.createGroupReferral(mockReferralData);
+      const result =
+        await referralService.createGroupReferral(mockReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Group ID is required for group referrals');
@@ -323,7 +338,9 @@ describe('ReferralService', () => {
       // Mock group exists check
       const mockSelect = jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: { id: 'group-123' }, error: null }),
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: { id: 'group-123' }, error: null }),
         }),
       });
 
@@ -339,18 +356,19 @@ describe('ReferralService', () => {
       });
 
       // Mock database constraint violation
-      const mockInsert = jest.fn().mockResolvedValue({ 
-        error: { 
+      const mockInsert = jest.fn().mockResolvedValue({
+        error: {
           message: 'insert or update on table violates foreign key constraint',
-          code: '23503'
-        } 
+          code: '23503',
+        },
       });
       mockSupabase.from.mockReturnValue({
         insert: mockInsert,
         select: mockSelect,
       } as any);
 
-      const result = await referralService.createGroupReferral(groupReferralData);
+      const result =
+        await referralService.createGroupReferral(groupReferralData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Group not found or has been deleted');
@@ -476,10 +494,9 @@ describe('ReferralService', () => {
 
       await referralService.createGeneralReferral(mockReferralData);
 
-      expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(
-        'test@example.com',
-        true
-      );
+      expect(
+        emailVerificationService.sendVerificationEmail
+      ).toHaveBeenCalledWith('test@example.com', true);
     });
 
     it('should not fail referral creation if email verification fails', async () => {
@@ -532,12 +549,12 @@ describe('ReferralService', () => {
         const mockDataSelect = jest.fn().mockReturnValue({
           gte: jest.fn().mockReturnValue({
             lte: jest.fn().mockReturnValue({
-              order: jest.fn().mockResolvedValue({ 
+              order: jest.fn().mockResolvedValue({
                 data: [
                   { created_at: '2023-01-15T00:00:00Z' },
                   { created_at: '2023-02-15T00:00:00Z' },
-                ], 
-                error: null 
+                ],
+                error: null,
               }),
             }),
           }),
@@ -552,7 +569,10 @@ describe('ReferralService', () => {
           .mockReturnValueOnce({ select: mockDataSelect }) // group referrers
           .mockReturnValueOnce({ select: mockDataSelect }); // general referrers
 
-        const result = await referralService.getReferralStatistics('2023-01-01', '2023-12-31');
+        const result = await referralService.getReferralStatistics(
+          '2023-01-01',
+          '2023-12-31'
+        );
 
         expect(result.error).toBeNull();
         expect(result.data).toHaveProperty('totalReferrals');
@@ -576,7 +596,9 @@ describe('ReferralService', () => {
 
         const mockSelect = jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockReferral, error: null }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: mockReferral, error: null }),
           }),
         });
 
@@ -629,7 +651,11 @@ describe('ReferralService', () => {
           }),
         });
 
-        const result = await referralService.updateReferralNote('ref-1', 'Updated note', true);
+        const result = await referralService.updateReferralNote(
+          'ref-1',
+          'Updated note',
+          true
+        );
 
         expect(result.error).toBeNull();
         expect(result.data).toBe(true);
@@ -659,7 +685,8 @@ describe('ReferralService', () => {
           }),
         });
 
-        const result = await referralService.getReferralCountsByReferrer('user-1');
+        const result =
+          await referralService.getReferralCountsByReferrer('user-1');
 
         expect(result.error).toBeNull();
         expect(result.data).toHaveProperty('groupReferrals');
@@ -697,17 +724,22 @@ describe('ReferralService', () => {
         });
 
         // Mock successful user insert but failed referral insert due to unique constraint
-        const mockInsert = jest.fn()
+        const mockInsert = jest
+          .fn()
           .mockResolvedValueOnce({ error: null }) // First call for users table
-          .mockResolvedValueOnce({ 
-            error: { code: '23505', message: 'duplicate key value violates unique constraint' } 
+          .mockResolvedValueOnce({
+            error: {
+              code: '23505',
+              message: 'duplicate key value violates unique constraint',
+            },
           }); // Second call for referrals table
 
         (supabase.from as jest.Mock).mockReturnValue({
           insert: mockInsert,
         });
 
-        const result = await referralService.createGeneralReferral(mockReferralData);
+        const result =
+          await referralService.createGeneralReferral(mockReferralData);
 
         expect(result.success).toBe(false);
         expect(result.error).toBe('This user has already been referred by you');
@@ -721,17 +753,23 @@ describe('ReferralService', () => {
         });
 
         // Mock successful user insert but failed referral insert due to FK constraint
-        const mockInsert = jest.fn()
+        const mockInsert = jest
+          .fn()
           .mockResolvedValueOnce({ error: null }) // First call for users table
-          .mockResolvedValueOnce({ 
-            error: { code: '23503', message: 'insert or update on table violates foreign key constraint' } 
+          .mockResolvedValueOnce({
+            error: {
+              code: '23503',
+              message:
+                'insert or update on table violates foreign key constraint',
+            },
           }); // Second call for referrals table
 
         (supabase.from as jest.Mock).mockReturnValue({
           insert: mockInsert,
         });
 
-        const result = await referralService.createGeneralReferral(mockReferralData);
+        const result =
+          await referralService.createGeneralReferral(mockReferralData);
 
         expect(result.success).toBe(false);
         expect(result.error).toBe('Invalid referrer or user reference');
@@ -745,24 +783,28 @@ describe('ReferralService', () => {
         });
 
         // Mock successful user insert but failed referral insert due to check constraint
-        const mockInsert = jest.fn()
+        const mockInsert = jest
+          .fn()
           .mockResolvedValueOnce({ error: null }) // First call for users table
-          .mockResolvedValueOnce({ 
-            error: { code: '23514', message: 'new row violates check constraint' } 
+          .mockResolvedValueOnce({
+            error: {
+              code: '23514',
+              message: 'new row violates check constraint',
+            },
           }); // Second call for referrals table
 
         (supabase.from as jest.Mock).mockReturnValue({
           insert: mockInsert,
         });
 
-        const result = await referralService.createGeneralReferral(mockReferralData);
+        const result =
+          await referralService.createGeneralReferral(mockReferralData);
 
         expect(result.success).toBe(false);
         expect(result.error).toBe('Cannot refer yourself');
       });
     });
   });
-});
 
   describe('Error Handling and Validation', () => {
     beforeEach(() => {
@@ -774,7 +816,8 @@ describe('ReferralService', () => {
       // Mock rate limiter to return rate limit exceeded
       jest.spyOn(referralRateLimiter, 'canMakeReferral').mockReturnValue({
         allowed: false,
-        reason: 'Too many referrals in the last hour. You can make 5 referrals per hour.',
+        reason:
+          'Too many referrals in the last hour. You can make 5 referrals per hour.',
         retryAfter: 30,
       });
 
@@ -784,7 +827,9 @@ describe('ReferralService', () => {
       expect(result.error).toContain('Too many referrals');
       expect(result.errorDetails?.type).toBe('rate_limit');
       expect(result.errorDetails?.retryable).toBe(true);
-      expect(result.errorDetails?.suggestions).toContain('Try again in 30 minutes');
+      expect(result.errorDetails?.suggestions).toContain(
+        'Try again in 30 minutes'
+      );
     });
 
     it('should handle validation errors', async () => {
@@ -898,7 +943,7 @@ describe('ReferralService', () => {
       const result = await referralService.createReferral(dirtyData);
 
       expect(result.success).toBe(true);
-      
+
       // Verify that createReferredUser was called with sanitized data
       expect(mockAuthService.createReferredUser).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -946,7 +991,10 @@ describe('ReferralService', () => {
       // Mock database constraint violation
       mockSupabase.from.mockReturnValue({
         insert: jest.fn().mockResolvedValue({
-          error: { code: '23505', message: 'duplicate key value violates unique constraint' },
+          error: {
+            code: '23505',
+            message: 'duplicate key value violates unique constraint',
+          },
         }),
       } as any);
 
@@ -966,7 +1014,11 @@ describe('ReferralService', () => {
       // Mock foreign key constraint violation
       mockSupabase.from.mockReturnValue({
         insert: jest.fn().mockResolvedValue({
-          error: { code: '23503', message: 'insert or update on table violates foreign key constraint' },
+          error: {
+            code: '23503',
+            message:
+              'insert or update on table violates foreign key constraint',
+          },
         }),
       } as any);
 
@@ -1040,7 +1092,7 @@ describe('ReferralService', () => {
 
     it('should handle retry logic for transient failures', async () => {
       let attemptCount = 0;
-      
+
       // Mock transient failure followed by success
       mockAuthService.createReferredUser.mockImplementation(() => {
         attemptCount++;
@@ -1084,7 +1136,7 @@ describe('ReferralService', () => {
       const specialCharData: CreateReferralData = {
         ...mockReferralData,
         firstName: "O'Connor",
-        lastName: "Smith-Jones",
+        lastName: 'Smith-Jones',
       };
 
       // Mock successful operations
@@ -1109,8 +1161,8 @@ describe('ReferralService', () => {
     it('should handle international characters in names', async () => {
       const internationalData: CreateReferralData = {
         ...mockReferralData,
-        firstName: "José",
-        lastName: "Müller",
+        firstName: 'José',
+        lastName: 'Müller',
       };
 
       const result = await referralService.createReferral(internationalData);

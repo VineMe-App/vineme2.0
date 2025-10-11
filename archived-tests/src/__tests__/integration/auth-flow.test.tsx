@@ -6,6 +6,7 @@ import {
   waitFor,
 } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// eslint-disable-next-line import/no-unresolved
 import SignInScreen from '@/app/(auth)/sign-in';
 import * as authService from '@/services/auth';
 

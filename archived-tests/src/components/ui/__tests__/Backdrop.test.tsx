@@ -40,9 +40,7 @@ jest.mock('react-native/Libraries/Utilities/Dimensions', () => ({
 }));
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider initialTheme="light">
-    {children}
-  </ThemeProvider>
+  <ThemeProvider initialTheme="light">{children}</ThemeProvider>
 );
 
 describe('Backdrop Component', () => {
@@ -84,7 +82,12 @@ describe('Backdrop Component', () => {
     it('renders when not visible with none animation', () => {
       const { getByTestId } = render(
         <TestWrapper>
-          <Backdrop {...defaultProps} isVisible={false} animationType="none" testID="backdrop">
+          <Backdrop
+            {...defaultProps}
+            isVisible={false}
+            animationType="none"
+            testID="backdrop"
+          >
             <Text>Backdrop Content</Text>
           </Backdrop>
         </TestWrapper>
@@ -190,7 +193,11 @@ describe('Backdrop Component', () => {
     it('applies custom color', () => {
       const { getByTestId } = render(
         <TestWrapper>
-          <Backdrop {...defaultProps} color="rgba(255, 0, 0, 0.5)" testID="backdrop" />
+          <Backdrop
+            {...defaultProps}
+            color="rgba(255, 0, 0, 0.5)"
+            testID="backdrop"
+          />
         </TestWrapper>
       );
 
@@ -229,9 +236,9 @@ describe('Backdrop Component', () => {
       );
 
       const backdrop = getByTestId('backdrop');
-      expect(backdrop.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining(customStyle)
-      ]));
+      expect(backdrop.props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining(customStyle)])
+      );
     });
   });
 
@@ -239,7 +246,11 @@ describe('Backdrop Component', () => {
     it('uses custom animation duration', () => {
       const { getByTestId } = render(
         <TestWrapper>
-          <Backdrop {...defaultProps} animationDuration={500} testID="backdrop" />
+          <Backdrop
+            {...defaultProps}
+            animationDuration={500}
+            testID="backdrop"
+          />
         </TestWrapper>
       );
 

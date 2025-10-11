@@ -48,12 +48,25 @@ describe('Button Integration Tests', () => {
     });
 
     it('handles all variants with theme', () => {
-      const variants = ['primary', 'secondary', 'success', 'warning', 'error', 'info', 'ghost', 'outline'] as const;
-      
+      const variants = [
+        'primary',
+        'secondary',
+        'success',
+        'warning',
+        'error',
+        'info',
+        'ghost',
+        'outline',
+      ] as const;
+
       variants.forEach((variant) => {
         const { getByRole } = render(
           <ThemeProvider initialTheme="light">
-            <Button title={`${variant} Button`} variant={variant} onPress={() => {}} />
+            <Button
+              title={`${variant} Button`}
+              variant={variant}
+              onPress={() => {}}
+            />
           </ThemeProvider>
         );
 
@@ -66,11 +79,7 @@ describe('Button Integration Tests', () => {
     it('renders with icon and integrates with theme', () => {
       const { getByText } = render(
         <ThemeProvider initialTheme="light">
-          <Button 
-            title="Icon Button" 
-            icon={<TestIcon />}
-            onPress={() => {}} 
-          />
+          <Button title="Icon Button" icon={<TestIcon />} onPress={() => {}} />
         </ThemeProvider>
       );
 
@@ -81,10 +90,10 @@ describe('Button Integration Tests', () => {
     it('renders with right icon and integrates with theme', () => {
       const { getByText } = render(
         <ThemeProvider initialTheme="light">
-          <Button 
-            title="Icon Button" 
+          <Button
+            title="Icon Button"
             iconRight={<TestIcon />}
-            onPress={() => {}} 
+            onPress={() => {}}
           />
         </ThemeProvider>
       );
@@ -98,11 +107,7 @@ describe('Button Integration Tests', () => {
     it('renders loading state with theme integration', () => {
       const { getByText } = render(
         <ThemeProvider initialTheme="light">
-          <Button 
-            title="Loading Button" 
-            loading
-            onPress={() => {}} 
-          />
+          <Button title="Loading Button" loading onPress={() => {}} />
         </ThemeProvider>
       );
 
@@ -111,15 +116,15 @@ describe('Button Integration Tests', () => {
 
     it('renders different loading variants with theme', () => {
       const variants = ['circular', 'dots', 'pulse', 'bars'] as const;
-      
+
       variants.forEach((variant) => {
         const { getByText } = render(
           <ThemeProvider initialTheme="light">
-            <Button 
-              title="Loading Button" 
+            <Button
+              title="Loading Button"
               loading
               loadingVariant={variant}
-              onPress={() => {}} 
+              onPress={() => {}}
             />
           </ThemeProvider>
         );
@@ -140,7 +145,7 @@ describe('Button Integration Tests', () => {
 
       const button = getByRole('button');
       fireEvent.press(button);
-      
+
       expect(onPress).toHaveBeenCalledTimes(1);
     });
 
@@ -161,11 +166,11 @@ describe('Button Integration Tests', () => {
     it('maintains accessibility with theme integration', () => {
       const { getByRole, getByLabelText } = render(
         <ThemeProvider initialTheme="light">
-          <Button 
-            title="Accessible Button" 
+          <Button
+            title="Accessible Button"
             accessibilityLabel="Custom accessible button"
             accessibilityHint="Tap to perform action"
-            onPress={() => {}} 
+            onPress={() => {}}
           />
         </ThemeProvider>
       );
@@ -179,12 +184,7 @@ describe('Button Integration Tests', () => {
     it('handles accessibility states correctly with theme', () => {
       const { getByRole } = render(
         <ThemeProvider initialTheme="light">
-          <Button 
-            title="Loading Button" 
-            loading
-            disabled
-            onPress={() => {}} 
-          />
+          <Button title="Loading Button" loading disabled onPress={() => {}} />
         </ThemeProvider>
       );
 
@@ -198,11 +198,7 @@ describe('Button Integration Tests', () => {
     it('renders full width correctly with theme', () => {
       const { getByRole } = render(
         <ThemeProvider initialTheme="light">
-          <Button 
-            title="Full Width Button" 
-            fullWidth
-            onPress={() => {}} 
-          />
+          <Button title="Full Width Button" fullWidth onPress={() => {}} />
         </ThemeProvider>
       );
 
@@ -214,14 +210,14 @@ describe('Button Integration Tests', () => {
     it('applies custom styles while maintaining theme integration', () => {
       const customStyle = { backgroundColor: 'red' };
       const customTextStyle = { color: 'blue' };
-      
+
       const { getByRole, getByText } = render(
         <ThemeProvider initialTheme="light">
-          <Button 
-            title="Custom Styled Button" 
+          <Button
+            title="Custom Styled Button"
             style={customStyle}
             textStyle={customTextStyle}
-            onPress={() => {}} 
+            onPress={() => {}}
           />
         </ThemeProvider>
       );

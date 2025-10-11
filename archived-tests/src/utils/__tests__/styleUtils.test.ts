@@ -42,31 +42,49 @@ describe('ResponsiveUtils', () => {
   describe('getCurrentBreakpoint', () => {
     it('should return correct breakpoint for different screen sizes', () => {
       // xs breakpoint
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 400, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 400,
+        height: 667,
+      });
       expect(ResponsiveUtils.getCurrentBreakpoint()).toBe('xs');
 
       // sm breakpoint
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 600, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 600,
+        height: 667,
+      });
       expect(ResponsiveUtils.getCurrentBreakpoint()).toBe('sm');
 
       // md breakpoint
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 800, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 800,
+        height: 667,
+      });
       expect(ResponsiveUtils.getCurrentBreakpoint()).toBe('md');
 
       // lg breakpoint
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 1000, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 1000,
+        height: 667,
+      });
       expect(ResponsiveUtils.getCurrentBreakpoint()).toBe('lg');
 
       // xl breakpoint
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 1300, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 1300,
+        height: 667,
+      });
       expect(ResponsiveUtils.getCurrentBreakpoint()).toBe('xl');
     });
   });
 
   describe('matchesBreakpoint', () => {
     it('should correctly match breakpoints', () => {
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 800, height: 667 });
-      
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 800,
+        height: 667,
+      });
+
       expect(ResponsiveUtils.matchesBreakpoint('xs')).toBe(true);
       expect(ResponsiveUtils.matchesBreakpoint('sm')).toBe(true);
       expect(ResponsiveUtils.matchesBreakpoint('md')).toBe(true);
@@ -85,10 +103,16 @@ describe('ResponsiveUtils', () => {
         xl: 50,
       };
 
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 800, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 800,
+        height: 667,
+      });
       expect(ResponsiveUtils.getResponsiveValue(responsiveValue)).toBe(30);
 
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 400, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 400,
+        height: 667,
+      });
       expect(ResponsiveUtils.getResponsiveValue(responsiveValue)).toBe(10);
     });
 
@@ -103,8 +127,13 @@ describe('ResponsiveUtils', () => {
         lg: 40,
       };
 
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 400, height: 667 });
-      expect(ResponsiveUtils.getResponsiveValue(partialResponsiveValue)).toBe(30);
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 400,
+        height: 667,
+      });
+      expect(ResponsiveUtils.getResponsiveValue(partialResponsiveValue)).toBe(
+        30
+      );
     });
   });
 
@@ -115,7 +144,10 @@ describe('ResponsiveUtils', () => {
         padding: { xs: 8, md: 12, lg: 16 },
       };
 
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 800, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 800,
+        height: 667,
+      });
       const result = ResponsiveUtils.createResponsiveStyles(responsiveStyles);
 
       expect(result.fontSize).toBe(16);
@@ -125,23 +157,38 @@ describe('ResponsiveUtils', () => {
 
   describe('getScaleFactor', () => {
     it('should return correct scale factor', () => {
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 375, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 375,
+        height: 667,
+      });
       expect(ResponsiveUtils.getScaleFactor()).toBe(1);
 
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 750, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 750,
+        height: 667,
+      });
       expect(ResponsiveUtils.getScaleFactor()).toBe(1.5); // Capped at 1.5
 
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 300, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 300,
+        height: 667,
+      });
       expect(ResponsiveUtils.getScaleFactor()).toBe(0.8);
     });
   });
 
   describe('scale', () => {
     it('should scale values correctly', () => {
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 375, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 375,
+        height: 667,
+      });
       expect(ResponsiveUtils.scale(16)).toBe(16);
 
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 450, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 450,
+        height: 667,
+      });
       expect(ResponsiveUtils.scale(16)).toBe(19); // 16 * 1.2 = 19.2, rounded to 19
     });
   });
@@ -150,7 +197,6 @@ describe('ResponsiveUtils', () => {
 const mockTheme = lightTheme;
 
 describe('ThemeStyleUtils', () => {
-
   describe('createThemedStyles', () => {
     it('should create themed styles', () => {
       const styleDefinitions = {
@@ -164,7 +210,10 @@ describe('ThemeStyleUtils', () => {
         }),
       };
 
-      const result = ThemeStyleUtils.createThemedStyles(styleDefinitions, mockTheme);
+      const result = ThemeStyleUtils.createThemedStyles(
+        styleDefinitions,
+        mockTheme
+      );
 
       expect(result.container).toEqual({
         backgroundColor: mockTheme.colors.background.primary,
@@ -182,7 +231,10 @@ describe('ThemeStyleUtils', () => {
       const baseStyles = { padding: 16, margin: 8 };
       const overrideStyles = { padding: 24, backgroundColor: 'red' };
 
-      const result = ThemeStyleUtils.mergeThemedStyles(baseStyles, overrideStyles);
+      const result = ThemeStyleUtils.mergeThemedStyles(
+        baseStyles,
+        overrideStyles
+      );
 
       expect(result).toEqual({
         padding: 24,
@@ -208,7 +260,10 @@ describe('ThemeStyleUtils', () => {
         { condition: true, style: { borderRadius: 4 } },
       ];
 
-      const result = ThemeStyleUtils.applyConditionalStyles(baseStyles, conditionalStyles);
+      const result = ThemeStyleUtils.applyConditionalStyles(
+        baseStyles,
+        conditionalStyles
+      );
 
       expect(result).toEqual({
         padding: 16,
@@ -345,7 +400,9 @@ describe('StyleMergeUtils', () => {
 
     it('should handle undefined and null values', () => {
       const style1 = { padding: 16 };
-      const result = StyleMergeUtils.mergeStyles(style1, undefined, null, { margin: 8 });
+      const result = StyleMergeUtils.mergeStyles(style1, undefined, null, {
+        margin: 8,
+      });
 
       expect(result).toEqual({
         padding: 16,
@@ -363,7 +420,10 @@ describe('StyleMergeUtils', () => {
         { condition: true, style: { borderRadius: 4 } },
       ];
 
-      const result = StyleMergeUtils.conditionalMerge(baseStyle, conditionalStyles);
+      const result = StyleMergeUtils.conditionalMerge(
+        baseStyle,
+        conditionalStyles
+      );
 
       expect(result).toEqual({
         padding: 16,
@@ -507,7 +567,10 @@ describe('StyleUtils', () => {
         padding: { xs: 8, md: 12 },
       };
 
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 800, height: 667 });
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 800,
+        height: 667,
+      });
       const result = StyleUtils.createResponsiveThemedStyles(styles, mockTheme);
 
       expect(result.fontSize).toBe(16);

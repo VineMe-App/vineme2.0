@@ -25,15 +25,12 @@ describe('Theme Transitions', () => {
       const TestStatefulComponent: React.FC = () => {
         const [count, setCount] = useState(0);
         const { theme, toggleTheme } = useTheme();
-        
+
         return (
           <>
             <div testID="count">{count}</div>
             <div testID="theme-name">{theme.name}</div>
-            <button
-              testID="increment"
-              onPress={() => setCount(c => c + 1)}
-            >
+            <button testID="increment" onPress={() => setCount((c) => c + 1)}>
               Increment
             </button>
             <button testID="toggle-theme" onPress={toggleTheme}>
@@ -70,7 +67,7 @@ describe('Theme Transitions', () => {
     it('should update all theme-dependent values simultaneously', () => {
       const TestMultipleValuesComponent: React.FC = () => {
         const { theme, colors, spacing, typography, toggleTheme } = useTheme();
-        
+
         return (
           <>
             <div testID="theme-name">{theme.name}</div>
@@ -108,9 +105,11 @@ describe('Theme Transitions', () => {
       // All values should change simultaneously
       expect(getByTestId('theme-name').children[0]).not.toBe(initialTheme);
       expect(getByTestId('primary-color').children[0]).not.toBe(initialPrimary);
-      expect(getByTestId('background-color').children[0]).not.toBe(initialBackground);
+      expect(getByTestId('background-color').children[0]).not.toBe(
+        initialBackground
+      );
       expect(getByTestId('text-color').children[0]).not.toBe(initialText);
-      
+
       // Spacing and typography should remain the same (shared between themes)
       expect(getByTestId('base-spacing').children[0]).toBe(initialSpacing);
       expect(getByTestId('font-size').children[0]).toBe(initialFontSize);
@@ -124,7 +123,7 @@ describe('Theme Transitions', () => {
       const TestRenderCountComponent: React.FC = () => {
         renderCount++;
         const { theme, toggleTheme } = useTheme();
-        
+
         return (
           <>
             <div testID="render-count">{renderCount}</div>
@@ -142,14 +141,18 @@ describe('Theme Transitions', () => {
         </ThemeProvider>
       );
 
-      const initialRenderCount = parseInt(getByTestId('render-count').children[0] as string);
+      const initialRenderCount = parseInt(
+        getByTestId('render-count').children[0] as string
+      );
 
       // Toggle theme
       act(() => {
         getByTestId('toggle-theme').props.onPress();
       });
 
-      const afterToggleRenderCount = parseInt(getByTestId('render-count').children[0] as string);
+      const afterToggleRenderCount = parseInt(
+        getByTestId('render-count').children[0] as string
+      );
 
       // Should only re-render once for the theme change
       expect(afterToggleRenderCount - initialRenderCount).toBe(1);
@@ -173,7 +176,7 @@ describe('Theme Transitions', () => {
 
       const TestParentComponent: React.FC = () => {
         const { toggleTheme } = useTheme();
-        
+
         return (
           <>
             <SpacingComponent />
@@ -210,13 +213,19 @@ describe('Theme Transitions', () => {
     it('should not create new objects unnecessarily', () => {
       const TestObjectStabilityComponent: React.FC = () => {
         const { spacing, typography, borderRadius } = useTheme();
-        
+
         // These objects should be stable across renders when theme doesn't change
         return (
           <>
-            <div testID="spacing-ref">{JSON.stringify(spacing === spacing)}</div>
-            <div testID="typography-ref">{JSON.stringify(typography === typography)}</div>
-            <div testID="border-radius-ref">{JSON.stringify(borderRadius === borderRadius)}</div>
+            <div testID="spacing-ref">
+              {JSON.stringify(spacing === spacing)}
+            </div>
+            <div testID="typography-ref">
+              {JSON.stringify(typography === typography)}
+            </div>
+            <div testID="border-radius-ref">
+              {JSON.stringify(borderRadius === borderRadius)}
+            </div>
           </>
         );
       };
@@ -249,12 +258,12 @@ describe('Theme Transitions', () => {
     it('should handle theme switching errors gracefully', () => {
       const TestErrorComponent: React.FC = () => {
         const { setTheme } = useTheme();
-        
+
         const handleBadTheme = () => {
           // Try to set an invalid theme
           setTheme({} as any);
         };
-        
+
         return (
           <button testID="bad-theme" onPress={handleBadTheme}>
             Set Bad Theme

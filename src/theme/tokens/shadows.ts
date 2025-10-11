@@ -174,7 +174,10 @@ export const shadowUtils = {
   /**
    * Modify existing shadow with different opacity
    */
-  withOpacity: (shadowKey: keyof ThemeShadows, opacity: number): ShadowToken => {
+  withOpacity: (
+    shadowKey: keyof ThemeShadows,
+    opacity: number
+  ): ShadowToken => {
     const baseShadow = shadows[shadowKey];
     return {
       ...baseShadow,
@@ -191,9 +194,12 @@ export const shadowUtils = {
   ): ViewStyle => {
     const componentShadows = semanticShadows[component];
     if (typeof componentShadows === 'object' && 'resting' in componentShadows) {
-      const shadowToken = (componentShadows as any)[state] || componentShadows.resting;
+      const shadowToken =
+        (componentShadows as any)[state] || componentShadows.resting;
       return shadowUtils.getShadowStyle(
-        Object.keys(shadows).find(key => shadows[key as keyof ThemeShadows] === shadowToken) as keyof ThemeShadows || 'sm'
+        (Object.keys(shadows).find(
+          (key) => shadows[key as keyof ThemeShadows] === shadowToken
+        ) as keyof ThemeShadows) || 'sm'
       );
     }
     return shadowUtils.getShadowStyle('sm');

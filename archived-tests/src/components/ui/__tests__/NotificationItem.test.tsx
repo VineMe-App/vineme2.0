@@ -21,13 +21,14 @@ jest.mock('react-native-gesture-handler', () => ({
   State: { END: 5 },
 }));
 
-const mockUseNotificationNavigation = useNotificationNavigation as jest.MockedFunction<typeof useNotificationNavigation>;
+const mockUseNotificationNavigation =
+  useNotificationNavigation as jest.MockedFunction<
+    typeof useNotificationNavigation
+  >;
 
 const createWrapper = () => {
   return ({ children }: { children: React.ReactNode }) => (
-    <ThemeProvider>
-      {children}
-    </ThemeProvider>
+    <ThemeProvider>{children}</ThemeProvider>
   );
 };
 
@@ -68,7 +69,7 @@ describe('NotificationItem', () => {
 
   it('renders notification content correctly', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} />
@@ -81,7 +82,7 @@ describe('NotificationItem', () => {
 
   it('shows unread indicator for unread notifications', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} />
@@ -100,7 +101,7 @@ describe('NotificationItem', () => {
     };
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} notification={readNotification} />
@@ -112,7 +113,7 @@ describe('NotificationItem', () => {
 
   it('displays formatted timestamp correctly', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} />
@@ -125,7 +126,7 @@ describe('NotificationItem', () => {
 
   it('displays notification type badge', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} />
@@ -138,18 +139,15 @@ describe('NotificationItem', () => {
   it('calls onMarkAsRead and handleNotificationPress when pressed', () => {
     const mockOnMarkAsRead = jest.fn();
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
-        <NotificationItem 
-          {...defaultProps} 
-          onMarkAsRead={mockOnMarkAsRead}
-        />
+        <NotificationItem {...defaultProps} onMarkAsRead={mockOnMarkAsRead} />
       </Wrapper>
     );
 
     fireEvent.press(screen.getByLabelText(/Notification: New Friend Request/));
-    
+
     expect(mockOnMarkAsRead).toHaveBeenCalledWith('test-notification-1');
     expect(mockHandleNotificationPress).toHaveBeenCalledWith(mockNotification);
   });
@@ -163,11 +161,11 @@ describe('NotificationItem', () => {
     };
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
-        <NotificationItem 
-          {...defaultProps} 
+        <NotificationItem
+          {...defaultProps}
           notification={readNotification}
           onMarkAsRead={mockOnMarkAsRead}
         />
@@ -175,7 +173,7 @@ describe('NotificationItem', () => {
     );
 
     fireEvent.press(screen.getByLabelText(/Notification: New Friend Request/));
-    
+
     expect(mockOnMarkAsRead).not.toHaveBeenCalled();
     expect(mockHandleNotificationPress).toHaveBeenCalledWith(readNotification);
   });
@@ -189,7 +187,7 @@ describe('NotificationItem', () => {
     };
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} notification={groupNotification} />
@@ -211,10 +209,13 @@ describe('NotificationItem', () => {
     };
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
-        <NotificationItem {...defaultProps} notification={notificationWithAvatar} />
+        <NotificationItem
+          {...defaultProps}
+          notification={notificationWithAvatar}
+        />
       </Wrapper>
     );
 
@@ -223,15 +224,19 @@ describe('NotificationItem', () => {
 
   it('has proper accessibility labels', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} />
       </Wrapper>
     );
 
-    expect(screen.getByLabelText(/Notification: New Friend Request/)).toBeTruthy();
-    expect(screen.getByLabelText(/Double tap to open notification/)).toBeTruthy();
+    expect(
+      screen.getByLabelText(/Notification: New Friend Request/)
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText(/Double tap to open notification/)
+    ).toBeTruthy();
   });
 
   it('handles different notification types correctly', () => {
@@ -248,7 +253,7 @@ describe('NotificationItem', () => {
     };
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} notification={eventNotification} />
@@ -262,12 +267,13 @@ describe('NotificationItem', () => {
   it('truncates long titles and bodies', () => {
     const longNotification: Notification = {
       ...mockNotification,
-      title: 'This is a very long notification title that should be truncated when displayed',
+      title:
+        'This is a very long notification title that should be truncated when displayed',
       body: 'This is a very long notification body that should be truncated when displayed in the notification item to prevent layout issues and maintain readability',
     };
 
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} notification={longNotification} />
@@ -279,7 +285,7 @@ describe('NotificationItem', () => {
 
   it('uses custom testID when provided', () => {
     const Wrapper = createWrapper();
-    
+
     render(
       <Wrapper>
         <NotificationItem {...defaultProps} testID="custom-notification-item" />

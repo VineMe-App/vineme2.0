@@ -1,6 +1,6 @@
 /**
  * Utility to detect if the app is running in Expo Go
- * 
+ *
  * Use this to conditionally render components that require native modules
  * not available in Expo Go (like react-native-maps)
  */
@@ -31,4 +31,3 @@ export function isExpoGo(): boolean {
 export function hasNativeFeatures(): boolean {
   return !isExpoGo();
 }
-

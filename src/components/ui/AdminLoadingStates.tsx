@@ -26,7 +26,9 @@ export const AdminLoadingCard: React.FC<AdminLoadingCardProps> = ({
     <View style={styles.loadingCard}>
       <View style={styles.loadingHeader}>
         <LoadingSpinner size="medium" />
-        <Text weight="semiBold" style={styles.loadingTitle}>{title}</Text>
+        <Text weight="semiBold" style={styles.loadingTitle}>
+          {title}
+        </Text>
       </View>
 
       {message && <Text style={styles.loadingMessage}>{message}</Text>}
@@ -83,21 +85,35 @@ export const AdminBatchLoading: React.FC<AdminBatchLoadingProps> = ({
     <View style={styles.batchLoadingContainer}>
       <View style={styles.batchHeader}>
         <LoadingSpinner size="large" />
-        <Text weight="semiBold" style={styles.batchTitle}>Processing Operations</Text>
+        <Text weight="semiBold" style={styles.batchTitle}>
+          Processing Operations
+        </Text>
       </View>
 
       <View style={styles.batchStats}>
         <View style={styles.statItem}>
-          <Text weight="bold" style={styles.statNumber}>{completed}</Text>
-          <Text weight="medium" style={styles.statLabel}>Completed</Text>
+          <Text weight="bold" style={styles.statNumber}>
+            {completed}
+          </Text>
+          <Text weight="medium" style={styles.statLabel}>
+            Completed
+          </Text>
         </View>
         <View style={styles.statItem}>
-          <Text weight="bold" style={[styles.statNumber, styles.failedNumber]}>{failed}</Text>
-          <Text weight="medium" style={styles.statLabel}>Failed</Text>
+          <Text weight="bold" style={[styles.statNumber, styles.failedNumber]}>
+            {failed}
+          </Text>
+          <Text weight="medium" style={styles.statLabel}>
+            Failed
+          </Text>
         </View>
         <View style={styles.statItem}>
-          <Text weight="bold" style={styles.statNumber}>{remaining}</Text>
-          <Text weight="medium" style={styles.statLabel}>Remaining</Text>
+          <Text weight="bold" style={styles.statNumber}>
+            {remaining}
+          </Text>
+          <Text weight="medium" style={styles.statLabel}>
+            Remaining
+          </Text>
         </View>
       </View>
 

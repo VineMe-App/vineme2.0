@@ -3,29 +3,35 @@
  * Provides theme context and manages theme switching with smooth transitions
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react';
 import { Appearance, ColorSchemeName } from 'react-native';
 import { ThemeContext } from './ThemeContext';
 import { lightTheme, darkTheme } from '../themes';
-import { 
-  ThemeProviderProps, 
-  ThemeMode, 
-  Theme, 
+import {
+  ThemeProviderProps,
+  ThemeMode,
+  Theme,
   ThemeConfig,
-  ThemeContextValue 
+  ThemeContextValue,
 } from '../themes/types';
 import { assetManager, AssetConfig } from '../../assets';
-import { 
-  ThemeSwitchingOptimizer, 
-  StylePerformanceDebugger 
+import {
+  ThemeSwitchingOptimizer,
+  StylePerformanceDebugger,
 } from '../../utils/performanceStyleUtils';
 
 /**
  * ThemeProvider component that manages theme state and provides context
  */
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ 
-  children, 
-  initialTheme = 'system' 
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({
+  children,
+  initialTheme = 'system',
 }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>(initialTheme);
   const [systemColorScheme, setSystemColorScheme] = useState<ColorSchemeName>(
@@ -96,7 +102,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       } else {
         // For custom themes, default to light/dark based on theme characteristics
         // This is a basic heuristic - you could make this more sophisticated
-        const isCustomDark = newTheme.colors?.background?.primary === darkTheme.colors.background.primary;
+        const isCustomDark =
+          newTheme.colors?.background?.primary ===
+          darkTheme.colors.background.primary;
         setThemeMode(isCustomDark ? 'dark' : 'light');
       }
     } catch (error) {
@@ -107,11 +115,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
   const toggleTheme = useCallback(() => {
     const previousTheme = previousThemeRef.current;
-    
+
     if (themeMode === 'system') {
       // If currently system, toggle to opposite of current system setting
       const newMode = systemColorScheme === 'dark' ? 'light' : 'dark';
-      
+
       if (previousTheme) {
         const newTheme = newMode === 'dark' ? darkTheme : lightTheme;
         ThemeSwitchingOptimizer.optimizeThemeSwitch(
@@ -125,7 +133,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     } else {
       // Toggle between light and dark
       const newMode = themeMode === 'light' ? 'dark' : 'light';
-      
+
       if (previousTheme) {
         const newTheme = newMode === 'dark' ? darkTheme : lightTheme;
         ThemeSwitchingOptimizer.optimizeThemeSwitch(
@@ -145,7 +153,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       assetManager.updateAssets(newAssets);
       // Force re-render by updating a state value
       // In a production app, you might want to use a more sophisticated approach
-      setThemeMode(current => current);
+      setThemeMode((current) => current);
     } catch (error) {
       console.warn('Error updating assets:', error);
     }
@@ -157,29 +165,32 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   }, [theme]);
 
   // Create context value with performance optimization
-  const contextValue: ThemeContextValue = useMemo(() => ({
-    theme,
-    setTheme,
-    themeMode,
-    setThemeMode,
-    isDark,
-    toggleTheme,
-    colors: theme.colors,
-    spacing: theme.spacing,
-    typography: theme.typography,
-    shadows: theme.shadows,
-    borderRadius: theme.borderRadius,
-    assets: theme.assets,
-    updateAssets,
-  }), [
-    theme,
-    setTheme,
-    themeMode,
-    setThemeMode,
-    isDark,
-    toggleTheme,
-    updateAssets,
-  ]);
+  const contextValue: ThemeContextValue = useMemo(
+    () => ({
+      theme,
+      setTheme,
+      themeMode,
+      setThemeMode,
+      isDark,
+      toggleTheme,
+      colors: theme.colors,
+      spacing: theme.spacing,
+      typography: theme.typography,
+      shadows: theme.shadows,
+      borderRadius: theme.borderRadius,
+      assets: theme.assets,
+      updateAssets,
+    }),
+    [
+      theme,
+      setTheme,
+      themeMode,
+      setThemeMode,
+      isDark,
+      toggleTheme,
+      updateAssets,
+    ]
+  );
 
   return (
     <ThemeContext.Provider value={contextValue}>

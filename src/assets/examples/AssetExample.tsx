@@ -26,21 +26,21 @@ export const AssetExample: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Brand Asset Management Example</Text>
-      
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Logo Variants</Text>
-        
+
         <View style={styles.logoRow}>
           <View style={styles.logoContainer}>
             <Logo variant="full" size="small" />
             <Text style={styles.logoLabel}>Full (Small)</Text>
           </View>
-          
+
           <View style={styles.logoContainer}>
             <Logo variant="icon" size="medium" />
             <Text style={styles.logoLabel}>Icon (Medium)</Text>
           </View>
-          
+
           <View style={styles.logoContainer}>
             <Logo variant="full" size="large" />
             <Text style={styles.logoLabel}>Full (Large)</Text>
@@ -50,18 +50,20 @@ export const AssetExample: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Theme-Aware Logos</Text>
-        
+
         <View style={styles.logoRow}>
           <View style={styles.logoContainer}>
             <Logo variant="full" theme="auto" size="medium" />
-            <Text style={styles.logoLabel}>Auto ({isDark ? 'Dark' : 'Light'})</Text>
+            <Text style={styles.logoLabel}>
+              Auto ({isDark ? 'Dark' : 'Light'})
+            </Text>
           </View>
-          
+
           <View style={styles.logoContainer}>
             <Logo variant="full" theme="light" size="medium" />
             <Text style={styles.logoLabel}>Force Light</Text>
           </View>
-          
+
           <View style={styles.logoContainer}>
             <Logo variant="full" theme="dark" size="medium" />
             <Text style={styles.logoLabel}>Force Dark</Text>
@@ -71,18 +73,18 @@ export const AssetExample: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Custom Sizes</Text>
-        
+
         <View style={styles.logoRow}>
           <View style={styles.logoContainer}>
             <Logo size={32} />
             <Text style={styles.logoLabel}>32px</Text>
           </View>
-          
+
           <View style={styles.logoContainer}>
             <Logo size={64} />
             <Text style={styles.logoLabel}>64px</Text>
           </View>
-          
+
           <View style={styles.logoContainer}>
             <Logo size={128} />
             <Text style={styles.logoLabel}>128px</Text>
@@ -93,15 +95,21 @@ export const AssetExample: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Asset Management</Text>
         <Text style={styles.description}>
-          The asset management system provides centralized control over brand assets
-          with fallback mechanisms and theme-aware selection.
+          The asset management system provides centralized control over brand
+          assets with fallback mechanisms and theme-aware selection.
         </Text>
-        
+
         <Text style={styles.features}>Features:</Text>
         <Text style={styles.feature}>• Centralized asset configuration</Text>
-        <Text style={styles.feature}>• Multiple logo variants (full, icon, light, dark)</Text>
-        <Text style={styles.feature}>• Automatic theme-based asset selection</Text>
-        <Text style={styles.feature}>• Fallback mechanisms for missing assets</Text>
+        <Text style={styles.feature}>
+          • Multiple logo variants (full, icon, light, dark)
+        </Text>
+        <Text style={styles.feature}>
+          • Automatic theme-based asset selection
+        </Text>
+        <Text style={styles.feature}>
+          • Fallback mechanisms for missing assets
+        </Text>
         <Text style={styles.feature}>• Dynamic asset updates</Text>
         <Text style={styles.feature}>• TypeScript type safety</Text>
       </View>

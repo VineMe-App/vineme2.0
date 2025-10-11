@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,11 +33,11 @@ import {
 } from '../services/notifications';
 import { useAuthStore } from '../stores/auth';
 import { supabase } from '../services/supabase';
-import type { 
-  Notification, 
-  NotificationQueryOptions, 
+import type {
+  Notification,
+  NotificationQueryOptions,
   NotificationSettings,
-  NotificationSubscription 
+  NotificationSubscription,
 } from '../types/notifications';
 
 /**
@@ -80,19 +85,15 @@ export const useNotifications = () => {
     // Listen for user interactions with notifications
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log('Notification response:', response);
+        console.log(
+          'Notification response:',
+          response.notification.request.content.data
+        );
         handleNotificationResponse(response, router);
       });
 
     return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(
-          notificationListener.current
-        );
-      }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
-      }
+      notificationListener.current?.remove();
     };
   }, [router]);
 
@@ -203,7 +204,9 @@ export const useNotificationPermissions = () => {
  */
 export const useEnhancedNotifications = (userId?: string) => {
   const queryClient = useQueryClient();
-  const [realtimeSubscription, setRealtimeSubscription] = useState<(() => void) | null>(null);
+  const [realtimeSubscription, setRealtimeSubscription] = useState<
+    (() => void) | null
+  >(null);
 
   // Real-time notification subscription management
   useEffect(() => {
@@ -291,15 +294,20 @@ export const useEnhancedNotifications = (userId?: string) => {
         ['notifications', 'list', userId],
         (oldData: any) => {
           if (!oldData) return oldData;
-          
+
           return {
             ...oldData,
             pages: oldData.pages.map((page: any) => ({
               ...page,
-              notifications: page.notifications.map((notification: Notification) =>
-                notification.id === notificationId
-                  ? { ...notification, read: true, read_at: new Date().toISOString() }
-                  : notification
+              notifications: page.notifications.map(
+                (notification: Notification) =>
+                  notification.id === notificationId
+                    ? {
+                        ...notification,
+                        read: true,
+                        read_at: new Date().toISOString(),
+                      }
+                    : notification
               ),
             })),
           };
@@ -321,22 +329,28 @@ export const useEnhancedNotifications = (userId?: string) => {
 
   // Mark multiple notifications as read mutation
   const markMultipleAsReadMutation = useMutation({
-    mutationFn: (notificationIds: string[]) => markNotificationsAsRead(notificationIds),
+    mutationFn: (notificationIds: string[]) =>
+      markNotificationsAsRead(notificationIds),
     onSuccess: (_, notificationIds) => {
       // Update notifications in cache
       queryClient.setQueryData(
         ['notifications', 'list', userId],
         (oldData: any) => {
           if (!oldData) return oldData;
-          
+
           return {
             ...oldData,
             pages: oldData.pages.map((page: any) => ({
               ...page,
-              notifications: page.notifications.map((notification: Notification) =>
-                notificationIds.includes(notification.id)
-                  ? { ...notification, read: true, read_at: new Date().toISOString() }
-                  : notification
+              notifications: page.notifications.map(
+                (notification: Notification) =>
+                  notificationIds.includes(notification.id)
+                    ? {
+                        ...notification,
+                        read: true,
+                        read_at: new Date().toISOString(),
+                      }
+                    : notification
               ),
             })),
           };
@@ -365,16 +379,18 @@ export const useEnhancedNotifications = (userId?: string) => {
         ['notifications', 'list', userId],
         (oldData: any) => {
           if (!oldData) return oldData;
-          
+
           return {
             ...oldData,
             pages: oldData.pages.map((page: any) => ({
               ...page,
-              notifications: page.notifications.map((notification: Notification) => ({
-                ...notification,
-                read: true,
-                read_at: new Date().toISOString(),
-              })),
+              notifications: page.notifications.map(
+                (notification: Notification) => ({
+                  ...notification,
+                  read: true,
+                  read_at: new Date().toISOString(),
+                })
+              ),
             })),
           };
         }
@@ -402,13 +418,14 @@ export const useEnhancedNotifications = (userId?: string) => {
         ['notifications', 'list', userId],
         (oldData: any) => {
           if (!oldData) return oldData;
-          
+
           return {
             ...oldData,
             pages: oldData.pages.map((page: any) => ({
               ...page,
               notifications: page.notifications.filter(
-                (notification: Notification) => notification.id !== notificationId
+                (notification: Notification) =>
+                  notification.id !== notificationId
               ),
             })),
           };
@@ -416,7 +433,9 @@ export const useEnhancedNotifications = (userId?: string) => {
       );
 
       // Update unread count if notification was unread
-      const wasUnread = unreadNotifications?.some(n => n.id === notificationId && !n.read);
+      const wasUnread = unreadNotifications?.some(
+        (n) => n.id === notificationId && !n.read
+      );
       if (wasUnread) {
         queryClient.setQueryData(
           ['notifications', 'count', userId, { read: false }],
@@ -433,20 +452,22 @@ export const useEnhancedNotifications = (userId?: string) => {
 
   // Delete multiple notifications mutation
   const deleteMultipleMutation = useMutation({
-    mutationFn: (notificationIds: string[]) => deleteMultipleNotifications(notificationIds),
+    mutationFn: (notificationIds: string[]) =>
+      deleteMultipleNotifications(notificationIds),
     onSuccess: (_, notificationIds) => {
       // Remove notifications from cache
       queryClient.setQueryData(
         ['notifications', 'list', userId],
         (oldData: any) => {
           if (!oldData) return oldData;
-          
+
           return {
             ...oldData,
             pages: oldData.pages.map((page: any) => ({
               ...page,
               notifications: page.notifications.filter(
-                (notification: Notification) => !notificationIds.includes(notification.id)
+                (notification: Notification) =>
+                  !notificationIds.includes(notification.id)
               ),
             })),
           };
@@ -454,10 +475,11 @@ export const useEnhancedNotifications = (userId?: string) => {
       );
 
       // Update unread count for deleted unread notifications
-      const deletedUnreadCount = unreadNotifications?.filter(
-        n => notificationIds.includes(n.id) && !n.read
-      ).length || 0;
-      
+      const deletedUnreadCount =
+        unreadNotifications?.filter(
+          (n) => notificationIds.includes(n.id) && !n.read
+        ).length || 0;
+
       if (deletedUnreadCount > 0) {
         queryClient.setQueryData(
           ['notifications', 'count', userId, { read: false }],
@@ -473,7 +495,8 @@ export const useEnhancedNotifications = (userId?: string) => {
   });
 
   // Flatten paginated notifications
-  const allNotifications = notificationsData?.pages.flatMap(page => page.notifications) || [];
+  const allNotifications =
+    notificationsData?.pages.flatMap((page) => page.notifications) || [];
 
   // Refresh all notification data
   const refreshNotifications = useCallback(() => {
@@ -487,16 +510,16 @@ export const useEnhancedNotifications = (userId?: string) => {
     notifications: allNotifications,
     unreadNotifications: unreadNotifications || [],
     unreadCount: unreadCount || 0,
-    
+
     // Loading states
     isLoading: isLoadingNotifications || isLoadingCount,
     isLoadingMore: isFetchingNextPage,
     isLoadingUnread,
-    
+
     // Pagination
     hasNextPage,
     fetchNextPage,
-    
+
     // Actions
     markAsRead: markAsReadMutation.mutate,
     markMultipleAsRead: markMultipleAsReadMutation.mutate,
@@ -504,17 +527,17 @@ export const useEnhancedNotifications = (userId?: string) => {
     deleteNotification: deleteNotificationMutation.mutate,
     deleteMultiple: deleteMultipleMutation.mutate,
     refreshNotifications,
-    
+
     // Action states
     isMarkingAsRead: markAsReadMutation.isPending,
     isMarkingMultipleAsRead: markMultipleAsReadMutation.isPending,
     isMarkingAllAsRead: markAllAsReadMutation.isPending,
     isDeleting: deleteNotificationMutation.isPending,
     isDeletingMultiple: deleteMultipleMutation.isPending,
-    
+
     // Errors
     error: notificationsError || countError || unreadError,
-    
+
     // Real-time subscription status
     isSubscribed: !!realtimeSubscription,
   };
@@ -612,9 +635,13 @@ export const useAdminNotifications = (userId?: string) => {
  */
 export const useNotificationPanel = (userId?: string) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
-  const [filterType, setFilterType] = useState<'all' | 'unread' | 'read'>('all');
-  
+  const [selectedNotifications, setSelectedNotifications] = useState<string[]>(
+    []
+  );
+  const [filterType, setFilterType] = useState<'all' | 'unread' | 'read'>(
+    'all'
+  );
+
   const {
     notifications,
     unreadNotifications,
@@ -641,9 +668,9 @@ export const useNotificationPanel = (userId?: string) => {
   const filteredNotifications = useMemo(() => {
     switch (filterType) {
       case 'unread':
-        return notifications.filter(n => !n.read);
+        return notifications.filter((n) => !n.read);
       case 'read':
-        return notifications.filter(n => n.read);
+        return notifications.filter((n) => n.read);
       default:
         return notifications;
     }
@@ -658,15 +685,15 @@ export const useNotificationPanel = (userId?: string) => {
 
   // Selection actions
   const toggleNotificationSelection = useCallback((notificationId: string) => {
-    setSelectedNotifications(prev => 
+    setSelectedNotifications((prev) =>
       prev.includes(notificationId)
-        ? prev.filter(id => id !== notificationId)
+        ? prev.filter((id) => id !== notificationId)
         : [...prev, notificationId]
     );
   }, []);
 
   const selectAllVisible = useCallback(() => {
-    setSelectedNotifications(filteredNotifications.map(n => n.id));
+    setSelectedNotifications(filteredNotifications.map((n) => n.id));
   }, [filteredNotifications]);
 
   const clearSelection = useCallback(() => {
@@ -711,23 +738,23 @@ export const useNotificationPanel = (userId?: string) => {
     isVisible,
     openPanel,
     closePanel,
-    
+
     // Data
     notifications: filteredNotifications,
     unreadCount,
-    
+
     // Loading states
     isLoading,
     isLoadingMore,
     hasNextPage,
-    
+
     // Selection
     selectedNotifications,
     toggleNotificationSelection,
     selectAllVisible,
     clearSelection,
     hasSelection: selectedNotifications.length > 0,
-    
+
     // Actions
     markAsRead,
     markSelectedAsRead,
@@ -736,18 +763,18 @@ export const useNotificationPanel = (userId?: string) => {
     deleteSelected,
     onRefresh,
     loadMore,
-    
+
     // Action states
     isMarkingAsRead,
     isMarkingMultipleAsRead,
     isMarkingAllAsRead,
     isDeleting,
     isDeletingMultiple,
-    
+
     // Filtering
     filterType,
     setFilter,
-    
+
     // Error
     error,
   };
@@ -758,7 +785,7 @@ export const useNotificationPanel = (userId?: string) => {
  */
 export const useNotificationBadge = (userId?: string) => {
   const { unreadCount, isLoading, error } = useEnhancedNotifications(userId);
-  
+
   // Format badge count for display (e.g., 99+ for counts over 99)
   const formattedCount = useMemo(() => {
     if (unreadCount === 0) return '';
@@ -797,8 +824,14 @@ export const useNotificationSettings = (userId?: string) => {
 
   // Update settings mutation
   const updateSettingsMutation = useMutation({
-    mutationFn: (newSettings: Partial<Omit<NotificationSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) =>
-      updateEnhancedNotificationSettings(userId!, newSettings),
+    mutationFn: (
+      newSettings: Partial<
+        Omit<
+          NotificationSettings,
+          'id' | 'user_id' | 'created_at' | 'updated_at'
+        >
+      >
+    ) => updateEnhancedNotificationSettings(userId!, newSettings),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['notification-settings', 'enhanced', userId],
@@ -807,22 +840,36 @@ export const useNotificationSettings = (userId?: string) => {
   });
 
   // Individual setting toggles
-  const toggleSetting = useCallback((
-    setting: keyof Omit<NotificationSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>
-  ) => {
-    if (settings) {
-      updateSettingsMutation.mutate({
-        [setting]: !settings[setting],
-      });
-    }
-  }, [settings, updateSettingsMutation]);
+  const toggleSetting = useCallback(
+    (
+      setting: keyof Omit<
+        NotificationSettings,
+        'id' | 'user_id' | 'created_at' | 'updated_at'
+      >
+    ) => {
+      if (settings) {
+        updateSettingsMutation.mutate({
+          [setting]: !settings[setting],
+        });
+      }
+    },
+    [settings, updateSettingsMutation]
+  );
 
   // Bulk setting updates
-  const updateSettings = useCallback((
-    newSettings: Partial<Omit<NotificationSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
-  ) => {
-    updateSettingsMutation.mutate(newSettings);
-  }, [updateSettingsMutation]);
+  const updateSettings = useCallback(
+    (
+      newSettings: Partial<
+        Omit<
+          NotificationSettings,
+          'id' | 'user_id' | 'created_at' | 'updated_at'
+        >
+      >
+    ) => {
+      updateSettingsMutation.mutate(newSettings);
+    },
+    [updateSettingsMutation]
+  );
 
   // Enable all notifications
   const enableAll = useCallback(() => {
@@ -875,107 +922,116 @@ export const useNotificationNavigation = () => {
   const { user } = useAuthStore();
 
   // Handle notification press/tap
-  const handleNotificationPress = useCallback((notification: Notification) => {
-    // Mark as read if not already read
-    if (!notification.read) {
-      markNotificationAsRead(notification.id);
-    }
+  const handleNotificationPress = useCallback(
+    (notification: Notification) => {
+      // Mark as read if not already read
+      if (!notification.read) {
+        markNotificationAsRead(notification.id);
+      }
 
-    // Navigate based on notification type and action URL
-    if (notification.action_url) {
-      router.push(notification.action_url);
-      return;
-    }
+      // Navigate based on notification type and action URL
+      if (notification.action_url) {
+        router.push(notification.action_url);
+        return;
+      }
 
-    // Fallback navigation based on notification type
-    switch (notification.type) {
-      case 'friend_request_received':
-        router.push(`/profile/${notification.data.fromUserId}`);
-        break;
-      case 'friend_request_accepted':
-        router.push(`/profile/${notification.data.acceptedByUserId}`);
-        break;
-      case 'group_request_submitted':
-      case 'group_request_approved':
-      case 'group_request_denied':
-        router.push(`/group/${notification.data.groupId}`);
-        break;
-      case 'join_request_received':
-        router.push(`/group/${notification.data.groupId}/requests`);
-        break;
-      case 'join_request_approved':
-      case 'join_request_denied':
-      case 'group_member_added':
-        router.push(`/group/${notification.data.groupId}`);
-        break;
-      case 'referral_accepted':
-        router.push(`/profile/${notification.data.referredUserId}`);
-        break;
-      case 'referral_joined_group':
-        router.push(`/group/${notification.data.groupId}`);
-        break;
-      case 'event_reminder':
-        router.push(`/event/${notification.data.eventId}`);
-        break;
-      default:
-        // Default to home screen
-        router.push('/(tabs)');
-    }
-  }, [router]);
+      // Fallback navigation based on notification type
+      switch (notification.type) {
+        case 'friend_request_received':
+          router.push(`/profile/${notification.data.fromUserId}`);
+          break;
+        case 'friend_request_accepted':
+          router.push(`/profile/${notification.data.acceptedByUserId}`);
+          break;
+        case 'group_request_submitted':
+        case 'group_request_approved':
+        case 'group_request_denied':
+          router.push(`/group/${notification.data.groupId}`);
+          break;
+        case 'join_request_received':
+          router.push(`/group/${notification.data.groupId}/requests`);
+          break;
+        case 'join_request_approved':
+        case 'join_request_denied':
+        case 'group_member_added':
+          router.push(`/group/${notification.data.groupId}`);
+          break;
+        case 'referral_accepted':
+          router.push(`/profile/${notification.data.referredUserId}`);
+          break;
+        case 'referral_joined_group':
+          router.push(`/group/${notification.data.groupId}`);
+          break;
+        case 'event_reminder':
+          router.push(`/event/${notification.data.eventId}`);
+          break;
+        default:
+          // Default to home screen
+          router.push('/(tabs)');
+      }
+    },
+    [router]
+  );
 
   // Validate navigation permissions
-  const validateNavigationPermissions = useCallback((notification: Notification): boolean => {
-    if (!user) return false;
+  const validateNavigationPermissions = useCallback(
+    (notification: Notification): boolean => {
+      if (!user) return false;
 
-    // Basic validation - user should only navigate to their own notifications
-    if (notification.user_id !== user.id) return false;
+      // Basic validation - user should only navigate to their own notifications
+      if (notification.user_id !== user.id) return false;
 
-    // Additional validation based on notification type
-    switch (notification.type) {
-      case 'group_request_submitted':
-        // Only church admins should see these
-        return user.roles?.includes('church_admin') || false;
-      case 'join_request_received':
-        // Only group leaders should see these
-        // This would need additional group membership validation
-        return true; // Simplified for now
-      default:
-        return true;
-    }
-  }, [user]);
+      // Additional validation based on notification type
+      switch (notification.type) {
+        case 'group_request_submitted':
+          // Only church admins should see these
+          return user.roles?.includes('church_admin') || false;
+        case 'join_request_received':
+          // Only group leaders should see these
+          // This would need additional group membership validation
+          return true; // Simplified for now
+        default:
+          return true;
+      }
+    },
+    [user]
+  );
 
   // Get navigation target without navigating
-  const getNavigationTarget = useCallback((notification: Notification): string => {
-    if (notification.action_url) {
-      return notification.action_url;
-    }
+  const getNavigationTarget = useCallback(
+    (notification: Notification): string => {
+      if (notification.action_url) {
+        return notification.action_url;
+      }
 
-    // Fallback navigation based on notification type
-    switch (notification.type) {
-      case 'friend_request_received':
-        return `/profile/${notification.data.fromUserId}`;
-      case 'friend_request_accepted':
-        return `/profile/${notification.data.acceptedByUserId}`;
-      case 'group_request_submitted':
-      case 'group_request_approved':
-      case 'group_request_denied':
-        return `/group/${notification.data.groupId}`;
-      case 'join_request_received':
-        return `/group/${notification.data.groupId}/requests`;
-      case 'join_request_approved':
-      case 'join_request_denied':
-      case 'group_member_added':
-        return `/group/${notification.data.groupId}`;
-      case 'referral_accepted':
-        return `/profile/${notification.data.referredUserId}`;
-      case 'referral_joined_group':
-        return `/group/${notification.data.groupId}`;
-      case 'event_reminder':
-        return `/event/${notification.data.eventId}`;
-      default:
-        return '/(tabs)';
-    }
-  }, []);
+      // Fallback navigation based on notification type
+      switch (notification.type) {
+        case 'friend_request_received':
+          return `/profile/${notification.data.fromUserId}`;
+        case 'friend_request_accepted':
+          return `/profile/${notification.data.acceptedByUserId}`;
+        case 'group_request_submitted':
+        case 'group_request_approved':
+        case 'group_request_denied':
+          return `/group/${notification.data.groupId}`;
+        case 'join_request_received':
+          return `/group/${notification.data.groupId}/requests`;
+        case 'join_request_approved':
+        case 'join_request_denied':
+        case 'group_member_added':
+          return `/group/${notification.data.groupId}`;
+        case 'referral_accepted':
+          return `/profile/${notification.data.referredUserId}`;
+        case 'referral_joined_group':
+          return `/group/${notification.data.groupId}`;
+        case 'event_reminder':
+          return `/event/${notification.data.eventId}`;
+        default:
+          return '/(tabs)';
+      }
+    },
+    []
+  );
 
   return {
     handleNotificationPress,

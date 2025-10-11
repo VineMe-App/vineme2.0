@@ -1,15 +1,21 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
-import { Text, Heading1, Heading2, BodyText, BodyLarge, Caption, Label } from '../Text';
+import {
+  Text,
+  Heading1,
+  Heading2,
+  BodyText,
+  BodyLarge,
+  Caption,
+  Label,
+} from '../Text';
 import { ThemeProvider } from '../../../theme/provider/ThemeProvider';
 import { lightTheme } from '../../../theme/themes/light';
 
 // Mock theme provider wrapper
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider initialTheme="light">
-    {children}
-  </ThemeProvider>
+  <ThemeProvider initialTheme="light">{children}</ThemeProvider>
 );
 
 // Helper function to get flattened style
@@ -30,7 +36,7 @@ describe('Text Component', () => {
           <Text testID="test-text">Hello World</Text>
         </TestWrapper>
       );
-      
+
       expect(screen.getByTestId('test-text')).toBeTruthy();
       expect(screen.getByText('Hello World')).toBeTruthy();
     });
@@ -41,7 +47,7 @@ describe('Text Component', () => {
           <Text testID="default-text">Default Text</Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('default-text');
       const style = getStyle(textElement);
       expect(style).toMatchObject({
@@ -55,10 +61,12 @@ describe('Text Component', () => {
     it('applies h1 variant styles correctly', () => {
       render(
         <TestWrapper>
-          <Text variant="h1" testID="h1-text">Heading 1</Text>
+          <Text variant="h1" testID="h1-text">
+            Heading 1
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('h1-text');
       const style = getStyle(textElement);
       expect(style).toMatchObject({
@@ -71,10 +79,12 @@ describe('Text Component', () => {
     it('applies h2 variant styles correctly', () => {
       render(
         <TestWrapper>
-          <Text variant="h2" testID="h2-text">Heading 2</Text>
+          <Text variant="h2" testID="h2-text">
+            Heading 2
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('h2-text');
       const style = getStyle(textElement);
       expect(style).toMatchObject({
@@ -87,10 +97,12 @@ describe('Text Component', () => {
     it('applies body variant styles correctly', () => {
       render(
         <TestWrapper>
-          <Text variant="body" testID="body-text">Body Text</Text>
+          <Text variant="body" testID="body-text">
+            Body Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('body-text');
       const style = getStyle(textElement);
       expect(style).toMatchObject({
@@ -103,10 +115,12 @@ describe('Text Component', () => {
     it('applies caption variant styles correctly', () => {
       render(
         <TestWrapper>
-          <Text variant="caption" testID="caption-text">Caption Text</Text>
+          <Text variant="caption" testID="caption-text">
+            Caption Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('caption-text');
       const style = getStyle(textElement);
       expect(style).toMatchObject({
@@ -119,10 +133,12 @@ describe('Text Component', () => {
     it('applies label variant styles correctly', () => {
       render(
         <TestWrapper>
-          <Text variant="label" testID="label-text">Label Text</Text>
+          <Text variant="label" testID="label-text">
+            Label Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('label-text');
       const style = getStyle(textElement);
       expect(style).toMatchObject({
@@ -137,10 +153,12 @@ describe('Text Component', () => {
     it('applies primary color correctly', () => {
       render(
         <TestWrapper>
-          <Text color="primary" testID="primary-text">Primary Text</Text>
+          <Text color="primary" testID="primary-text">
+            Primary Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('primary-text');
       const style = getStyle(textElement);
       expect(style.color).toBe(lightTheme.colors.text.primary);
@@ -149,10 +167,12 @@ describe('Text Component', () => {
     it('applies secondary color correctly', () => {
       render(
         <TestWrapper>
-          <Text color="secondary" testID="secondary-text">Secondary Text</Text>
+          <Text color="secondary" testID="secondary-text">
+            Secondary Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('secondary-text');
       const style = getStyle(textElement);
       expect(style.color).toBe(lightTheme.colors.text.secondary);
@@ -161,10 +181,12 @@ describe('Text Component', () => {
     it('applies error color correctly', () => {
       render(
         <TestWrapper>
-          <Text color="error" testID="error-text">Error Text</Text>
+          <Text color="error" testID="error-text">
+            Error Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('error-text');
       const style = getStyle(textElement);
       expect(style.color).toBe(lightTheme.colors.error[600]);
@@ -173,10 +195,12 @@ describe('Text Component', () => {
     it('applies success color correctly', () => {
       render(
         <TestWrapper>
-          <Text color="success" testID="success-text">Success Text</Text>
+          <Text color="success" testID="success-text">
+            Success Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('success-text');
       const style = getStyle(textElement);
       expect(style.color).toBe(lightTheme.colors.success[600]);
@@ -185,10 +209,12 @@ describe('Text Component', () => {
     it('applies disabled color correctly', () => {
       render(
         <TestWrapper>
-          <Text color="disabled" testID="disabled-text">Disabled Text</Text>
+          <Text color="disabled" testID="disabled-text">
+            Disabled Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('disabled-text');
       const style = getStyle(textElement);
       expect(style.color).toBe(lightTheme.colors.text.disabled);
@@ -199,10 +225,12 @@ describe('Text Component', () => {
     it('applies custom font weight correctly', () => {
       render(
         <TestWrapper>
-          <Text weight="bold" testID="bold-text">Bold Text</Text>
+          <Text weight="bold" testID="bold-text">
+            Bold Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('bold-text');
       const style = getStyle(textElement);
       expect(style.fontWeight).toBe('700');
@@ -211,10 +239,12 @@ describe('Text Component', () => {
     it('applies light font weight correctly', () => {
       render(
         <TestWrapper>
-          <Text weight="light" testID="light-text">Light Text</Text>
+          <Text weight="light" testID="light-text">
+            Light Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('light-text');
       const style = getStyle(textElement);
       expect(style.fontWeight).toBe('300');
@@ -223,10 +253,12 @@ describe('Text Component', () => {
     it('overrides variant font weight with custom weight', () => {
       render(
         <TestWrapper>
-          <Text variant="h1" weight="light" testID="custom-weight-text">Custom Weight</Text>
+          <Text variant="h1" weight="light" testID="custom-weight-text">
+            Custom Weight
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('custom-weight-text');
       const style = getStyle(textElement);
       expect(style.fontWeight).toBe('300'); // light, not h1's bold
@@ -240,7 +272,7 @@ describe('Text Component', () => {
           <Text testID="default-align-text">Default Align</Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('default-align-text');
       const style = getStyle(textElement);
       expect(style.textAlign).toBe('left');
@@ -249,10 +281,12 @@ describe('Text Component', () => {
     it('applies center alignment correctly', () => {
       render(
         <TestWrapper>
-          <Text align="center" testID="center-text">Center Text</Text>
+          <Text align="center" testID="center-text">
+            Center Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('center-text');
       const style = getStyle(textElement);
       expect(style.textAlign).toBe('center');
@@ -261,10 +295,12 @@ describe('Text Component', () => {
     it('applies right alignment correctly', () => {
       render(
         <TestWrapper>
-          <Text align="right" testID="right-text">Right Text</Text>
+          <Text align="right" testID="right-text">
+            Right Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('right-text');
       const style = getStyle(textElement);
       expect(style.textAlign).toBe('right');
@@ -275,10 +311,12 @@ describe('Text Component', () => {
     it('sets correct accessibility role for heading variants', () => {
       render(
         <TestWrapper>
-          <Text variant="h1" testID="heading-text">Heading</Text>
+          <Text variant="h1" testID="heading-text">
+            Heading
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('heading-text');
       expect(textElement.props.accessibilityRole).toBe('header');
     });
@@ -286,10 +324,12 @@ describe('Text Component', () => {
     it('sets correct accessibility role for body text', () => {
       render(
         <TestWrapper>
-          <Text variant="body" testID="body-text">Body</Text>
+          <Text variant="body" testID="body-text">
+            Body
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('body-text');
       expect(textElement.props.accessibilityRole).toBe('text');
     });
@@ -300,7 +340,7 @@ describe('Text Component', () => {
           <Text testID="scalable-text">Scalable Text</Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('scalable-text');
       expect(textElement.props.allowFontScaling).toBe(true);
     });
@@ -311,7 +351,7 @@ describe('Text Component', () => {
           <Text testID="labeled-text">Accessible Text</Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('labeled-text');
       expect(textElement.props.accessibilityLabel).toBe('Accessible Text');
     });
@@ -320,13 +360,15 @@ describe('Text Component', () => {
   describe('Custom Styles', () => {
     it('applies custom style overrides', () => {
       const customStyle = { marginTop: 10, marginBottom: 5 };
-      
+
       render(
         <TestWrapper>
-          <Text style={customStyle} testID="custom-style-text">Custom Style</Text>
+          <Text style={customStyle} testID="custom-style-text">
+            Custom Style
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('custom-style-text');
       const style = getStyle(textElement);
       expect(style).toMatchObject(customStyle);
@@ -334,13 +376,15 @@ describe('Text Component', () => {
 
     it('merges custom styles with variant styles', () => {
       const customStyle = { color: '#ff0000' };
-      
+
       render(
         <TestWrapper>
-          <Text variant="h1" style={customStyle} testID="merged-style-text">Merged Style</Text>
+          <Text variant="h1" style={customStyle} testID="merged-style-text">
+            Merged Style
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('merged-style-text');
       const style = getStyle(textElement);
       expect(style).toMatchObject({
@@ -354,10 +398,12 @@ describe('Text Component', () => {
     it('sets selectable prop correctly', () => {
       render(
         <TestWrapper>
-          <Text selectable testID="selectable-text">Selectable Text</Text>
+          <Text selectable testID="selectable-text">
+            Selectable Text
+          </Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('selectable-text');
       expect(textElement.props.selectable).toBe(true);
     });
@@ -368,7 +414,7 @@ describe('Text Component', () => {
           <Text testID="non-selectable-text">Non-selectable Text</Text>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('non-selectable-text');
       expect(textElement.props.selectable).toBe(false);
     });
@@ -383,7 +429,7 @@ describe('Predefined Text Components', () => {
           <Heading1 testID="heading1">Heading 1</Heading1>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('heading1');
       const style = getStyle(textElement);
       expect(style.fontSize).toBe(60); // h1 fontSize
@@ -396,7 +442,7 @@ describe('Predefined Text Components', () => {
           <Heading2 testID="heading2">Heading 2</Heading2>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('heading2');
       const style = getStyle(textElement);
       expect(style.fontSize).toBe(48); // h2 fontSize
@@ -411,7 +457,7 @@ describe('Predefined Text Components', () => {
           <BodyText testID="body-text">Body Text</BodyText>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('body-text');
       const style = getStyle(textElement);
       expect(style.fontSize).toBe(16); // body fontSize
@@ -424,7 +470,7 @@ describe('Predefined Text Components', () => {
           <BodyLarge testID="body-large">Large Body Text</BodyLarge>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('body-large');
       const style = getStyle(textElement);
       expect(style.fontSize).toBe(18); // bodyLarge fontSize
@@ -438,7 +484,7 @@ describe('Predefined Text Components', () => {
           <Caption testID="caption">Caption Text</Caption>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('caption');
       const style = getStyle(textElement);
       expect(style.fontSize).toBe(12); // caption fontSize
@@ -450,7 +496,7 @@ describe('Predefined Text Components', () => {
           <Label testID="label">Label Text</Label>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('label');
       const style = getStyle(textElement);
       expect(style.fontSize).toBe(14); // label fontSize
@@ -462,10 +508,12 @@ describe('Predefined Text Components', () => {
     it('forwards props to predefined components', () => {
       render(
         <TestWrapper>
-          <Heading1 color="error" align="center" testID="forwarded-props">Error Heading</Heading1>
+          <Heading1 color="error" align="center" testID="forwarded-props">
+            Error Heading
+          </Heading1>
         </TestWrapper>
       );
-      
+
       const textElement = screen.getByTestId('forwarded-props');
       const style = getStyle(textElement);
       expect(style.color).toBe(lightTheme.colors.error[600]);

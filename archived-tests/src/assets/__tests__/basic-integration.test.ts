@@ -26,7 +26,7 @@ describe('Basic Asset Management Integration', () => {
   it('should get logo assets', () => {
     const fullLogo = assetManager.getLogo('full');
     const iconLogo = assetManager.getLogo('icon');
-    
+
     expect(fullLogo).toBeDefined();
     expect(iconLogo).toBeDefined();
   });
@@ -40,7 +40,7 @@ describe('Basic Asset Management Integration', () => {
 
     assetManager.updateAssets(newAssets);
     const assets = assetManager.getAssets();
-    
+
     expect(assets.logos.custom).toEqual({ uri: 'custom-logo.png' });
   });
 

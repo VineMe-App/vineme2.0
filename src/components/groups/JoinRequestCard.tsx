@@ -80,7 +80,8 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
     lastInitial: true,
     fallback: 'full',
   });
-  const requesterFriendlyName = requesterShortName || requesterFullName || 'this person';
+  const requesterFriendlyName =
+    requesterShortName || requesterFullName || 'this person';
 
   const journeyStageLabel = useMemo(() => {
     if (!journeyStatus || journeyStatus < 1) {

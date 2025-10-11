@@ -1,10 +1,10 @@
 import { ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { Theme } from '../../theme/themes/types';
-import { 
-  LegacyStyleMapping, 
-  StyleMigrationOptions, 
+import {
+  LegacyStyleMapping,
+  StyleMigrationOptions,
   LegacyStyle,
-  ThemeAwareStyle 
+  ThemeAwareStyle,
 } from './types';
 
 /**
@@ -62,7 +62,11 @@ export class StyleMigrator {
    */
   migrateStyles(
     legacyStyles: LegacyStyle,
-    options: StyleMigrationOptions = { useSemanticColors: true, convertToTokens: true, preserveComments: false }
+    options: StyleMigrationOptions = {
+      useSemanticColors: true,
+      convertToTokens: true,
+      preserveComments: false,
+    }
   ): { themeAwareStyles: ThemeAwareStyle; mappings: LegacyStyleMapping[] } {
     const themeAwareStyles: ThemeAwareStyle = {};
     const mappings: LegacyStyleMapping[] = [];
@@ -70,16 +74,21 @@ export class StyleMigrator {
     for (const [styleName, styleObject] of Object.entries(legacyStyles)) {
       themeAwareStyles[styleName] = (theme: Theme) => {
         const migratedStyle: any = {};
-        
+
         for (const [property, value] of Object.entries(styleObject)) {
-          const migrationResult = this.migrateStyleProperty(property, value, theme, options);
+          const migrationResult = this.migrateStyleProperty(
+            property,
+            value,
+            theme,
+            options
+          );
           migratedStyle[property] = migrationResult.value;
-          
+
           if (migrationResult.mapping) {
             mappings.push(migrationResult.mapping);
           }
         }
-        
+
         return migratedStyle;
       };
     }
@@ -226,7 +235,7 @@ export class StyleMigrator {
     options: StyleMigrationOptions
   ): { value: any; tokenPath: string; confidence: number } | null {
     const normalizedValue = value.toLowerCase();
-    
+
     // Check direct mappings first
     const directMapping = this.colorMappings.get(normalizedValue);
     if (directMapping) {
@@ -365,19 +374,20 @@ export class StyleMigrator {
     theme: Theme
   ): { value: number; path: string; confidence: number } | null {
     const spacingValues = Array.from(this.spacingMappings.keys());
-    const closest = spacingValues.reduce((prev, curr) => 
+    const closest = spacingValues.reduce((prev, curr) =>
       Math.abs(curr - targetValue) < Math.abs(prev - targetValue) ? curr : prev
     );
 
     const difference = Math.abs(closest - targetValue);
-    if (difference <= 4) { // Allow 4px difference
+    if (difference <= 4) {
+      // Allow 4px difference
       const mapping = this.spacingMappings.get(closest);
       if (mapping) {
         const tokenValue = this.getNestedValue(theme, mapping);
         return {
           value: tokenValue || targetValue,
           path: mapping,
-          confidence: 1 - (difference / 8), // Reduce confidence based on difference
+          confidence: 1 - difference / 8, // Reduce confidence based on difference
         };
       }
     }
@@ -401,8 +411,8 @@ export class StyleMigrator {
       '700': 'typography.fontWeight.bold',
       '800': 'typography.fontWeight.extraBold',
       '900': 'typography.fontWeight.black',
-      'normal': 'typography.fontWeight.normal',
-      'bold': 'typography.fontWeight.bold',
+      normal: 'typography.fontWeight.normal',
+      bold: 'typography.fontWeight.bold',
     };
 
     const mapping = weightMappings[weight.toString()];
@@ -432,16 +442,20 @@ export class StyleMigrator {
     lines.push(`${styleName}: (theme: Theme) => ({`);
 
     for (const [property, value] of Object.entries(legacyStyle)) {
-      const mapping = mappings.find(m => m.legacyProperty === property);
-      
+      const mapping = mappings.find((m) => m.legacyProperty === property);
+
       if (mapping && mapping.confidence > 0.7) {
         if (mapping.needsReview) {
-          lines.push(`  ${property}: theme.${mapping.themeTokenPath}, // TODO: Review migration - was: ${mapping.legacyValue}`);
+          lines.push(
+            `  ${property}: theme.${mapping.themeTokenPath}, // TODO: Review migration - was: ${mapping.legacyValue}`
+          );
         } else {
           lines.push(`  ${property}: theme.${mapping.themeTokenPath},`);
         }
       } else {
-        lines.push(`  ${property}: ${JSON.stringify(value)}, // TODO: Migrate to theme token`);
+        lines.push(
+          `  ${property}: ${JSON.stringify(value)}, // TODO: Migrate to theme token`
+        );
       }
     }
 

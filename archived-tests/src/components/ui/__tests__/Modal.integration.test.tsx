@@ -57,9 +57,7 @@ jest.mock('react-native/Libraries/Utilities/Dimensions', () => ({
 }));
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider initialTheme="light">
-    {children}
-  </ThemeProvider>
+  <ThemeProvider initialTheme="light">{children}</ThemeProvider>
 );
 
 describe('Modal Integration Tests', () => {
@@ -104,7 +102,11 @@ describe('Modal Integration Tests', () => {
 
       const { getByText } = render(
         <TestWrapper>
-          <Modal isVisible={true} onClose={mockModalClose} title="Interactive Modal">
+          <Modal
+            isVisible={true}
+            onClose={mockModalClose}
+            title="Interactive Modal"
+          >
             <Button title="Test Button" onPress={mockButtonPress} />
           </Modal>
         </TestWrapper>
@@ -121,7 +123,7 @@ describe('Modal Integration Tests', () => {
 
       const FormModal = () => {
         const [value, setValue] = useState('');
-        
+
         return (
           <Modal isVisible={true} onClose={mockModalClose} title="Form Modal">
             <View>
@@ -155,14 +157,14 @@ describe('Modal Integration Tests', () => {
     it('handles modal show/hide state correctly', async () => {
       const ModalController = () => {
         const [isVisible, setIsVisible] = useState(false);
-        
+
         return (
           <View>
             <TouchableOpacity onPress={() => setIsVisible(true)}>
               <Text>Show Modal</Text>
             </TouchableOpacity>
-            <Modal 
-              isVisible={isVisible} 
+            <Modal
+              isVisible={isVisible}
               onClose={() => setIsVisible(false)}
               title="Controlled Modal"
             >
@@ -201,7 +203,7 @@ describe('Modal Integration Tests', () => {
       const MultiModalController = () => {
         const [modal1Visible, setModal1Visible] = useState(false);
         const [modal2Visible, setModal2Visible] = useState(false);
-        
+
         return (
           <View>
             <TouchableOpacity onPress={() => setModal1Visible(true)}>
@@ -210,17 +212,17 @@ describe('Modal Integration Tests', () => {
             <TouchableOpacity onPress={() => setModal2Visible(true)}>
               <Text>Show Modal 2</Text>
             </TouchableOpacity>
-            
-            <Modal 
-              isVisible={modal1Visible} 
+
+            <Modal
+              isVisible={modal1Visible}
               onClose={() => setModal1Visible(false)}
               title="Modal 1"
             >
               <Text>Modal 1 Content</Text>
             </Modal>
-            
-            <Modal 
-              isVisible={modal2Visible} 
+
+            <Modal
+              isVisible={modal2Visible}
               onClose={() => setModal2Visible(false)}
               title="Modal 2"
             >
@@ -262,8 +264,16 @@ describe('Modal Integration Tests', () => {
       const { getByTestId } = render(
         <TestWrapper>
           <View>
-            <Overlay isVisible={true} onPress={mockOverlayPress} testID="custom-overlay">
-              <Modal isVisible={true} onClose={mockModalClose} title="Modal with Overlay">
+            <Overlay
+              isVisible={true}
+              onPress={mockOverlayPress}
+              testID="custom-overlay"
+            >
+              <Modal
+                isVisible={true}
+                onClose={mockModalClose}
+                title="Modal with Overlay"
+              >
                 <Text>Modal Content</Text>
               </Modal>
             </Overlay>
@@ -283,8 +293,16 @@ describe('Modal Integration Tests', () => {
       const { getByTestId } = render(
         <TestWrapper>
           <View>
-            <Backdrop isVisible={true} onPress={mockBackdropPress} testID="custom-backdrop">
-              <Modal isVisible={true} onClose={mockModalClose} title="Modal with Backdrop">
+            <Backdrop
+              isVisible={true}
+              onPress={mockBackdropPress}
+              testID="custom-backdrop"
+            >
+              <Modal
+                isVisible={true}
+                onClose={mockModalClose}
+                title="Modal with Backdrop"
+              >
                 <Text>Modal Content</Text>
               </Modal>
             </Backdrop>
@@ -302,18 +320,18 @@ describe('Modal Integration Tests', () => {
     it('works with Portal system', async () => {
       const PortalModalController = () => {
         const [isVisible, setIsVisible] = useState(false);
-        
+
         return (
           <View>
             <PortalHost />
             <TouchableOpacity onPress={() => setIsVisible(true)}>
               <Text>Show Portal Modal</Text>
             </TouchableOpacity>
-            
+
             {isVisible && (
               <Portal name="modal-portal">
-                <Modal 
-                  isVisible={isVisible} 
+                <Modal
+                  isVisible={isVisible}
                   onClose={() => setIsVisible(false)}
                   title="Portal Modal"
                 >
@@ -333,7 +351,7 @@ describe('Modal Integration Tests', () => {
 
       // Show modal through portal
       fireEvent.press(getByText('Show Portal Modal'));
-      
+
       await act(async () => {
         await waitFor(() => {
           expect(getByText('Portal Modal Content')).toBeTruthy();
@@ -349,7 +367,11 @@ describe('Modal Integration Tests', () => {
 
       const { getByLabelText, getByText } = render(
         <TestWrapper>
-          <Modal isVisible={true} onClose={mockModalClose} title="Accessible Modal">
+          <Modal
+            isVisible={true}
+            onClose={mockModalClose}
+            title="Accessible Modal"
+          >
             <Button title="Accessible Button" onPress={mockButtonPress} />
           </Modal>
         </TestWrapper>
@@ -369,14 +391,18 @@ describe('Modal Integration Tests', () => {
 
       const { getByLabelText } = render(
         <TestWrapper>
-          <Modal isVisible={true} onClose={mockModalClose} title="Keyboard Modal">
+          <Modal
+            isVisible={true}
+            onClose={mockModalClose}
+            title="Keyboard Modal"
+          >
             <Text>Modal with keyboard support</Text>
           </Modal>
         </TestWrapper>
       );
 
       const modal = getByLabelText('Keyboard Modal');
-      
+
       // Simulate escape key press
       fireEvent(modal, 'keyPress', { nativeEvent: { key: 'Escape' } });
       expect(mockModalClose).toHaveBeenCalledTimes(1);
@@ -388,20 +414,20 @@ describe('Modal Integration Tests', () => {
       const RapidModalController = () => {
         const [isVisible, setIsVisible] = useState(false);
         const [count, setCount] = useState(0);
-        
+
         const toggleModal = () => {
           setIsVisible(!isVisible);
-          setCount(c => c + 1);
+          setCount((c) => c + 1);
         };
-        
+
         return (
           <View>
             <TouchableOpacity onPress={toggleModal}>
               <Text>Toggle Modal ({count})</Text>
             </TouchableOpacity>
-            
-            <Modal 
-              isVisible={isVisible} 
+
+            <Modal
+              isVisible={isVisible}
               onClose={() => setIsVisible(false)}
               title="Rapid Modal"
             >
@@ -420,7 +446,7 @@ describe('Modal Integration Tests', () => {
       // Rapidly toggle modal multiple times
       for (let i = 0; i < 5; i++) {
         fireEvent.press(getByText(`Toggle Modal (${i})`));
-        
+
         if (i % 2 === 0) {
           await waitFor(() => {
             expect(getByText(`Rapid Modal Content ${i + 1}`)).toBeTruthy();

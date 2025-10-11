@@ -3,8 +3,15 @@ import { permissionService } from './permissions';
 import { groupMembershipNotesService } from './groupMembershipNotes';
 import { triggerJoinRequestReceivedNotification } from './notifications';
 import { getFullName } from '../utils/name';
+import type {
+  GroupWithDetails,
+  GroupMembership,
+  GroupMembershipWithUser,
+} from '../types/database';
 
-const withDisplayName = <T extends { first_name?: string | null; last_name?: string | null }>(
+const withDisplayName = <
+  T extends { first_name?: string | null; last_name?: string | null },
+>(
   user: (T & { name?: string | null }) | null | undefined
 ) =>
   user
@@ -13,11 +20,6 @@ const withDisplayName = <T extends { first_name?: string | null; last_name?: str
         name: getFullName(user),
       }
     : user;
-import type {
-  GroupWithDetails,
-  GroupMembership,
-  GroupMembershipWithUser,
-} from '../types/database';
 
 export interface GroupServiceResponse<T = any> {
   data: T | null;

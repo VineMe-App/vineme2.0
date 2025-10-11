@@ -28,14 +28,14 @@ const ThemeTestApp: React.FC = () => {
       <Text testID="dark-indicator">
         Dark Mode: {isDark ? 'true' : 'false'}
       </Text>
-      
+
       <Button
         testID="toggle-theme-btn"
         title="Toggle Theme"
         onPress={toggleTheme}
         variant="primary"
       />
-      
+
       <Card testID="test-card" variant="elevated">
         <Text testID="card-text">Card Content</Text>
         <Button
@@ -45,7 +45,7 @@ const ThemeTestApp: React.FC = () => {
           variant="secondary"
         />
       </Card>
-      
+
       <Input
         testID="test-input"
         label="Test Input"
@@ -53,7 +53,7 @@ const ThemeTestApp: React.FC = () => {
         onChangeText={setInputValue}
         placeholder="Enter text"
       />
-      
+
       <Modal
         testID="test-modal"
         visible={modalVisible}
@@ -85,8 +85,12 @@ describe('Theme Switching Integration', () => {
       );
 
       // Verify initial light theme
-      expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: light');
-      expect(screen.getByTestId('dark-indicator')).toHaveTextContent('Dark Mode: false');
+      expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+        'Current Theme: light'
+      );
+      expect(screen.getByTestId('dark-indicator')).toHaveTextContent(
+        'Dark Mode: false'
+      );
 
       // Toggle to dark theme
       act(() => {
@@ -94,8 +98,12 @@ describe('Theme Switching Integration', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: dark');
-        expect(screen.getByTestId('dark-indicator')).toHaveTextContent('Dark Mode: true');
+        expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+          'Current Theme: dark'
+        );
+        expect(screen.getByTestId('dark-indicator')).toHaveTextContent(
+          'Dark Mode: true'
+        );
       });
 
       // Toggle back to light theme
@@ -104,8 +112,12 @@ describe('Theme Switching Integration', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: light');
-        expect(screen.getByTestId('dark-indicator')).toHaveTextContent('Dark Mode: false');
+        expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+          'Current Theme: light'
+        );
+        expect(screen.getByTestId('dark-indicator')).toHaveTextContent(
+          'Dark Mode: false'
+        );
       });
     });
 
@@ -128,7 +140,9 @@ describe('Theme Switching Integration', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: dark');
+        expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+          'Current Theme: dark'
+        );
       });
 
       // Input value should be preserved
@@ -162,7 +176,9 @@ describe('Theme Switching Integration', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: dark');
+        expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+          'Current Theme: dark'
+        );
       });
 
       // Components should now use dark theme colors
@@ -198,7 +214,9 @@ describe('Theme Switching Integration', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: dark');
+        expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+          'Current Theme: dark'
+        );
       });
 
       // Modal and its contents should also update to dark theme
@@ -211,7 +229,7 @@ describe('Theme Switching Integration', () => {
   describe('System Theme Integration', () => {
     it('should respond to system theme changes', async () => {
       const mockAppearance = require('react-native').Appearance;
-      
+
       render(
         <ThemeProvider initialTheme="system">
           <ThemeTestApp />
@@ -219,7 +237,9 @@ describe('Theme Switching Integration', () => {
       );
 
       // Initially should follow system (mocked as light)
-      expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: light');
+      expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+        'Current Theme: light'
+      );
 
       // Simulate system theme change to dark
       act(() => {
@@ -230,7 +250,9 @@ describe('Theme Switching Integration', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: dark');
+        expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+          'Current Theme: dark'
+        );
       });
     });
 
@@ -242,7 +264,9 @@ describe('Theme Switching Integration', () => {
       );
 
       // Should start with system theme (light)
-      expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: light');
+      expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+        'Current Theme: light'
+      );
 
       // Manual toggle should override system
       act(() => {
@@ -250,7 +274,9 @@ describe('Theme Switching Integration', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: dark');
+        expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+          'Current Theme: dark'
+        );
       });
     });
   });
@@ -259,7 +285,7 @@ describe('Theme Switching Integration', () => {
     it('should handle invalid theme gracefully', async () => {
       const TestComponentWithInvalidTheme: React.FC = () => {
         const { setTheme } = useTheme();
-        
+
         return (
           <Button
             testID="invalid-theme-btn"
@@ -300,7 +326,7 @@ describe('Theme Switching Integration', () => {
 
       // Rapidly toggle theme multiple times
       const toggleButton = screen.getByTestId('toggle-theme-btn');
-      
+
       for (let i = 0; i < 5; i++) {
         act(() => {
           toggleButton.props.onPress();
@@ -309,11 +335,15 @@ describe('Theme Switching Integration', () => {
 
       await waitFor(() => {
         // Should end up on dark theme (odd number of toggles)
-        expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Current Theme: dark');
+        expect(screen.getByTestId('theme-indicator')).toHaveTextContent(
+          'Current Theme: dark'
+        );
       });
 
       // All components should be consistent
-      expect(screen.getByTestId('dark-indicator')).toHaveTextContent('Dark Mode: true');
+      expect(screen.getByTestId('dark-indicator')).toHaveTextContent(
+        'Dark Mode: true'
+      );
     });
   });
 });

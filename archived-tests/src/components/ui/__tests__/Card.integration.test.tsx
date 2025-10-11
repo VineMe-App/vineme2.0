@@ -32,13 +32,11 @@ const ThemeSwitchingCard: React.FC<{
 };
 
 // Wrapper component for theme provider
-const TestWrapper: React.FC<{ 
+const TestWrapper: React.FC<{
   children: React.ReactNode;
   initialTheme?: 'light' | 'dark';
 }> = ({ children, initialTheme = 'light' }) => (
-  <ThemeProvider initialTheme={initialTheme}>
-    {children}
-  </ThemeProvider>
+  <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>
 );
 
 describe('Card Integration Tests', () => {
@@ -64,9 +62,13 @@ describe('Card Integration Tests', () => {
     });
 
     it('applies correct theme colors for different variants', async () => {
-      const variants: Array<'default' | 'outlined' | 'elevated' | 'filled' | 'ghost'> = [
-        'default', 'outlined', 'elevated', 'filled', 'ghost'
-      ];
+      const variants: (
+        | 'default'
+        | 'outlined'
+        | 'elevated'
+        | 'filled'
+        | 'ghost'
+      )[] = ['default', 'outlined', 'elevated', 'filled', 'ghost'];
 
       for (const variant of variants) {
         render(
@@ -162,15 +164,15 @@ describe('Card Integration Tests', () => {
         const [pressCount, setPressCount] = React.useState(0);
 
         const handlePress = () => {
-          setPressCount(prev => prev + 1);
+          setPressCount((prev) => prev + 1);
           if (pressCount >= 2) {
             setDisabled(true);
           }
         };
 
         return (
-          <Card 
-            onPress={handlePress} 
+          <Card
+            onPress={handlePress}
             disabled={disabled}
             testID="state-changing-card"
           >
@@ -274,7 +276,7 @@ describe('Card Integration Tests', () => {
       );
 
       const card = screen.getByTestId('theme-card');
-      
+
       // Check initial accessibility
       expect(card.props.accessibilityRole).toBe('button');
       expect(card.props.accessible).toBe(true);
@@ -295,7 +297,7 @@ describe('Card Integration Tests', () => {
         const [content, setContent] = React.useState('Initial content');
 
         return (
-          <Card 
+          <Card
             onPress={() => setContent('Updated content')}
             accessibilityLabel={`Card with ${content}`}
             testID="dynamic-card"
@@ -312,7 +314,7 @@ describe('Card Integration Tests', () => {
       );
 
       const card = screen.getByTestId('dynamic-card');
-      
+
       // Initial state
       expect(screen.getByText('Initial content')).toBeTruthy();
       expect(card.props.accessibilityLabel).toBe('Card with Initial content');
@@ -331,7 +333,9 @@ describe('Card Integration Tests', () => {
       };
 
       // Mock console.error to avoid test output noise
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       expect(() => {
         render(
@@ -348,7 +352,9 @@ describe('Card Integration Tests', () => {
 
     it('handles theme provider errors gracefully', () => {
       // Mock console.error to avoid test output noise
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       expect(() => {
         render(

@@ -35,7 +35,9 @@ jest.mock('@expo/vector-icons', () => ({
 const HomeHeader = () => {
   const { useTheme } = require('@/theme/provider/useTheme');
   const { useAuthStore } = require('@/stores/auth');
-  const { NotificationIconWithBadge } = require('@/components/ui/NotificationIconWithBadge');
+  const {
+    NotificationIconWithBadge,
+  } = require('@/components/ui/NotificationIconWithBadge');
   const { useNotificationBadge } = require('@/hooks/useNotifications');
   const { useState } = require('react');
   const { View, StyleSheet } = require('react-native');
@@ -44,11 +46,14 @@ const HomeHeader = () => {
   const { theme } = useTheme();
   const { user } = useAuthStore();
   const { count: unreadCount } = useNotificationBadge(user?.id);
-  const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
+  const [notificationPanelVisible, setNotificationPanelVisible] =
+    useState(false);
 
   const handleNotificationPress = () => {
     setNotificationPanelVisible(true);
-    console.log('Notification icon pressed - panel will be implemented in next task');
+    console.log(
+      'Notification icon pressed - panel will be implemented in next task'
+    );
   };
 
   const styles = StyleSheet.create({
@@ -82,9 +87,7 @@ const HomeHeader = () => {
 
 // Test wrapper with theme provider
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider theme={lightTheme}>
-    {children}
-  </ThemeProvider>
+  <ThemeProvider theme={lightTheme}>{children}</ThemeProvider>
 );
 
 describe('Home Header Integration', () => {
@@ -97,7 +100,7 @@ describe('Home Header Integration', () => {
 
     // Check that the title is rendered
     expect(getByText('VineMe')).toBeTruthy();
-    
+
     // Check that the notification icon is rendered
     expect(getByTestId('home-notification-icon')).toBeTruthy();
   });
@@ -121,8 +124,12 @@ describe('Home Header Integration', () => {
     );
 
     const notificationIcon = getByTestId('home-notification-icon');
-    expect(notificationIcon.props.accessibilityLabel).toContain('Notifications, 3 unread');
-    expect(notificationIcon.props.accessibilityHint).toBe('Double tap to open notifications panel');
+    expect(notificationIcon.props.accessibilityLabel).toContain(
+      'Notifications, 3 unread'
+    );
+    expect(notificationIcon.props.accessibilityHint).toBe(
+      'Double tap to open notifications panel'
+    );
   });
 
   it('has proper layout with title on left and notification icon on right', () => {
@@ -134,7 +141,7 @@ describe('Home Header Integration', () => {
 
     const title = getByText('VineMe');
     const notificationIcon = getByTestId('home-notification-icon');
-    
+
     // Both elements should be present
     expect(title).toBeTruthy();
     expect(notificationIcon).toBeTruthy();

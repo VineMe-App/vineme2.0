@@ -58,9 +58,10 @@ describe('EmailVerificationService', () => {
         error: { message: 'Rate limit exceeded' },
       });
 
-      const result = await emailVerificationService.sendVerificationEmail(
-        'test@example.com'
-      );
+      const result =
+        await emailVerificationService.sendVerificationEmail(
+          'test@example.com'
+        );
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Too many verification emails sent');
@@ -72,9 +73,10 @@ describe('EmailVerificationService', () => {
         new Error('Network error')
       );
 
-      const result = await emailVerificationService.sendVerificationEmail(
-        'test@example.com'
-      );
+      const result =
+        await emailVerificationService.sendVerificationEmail(
+          'test@example.com'
+        );
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -124,9 +126,8 @@ describe('EmailVerificationService', () => {
       // Mock verification status check
       (authService.isEmailVerified as jest.Mock).mockResolvedValue(true);
 
-      const result = await emailVerificationService.checkVerificationStatus(
-        'user-123'
-      );
+      const result =
+        await emailVerificationService.checkVerificationStatus('user-123');
 
       expect(result).toBe(true);
       expect(authService.isEmailVerified).toHaveBeenCalledWith('user-123');
@@ -138,9 +139,8 @@ describe('EmailVerificationService', () => {
         new Error('Database error')
       );
 
-      const result = await emailVerificationService.checkVerificationStatus(
-        'user-123'
-      );
+      const result =
+        await emailVerificationService.checkVerificationStatus('user-123');
 
       expect(result).toBe(false);
     });
@@ -153,9 +153,10 @@ describe('EmailVerificationService', () => {
         success: true,
       });
 
-      const result = await emailVerificationService.resendVerificationEmail(
-        'test@example.com'
-      );
+      const result =
+        await emailVerificationService.resendVerificationEmail(
+          'test@example.com'
+        );
 
       expect(result.success).toBe(true);
       expect(authService.resendVerificationEmail).toHaveBeenCalled();
@@ -168,9 +169,10 @@ describe('EmailVerificationService', () => {
         error: 'User not found',
       });
 
-      const result = await emailVerificationService.resendVerificationEmail(
-        'test@example.com'
-      );
+      const result =
+        await emailVerificationService.resendVerificationEmail(
+          'test@example.com'
+        );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('User not found');
@@ -211,9 +213,10 @@ describe('EmailVerificationService', () => {
           error: { message: testCase.error },
         });
 
-        const result = await emailVerificationService.sendVerificationEmail(
-          'test@example.com'
-        );
+        const result =
+          await emailVerificationService.sendVerificationEmail(
+            'test@example.com'
+          );
 
         expect(result.success).toBe(false);
         expect(result.error).toContain(testCase.expected);

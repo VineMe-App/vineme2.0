@@ -6,25 +6,15 @@
 export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 
-export { 
-  Skeleton, 
-  SkeletonText, 
-  SkeletonAvatar 
-} from './Skeleton';
-export type { 
-  SkeletonProps, 
-  SkeletonTextProps, 
-  SkeletonAvatarProps 
+export { Skeleton, SkeletonText, SkeletonAvatar } from './Skeleton';
+export type {
+  SkeletonProps,
+  SkeletonTextProps,
+  SkeletonAvatarProps,
 } from './Skeleton';
 
-export { 
-  ProgressBar, 
-  CircularProgress 
-} from './ProgressBar';
-export type { 
-  ProgressBarProps, 
-  CircularProgressProps 
-} from './ProgressBar';
+export { ProgressBar, CircularProgress } from './ProgressBar';
+export type { ProgressBarProps, CircularProgressProps } from './ProgressBar';
 
 export {
   FadeIn,

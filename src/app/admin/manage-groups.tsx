@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
+  RefreshControl,
   Alert,
   TouchableOpacity,
+  FlatList,
+  Platform,
 } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import {

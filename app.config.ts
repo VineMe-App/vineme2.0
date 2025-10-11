@@ -64,13 +64,41 @@ export default ({ config }: ConfigContext): ExpoConfig => {
               {
                 action: 'VIEW',
                 data: [
-                  { scheme: 'https', host: 'vineme.app', pathPrefix: '/group/' },
-                  { scheme: 'https', host: 'www.vineme.app', pathPrefix: '/group/' },
-                  { scheme: 'https', host: 'vineme.app', pathPrefix: '/event/' },
-                  { scheme: 'https', host: 'www.vineme.app', pathPrefix: '/event/' },
-                  { scheme: 'https', host: 'vineme.app', pathPrefix: '/referral/' },
-                  { scheme: 'https', host: 'www.vineme.app', pathPrefix: '/referral/' },
-                  { scheme: 'https', host: 'vineme.app', pathPrefix: '/notifications' },
+                  {
+                    scheme: 'https',
+                    host: 'vineme.app',
+                    pathPrefix: '/group/',
+                  },
+                  {
+                    scheme: 'https',
+                    host: 'www.vineme.app',
+                    pathPrefix: '/group/',
+                  },
+                  {
+                    scheme: 'https',
+                    host: 'vineme.app',
+                    pathPrefix: '/event/',
+                  },
+                  {
+                    scheme: 'https',
+                    host: 'www.vineme.app',
+                    pathPrefix: '/event/',
+                  },
+                  {
+                    scheme: 'https',
+                    host: 'vineme.app',
+                    pathPrefix: '/referral/',
+                  },
+                  {
+                    scheme: 'https',
+                    host: 'www.vineme.app',
+                    pathPrefix: '/referral/',
+                  },
+                  {
+                    scheme: 'https',
+                    host: 'vineme.app',
+                    pathPrefix: '/notifications',
+                  },
                   {
                     scheme: 'https',
                     host: 'www.vineme.app',

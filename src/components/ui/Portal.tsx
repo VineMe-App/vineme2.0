@@ -47,7 +47,9 @@ export interface PortalProps {
 }
 
 export const Portal: React.FC<PortalProps> = ({ children, name }) => {
-  const keyRef = useRef(name || `portal_${Math.random().toString(36).substr(2, 9)}`);
+  const keyRef = useRef(
+    name || `portal_${Math.random().toString(36).substr(2, 9)}`
+  );
   const key = keyRef.current;
 
   useEffect(() => {

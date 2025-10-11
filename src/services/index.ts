@@ -13,7 +13,12 @@ export { joinRequestService } from './joinRequests';
 export { locationService } from './location';
 export { contactAuditService } from './contactAudit';
 export { groupMediaService } from './groupMedia';
-export { referralService, ReferralDatabaseUtils, REFERRAL_SCHEMA_SQL, COMPLETE_REFERRAL_SCHEMA } from './referrals';
+export {
+  referralService,
+  ReferralDatabaseUtils,
+  REFERRAL_SCHEMA_SQL,
+  COMPLETE_REFERRAL_SCHEMA,
+} from './referrals';
 export type { AuthResponse, SignUpData, SignInData } from './auth';
 export type { UpdateUserProfileData, UserServiceResponse } from './users';
 export type {

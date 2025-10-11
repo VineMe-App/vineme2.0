@@ -81,7 +81,9 @@ describe('referralValidation', () => {
 
       const result = validateReferralForm(shortPhone);
       expect(result.isValid).toBe(false);
-      expect(result.errors.phone).toBe('Phone number must be at least 10 digits');
+      expect(result.errors.phone).toBe(
+        'Phone number must be at least 10 digits'
+      );
     });
 
     it('should validate name fields', () => {
@@ -95,8 +97,12 @@ describe('referralValidation', () => {
 
       const result = validateReferralForm(invalidNames);
       expect(result.isValid).toBe(false);
-      expect(result.errors.firstName).toBe('First name contains invalid characters');
-      expect(result.errors.lastName).toBe('Last name contains invalid characters');
+      expect(result.errors.firstName).toBe(
+        'First name contains invalid characters'
+      );
+      expect(result.errors.lastName).toBe(
+        'Last name contains invalid characters'
+      );
     });
 
     it('should validate note length', () => {
@@ -251,7 +257,7 @@ describe('referralValidation', () => {
     it('should record referral attempts', () => {
       const userId = 'test-user-2';
       rateLimiter.recordReferral(userId);
-      
+
       const status = rateLimiter.getRateLimitStatus(userId);
       expect(status.hourlyUsed).toBe(1);
       expect(status.dailyUsed).toBe(1);
@@ -260,12 +266,12 @@ describe('referralValidation', () => {
 
     it('should enforce hourly limits', () => {
       const userId = 'test-user-3';
-      
+
       // Make 5 referrals (hourly limit)
       for (let i = 0; i < 5; i++) {
         rateLimiter.recordReferral(userId);
       }
-      
+
       const result = rateLimiter.canMakeReferral(userId);
       expect(result.allowed).toBe(false);
       expect(result.reason).toContain('Too many referrals in the last hour');
@@ -273,12 +279,12 @@ describe('referralValidation', () => {
 
     it('should provide rate limit status', () => {
       const userId = 'test-user-4';
-      
+
       // Make 3 referrals
       for (let i = 0; i < 3; i++) {
         rateLimiter.recordReferral(userId);
       }
-      
+
       const status = rateLimiter.getRateLimitStatus(userId);
       expect(status.hourlyUsed).toBe(3);
       expect(status.hourlyLimit).toBe(5);
@@ -288,10 +294,10 @@ describe('referralValidation', () => {
 
     it('should clear user rate limits', () => {
       const userId = 'test-user-5';
-      
+
       rateLimiter.recordReferral(userId);
       rateLimiter.clearUserRateLimit(userId);
-      
+
       const status = rateLimiter.getRateLimitStatus(userId);
       expect(status.hourlyUsed).toBe(0);
     });
@@ -301,36 +307,42 @@ describe('referralValidation', () => {
     it('should create validation error messages', () => {
       const validationError = new ValidationError('Invalid email format');
       const result = createReferralErrorMessage(validationError);
-      
+
       expect(result.title).toBe('Invalid Information');
       expect(result.message).toBe('Invalid email format');
       expect(result.actionable).toBe(true);
       expect(result.retryable).toBe(true);
-      expect(result.suggestions).toContain('Please check the highlighted fields and correct any errors');
+      expect(result.suggestions).toContain(
+        'Please check the highlighted fields and correct any errors'
+      );
     });
 
     it('should create rate limit error messages', () => {
       const rateLimitError = new Error('rate limit exceeded');
       const result = createReferralErrorMessage(rateLimitError);
-      
+
       expect(result.title).toBe('Too Many Referrals');
       expect(result.retryable).toBe(true);
-      expect(result.suggestions).toContain('Please wait before making another referral');
+      expect(result.suggestions).toContain(
+        'Please wait before making another referral'
+      );
     });
 
     it('should create duplicate error messages', () => {
       const duplicateError = new Error('This record already exists');
       const result = createReferralErrorMessage(duplicateError);
-      
+
       expect(result.title).toBe('Already Referred');
       expect(result.retryable).toBe(false);
-      expect(result.suggestions).toContain('Check if they already have an account');
+      expect(result.suggestions).toContain(
+        'Check if they already have an account'
+      );
     });
 
     it('should create network error messages', () => {
       const networkError = new Error('Network connection failed');
       const result = createReferralErrorMessage(networkError);
-      
+
       expect(result.title).toBe('Connection Problem');
       expect(result.retryable).toBe(true);
       expect(result.suggestions).toContain('Check your internet connection');
@@ -339,16 +351,18 @@ describe('referralValidation', () => {
     it('should create email error messages', () => {
       const emailError = new Error('email failed to send');
       const result = createReferralErrorMessage(emailError);
-      
+
       expect(result.title).toBe('Email Delivery Issue');
       expect(result.retryable).toBe(true);
-      expect(result.suggestions).toContain('The person can still create an account manually');
+      expect(result.suggestions).toContain(
+        'The person can still create an account manually'
+      );
     });
 
     it('should create default error messages', () => {
       const unknownError = new Error('Something went wrong');
       const result = createReferralErrorMessage(unknownError);
-      
+
       expect(result.title).toBe('Referral Failed');
       expect(result.retryable).toBe(true);
       expect(result.suggestions).toContain('Please try again in a few moments');
@@ -392,7 +406,7 @@ describe('referralValidation', () => {
         '+86 10 8888 8888', // China
       ];
 
-      internationalPhones.forEach(phone => {
+      internationalPhones.forEach((phone) => {
         const data = {
           email: 'test@example.com',
           phone,
@@ -413,7 +427,7 @@ describe('referralValidation', () => {
         'test123@sub.example.co.uk',
       ];
 
-      validEmails.forEach(email => {
+      validEmails.forEach((email) => {
         const data = {
           email,
           phone: '+1234567890',
@@ -433,7 +447,7 @@ describe('referralValidation', () => {
         'double@@domain.com',
       ];
 
-      invalidEmails.forEach(email => {
+      invalidEmails.forEach((email) => {
         const data = {
           email,
           phone: '+1234567890',
@@ -441,7 +455,10 @@ describe('referralValidation', () => {
         };
 
         const result = validateReferralForm(data);
-        expect(result.isValid).toBe(false, `Email "${email}" should be invalid`);
+        expect(result.isValid).toBe(
+          false,
+          `Email "${email}" should be invalid`
+        );
         expect(result.errors.email).toBe('Please enter a valid email address');
       });
     });

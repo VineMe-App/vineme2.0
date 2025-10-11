@@ -1,6 +1,6 @@
 /**
  * Notification Formatting and Validation Utilities
- * 
+ *
  * This file contains utilities for formatting notification messages,
  * validating notification data, sanitizing content, and validating action URLs.
  */
@@ -17,7 +17,10 @@ import type {
 } from '../types/notifications';
 
 // Notification message templates for each type
-export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
+export const NOTIFICATION_TEMPLATES: Record<
+  NotificationType,
+  NotificationTemplate
+> = {
   friend_request_received: {
     type: 'friend_request_received',
     titleTemplate: 'New Friend Request',
@@ -25,7 +28,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     actionUrl: '/profile/{{fromUserId}}',
     variables: ['fromUserName', 'fromUserId'],
   },
-  
+
   friend_request_accepted: {
     type: 'friend_request_accepted',
     titleTemplate: 'Friend Request Accepted',
@@ -33,7 +36,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     actionUrl: '/profile/{{acceptedByUserId}}',
     variables: ['acceptedByUserName', 'acceptedByUserId'],
   },
-  
+
   group_request_submitted: {
     type: 'group_request_submitted',
     titleTemplate: 'New Group Request',
@@ -41,23 +44,25 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     actionUrl: '/admin/groups/{{groupId}}',
     variables: ['creatorName', 'groupTitle', 'groupId'],
   },
-  
+
   group_request_approved: {
     type: 'group_request_approved',
     titleTemplate: 'Group Request Approved',
-    bodyTemplate: 'Your group "{{groupTitle}}" has been approved by {{approvedByName}}',
+    bodyTemplate:
+      'Your group "{{groupTitle}}" has been approved by {{approvedByName}}',
     actionUrl: '/group/{{groupId}}',
     variables: ['groupTitle', 'approvedByName', 'groupId'],
   },
-  
+
   group_request_denied: {
     type: 'group_request_denied',
     titleTemplate: 'Group Request Declined',
-    bodyTemplate: 'Your group "{{groupTitle}}" was declined by {{deniedByName}}{{#reason}}. Reason: {{reason}}{{/reason}}',
+    bodyTemplate:
+      'Your group "{{groupTitle}}" was declined by {{deniedByName}}{{#reason}}. Reason: {{reason}}{{/reason}}',
     actionUrl: '/group/{{groupId}}',
     variables: ['groupTitle', 'deniedByName', 'groupId', 'reason'],
   },
-  
+
   join_request_received: {
     type: 'join_request_received',
     titleTemplate: 'New Join Request',
@@ -65,23 +70,25 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     actionUrl: '/group/{{groupId}}/requests',
     variables: ['requesterName', 'groupTitle', 'groupId'],
   },
-  
+
   join_request_approved: {
     type: 'join_request_approved',
     titleTemplate: 'Join Request Approved',
-    bodyTemplate: '{{approvedByName}} approved your request to join "{{groupTitle}}"',
+    bodyTemplate:
+      '{{approvedByName}} approved your request to join "{{groupTitle}}"',
     actionUrl: '/group/{{groupId}}',
     variables: ['approvedByName', 'groupTitle', 'groupId'],
   },
-  
+
   join_request_denied: {
     type: 'join_request_denied',
     titleTemplate: 'Join Request Declined',
-    bodyTemplate: '{{deniedByName}} declined your request to join "{{groupTitle}}"',
+    bodyTemplate:
+      '{{deniedByName}} declined your request to join "{{groupTitle}}"',
     actionUrl: '/group/{{groupId}}',
     variables: ['deniedByName', 'groupTitle', 'groupId'],
   },
-  
+
   group_member_added: {
     type: 'group_member_added',
     titleTemplate: 'Welcome to {{groupTitle}}',
@@ -89,23 +96,25 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     actionUrl: '/group/{{groupId}}',
     variables: ['groupTitle', 'addedByName', 'groupId'],
   },
-  
+
   referral_accepted: {
     type: 'referral_accepted',
     titleTemplate: 'Referral Accepted',
-    bodyTemplate: '{{referredUserName}} has joined VineMe through your referral',
+    bodyTemplate:
+      '{{referredUserName}} has joined VineMe through your referral',
     actionUrl: '/profile/{{referredUserId}}',
     variables: ['referredUserName', 'referredUserId'],
   },
-  
+
   referral_joined_group: {
     type: 'referral_joined_group',
     titleTemplate: 'Referral Joined Group',
-    bodyTemplate: '{{referredUserName}} joined "{{groupTitle}}" through your referral',
+    bodyTemplate:
+      '{{referredUserName}} joined "{{groupTitle}}" through your referral',
     actionUrl: '/group/{{groupId}}',
     variables: ['referredUserName', 'groupTitle', 'groupId'],
   },
-  
+
   event_reminder: {
     type: 'event_reminder',
     titleTemplate: 'Event Reminder',
@@ -116,122 +125,255 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
 };
 
 // Validation schemas for each notification type
-export const NOTIFICATION_VALIDATION_SCHEMAS: Record<NotificationType, NotificationValidationSchema> = {
+export const NOTIFICATION_VALIDATION_SCHEMAS: Record<
+  NotificationType,
+  NotificationValidationSchema
+> = {
   friend_request_received: {
     type: 'friend_request_received',
     rules: [
       { field: 'fromUserId', required: true, type: 'string', minLength: 1 },
       { field: 'toUserId', required: true, type: 'string', minLength: 1 },
-      { field: 'fromUserName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'fromUserName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
     ],
   },
-  
+
   friend_request_accepted: {
     type: 'friend_request_accepted',
     rules: [
-      { field: 'acceptedByUserId', required: true, type: 'string', minLength: 1 },
-      { field: 'acceptedByUserName', required: true, type: 'string', minLength: 1, maxLength: 100 },
-      { field: 'originalRequesterId', required: true, type: 'string', minLength: 1 },
+      {
+        field: 'acceptedByUserId',
+        required: true,
+        type: 'string',
+        minLength: 1,
+      },
+      {
+        field: 'acceptedByUserName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
+      {
+        field: 'originalRequesterId',
+        required: true,
+        type: 'string',
+        minLength: 1,
+      },
     ],
   },
-  
+
   group_request_submitted: {
     type: 'group_request_submitted',
     rules: [
       { field: 'groupId', required: true, type: 'string', minLength: 1 },
-      { field: 'groupTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
+      {
+        field: 'groupTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
       { field: 'creatorId', required: true, type: 'string', minLength: 1 },
-      { field: 'creatorName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'creatorName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
       { field: 'churchId', required: true, type: 'string', minLength: 1 },
     ],
   },
-  
+
   group_request_approved: {
     type: 'group_request_approved',
     rules: [
       { field: 'groupId', required: true, type: 'string', minLength: 1 },
-      { field: 'groupTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
+      {
+        field: 'groupTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
       { field: 'leaderId', required: true, type: 'string', minLength: 1 },
-      { field: 'approvedByName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'approvedByName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
     ],
   },
-  
+
   group_request_denied: {
     type: 'group_request_denied',
     rules: [
       { field: 'groupId', required: true, type: 'string', minLength: 1 },
-      { field: 'groupTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
+      {
+        field: 'groupTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
       { field: 'leaderId', required: true, type: 'string', minLength: 1 },
-      { field: 'deniedByName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'deniedByName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
       { field: 'reason', required: false, type: 'string', maxLength: 500 },
     ],
   },
-  
+
   join_request_received: {
     type: 'join_request_received',
     rules: [
       { field: 'groupId', required: true, type: 'string', minLength: 1 },
-      { field: 'groupTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
+      {
+        field: 'groupTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
       { field: 'requesterId', required: true, type: 'string', minLength: 1 },
-      { field: 'requesterName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'requesterName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
       { field: 'leaderIds', required: true, type: 'array', minLength: 1 },
     ],
   },
-  
+
   join_request_approved: {
     type: 'join_request_approved',
     rules: [
       { field: 'groupId', required: true, type: 'string', minLength: 1 },
-      { field: 'groupTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
+      {
+        field: 'groupTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
       { field: 'requesterId', required: true, type: 'string', minLength: 1 },
-      { field: 'approvedByName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'approvedByName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
     ],
   },
-  
+
   join_request_denied: {
     type: 'join_request_denied',
     rules: [
       { field: 'groupId', required: true, type: 'string', minLength: 1 },
-      { field: 'groupTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
+      {
+        field: 'groupTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
       { field: 'requesterId', required: true, type: 'string', minLength: 1 },
-      { field: 'deniedByName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'deniedByName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
     ],
   },
-  
+
   group_member_added: {
     type: 'group_member_added',
     rules: [
       { field: 'groupId', required: true, type: 'string', minLength: 1 },
-      { field: 'groupTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
-      { field: 'addedByName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'groupTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
+      {
+        field: 'addedByName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
     ],
   },
-  
+
   referral_accepted: {
     type: 'referral_accepted',
     rules: [
       { field: 'referrerId', required: true, type: 'string', minLength: 1 },
       { field: 'referredUserId', required: true, type: 'string', minLength: 1 },
-      { field: 'referredUserName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'referredUserName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
     ],
   },
-  
+
   referral_joined_group: {
     type: 'referral_joined_group',
     rules: [
       { field: 'referrerId', required: true, type: 'string', minLength: 1 },
       { field: 'referredUserId', required: true, type: 'string', minLength: 1 },
-      { field: 'referredUserName', required: true, type: 'string', minLength: 1, maxLength: 100 },
+      {
+        field: 'referredUserName',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 100,
+      },
       { field: 'groupId', required: true, type: 'string', minLength: 1 },
-      { field: 'groupTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
+      {
+        field: 'groupTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
     ],
   },
-  
+
   event_reminder: {
     type: 'event_reminder',
     rules: [
       { field: 'eventId', required: true, type: 'string', minLength: 1 },
-      { field: 'eventTitle', required: true, type: 'string', minLength: 1, maxLength: 200 },
+      {
+        field: 'eventTitle',
+        required: true,
+        type: 'string',
+        minLength: 1,
+        maxLength: 200,
+      },
       { field: 'eventDate', required: true, type: 'string', minLength: 1 },
       { field: 'userId', required: true, type: 'string', minLength: 1 },
       { field: 'reminderMinutes', required: true, type: 'number' },
@@ -262,21 +404,24 @@ export function formatNotificationMessage(
   data: NotificationTemplateData
 ): string {
   let formatted = template;
-  
+
   // Replace simple variables {{variable}}
   Object.entries(data).forEach(([key, value]) => {
     const regex = new RegExp(`{{${key}}}`, 'g');
     formatted = formatted.replace(regex, String(value));
   });
-  
+
   // Handle conditional sections {{#variable}}...{{/variable}}
-  formatted = formatted.replace(/{{#(\w+)}}(.*?){{\/\1}}/g, (match, variable, content) => {
-    return data[variable] ? content : '';
-  });
-  
+  formatted = formatted.replace(
+    /{{#(\w+)}}(.*?){{\/\1}}/g,
+    (match, variable, content) => {
+      return data[variable] ? content : '';
+    }
+  );
+
   // Clean up any remaining template variables
   formatted = formatted.replace(/{{[^}]+}}/g, '');
-  
+
   return formatted.trim();
 }
 
@@ -288,19 +433,19 @@ export function generateNotificationContent(
   triggerData: any
 ): { title: string; body: string; actionUrl?: string } {
   const template = NOTIFICATION_TEMPLATES[type];
-  
+
   if (!template) {
     throw new Error(`No template found for notification type: ${type}`);
   }
-  
+
   const templateData = triggerData as NotificationTemplateData;
-  
+
   const title = formatNotificationMessage(template.titleTemplate, templateData);
   const body = formatNotificationMessage(template.bodyTemplate, templateData);
-  const actionUrl = template.actionUrl 
+  const actionUrl = template.actionUrl
     ? formatNotificationMessage(template.actionUrl, templateData)
     : undefined;
-  
+
   return { title, body, actionUrl };
 }
 
@@ -311,22 +456,22 @@ export function sanitizeNotificationContent(content: string): string {
   if (!content || typeof content !== 'string') {
     return '';
   }
-  
+
   // Remove HTML tags
   let sanitized = content.replace(/<[^>]*>/g, '');
-  
+
   // Remove script-like content
   sanitized = sanitized.replace(/javascript:/gi, '');
   sanitized = sanitized.replace(/on\w+\s*=/gi, '');
-  
+
   // Limit length
   if (sanitized.length > 500) {
     sanitized = sanitized.substring(0, 497) + '...';
   }
-  
+
   // Trim whitespace
   sanitized = sanitized.trim();
-  
+
   return sanitized;
 }
 
@@ -339,7 +484,7 @@ export function validateNotificationData(
 ): { isValid: boolean; errors: NotificationError[] } {
   const schema = NOTIFICATION_VALIDATION_SCHEMAS[type];
   const errors: NotificationError[] = [];
-  
+
   if (!schema) {
     errors.push({
       code: 'INVALID_TYPE',
@@ -348,12 +493,15 @@ export function validateNotificationData(
     });
     return { isValid: false, errors };
   }
-  
+
   for (const rule of schema.rules) {
     const value = data[rule.field];
-    
+
     // Check required fields
-    if (rule.required && (value === undefined || value === null || value === '')) {
+    if (
+      rule.required &&
+      (value === undefined || value === null || value === '')
+    ) {
       errors.push({
         code: 'REQUIRED_FIELD_MISSING',
         message: `Required field '${rule.field}' is missing`,
@@ -362,12 +510,12 @@ export function validateNotificationData(
       });
       continue;
     }
-    
+
     // Skip validation if field is not required and not provided
     if (!rule.required && (value === undefined || value === null)) {
       continue;
     }
-    
+
     // Type validation
     if (rule.type && value !== undefined && value !== null) {
       const actualType = Array.isArray(value) ? 'array' : typeof value;
@@ -381,7 +529,7 @@ export function validateNotificationData(
         continue;
       }
     }
-    
+
     // String length validation
     if (rule.type === 'string' && typeof value === 'string') {
       if (rule.minLength && value.length < rule.minLength) {
@@ -389,20 +537,28 @@ export function validateNotificationData(
           code: 'MIN_LENGTH_VIOLATION',
           message: `Field '${rule.field}' must be at least ${rule.minLength} characters long`,
           type: 'validation',
-          details: { field: rule.field, minLength: rule.minLength, actualLength: value.length },
+          details: {
+            field: rule.field,
+            minLength: rule.minLength,
+            actualLength: value.length,
+          },
         });
       }
-      
+
       if (rule.maxLength && value.length > rule.maxLength) {
         errors.push({
           code: 'MAX_LENGTH_VIOLATION',
           message: `Field '${rule.field}' must be no more than ${rule.maxLength} characters long`,
           type: 'validation',
-          details: { field: rule.field, maxLength: rule.maxLength, actualLength: value.length },
+          details: {
+            field: rule.field,
+            maxLength: rule.maxLength,
+            actualLength: value.length,
+          },
         });
       }
     }
-    
+
     // Array length validation
     if (rule.type === 'array' && Array.isArray(value)) {
       if (rule.minLength && value.length < rule.minLength) {
@@ -410,13 +566,21 @@ export function validateNotificationData(
           code: 'MIN_LENGTH_VIOLATION',
           message: `Field '${rule.field}' must have at least ${rule.minLength} items`,
           type: 'validation',
-          details: { field: rule.field, minLength: rule.minLength, actualLength: value.length },
+          details: {
+            field: rule.field,
+            minLength: rule.minLength,
+            actualLength: value.length,
+          },
         });
       }
     }
-    
+
     // Pattern validation
-    if (rule.pattern && typeof value === 'string' && !rule.pattern.test(value)) {
+    if (
+      rule.pattern &&
+      typeof value === 'string' &&
+      !rule.pattern.test(value)
+    ) {
       errors.push({
         code: 'PATTERN_MISMATCH',
         message: `Field '${rule.field}' does not match required pattern`,
@@ -424,32 +588,41 @@ export function validateNotificationData(
         details: { field: rule.field, pattern: rule.pattern.toString() },
       });
     }
-    
+
     // Allowed values validation
     if (rule.allowedValues && !rule.allowedValues.includes(value)) {
       errors.push({
         code: 'INVALID_VALUE',
         message: `Field '${rule.field}' must be one of: ${rule.allowedValues.join(', ')}`,
         type: 'validation',
-        details: { field: rule.field, allowedValues: rule.allowedValues, actualValue: value },
+        details: {
+          field: rule.field,
+          allowedValues: rule.allowedValues,
+          actualValue: value,
+        },
       });
     }
   }
-  
+
   return { isValid: errors.length === 0, errors };
 }
 
 /**
  * Validate action URL against whitelist
  */
-export function validateActionUrl(url: string): { isValid: boolean; error?: NotificationError } {
+export function validateActionUrl(url: string): {
+  isValid: boolean;
+  error?: NotificationError;
+} {
   if (!url || typeof url !== 'string') {
     return { isValid: true }; // Empty URLs are allowed
   }
-  
+
   // Check against whitelisted patterns
-  const isAllowed = ALLOWED_ACTION_URL_PATTERNS.some(pattern => pattern.test(url));
-  
+  const isAllowed = ALLOWED_ACTION_URL_PATTERNS.some((pattern) =>
+    pattern.test(url)
+  );
+
   if (!isAllowed) {
     return {
       isValid: false,
@@ -461,18 +634,19 @@ export function validateActionUrl(url: string): { isValid: boolean; error?: Noti
       },
     };
   }
-  
+
   return { isValid: true };
 }
 
 /**
  * Validate complete notification input
  */
-export function validateNotificationInput(
-  input: CreateNotificationInput
-): { isValid: boolean; errors: NotificationError[] } {
+export function validateNotificationInput(input: CreateNotificationInput): {
+  isValid: boolean;
+  errors: NotificationError[];
+} {
   const errors: NotificationError[] = [];
-  
+
   // Validate basic structure
   if (!input.user_id || typeof input.user_id !== 'string') {
     errors.push({
@@ -481,7 +655,7 @@ export function validateNotificationInput(
       type: 'validation',
     });
   }
-  
+
   if (!input.type || typeof input.type !== 'string') {
     errors.push({
       code: 'INVALID_TYPE',
@@ -489,7 +663,7 @@ export function validateNotificationInput(
       type: 'validation',
     });
   }
-  
+
   if (!input.title || typeof input.title !== 'string') {
     errors.push({
       code: 'INVALID_TITLE',
@@ -497,7 +671,7 @@ export function validateNotificationInput(
       type: 'validation',
     });
   }
-  
+
   if (!input.body || typeof input.body !== 'string') {
     errors.push({
       code: 'INVALID_BODY',
@@ -505,16 +679,16 @@ export function validateNotificationInput(
       type: 'validation',
     });
   }
-  
+
   // Sanitize content
   if (input.title) {
     input.title = sanitizeNotificationContent(input.title);
   }
-  
+
   if (input.body) {
     input.body = sanitizeNotificationContent(input.body);
   }
-  
+
   // Validate action URL if provided
   if (input.action_url) {
     const urlValidation = validateActionUrl(input.action_url);
@@ -522,13 +696,16 @@ export function validateNotificationInput(
       errors.push(urlValidation.error);
     }
   }
-  
+
   // Validate data if provided
   if (input.data && input.type) {
-    const dataValidation = validateNotificationData(input.type as NotificationType, input.data);
+    const dataValidation = validateNotificationData(
+      input.type as NotificationType,
+      input.data
+    );
     errors.push(...dataValidation.errors);
   }
-  
+
   return { isValid: errors.length === 0, errors };
 }
 
@@ -543,12 +720,14 @@ export function createFormattedNotification(
   // Validate trigger data
   const validation = validateNotificationData(type, triggerData);
   if (!validation.isValid) {
-    throw new Error(`Invalid trigger data: ${validation.errors.map(e => e.message).join(', ')}`);
+    throw new Error(
+      `Invalid trigger data: ${validation.errors.map((e) => e.message).join(', ')}`
+    );
   }
-  
+
   // Generate content from template
   const content = generateNotificationContent(type, triggerData);
-  
+
   // Create notification input
   const notification: CreateNotificationInput = {
     user_id: userId,
@@ -558,13 +737,15 @@ export function createFormattedNotification(
     data: triggerData as Record<string, any>,
     action_url: content.actionUrl,
   };
-  
+
   // Final validation
   const inputValidation = validateNotificationInput(notification);
   if (!inputValidation.isValid) {
-    throw new Error(`Invalid notification input: ${inputValidation.errors.map(e => e.message).join(', ')}`);
+    throw new Error(
+      `Invalid notification input: ${inputValidation.errors.map((e) => e.message).join(', ')}`
+    );
   }
-  
+
   return notification;
 }
 

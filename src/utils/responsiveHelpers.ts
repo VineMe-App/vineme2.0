@@ -104,7 +104,7 @@ export class DeviceUtils {
     // Basic implementation - in real app, you'd use react-native-safe-area-context
     const topInset = Platform.OS === 'ios' ? 44 : 24; // Status bar height
     const bottomInset = Platform.OS === 'ios' ? 34 : 0; // Home indicator height
-    
+
     return {
       width: screenWidth,
       height: screenHeight - topInset - bottomInset,
@@ -151,11 +151,11 @@ export class ResponsiveSizing {
   static scaleFontSize(size: number): number {
     const fontScale = DeviceUtils.getFontScale();
     const scaledSize = this.moderateScale(size);
-    
+
     // Apply font scale but cap it to prevent extremely large text
     const maxScale = 1.3;
     const appliedScale = Math.min(fontScale, maxScale);
-    
+
     return Math.round(scaledSize * appliedScale);
   }
 
@@ -210,7 +210,10 @@ export class BreakpointUtils {
   /**
    * Check if current screen is between two breakpoints
    */
-  static isBetween(minBreakpoint: Breakpoint, maxBreakpoint: Breakpoint): boolean {
+  static isBetween(
+    minBreakpoint: Breakpoint,
+    maxBreakpoint: Breakpoint
+  ): boolean {
     updateDimensions();
     return (
       screenWidth >= breakpoints[minBreakpoint] &&
@@ -221,18 +224,24 @@ export class BreakpointUtils {
   /**
    * Get value based on breakpoint conditions
    */
-  static getValue<T>(breakpointValues: Partial<Record<Breakpoint, T>>, fallback: T): T {
+  static getValue<T>(
+    breakpointValues: Partial<Record<Breakpoint, T>>,
+    fallback: T
+  ): T {
     updateDimensions();
     const currentBreakpoint = this.getCurrentBreakpoint();
     const breakpointOrder: Breakpoint[] = ['xl', 'lg', 'md', 'sm', 'xs'];
-    
+
     // Find the best matching breakpoint value
     for (const bp of breakpointOrder) {
-      if (breakpoints[bp] <= screenWidth && breakpointValues[bp] !== undefined) {
+      if (
+        breakpoints[bp] <= screenWidth &&
+        breakpointValues[bp] !== undefined
+      ) {
         return breakpointValues[bp] as T;
       }
     }
-    
+
     return fallback;
   }
 
@@ -304,11 +313,16 @@ export class GridUtils {
    * Get responsive grid configuration
    */
   static getResponsiveGridConfig(
-    breakpointConfigs: Partial<Record<Breakpoint, {
-      columns: number;
-      spacing: number;
-      itemHeight?: number;
-    }>>
+    breakpointConfigs: Partial<
+      Record<
+        Breakpoint,
+        {
+          columns: number;
+          spacing: number;
+          itemHeight?: number;
+        }
+      >
+    >
   ): { columns: number; spacing: number; itemHeight: number } {
     const defaultConfig = {
       columns: 1,
@@ -395,7 +409,7 @@ export const responsiveUtils = {
   breakpoints: BreakpointUtils,
   grid: GridUtils,
   typography: ResponsiveTypography,
-  
+
   // Convenience methods
   isTablet: () => DeviceUtils.isTablet(),
   isPhone: () => DeviceUtils.isPhone(),
@@ -403,7 +417,8 @@ export const responsiveUtils = {
   isPortrait: () => DeviceUtils.isPortrait(),
   scaleWidth: (size: number) => ResponsiveSizing.scaleWidth(size),
   scaleHeight: (size: number) => ResponsiveSizing.scaleHeight(size),
-  moderateScale: (size: number, factor?: number) => ResponsiveSizing.moderateScale(size, factor),
+  moderateScale: (size: number, factor?: number) =>
+    ResponsiveSizing.moderateScale(size, factor),
   getCurrentBreakpoint: () => BreakpointUtils.getCurrentBreakpoint(),
 };
 

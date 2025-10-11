@@ -11,11 +11,7 @@ import { ThemeProvider } from '../../../../theme/provider/ThemeProvider';
 // Animated is mocked in test-setup.js
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(
-    <ThemeProvider>
-      {component}
-    </ThemeProvider>
-  );
+  return render(<ThemeProvider>{component}</ThemeProvider>);
 };
 
 describe('ProgressBar', () => {
@@ -33,11 +29,11 @@ describe('ProgressBar', () => {
 
   it('renders with custom dimensions', () => {
     const { getByTestId } = renderWithTheme(
-      <ProgressBar 
-        progress={75} 
-        width={300} 
-        height={12} 
-        testID="progress-bar" 
+      <ProgressBar
+        progress={75}
+        width={300}
+        height={12}
+        testID="progress-bar"
       />
     );
 
@@ -45,19 +41,19 @@ describe('ProgressBar', () => {
   });
 
   it('renders with different variants', () => {
-    const variants: Array<'default' | 'thin' | 'thick' | 'rounded'> = [
+    const variants: ('default' | 'thin' | 'thick' | 'rounded')[] = [
       'default',
       'thin',
       'thick',
-      'rounded'
+      'rounded',
     ];
 
     variants.forEach((variant) => {
       const { getByTestId } = renderWithTheme(
-        <ProgressBar 
-          progress={60} 
-          variant={variant} 
-          testID={`progress-bar-${variant}`} 
+        <ProgressBar
+          progress={60}
+          variant={variant}
+          testID={`progress-bar-${variant}`}
         />
       );
 
@@ -89,11 +85,11 @@ describe('ProgressBar', () => {
 
   it('renders with custom text', () => {
     const { getByText } = renderWithTheme(
-      <ProgressBar 
-        progress={50} 
-        showText={true} 
-        text="Loading..." 
-        testID="progress-bar" 
+      <ProgressBar
+        progress={50}
+        showText={true}
+        text="Loading..."
+        testID="progress-bar"
       />
     );
 
@@ -102,11 +98,11 @@ describe('ProgressBar', () => {
 
   it('applies custom colors', () => {
     const { getByTestId } = renderWithTheme(
-      <ProgressBar 
-        progress={60} 
-        color="#ff0000" 
-        backgroundColor="#f0f0f0" 
-        testID="progress-bar" 
+      <ProgressBar
+        progress={60}
+        color="#ff0000"
+        backgroundColor="#f0f0f0"
+        testID="progress-bar"
       />
     );
 
@@ -115,8 +111,8 @@ describe('ProgressBar', () => {
 
   it('has proper accessibility attributes', () => {
     const { getByRole } = renderWithTheme(
-      <ProgressBar 
-        progress={75} 
+      <ProgressBar
+        progress={75}
         testID="progress-bar"
         accessibilityLabel="File upload progress"
       />
@@ -133,12 +129,12 @@ describe('ProgressBar', () => {
 
   it('calls onComplete when progress reaches 100', () => {
     const onComplete = jest.fn();
-    
+
     renderWithTheme(
-      <ProgressBar 
-        progress={100} 
-        onComplete={onComplete} 
-        testID="progress-bar" 
+      <ProgressBar
+        progress={100}
+        onComplete={onComplete}
+        testID="progress-bar"
       />
     );
 
@@ -147,11 +143,7 @@ describe('ProgressBar', () => {
 
   it('does not animate when animated is false', () => {
     const { getByTestId } = renderWithTheme(
-      <ProgressBar 
-        progress={50} 
-        animated={false} 
-        testID="progress-bar" 
-      />
+      <ProgressBar progress={50} animated={false} testID="progress-bar" />
     );
 
     expect(getByTestId('progress-bar')).toBeTruthy();
@@ -160,13 +152,13 @@ describe('ProgressBar', () => {
   it('applies custom styles', () => {
     const customStyle = { marginTop: 20 };
     const fillStyle = { opacity: 0.8 };
-    
+
     const { getByTestId } = renderWithTheme(
-      <ProgressBar 
-        progress={50} 
-        style={customStyle} 
+      <ProgressBar
+        progress={50}
+        style={customStyle}
         fillStyle={fillStyle}
-        testID="progress-bar" 
+        testID="progress-bar"
       />
     );
 
@@ -192,11 +184,11 @@ describe('CircularProgress', () => {
 
   it('renders with custom size and stroke width', () => {
     const { getByTestId } = renderWithTheme(
-      <CircularProgress 
-        progress={75} 
-        size={80} 
-        strokeWidth={8} 
-        testID="circular-progress" 
+      <CircularProgress
+        progress={75}
+        size={80}
+        strokeWidth={8}
+        testID="circular-progress"
       />
     );
 
@@ -213,10 +205,10 @@ describe('CircularProgress', () => {
 
   it('renders with custom text', () => {
     const { getByText } = renderWithTheme(
-      <CircularProgress 
-        progress={50} 
-        text="50/100" 
-        testID="circular-progress" 
+      <CircularProgress
+        progress={50}
+        text="50/100"
+        testID="circular-progress"
       />
     );
 
@@ -225,10 +217,10 @@ describe('CircularProgress', () => {
 
   it('hides text when showText is false', () => {
     const { queryByText } = renderWithTheme(
-      <CircularProgress 
-        progress={75} 
-        showText={false} 
-        testID="circular-progress" 
+      <CircularProgress
+        progress={75}
+        showText={false}
+        testID="circular-progress"
       />
     );
 
@@ -237,12 +229,12 @@ describe('CircularProgress', () => {
 
   it('applies custom colors', () => {
     const { getByTestId } = renderWithTheme(
-      <CircularProgress 
-        progress={60} 
-        color="#00ff00" 
-        backgroundColor="#f0f0f0" 
+      <CircularProgress
+        progress={60}
+        color="#00ff00"
+        backgroundColor="#f0f0f0"
         textColor="#333333"
-        testID="circular-progress" 
+        testID="circular-progress"
       />
     );
 
@@ -265,8 +257,8 @@ describe('CircularProgress', () => {
 
   it('has proper accessibility attributes', () => {
     const { getByRole } = renderWithTheme(
-      <CircularProgress 
-        progress={75} 
+      <CircularProgress
+        progress={75}
         testID="circular-progress"
         accessibilityLabel="Download progress"
       />
@@ -283,10 +275,10 @@ describe('CircularProgress', () => {
 
   it('does not animate when animated is false', () => {
     const { getByTestId } = renderWithTheme(
-      <CircularProgress 
-        progress={50} 
-        animated={false} 
-        testID="circular-progress" 
+      <CircularProgress
+        progress={50}
+        animated={false}
+        testID="circular-progress"
       />
     );
 
@@ -295,12 +287,12 @@ describe('CircularProgress', () => {
 
   it('applies custom styles', () => {
     const customStyle = { marginTop: 20 };
-    
+
     const { getByTestId } = renderWithTheme(
-      <CircularProgress 
-        progress={50} 
-        style={customStyle} 
-        testID="circular-progress" 
+      <CircularProgress
+        progress={50}
+        style={customStyle}
+        testID="circular-progress"
       />
     );
 
