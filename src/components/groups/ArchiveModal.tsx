@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Text } from '../ui/Text';
 import { Modal } from '../ui/Modal';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { EmptyState } from '../ui/EmptyState';
 import { MembershipNotesSection } from './MembershipNotesSection';
 import { useAllGroupMemberships } from '../../hooks/useGroups';
 import { getFullName } from '../../utils/name';
@@ -59,9 +58,16 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
     activeTab === 'requests' ? archivedRequests : inactiveMembers;
 
   return (
-    <Modal isVisible={visible} onClose={onClose} title="Archive">
+    <Modal
+      isVisible={visible}
+      onClose={onClose}
+      title="Archive"
+      size="large"
+      variant="centered"
+      scrollable={true}
+    >
       {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
+      <View style={styles.tabsContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'requests' && styles.activeTab]}
           onPress={() => {
@@ -127,22 +133,8 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             <LoadingSpinner size="small" />
             <Text style={styles.loadingText}>Loading archive...</Text>
           </View>
-        ) : currentData.length === 0 ? (
-          <EmptyState
-            title={
-              activeTab === 'requests'
-                ? 'No archived requests'
-                : 'No past members'
-            }
-            message={
-              activeTab === 'requests'
-                ? 'Archived requests will appear here'
-                : 'Members who have left will appear here'
-            }
-            icon={null}
-          />
         ) : (
-          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+          <View style={styles.listContent}>
             {currentData.map((item) => {
               const fullName = getFullName(item.user);
               const isExpanded = expandedItemId === item.id;
@@ -195,7 +187,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
                 </View>
               );
             })}
-          </ScrollView>
+          </View>
         )}
       </View>
 
@@ -219,7 +211,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  tabContainer: {
+  tabsContainer: {
     flexDirection: 'row',
     backgroundColor: '#f3f4f6',
     borderRadius: 8,
@@ -270,8 +262,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    minHeight: 500,
-    maxHeight: 600,
+    minHeight: 400,
+    maxHeight: Dimensions.get('window').height * 0.9, // Use 90% of screen height for better responsiveness
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -284,9 +276,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
   list: {
     flex: 1,
+    minHeight: 200,
+  },
+  listContent: {
     paddingHorizontal: 16,
+    paddingBottom: 16,
+    minHeight: 200,
   },
   itemContainer: {
     marginBottom: 12,
