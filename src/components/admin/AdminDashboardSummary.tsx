@@ -67,15 +67,6 @@ export function AdminDashboardSummary({
   const { unreadNotifications = [], isLoading: isLoadingNotifications } =
     useEnhancedNotifications(user?.id);
 
-  const notificationCounts = {
-    group_requests: unreadNotifications.filter(
-      (n: any) => n.type === 'group_request_submitted'
-    ).length,
-    join_requests: unreadNotifications.filter(
-      (n: any) => n.type === 'join_request_received'
-    ).length,
-  };
-
   // Fetch stats with refetch functions
   const {
     data: newcomersStats,
@@ -92,6 +83,13 @@ export function AdminDashboardSummary({
     isLoading: isLoadingRequests,
     refetch: refetchRequests,
   } = useRequestsStats();
+
+  const notificationCounts = {
+    group_requests: groupsStats?.pending || 0, // Show actual count of groups pending approval
+    join_requests: unreadNotifications.filter(
+      (n: any) => n.type === 'join_request_received'
+    ).length,
+  };
 
   const isLoading =
     isLoadingNotifications ||
