@@ -624,7 +624,6 @@ export default function ManageGroupsScreen() {
           subtitle="Review and manage church groups"
           notificationCount={notificationCounts.group_requests}
           onHelpPress={() => setShowHelp(true)}
-          breadcrumbs={AdminNavigation.getBreadcrumbs('/admin/manage-groups')}
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
