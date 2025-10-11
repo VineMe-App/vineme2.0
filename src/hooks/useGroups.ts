@@ -108,6 +108,31 @@ export const useGroupMembers = (groupId: string | undefined) => {
 };
 
 /**
+ * Hook to get all group memberships (including archived and inactive)
+ * Only for group leaders
+ */
+export const useAllGroupMemberships = (
+  groupId: string | undefined,
+  userId: string | undefined
+) => {
+  return useQuery({
+    queryKey: [...groupKeys.members(groupId || ''), 'all', userId || ''],
+    queryFn: async () => {
+      if (!groupId || !userId)
+        throw new Error('Group ID and User ID are required');
+      const { data, error } = await groupService.getAllGroupMemberships(
+        groupId,
+        userId
+      );
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!groupId && !!userId,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+  });
+};
+
+/**
  * Hook to get group leaders/admins (public)
  */
 export const useGroupLeaders = (groupId: string | undefined) => {

@@ -478,6 +478,62 @@ export class GroupService {
   }
 
   /**
+   * Get all group memberships (including archived and inactive)
+   * Only for group leaders
+   */
+  async getAllGroupMemberships(
+    groupId: string,
+    userId: string
+  ): Promise<GroupServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      // Check if user is a leader
+      const permissionCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        userId
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to view all memberships'
+          ),
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, first_name, last_name, avatar_url, newcomer),
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
+        `
+        )
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      const normalized = (data || []).map((m: any) => ({
+        ...m,
+        user: withDisplayName(m.user),
+      }));
+
+      return { data: normalized, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get all group memberships'),
+      };
+    }
+  }
+
+  /**
    * Get user's friends who are in a specific group (active memberships)
    */
   async getFriendsInGroup(

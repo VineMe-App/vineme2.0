@@ -1,13 +1,15 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { Text } from '../ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '../ui/Modal';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 import { MembershipNotesSection } from './MembershipNotesSection';
 import type { GroupMembershipWithUser } from '../../types/database';
 import { getDisplayName, getFullName } from '@/utils/name';
+import { useGetContactInfo, useInitiateContactAction } from '../../hooks/useJoinRequests';
 
 interface MemberManagementModalProps {
   visible: boolean;
@@ -22,6 +24,11 @@ interface MemberManagementModalProps {
   loading: boolean;
 }
 
+// Helper function to ensure phone number has + prefix
+const formatPhoneNumber = (phone: string): string => {
+  return phone.startsWith('+') ? phone : `+${phone}`;
+};
+
 export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
   visible,
   member,
@@ -34,12 +41,59 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
   onRemoveMember,
   loading,
 }) => {
+  const [showContactInfo, setShowContactInfo] = useState(false);
+  
+  // All hooks must be called before any conditional returns
+  const hasContactConsent = member?.contact_consent === true;
+  const { data: contactInfo } = useGetContactInfo(
+    showContactInfo && hasContactConsent && member?.id ? member.id : undefined,
+    leaderId
+  );
+  const initiateContactMutation = useInitiateContactAction();
+  
   if (!member) return null;
 
   const isLeader = member.role === 'leader';
   const joinDate = new Date(member.joined_at).toLocaleDateString();
   const fullName = getFullName(member.user);
   const shortName = getDisplayName(member.user, { fallback: 'full' });
+
+  const handleContactPress = async (
+    type: 'phone' | 'email',
+    value: string
+  ) => {
+    try {
+      await initiateContactMutation.mutateAsync({
+        requestId: member.id,
+        leaderId,
+        contactType: type,
+        contactValue: value,
+      });
+
+      if (type === 'phone') {
+        const url = `tel:${formatPhoneNumber(value)}`;
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        } else {
+          Alert.alert('Error', 'Unable to make phone calls on this device');
+        }
+      } else if (type === 'email') {
+        const url = `mailto:${value}`;
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        } else {
+          Alert.alert('Error', 'Unable to open email on this device');
+        }
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to initiate contact'
+      );
+    }
+  };
 
   return (
     <Modal isVisible={visible} onClose={onClose} title="Manage Member">
@@ -69,6 +123,70 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
             <Text style={styles.joinDate}>Joined {joinDate}</Text>
           </View>
         </View>
+
+        {/* Contact Section */}
+        <View style={styles.contactSection}>
+          <View style={styles.contactHeader}>
+            <Text style={styles.contactTitle}>Contact details</Text>
+            <Badge
+              variant={hasContactConsent ? 'success' : 'secondary'}
+              style={styles.badge}
+            >
+              {hasContactConsent ? 'Contact allowed' : 'No consent'}
+            </Badge>
+          </View>
+          {hasContactConsent ? (
+            <TouchableOpacity
+              onPress={() => setShowContactInfo(!showContactInfo)}
+              style={styles.contactToggle}
+            >
+              <Text style={styles.contactToggleText}>
+                {showContactInfo ? 'Hide contact info' : 'Show contact info'}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.noContactText}>
+              This member has not shared their contact details with leaders.
+            </Text>
+          )}
+        </View>
+
+        {showContactInfo && contactInfo && (
+          <View style={styles.contactInfo}>
+            {contactInfo.email && (
+              <View style={styles.contactItem}>
+                <TouchableOpacity
+                  onPress={() =>
+                    contactInfo.email &&
+                    handleContactPress('email', contactInfo.email)
+                  }
+                  style={styles.contactMain}
+                  disabled={initiateContactMutation.isPending}
+                >
+                  <Ionicons name="mail-outline" size={20} color="#007AFF" />
+                  <Text style={styles.contactValue}>{contactInfo.email}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {contactInfo.phone_number && (
+              <View style={styles.contactItem}>
+                <TouchableOpacity
+                  onPress={() =>
+                    contactInfo.phone_number &&
+                    handleContactPress('phone', contactInfo.phone_number)
+                  }
+                  style={styles.contactMain}
+                  disabled={initiateContactMutation.isPending}
+                >
+                  <Ionicons name="call-outline" size={20} color="#007AFF" />
+                  <Text style={styles.contactValue}>
+                    {contactInfo.phone_number}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Notes Section */}
         <View style={styles.notesContainer}>
@@ -210,6 +328,67 @@ const styles = StyleSheet.create({
   joinDate: {
     fontSize: 14,
     color: '#999',
+  },
+  contactSection: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  contactHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  contactTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  badge: {
+    alignSelf: 'flex-start',
+  },
+  contactToggle: {
+    paddingVertical: 8,
+  },
+  contactToggleText: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
+  },
+  noContactText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontStyle: 'italic',
+  },
+  contactInfo: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  contactItem: {
+    marginBottom: 12,
+  },
+  contactMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  contactValue: {
+    marginLeft: 12,
+    fontSize: 15,
+    color: '#1f2937',
+    fontWeight: '500',
   },
   actions: {
     gap: 12,

@@ -44,6 +44,9 @@ export class JoinRequestService {
         .eq('user_id', requestData.user_id)
         .single();
 
+      let data: any = null;
+      let error: any = null;
+
       if (existingMembership) {
         if (existingMembership.status === 'active') {
           return {
@@ -59,20 +62,70 @@ export class JoinRequestService {
             ),
           };
         }
-      }
 
-      // No separate join requests table. Create/ensure a pending membership instead
-      const { data, error } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: requestData.group_id,
-          user_id: requestData.user_id,
-          role: 'member',
-          status: 'pending',
-          // joined_at is set when request is approved
-        })
-        .select()
-        .single();
+        // If they were inactive or archived, reuse the existing membership row
+        if (
+          existingMembership.status === 'inactive' ||
+          existingMembership.status === 'archived'
+        ) {
+          const updateResult = await supabase
+            .from('group_memberships')
+            .update({
+              status: 'pending',
+              journey_status: null, // Reset journey status for new request
+              contact_consent: requestData.contact_consent || false,
+            })
+            .eq('id', existingMembership.id)
+            .select()
+            .single();
+
+          data = updateResult.data;
+          error = updateResult.error;
+
+          // Create note for the status change (rejoin request)
+          if (!error && data) {
+            try {
+              // Use appropriate note_type based on previous status
+              const noteType: 'request_archived' | 'member_left' =
+                existingMembership.status === 'inactive'
+                  ? 'member_left'
+                  : 'request_archived';
+              
+              await groupMembershipNotesService.createStatusChangeNote(
+                {
+                  membership_id: existingMembership.id,
+                  group_id: requestData.group_id,
+                  user_id: requestData.user_id,
+                  note_type: noteType,
+                  previous_status: existingMembership.status,
+                  new_status: 'pending',
+                  note_text: 'User requested to rejoin the group',
+                },
+                requestData.user_id
+              );
+            } catch (noteError) {
+              if (__DEV__)
+                console.warn('Failed to create rejoin note:', noteError);
+            }
+          }
+        }
+      } else {
+        // No existing membership, create new one
+        const insertResult = await supabase
+          .from('group_memberships')
+          .insert({
+            group_id: requestData.group_id,
+            user_id: requestData.user_id,
+            role: 'member',
+            status: 'pending',
+            contact_consent: requestData.contact_consent || false,
+          })
+          .select()
+          .single();
+
+        data = insertResult.data;
+        error = insertResult.error;
+      }
 
       if (error) {
         return { data: null, error: new Error(error.message) };

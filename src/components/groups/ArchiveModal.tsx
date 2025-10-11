@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { EmptyState } from '../ui/EmptyState';
 import { MembershipNotesSection } from './MembershipNotesSection';
-import { useGroupMembers } from '../../hooks/useGroups';
+import { useAllGroupMemberships } from '../../hooks/useGroups';
 import { getFullName } from '../../utils/name';
 
 interface ArchiveModalProps {
@@ -29,7 +29,10 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
   const [activeTab, setActiveTab] = useState<ArchiveTab>('requests');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
-  const { data: allMembers, isLoading } = useGroupMembers(groupId);
+  const { data: allMembers, isLoading } = useAllGroupMemberships(
+    groupId,
+    leaderId
+  );
 
   // Filter archived requests (pending that were archived)
   const archivedRequests =
@@ -72,10 +75,12 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             color={activeTab === 'requests' ? '#ec4899' : '#6b7280'}
           />
           <Text
-            style={[
-              styles.tabText,
-              activeTab === 'requests' && styles.activeTabText,
-            ]}
+            style={
+              [
+                styles.tabText,
+                activeTab === 'requests' && styles.activeTabText,
+              ] as any
+            }
           >
             Archived Requests
           </Text>
@@ -98,10 +103,12 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             color={activeTab === 'members' ? '#ec4899' : '#6b7280'}
           />
           <Text
-            style={[
-              styles.tabText,
-              activeTab === 'members' && styles.activeTabText,
-            ]}
+            style={
+              [
+                styles.tabText,
+                activeTab === 'members' && styles.activeTabText,
+              ] as any
+            }
           >
             Past Members
           </Text>
@@ -135,10 +142,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             icon={null}
           />
         ) : (
-          <ScrollView
-            style={styles.list}
-            showsVerticalScrollIndicator={false}
-          >
+          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
             {currentData.map((item) => {
               const fullName = getFullName(item.user);
               const isExpanded = expandedItemId === item.id;
@@ -266,7 +270,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    minHeight: 300,
+    minHeight: 500,
+    maxHeight: 600,
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -339,4 +344,3 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
-

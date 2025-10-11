@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupCreationService } from '../services/groupCreation';
 import { groupKeys } from './useGroups';
+import { noteKeys } from './useGroupMembershipNotes';
 import type { UpdateGroupData } from '../services/admin';
 
 /**
@@ -66,6 +67,8 @@ export const usePromoteToLeader = () => {
       // Invalidate group members to refetch with updated roles
       queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      // Invalidate notes queries (since we create a role change note)
+      queryClient.invalidateQueries({ queryKey: noteKeys.all });
     },
     onError: (error) => {
       console.error('Failed to promote to leader:', error);
@@ -101,6 +104,8 @@ export const useDemoteFromLeader = () => {
       // Invalidate group members to refetch with updated roles
       queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      // Invalidate notes queries (since we create a role change note)
+      queryClient.invalidateQueries({ queryKey: noteKeys.all });
     },
     onError: (error) => {
       console.error('Failed to demote from leader:', error);
@@ -132,10 +137,16 @@ export const useRemoveMember = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, { groupId }) => {
+    onSuccess: (data, { groupId, userId }) => {
       // Invalidate group members to refetch without removed member
       queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      // Also invalidate all memberships query (for archive view)
+      queryClient.invalidateQueries({
+        queryKey: [...groupKeys.members(groupId), 'all'],
+      });
+      // Invalidate notes queries (since we create a member removal note)
+      queryClient.invalidateQueries({ queryKey: noteKeys.all });
     },
     onError: (error) => {
       console.error('Failed to remove member:', error);
