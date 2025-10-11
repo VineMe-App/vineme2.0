@@ -15,7 +15,7 @@ interface SimplePieChartProps {
 }
 
 /**
- * Simple pie chart using horizontal bars with percentage indicators
+ * Simple chart with all segments in a single horizontal bar
  * This avoids needing react-native-svg dependency
  */
 export const SimplePieChart: React.FC<SimplePieChartProps> = ({
@@ -49,36 +49,42 @@ export const SimplePieChart: React.FC<SimplePieChartProps> = ({
         <Text style={styles.totalLabel}>Total</Text>
       </View>
 
-      {/* Segments as horizontal bars */}
-      <View style={styles.barsContainer}>
+      {/* Single bar with all segments */}
+      <View style={styles.singleBarContainer}>
         {segments.map((segment, index) => {
           const percentage = (segment.value / total) * 100;
           return (
-            <View key={index} style={styles.segmentContainer}>
-              <View style={styles.segmentHeader}>
-                <View style={styles.labelRow}>
-                  <View
-                    style={[
-                      styles.colorIndicator,
-                      { backgroundColor: segment.color },
-                    ]}
-                  />
-                  <Text style={styles.segmentLabel}>{segment.label}</Text>
-                </View>
-                <Text style={styles.segmentValue}>
+            <View
+              key={index}
+              style={[
+                styles.barSegment,
+                {
+                  width: `${percentage}%`,
+                  backgroundColor: segment.color,
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
+
+      {/* Legend below the bar */}
+      <View style={styles.legend}>
+        {segments.map((segment, index) => {
+          const percentage = (segment.value / total) * 100;
+          return (
+            <View key={index} style={styles.legendItem}>
+              <View
+                style={[
+                  styles.colorIndicator,
+                  { backgroundColor: segment.color },
+                ]}
+              />
+              <View style={styles.legendTextContainer}>
+                <Text style={styles.legendLabel}>{segment.label}</Text>
+                <Text style={styles.legendValue}>
                   {segment.value} ({Math.round(percentage)}%)
                 </Text>
-              </View>
-              <View style={styles.barContainer}>
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      width: `${percentage}%`,
-                      backgroundColor: segment.color,
-                    },
-                  ]}
-                />
               </View>
             </View>
           );
@@ -115,46 +121,44 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 4,
   },
-  barsContainer: {
-    gap: 12,
-  },
-  segmentContainer: {
-    gap: 6,
-  },
-  segmentHeader: {
+  singleBarContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    height: 28,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: 16,
   },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  barSegment: {
+    height: '100%',
+  },
+  legend: {
     gap: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   colorIndicator: {
     width: 14,
     height: 14,
     borderRadius: 3,
   },
-  segmentLabel: {
+  legendTextContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  legendLabel: {
     fontSize: 14,
     color: '#374151',
     fontWeight: '500',
   },
-  segmentValue: {
+  legendValue: {
     fontSize: 13,
     color: '#6b7280',
     fontWeight: '600',
-  },
-  barContainer: {
-    height: 8,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  bar: {
-    height: '100%',
-    borderRadius: 4,
   },
   emptyContainer: {
     alignItems: 'center',
