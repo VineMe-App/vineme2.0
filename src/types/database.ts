@@ -58,6 +58,7 @@ export interface Group {
   service_id: string;
   church_id: string;
   status: 'pending' | 'approved' | 'denied' | 'closed';
+  at_capacity: boolean; // Whether the group is currently at capacity
   created_at: string;
   updated_at?: string;
 }

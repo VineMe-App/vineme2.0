@@ -155,6 +155,41 @@ export const useRemoveMember = () => {
 };
 
 /**
+ * Hook for toggling group capacity status
+ */
+export const useToggleGroupCapacity = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      groupId,
+      userId,
+      atCapacity,
+    }: {
+      groupId: string;
+      userId: string;
+      atCapacity: boolean;
+    }) => {
+      const { data, error } = await groupCreationService.toggleGroupCapacity(
+        groupId,
+        userId,
+        atCapacity
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, { groupId }) => {
+      // Invalidate group data to refetch with updated capacity status
+      queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.all });
+    },
+    onError: (error) => {
+      console.error('Failed to toggle group capacity:', error);
+    },
+  });
+};
+
+/**
  * Combined hook for all group leader actions
  */
 export const useGroupLeaderActions = () => {
@@ -162,11 +197,13 @@ export const useGroupLeaderActions = () => {
   const promoteToLeaderMutation = usePromoteToLeader();
   const demoteFromLeaderMutation = useDemoteFromLeader();
   const removeMemberMutation = useRemoveMember();
+  const toggleGroupCapacityMutation = useToggleGroupCapacity();
 
   return {
     updateGroupDetailsMutation,
     promoteToLeaderMutation,
     demoteFromLeaderMutation,
     removeMemberMutation,
+    toggleGroupCapacityMutation,
   };
 };

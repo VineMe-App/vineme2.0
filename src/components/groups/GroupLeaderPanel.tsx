@@ -51,6 +51,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
     promoteToLeaderMutation,
     demoteFromLeaderMutation,
     removeMemberMutation,
+    toggleGroupCapacityMutation,
   } = useGroupLeaderActions();
 
   // Check if current user is a leader of this group
@@ -216,6 +217,43 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
     setSelectedMember(null);
   };
 
+  const handleToggleCapacity = async () => {
+    if (!userProfile?.id) return;
+
+    const newCapacityStatus = !group.at_capacity;
+    const message = newCapacityStatus
+      ? 'This will mark the group as full. Members can still apply but will see a warning that acceptance is unlikely.'
+      : 'This will mark the group as accepting new members.';
+
+    Alert.alert(
+      newCapacityStatus ? 'Mark as Full?' : 'Mark as Available?',
+      message,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              await toggleGroupCapacityMutation.mutateAsync({
+                groupId: group.id,
+                userId: userProfile.id,
+                atCapacity: newCapacityStatus,
+              });
+              onGroupUpdated?.();
+            } catch (error) {
+              Alert.alert(
+                'Error',
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to update capacity status'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -238,6 +276,55 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
             <Text style={styles.editButtonText}>Edit Details</Text>
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Capacity Status */}
+      <View style={styles.capacitySection}>
+        <View style={styles.capacityInfo}>
+          <Ionicons
+            name={group.at_capacity ? 'people' : 'checkmark-circle'}
+            size={20}
+            color={group.at_capacity ? '#f97316' : '#10b981'}
+          />
+          <View style={styles.capacityTextContainer}>
+            <Text style={styles.capacityLabel}>
+              {group.at_capacity ? 'Group is Full' : 'Accepting New Members'}
+            </Text>
+            <Text style={styles.capacityDescription}>
+              {group.at_capacity
+                ? 'Members can still apply but will see a warning'
+                : 'Group is open for new member applications'}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={handleToggleCapacity}
+          style={[
+            styles.capacityToggle,
+            group.at_capacity ? styles.capacityToggleFull : styles.capacityToggleAvailable,
+          ]}
+          disabled={toggleGroupCapacityMutation.isPending}
+        >
+          {toggleGroupCapacityMutation.isPending ? (
+            <LoadingSpinner size="small" />
+          ) : (
+            <>
+              <Ionicons
+                name={group.at_capacity ? 'checkmark-circle-outline' : 'close-circle-outline'}
+                size={16}
+                color={group.at_capacity ? '#10b981' : '#f97316'}
+              />
+              <Text
+                style={[
+                  styles.capacityToggleText,
+                  group.at_capacity ? styles.capacityToggleTextAvailable : styles.capacityToggleTextFull,
+                ]}
+              >
+                {group.at_capacity ? 'Mark as Available' : 'Mark as Full'}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Tab Navigation */}
@@ -457,6 +544,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  capacitySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    marginBottom: 16,
+  },
+  capacityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  capacityTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  capacityLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 2,
+  },
+  capacityDescription: {
+    fontSize: 12,
+    color: '#6b7280',
+    lineHeight: 16,
+  },
+  capacityToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginLeft: 12,
+  },
+  capacityToggleFull: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#10b981',
+  },
+  capacityToggleAvailable: {
+    backgroundColor: '#fff7ed',
+    borderColor: '#f97316',
+  },
+  capacityToggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  capacityToggleTextAvailable: {
+    color: '#10b981',
+  },
+  capacityToggleTextFull: {
+    color: '#f97316',
   },
   section: {
     marginBottom: 16,

@@ -92,6 +92,7 @@ export interface UpdateGroupData {
   location?: any;
   whatsapp_link?: string;
   image_url?: string;
+  at_capacity?: boolean;
 }
 
 const withDisplayName = <

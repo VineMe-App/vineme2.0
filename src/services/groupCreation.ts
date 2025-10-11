@@ -290,6 +290,31 @@ export class GroupCreationService {
   }
 
   /**
+   * Toggle group capacity status
+   */
+  async toggleGroupCapacity(
+    groupId: string,
+    userId: string,
+    atCapacity: boolean
+  ): Promise<AdminServiceResponse<Group>> {
+    try {
+      return this.updateGroupDetails(
+        groupId,
+        { at_capacity: atCapacity },
+        userId
+      );
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to toggle group capacity'),
+      };
+    }
+  }
+
+  /**
    * Promote a member to leader
    */
   async promoteToLeader(
