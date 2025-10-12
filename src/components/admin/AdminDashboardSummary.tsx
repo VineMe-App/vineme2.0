@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
 
   // Header Section
   headerSection: {
-    marginBottom: 20,
+    marginBottom: 16,
     paddingTop: 4,
   },
   headerTitle: {
@@ -328,14 +328,14 @@ const styles = StyleSheet.create({
   buttonsSection: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   actionButton: {
     flex: 1,
     backgroundColor: '#ffffff',
     borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
@@ -351,10 +351,10 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   buttonText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: '#1f2937',
     textAlign: 'center',
@@ -362,13 +362,13 @@ const styles = StyleSheet.create({
 
   // Stats Section
   statsSection: {
-    gap: 20,
+    gap: 16,
     paddingBottom: 24,
   },
   statCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -381,44 +381,44 @@ const styles = StyleSheet.create({
     borderColor: '#f3f4f6',
   },
   statTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
   },
   subTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#6b7280',
-    marginTop: 16,
-    marginBottom: 12,
+    marginTop: 12,
+    marginBottom: 8,
     textAlign: 'center',
   },
   outstandingContainer: {
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
     marginBottom: 8,
     backgroundColor: '#f9fafb',
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
   outstandingNumber: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: '700',
     color: '#8b5cf6',
-    lineHeight: 44,
+    lineHeight: 32,
   },
   outstandingLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#6b7280',
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: 2,
   },
   noDataContainer: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 16,
   },
   noDataText: {
     fontSize: 14,

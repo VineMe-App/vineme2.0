@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
 import { Text } from './Text';
 
 export interface PieChartSegment {
@@ -15,8 +15,7 @@ interface SimplePieChartProps {
 }
 
 /**
- * Simple chart with all segments in a single horizontal bar
- * This avoids needing react-native-svg dependency
+ * Animated horizontal bar chart with colored segments (original style with animations)
  */
 export const SimplePieChart: React.FC<SimplePieChartProps> = ({
   segments,
@@ -49,20 +48,16 @@ export const SimplePieChart: React.FC<SimplePieChartProps> = ({
         <Text style={styles.totalLabel}>Total</Text>
       </View>
 
-      {/* Single bar with all segments */}
+      {/* Animated Horizontal Bar with Segments */}
       <View style={styles.singleBarContainer}>
         {segments.map((segment, index) => {
           const percentage = (segment.value / total) * 100;
           return (
-            <View
+            <AnimatedBarSegment
               key={index}
-              style={[
-                styles.barSegment,
-                {
-                  width: `${percentage}%`,
-                  backgroundColor: segment.color,
-                },
-              ]}
+              width={`${percentage}%`}
+              color={segment.color}
+              delay={index * 200} // Stagger animation
             />
           );
         })}
@@ -91,6 +86,48 @@ export const SimplePieChart: React.FC<SimplePieChartProps> = ({
         })}
       </View>
     </View>
+  );
+};
+
+/**
+ * Animated bar segment that grows from left to right
+ */
+interface AnimatedBarSegmentProps {
+  width: string;
+  color: string;
+  delay: number;
+}
+
+const AnimatedBarSegment: React.FC<AnimatedBarSegmentProps> = ({
+  width,
+  color,
+  delay,
+}) => {
+  const animatedWidth = React.useMemo(() => new Animated.Value(0), []);
+
+  React.useEffect(() => {
+    // Animate width from 0 to target width
+    Animated.timing(animatedWidth, {
+      toValue: parseFloat(width),
+      duration: 800,
+      delay,
+      useNativeDriver: false,
+    }).start();
+  }, [animatedWidth, width, delay]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.barSegment,
+        {
+          width: animatedWidth.interpolate({
+            inputRange: [0, 100],
+            outputRange: ['0%', '100%'],
+          }),
+          backgroundColor: color,
+        },
+      ]}
+    />
   );
 };
 
