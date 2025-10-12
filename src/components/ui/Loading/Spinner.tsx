@@ -18,37 +18,37 @@ export interface SpinnerProps {
    * Size of the spinner
    */
   size?: 'small' | 'medium' | 'large' | number;
-  
+
   /**
    * Color of the spinner. If not provided, uses theme primary color
    */
   color?: string;
-  
+
   /**
    * Variant of the spinner animation
    */
   variant?: 'circular' | 'dots' | 'pulse' | 'bars';
-  
+
   /**
    * Animation duration in milliseconds
    */
   duration?: number;
-  
+
   /**
    * Whether the spinner is visible
    */
   visible?: boolean;
-  
+
   /**
    * Additional styles
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Accessibility label
    */
@@ -74,11 +74,11 @@ export const Spinner: React.FC<SpinnerProps> = ({
   const { theme } = useTheme();
   const spinValue = useRef(new Animated.Value(0)).current;
   const pulseValue = useRef(new Animated.Value(0)).current;
-  
+
   const spinnerSize = typeof size === 'number' ? size : SIZE_MAP[size];
   const spinnerColor = color || theme.colors.primary[500];
   const animationDuration = duration || theme.animations.timing.spinner;
-  
+
   useEffect(() => {
     if (!visible) {
       spinValue.setValue(0);
@@ -190,9 +190,12 @@ export const Spinner: React.FC<SpinnerProps> = ({
                     backgroundColor: spinnerColor,
                     opacity: spinValue.interpolate({
                       inputRange: [0, 0.33, 0.66, 1],
-                      outputRange: index === 0 ? [1, 0.3, 0.3, 1] : 
-                                  index === 1 ? [0.3, 1, 0.3, 0.3] : 
-                                               [0.3, 0.3, 1, 0.3],
+                      outputRange:
+                        index === 0
+                          ? [1, 0.3, 0.3, 1]
+                          : index === 1
+                            ? [0.3, 1, 0.3, 0.3]
+                            : [0.3, 0.3, 1, 0.3],
                     }),
                   },
                 ]}
@@ -243,10 +246,14 @@ export const Spinner: React.FC<SpinnerProps> = ({
                       {
                         scaleY: spinValue.interpolate({
                           inputRange: [0, 0.25, 0.5, 0.75, 1],
-                          outputRange: index === 0 ? [1, 0.4, 0.4, 0.4, 1] :
-                                      index === 1 ? [0.4, 1, 0.4, 0.4, 0.4] :
-                                      index === 2 ? [0.4, 0.4, 1, 0.4, 0.4] :
-                                                   [0.4, 0.4, 0.4, 1, 0.4],
+                          outputRange:
+                            index === 0
+                              ? [1, 0.4, 0.4, 0.4, 1]
+                              : index === 1
+                                ? [0.4, 1, 0.4, 0.4, 0.4]
+                                : index === 2
+                                  ? [0.4, 0.4, 1, 0.4, 0.4]
+                                  : [0.4, 0.4, 0.4, 1, 0.4],
                         }),
                       },
                     ],

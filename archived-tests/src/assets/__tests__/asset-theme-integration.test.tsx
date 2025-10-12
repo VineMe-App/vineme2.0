@@ -26,18 +26,20 @@ jest.mock('react-native', () => ({
 // Test component that uses theme assets
 const TestAssetComponent: React.FC = () => {
   const { assets, updateAssets, isDark } = useTheme();
-  
+
   return (
     <>
       <Logo testID="theme-logo" />
       <button
         testID="update-assets-btn"
-        onClick={() => updateAssets({
-          logos: {
-            ...assets.logos,
-            custom: { uri: 'custom-logo.png' },
-          },
-        })}
+        onClick={() =>
+          updateAssets({
+            logos: {
+              ...assets.logos,
+              custom: { uri: 'custom-logo.png' },
+            },
+          })
+        }
       >
         Update Assets
       </button>
@@ -55,7 +57,7 @@ describe('Asset-Theme Integration', () => {
   describe('Theme Provider Asset Integration', () => {
     it('should provide assets through theme context', () => {
       let capturedAssets: any;
-      
+
       const TestComponent = () => {
         const { assets } = useTheme();
         capturedAssets = assets;
@@ -76,7 +78,7 @@ describe('Asset-Theme Integration', () => {
 
     it('should provide updateAssets function through theme context', () => {
       let capturedUpdateAssets: any;
-      
+
       const TestComponent = () => {
         const { updateAssets } = useTheme();
         capturedUpdateAssets = updateAssets;
@@ -96,7 +98,7 @@ describe('Asset-Theme Integration', () => {
     it('should update assets through theme context', () => {
       const TestComponent = () => {
         const { assets, updateAssets } = useTheme();
-        
+
         React.useEffect(() => {
           updateAssets({
             icons: {
@@ -105,7 +107,9 @@ describe('Asset-Theme Integration', () => {
           });
         }, [updateAssets]);
 
-        return <span testID="test-icon">{JSON.stringify(assets.icons.test)}</span>;
+        return (
+          <span testID="test-icon">{JSON.stringify(assets.icons.test)}</span>
+        );
       };
 
       render(
@@ -177,7 +181,7 @@ describe('Asset-Theme Integration', () => {
   describe('Asset Fallback Mechanisms', () => {
     it('should handle missing assets gracefully', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       // Clear assets to simulate missing assets
       assetManager.updateAssets({
         logos: {} as any,
@@ -191,7 +195,7 @@ describe('Asset-Theme Integration', () => {
 
       // Should still render without crashing
       expect(screen.getByTestId('fallback-logo')).toBeTruthy();
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -222,11 +226,11 @@ describe('Asset-Theme Integration', () => {
   describe('Performance Considerations', () => {
     it('should not cause unnecessary re-renders when assets update', () => {
       let renderCount = 0;
-      
+
       const TestComponent = () => {
         renderCount++;
         const { updateAssets } = useTheme();
-        
+
         return (
           <button
             testID="update-btn"
@@ -260,10 +264,10 @@ describe('Asset-Theme Integration', () => {
   describe('Error Boundaries', () => {
     it('should handle asset update errors gracefully', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       const TestComponent = () => {
         const { updateAssets } = useTheme();
-        
+
         React.useEffect(() => {
           // Try to update with invalid data
           updateAssets(null as any);

@@ -10,7 +10,7 @@ interface FriendRequestCardProps {
   type: 'sent' | 'received';
   onAccept?: (friendshipId: string) => void;
   onReject?: (friendshipId: string) => void;
-  onCancel?: (friendshipId: string) => void;
+  onCancel?: (friendship: FriendshipWithUser) => void;
   isLoading?: boolean;
 }
 
@@ -45,8 +45,11 @@ export function FriendRequestCard({
   };
 
   const handleCancel = () => {
-    onCancel?.(friendship.id);
+    onCancel?.(friendship);
   };
+
+  const showCancel =
+    type === 'sent' && friendship.status === 'pending' && !!onCancel;
 
   return (
     <View style={styles.container}>
@@ -58,11 +61,7 @@ export function FriendRequestCard({
         accessibilityRole="button"
         accessibilityLabel={`View ${fullName || 'user'}'s profile`}
       >
-        <Avatar
-          imageUrl={displayUser.avatar_url}
-          name={fullName}
-          size={50}
-        />
+        <Avatar imageUrl={displayUser.avatar_url} name={fullName} size={50} />
         <View style={styles.textContainer}>
           <Text style={styles.name}>{shortName || fullName || 'User'}</Text>
           <Text style={styles.email}>{displayUser.email}</Text>
@@ -91,13 +90,15 @@ export function FriendRequestCard({
             </TouchableOpacity>
           </>
         ) : (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.cancelButton]}
-            onPress={handleCancel}
-            disabled={isLoading}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+          showCancel && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.cancelButton]}
+              onPress={handleCancel}
+              disabled={isLoading}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          )
         )}
       </View>
     </View>

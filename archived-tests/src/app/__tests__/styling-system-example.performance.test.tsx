@@ -61,7 +61,7 @@ describe('StylingSystemExample - Performance', () => {
 
     it('does not cause memory leaks during initial render', () => {
       const initialMemory = measureMemoryUsage();
-      
+
       const { unmount } = render(
         <ThemeProvider initialTheme="light">
           <StylingSystemExample />
@@ -76,10 +76,11 @@ describe('StylingSystemExample - Performance', () => {
       }
 
       const finalMemory = measureMemoryUsage();
-      
+
       if (initialMemory && finalMemory) {
         // Memory usage should not increase significantly
-        const memoryIncrease = finalMemory.usedJSHeapSize - initialMemory.usedJSHeapSize;
+        const memoryIncrease =
+          finalMemory.usedJSHeapSize - initialMemory.usedJSHeapSize;
         expect(memoryIncrease).toBeLessThan(1024 * 1024); // Less than 1MB increase
       }
     });
@@ -126,7 +127,7 @@ describe('StylingSystemExample - Performance', () => {
       }
 
       // All switches should be fast
-      renderTimes.forEach(time => {
+      renderTimes.forEach((time) => {
         expect(time).toBeLessThan(50);
       });
 
@@ -144,7 +145,7 @@ describe('StylingSystemExample - Performance', () => {
   describe('Animation Performance', () => {
     it('handles progress bar updates efficiently', () => {
       jest.useFakeTimers();
-      
+
       const { renderTime } = measureRenderTime(() =>
         render(
           <ThemeProvider initialTheme="light">
@@ -166,7 +167,7 @@ describe('StylingSystemExample - Performance', () => {
 
     it('maintains frame rate during animations', () => {
       jest.useFakeTimers();
-      
+
       render(
         <ThemeProvider initialTheme="light">
           <StylingSystemExample />
@@ -174,22 +175,24 @@ describe('StylingSystemExample - Performance', () => {
       );
 
       const frameRates: number[] = [];
-      
+
       // Simulate frame rate measurement during animations
-      for (let i = 0; i < 60; i++) { // 1 second at 60fps
+      for (let i = 0; i < 60; i++) {
+        // 1 second at 60fps
         const frameStart = performance.now();
-        
+
         act(() => {
           jest.advanceTimersByTime(16.67); // ~60fps
         });
-        
+
         const frameEnd = performance.now();
         const frameTime = frameEnd - frameStart;
         frameRates.push(1000 / frameTime); // Convert to FPS
       }
 
       // Should maintain reasonable frame rates
-      const avgFrameRate = frameRates.reduce((a, b) => a + b) / frameRates.length;
+      const avgFrameRate =
+        frameRates.reduce((a, b) => a + b) / frameRates.length;
       expect(avgFrameRate).toBeGreaterThan(30); // At least 30fps
 
       jest.useRealTimers();
@@ -222,7 +225,7 @@ describe('StylingSystemExample - Performance', () => {
 
       // Measure multiple input changes
       const renderTimes: number[] = [];
-      
+
       for (let i = 0; i < 10; i++) {
         const { renderTime } = measureRenderTime(() => {
           act(() => {
@@ -233,7 +236,7 @@ describe('StylingSystemExample - Performance', () => {
       }
 
       // Input changes should be fast
-      renderTimes.forEach(time => {
+      renderTimes.forEach((time) => {
         expect(time).toBeLessThan(20);
       });
     });
@@ -242,7 +245,7 @@ describe('StylingSystemExample - Performance', () => {
   describe('Memory Usage', () => {
     it('does not leak memory during component lifecycle', () => {
       const components: any[] = [];
-      
+
       // Create and destroy multiple instances
       for (let i = 0; i < 5; i++) {
         const component = render(
@@ -254,7 +257,7 @@ describe('StylingSystemExample - Performance', () => {
       }
 
       // Unmount all components
-      components.forEach(component => component.unmount());
+      components.forEach((component) => component.unmount());
 
       // Force garbage collection if available
       if (global.gc) {
@@ -267,7 +270,7 @@ describe('StylingSystemExample - Performance', () => {
 
     it('handles theme provider memory efficiently', () => {
       const providers: any[] = [];
-      
+
       // Create multiple theme providers
       for (let i = 0; i < 10; i++) {
         const provider = render(
@@ -279,7 +282,7 @@ describe('StylingSystemExample - Performance', () => {
       }
 
       // Cleanup
-      providers.forEach(provider => provider.unmount());
+      providers.forEach((provider) => provider.unmount());
 
       expect(providers.length).toBe(10);
     });
@@ -308,10 +311,12 @@ describe('StylingSystemExample - Performance', () => {
       );
 
       // Simulate scroll events
-      const scrollView = getByTestId('scroll-view') || { props: { onScroll: jest.fn() } };
-      
+      const scrollView = getByTestId('scroll-view') || {
+        props: { onScroll: jest.fn() },
+      };
+
       const scrollTimes: number[] = [];
-      
+
       for (let i = 0; i < 20; i++) {
         const { renderTime } = measureRenderTime(() => {
           act(() => {
@@ -328,7 +333,8 @@ describe('StylingSystemExample - Performance', () => {
       }
 
       // Scroll handling should be efficient
-      const avgScrollTime = scrollTimes.reduce((a, b) => a + b) / scrollTimes.length;
+      const avgScrollTime =
+        scrollTimes.reduce((a, b) => a + b) / scrollTimes.length;
       expect(avgScrollTime).toBeLessThan(10);
     });
   });
@@ -344,7 +350,7 @@ describe('StylingSystemExample - Performance', () => {
       const { rerender } = render(<TestWrapper variant="primary" />);
 
       const updateTimes: number[] = [];
-      
+
       // Test multiple prop updates
       for (let i = 0; i < 10; i++) {
         const { renderTime } = measureRenderTime(() => {
@@ -354,7 +360,7 @@ describe('StylingSystemExample - Performance', () => {
       }
 
       // Updates should be fast
-      updateTimes.forEach(time => {
+      updateTimes.forEach((time) => {
         expect(time).toBeLessThan(30);
       });
     });

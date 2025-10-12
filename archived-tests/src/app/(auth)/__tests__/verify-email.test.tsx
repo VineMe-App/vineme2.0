@@ -50,7 +50,9 @@ describe('VerifyEmailScreen', () => {
     const { getByText } = render(<VerifyEmailScreen />);
 
     expect(getByText('Verifying Your Email')).toBeTruthy();
-    expect(getByText('Please wait while we verify your email address...')).toBeTruthy();
+    expect(
+      getByText('Please wait while we verify your email address...')
+    ).toBeTruthy();
   });
 
   it('should handle successful email verification', async () => {
@@ -68,7 +70,9 @@ describe('VerifyEmailScreen', () => {
 
     await waitFor(() => {
       expect(getByText('Email Verified!')).toBeTruthy();
-      expect(getByText(/Your email has been successfully verified/)).toBeTruthy();
+      expect(
+        getByText(/Your email has been successfully verified/)
+      ).toBeTruthy();
     });
 
     expect(authService.handleEmailVerification).toHaveBeenCalledWith(
@@ -78,9 +82,12 @@ describe('VerifyEmailScreen', () => {
     expect(mockInitialize).toHaveBeenCalled();
 
     // Should redirect after 2 seconds
-    await waitFor(() => {
-      expect(mockRouter.replace).toHaveBeenCalledWith('/(auth)/onboarding');
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(mockRouter.replace).toHaveBeenCalledWith('/(auth)/onboarding');
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('should handle verification failure', async () => {

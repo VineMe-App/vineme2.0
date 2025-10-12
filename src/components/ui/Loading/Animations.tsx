@@ -18,32 +18,32 @@ export interface FadeInProps {
    * Children to animate
    */
   children: React.ReactNode;
-  
+
   /**
    * Animation duration in milliseconds
    */
   duration?: number;
-  
+
   /**
    * Delay before animation starts
    */
   delay?: number;
-  
+
   /**
    * Whether the component is visible
    */
   visible?: boolean;
-  
+
   /**
    * Additional styles
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Callback when animation completes
    */
@@ -61,9 +61,9 @@ export const FadeIn: React.FC<FadeInProps> = ({
 }) => {
   const { theme } = useTheme();
   const fadeValue = useRef(new Animated.Value(0)).current;
-  
+
   const animationDuration = duration || theme.animations.timing.fade;
-  
+
   useEffect(() => {
     const animation = Animated.timing(fadeValue, {
       toValue: visible ? 1 : 0,
@@ -71,13 +71,13 @@ export const FadeIn: React.FC<FadeInProps> = ({
       delay,
       useNativeDriver: true,
     });
-    
+
     animation.start(({ finished }) => {
       if (finished && onComplete) {
         onComplete();
       }
     });
-    
+
     return () => {
       animation.stop();
     };
@@ -103,42 +103,42 @@ export interface SlideInProps {
    * Children to animate
    */
   children: React.ReactNode;
-  
+
   /**
    * Direction of the slide animation
    */
   direction?: 'up' | 'down' | 'left' | 'right';
-  
+
   /**
    * Distance to slide in pixels
    */
   distance?: number;
-  
+
   /**
    * Animation duration in milliseconds
    */
   duration?: number;
-  
+
   /**
    * Delay before animation starts
    */
   delay?: number;
-  
+
   /**
    * Whether the component is visible
    */
   visible?: boolean;
-  
+
   /**
    * Additional styles
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Callback when animation completes
    */
@@ -158,9 +158,9 @@ export const SlideIn: React.FC<SlideInProps> = ({
 }) => {
   const { theme } = useTheme();
   const slideValue = useRef(new Animated.Value(0)).current;
-  
+
   const animationDuration = duration || theme.animations.timing.slide;
-  
+
   useEffect(() => {
     const animation = Animated.timing(slideValue, {
       toValue: visible ? 1 : 0,
@@ -168,13 +168,13 @@ export const SlideIn: React.FC<SlideInProps> = ({
       delay,
       useNativeDriver: true,
     });
-    
+
     animation.start(({ finished }) => {
       if (finished && onComplete) {
         onComplete();
       }
     });
-    
+
     return () => {
       animation.stop();
     };
@@ -190,17 +190,25 @@ export const SlideIn: React.FC<SlideInProps> = ({
       case 'up':
         return [{ translateY: translateValue }];
       case 'down':
-        return [{ translateY: slideValue.interpolate({
-          inputRange: [0, 1],
-          outputRange: [-distance, 0],
-        }) }];
+        return [
+          {
+            translateY: slideValue.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-distance, 0],
+            }),
+          },
+        ];
       case 'left':
         return [{ translateX: translateValue }];
       case 'right':
-        return [{ translateX: slideValue.interpolate({
-          inputRange: [0, 1],
-          outputRange: [-distance, 0],
-        }) }];
+        return [
+          {
+            translateX: slideValue.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-distance, 0],
+            }),
+          },
+        ];
       default:
         return [{ translateY: translateValue }];
     }
@@ -227,42 +235,42 @@ export interface ScaleInProps {
    * Children to animate
    */
   children: React.ReactNode;
-  
+
   /**
    * Initial scale value
    */
   initialScale?: number;
-  
+
   /**
    * Final scale value
    */
   finalScale?: number;
-  
+
   /**
    * Animation duration in milliseconds
    */
   duration?: number;
-  
+
   /**
    * Delay before animation starts
    */
   delay?: number;
-  
+
   /**
    * Whether the component is visible
    */
   visible?: boolean;
-  
+
   /**
    * Additional styles
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
   testID?: string;
-  
+
   /**
    * Callback when animation completes
    */
@@ -282,9 +290,9 @@ export const ScaleIn: React.FC<ScaleInProps> = ({
 }) => {
   const { theme } = useTheme();
   const scaleValue = useRef(new Animated.Value(0)).current;
-  
+
   const animationDuration = duration || theme.animations.duration.normal;
-  
+
   useEffect(() => {
     const animation = Animated.spring(scaleValue, {
       toValue: visible ? 1 : 0,
@@ -293,13 +301,13 @@ export const ScaleIn: React.FC<ScaleInProps> = ({
       tension: 100,
       friction: 8,
     });
-    
+
     animation.start(({ finished }) => {
       if (finished && onComplete) {
         onComplete();
       }
     });
-    
+
     return () => {
       animation.stop();
     };
@@ -333,32 +341,32 @@ export interface PulseProps {
    * Children to animate
    */
   children: React.ReactNode;
-  
+
   /**
    * Minimum scale value
    */
   minScale?: number;
-  
+
   /**
    * Maximum scale value
    */
   maxScale?: number;
-  
+
   /**
    * Animation duration in milliseconds
    */
   duration?: number;
-  
+
   /**
    * Whether the animation is running
    */
   running?: boolean;
-  
+
   /**
    * Additional styles
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
@@ -376,9 +384,9 @@ export const Pulse: React.FC<PulseProps> = ({
 }) => {
   const { theme } = useTheme();
   const pulseValue = useRef(new Animated.Value(0)).current;
-  
+
   const animationDuration = duration || theme.animations.duration.slow;
-  
+
   useEffect(() => {
     if (!running) {
       pulseValue.setValue(0);
@@ -438,32 +446,32 @@ export interface StaggeredAnimationProps {
    * Children to animate
    */
   children: React.ReactNode[];
-  
+
   /**
    * Delay between each child animation
    */
   staggerDelay?: number;
-  
+
   /**
    * Animation type
    */
   animationType?: 'fadeIn' | 'slideIn' | 'scaleIn';
-  
+
   /**
    * Animation duration for each child
    */
   duration?: number;
-  
+
   /**
    * Whether animations are running
    */
   running?: boolean;
-  
+
   /**
    * Additional styles for container
    */
   style?: ViewStyle;
-  
+
   /**
    * Test ID for testing
    */
@@ -481,23 +489,38 @@ export const StaggeredAnimation: React.FC<StaggeredAnimationProps> = ({
 }) => {
   const renderAnimatedChild = (child: React.ReactNode, index: number) => {
     const delay = index * staggerDelay;
-    
+
     switch (animationType) {
       case 'fadeIn':
         return (
-          <FadeIn key={index} delay={delay} duration={duration} visible={running}>
+          <FadeIn
+            key={index}
+            delay={delay}
+            duration={duration}
+            visible={running}
+          >
             {child}
           </FadeIn>
         );
       case 'slideIn':
         return (
-          <SlideIn key={index} delay={delay} duration={duration} visible={running}>
+          <SlideIn
+            key={index}
+            delay={delay}
+            duration={duration}
+            visible={running}
+          >
             {child}
           </SlideIn>
         );
       case 'scaleIn':
         return (
-          <ScaleIn key={index} delay={delay} duration={duration} visible={running}>
+          <ScaleIn
+            key={index}
+            delay={delay}
+            duration={duration}
+            visible={running}
+          >
             {child}
           </ScaleIn>
         );

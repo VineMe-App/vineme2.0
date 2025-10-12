@@ -18,7 +18,9 @@ const SimpleThemedComponent: React.FC = () => {
       <Text testID="theme-name">Theme: {theme.name}</Text>
       <Text testID="dark-mode">Dark: {isDark.toString()}</Text>
       <Text testID="primary-color">Primary: {theme.colors.primary[500]}</Text>
-      <Text testID="background-color">Background: {theme.colors.background.primary}</Text>
+      <Text testID="background-color">
+        Background: {theme.colors.background.primary}
+      </Text>
       <TouchableOpacity testID="toggle-button" onPress={toggleTheme}>
         <Text>Toggle Theme</Text>
       </TouchableOpacity>
@@ -39,7 +41,9 @@ describe('Basic Theme Integration Tests', () => {
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId('theme-name')).toHaveTextContent('Theme: light');
+      expect(screen.getByTestId('theme-name')).toHaveTextContent(
+        'Theme: light'
+      );
       expect(screen.getByTestId('dark-mode')).toHaveTextContent('Dark: false');
       expect(screen.getByTestId('primary-color')).toBeDefined();
       expect(screen.getByTestId('background-color')).toBeDefined();
@@ -64,7 +68,9 @@ describe('Basic Theme Integration Tests', () => {
       );
 
       // Start with light theme
-      expect(screen.getByTestId('theme-name')).toHaveTextContent('Theme: light');
+      expect(screen.getByTestId('theme-name')).toHaveTextContent(
+        'Theme: light'
+      );
       expect(screen.getByTestId('dark-mode')).toHaveTextContent('Dark: false');
 
       // Toggle to dark theme
@@ -80,7 +86,9 @@ describe('Basic Theme Integration Tests', () => {
         screen.getByTestId('toggle-button').props.onPress();
       });
 
-      expect(screen.getByTestId('theme-name')).toHaveTextContent('Theme: light');
+      expect(screen.getByTestId('theme-name')).toHaveTextContent(
+        'Theme: light'
+      );
       expect(screen.getByTestId('dark-mode')).toHaveTextContent('Dark: false');
     });
   });
@@ -94,7 +102,8 @@ describe('Basic Theme Integration Tests', () => {
       );
 
       const initialPrimary = screen.getByTestId('primary-color').children[0];
-      const initialBackground = screen.getByTestId('background-color').children[0];
+      const initialBackground =
+        screen.getByTestId('background-color').children[0];
 
       // Re-render with same theme
       rerender(
@@ -103,8 +112,12 @@ describe('Basic Theme Integration Tests', () => {
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId('primary-color').children[0]).toBe(initialPrimary);
-      expect(screen.getByTestId('background-color').children[0]).toBe(initialBackground);
+      expect(screen.getByTestId('primary-color').children[0]).toBe(
+        initialPrimary
+      );
+      expect(screen.getByTestId('background-color').children[0]).toBe(
+        initialBackground
+      );
     });
 
     it('should update theme values when theme changes', () => {
@@ -115,7 +128,8 @@ describe('Basic Theme Integration Tests', () => {
       );
 
       const lightPrimary = screen.getByTestId('primary-color').children[0];
-      const lightBackground = screen.getByTestId('background-color').children[0];
+      const lightBackground =
+        screen.getByTestId('background-color').children[0];
 
       // Change to dark theme
       rerender(
@@ -142,7 +156,9 @@ describe('Basic Theme Integration Tests', () => {
           <SimpleThemedComponent />
           <View testID="second-component">
             <Text testID="second-theme-name">Second: {theme.name}</Text>
-            <Text testID="second-primary">Primary: {theme.colors.primary[500]}</Text>
+            <Text testID="second-primary">
+              Primary: {theme.colors.primary[500]}
+            </Text>
           </View>
           <TouchableOpacity testID="external-toggle" onPress={toggleTheme}>
             <Text>External Toggle</Text>
@@ -181,7 +197,9 @@ describe('Basic Theme Integration Tests', () => {
       });
 
       expect(screen.getByTestId('theme-name')).toHaveTextContent('Theme: dark');
-      expect(screen.getByTestId('second-theme-name')).toHaveTextContent('Second: dark');
+      expect(screen.getByTestId('second-theme-name')).toHaveTextContent(
+        'Second: dark'
+      );
       expect(screen.getByTestId('dark-mode')).toHaveTextContent('Dark: true');
     });
   });
@@ -215,7 +233,9 @@ describe('Basic Theme Integration Tests', () => {
       }
 
       // Should end up on dark theme (even number of toggles from light)
-      expect(screen.getByTestId('theme-name')).toHaveTextContent('Theme: light');
+      expect(screen.getByTestId('theme-name')).toHaveTextContent(
+        'Theme: light'
+      );
       expect(screen.getByTestId('dark-mode')).toHaveTextContent('Dark: false');
     });
   });

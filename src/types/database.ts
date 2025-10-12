@@ -58,6 +58,7 @@ export interface Group {
   service_id: string;
   church_id: string;
   status: 'pending' | 'approved' | 'denied' | 'closed';
+  at_capacity: boolean; // Whether the group is currently at capacity
   created_at: string;
   updated_at?: string;
 }
@@ -70,7 +71,7 @@ export interface GroupMembership {
   user_id: string;
   role: 'member' | 'leader' | 'admin';
   joined_at: string | null;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'pending' | 'archived';
   referral_id?: string | null;
   journey_status?: MembershipJourneyStatus | null;
   contact_consent?: boolean | null;
@@ -87,6 +88,42 @@ export interface GroupJoinRequest {
   updated_at?: string;
   referral_id?: string | null;
   journey_status?: MembershipJourneyStatus | null;
+}
+
+export type GroupMembershipNoteType =
+  | 'manual' // Manual note by group leader
+  | 'request_approved' // pending -> active (approved to join)
+  | 'request_archived' // pending -> archived (rejected before joining)
+  | 'member_left' // active -> inactive (left or removed)
+  | 'journey_status_change' // Journey status updated (1, 2, 3) while pending
+  | 'role_change'; // Role changed while active
+
+export interface GroupMembershipNote {
+  id: string;
+  membership_id: string;
+  group_id: string;
+  user_id: string;
+  created_by_user_id: string;
+  note_type: GroupMembershipNoteType;
+  note_text?: string | null;
+
+  // Change tracking
+  previous_status?: 'active' | 'inactive' | 'pending' | 'archived' | null;
+  new_status?: 'active' | 'inactive' | 'pending' | 'archived' | null;
+  previous_journey_status?: MembershipJourneyStatus | null;
+  new_journey_status?: MembershipJourneyStatus | null;
+  previous_role?: 'member' | 'leader' | 'admin' | null;
+  new_role?: 'member' | 'leader' | 'admin' | null;
+
+  // Reason (for archiving or leaving)
+  reason?: string | null;
+
+  created_at: string;
+}
+
+export interface GroupMembershipNoteWithUser extends GroupMembershipNote {
+  created_by?: User;
+  user?: User;
 }
 
 export interface Event {
@@ -122,7 +159,7 @@ export interface Friendship {
   id: string;
   user_id: string;
   friend_id: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'blocked';
+  status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at?: string;
 }

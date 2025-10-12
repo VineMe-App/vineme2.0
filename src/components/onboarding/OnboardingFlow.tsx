@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  View,
+  StyleSheet,
+  StatusBar,
+  Platform,
+  ScrollView,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import type { OnboardingData, OnboardingStep } from '@/types/app';
@@ -201,16 +209,21 @@ export default function OnboardingFlow() {
         </View>
       </View>
 
-      <View style={styles.stepContainer}>
-        <StepComponent
-          data={onboardingData}
-          onNext={handleNext}
-          onBack={handleBack}
-          canGoBack={currentStepIndex > 0}
-          isLoading={isLoading}
-          error={error}
-        />
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.stepContainer}
+      >
+        <ScrollView keyboardShouldPersistTaps="handled">
+          <StepComponent
+            data={onboardingData}
+            onNext={handleNext}
+            onBack={handleBack}
+            canGoBack={currentStepIndex > 0}
+            isLoading={isLoading}
+            error={error}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

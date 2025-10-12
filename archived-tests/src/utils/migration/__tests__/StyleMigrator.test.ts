@@ -27,11 +27,14 @@ describe('StyleMigrator', () => {
         preserveComments: false,
       };
 
-      const { themeAwareStyles, mappings } = migrator.migrateStyles(legacyStyles, options);
+      const { themeAwareStyles, mappings } = migrator.migrateStyles(
+        legacyStyles,
+        options
+      );
 
       expect(themeAwareStyles).toBeDefined();
       expect(mappings).toHaveLength(3);
-      
+
       // Test that theme-aware styles function works
       const styles = themeAwareStyles.container(lightTheme);
       expect(styles).toBeDefined();
@@ -46,11 +49,14 @@ describe('StyleMigrator', () => {
         },
       };
 
-      const { themeAwareStyles, mappings } = migrator.migrateStyles(legacyStyles);
+      const { themeAwareStyles, mappings } =
+        migrator.migrateStyles(legacyStyles);
 
-      expect(mappings.some(m => m.legacyProperty === 'padding')).toBe(true);
-      expect(mappings.some(m => m.legacyProperty === 'margin')).toBe(true);
-      expect(mappings.some(m => m.legacyProperty === 'paddingHorizontal')).toBe(true);
+      expect(mappings.some((m) => m.legacyProperty === 'padding')).toBe(true);
+      expect(mappings.some((m) => m.legacyProperty === 'margin')).toBe(true);
+      expect(
+        mappings.some((m) => m.legacyProperty === 'paddingHorizontal')
+      ).toBe(true);
     });
 
     it('should migrate typography styles', () => {
@@ -61,10 +67,13 @@ describe('StyleMigrator', () => {
         },
       };
 
-      const { themeAwareStyles, mappings } = migrator.migrateStyles(legacyStyles);
+      const { themeAwareStyles, mappings } =
+        migrator.migrateStyles(legacyStyles);
 
-      expect(mappings.some(m => m.legacyProperty === 'fontSize')).toBe(true);
-      expect(mappings.some(m => m.legacyProperty === 'fontWeight')).toBe(true);
+      expect(mappings.some((m) => m.legacyProperty === 'fontSize')).toBe(true);
+      expect(mappings.some((m) => m.legacyProperty === 'fontWeight')).toBe(
+        true
+      );
     });
 
     it('should handle border radius migration', () => {
@@ -74,9 +83,12 @@ describe('StyleMigrator', () => {
         },
       };
 
-      const { themeAwareStyles, mappings } = migrator.migrateStyles(legacyStyles);
+      const { themeAwareStyles, mappings } =
+        migrator.migrateStyles(legacyStyles);
 
-      expect(mappings.some(m => m.legacyProperty === 'borderRadius')).toBe(true);
+      expect(mappings.some((m) => m.legacyProperty === 'borderRadius')).toBe(
+        true
+      );
       expect(mappings[0].confidence).toBe(1.0);
     });
 
@@ -89,11 +101,12 @@ describe('StyleMigrator', () => {
         },
       };
 
-      const { themeAwareStyles, mappings } = migrator.migrateStyles(legacyStyles);
+      const { themeAwareStyles, mappings } =
+        migrator.migrateStyles(legacyStyles);
 
       // Should have no mappings for unmappable properties
       expect(mappings).toHaveLength(0);
-      
+
       // But should still create theme-aware styles
       const styles = themeAwareStyles.container(lightTheme);
       expect(styles.flex).toBe(1);
@@ -142,7 +155,11 @@ describe('StyleMigrator', () => {
         },
       ];
 
-      const code = migrator.generateMigrationCode(styleName, legacyStyle, mappings);
+      const code = migrator.generateMigrationCode(
+        styleName,
+        legacyStyle,
+        mappings
+      );
 
       expect(code).toContain('container: (theme: Theme) => ({');
       expect(code).toContain('theme.colors.background.primary');
@@ -161,7 +178,11 @@ describe('StyleMigrator', () => {
         },
       ];
 
-      const code = migrator.generateMigrationCode('container', { backgroundColor: '#f5f5f5' }, mappings);
+      const code = migrator.generateMigrationCode(
+        'container',
+        { backgroundColor: '#f5f5f5' },
+        mappings
+      );
 
       expect(code).toContain('// TODO: Review migration - was: #f5f5f5');
     });
@@ -183,7 +204,8 @@ describe('StyleMigrator', () => {
         },
       };
 
-      const { themeAwareStyles, mappings } = migrator.migrateStyles(legacyStyles);
+      const { themeAwareStyles, mappings } =
+        migrator.migrateStyles(legacyStyles);
 
       expect(mappings).toHaveLength(0);
       const styles = themeAwareStyles.container(lightTheme);

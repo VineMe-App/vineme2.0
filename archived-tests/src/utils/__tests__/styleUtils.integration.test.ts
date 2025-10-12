@@ -35,8 +35,11 @@ describe('Style Utilities Integration', () => {
   describe('Responsive + Theme Integration', () => {
     it('should create responsive themed styles', () => {
       // Test with mobile dimensions
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 375, height: 667 });
-      
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 375,
+        height: 667,
+      });
+
       const responsiveStyles = {
         container: {
           xs: { padding: 8 },
@@ -50,7 +53,10 @@ describe('Style Utilities Integration', () => {
         },
       };
 
-      const result = StyleUtils.createResponsiveThemedStyles(responsiveStyles, lightTheme);
+      const result = StyleUtils.createResponsiveThemedStyles(
+        responsiveStyles,
+        lightTheme
+      );
 
       expect(result.container).toEqual({ padding: 8 });
       expect(result.text).toEqual({ fontSize: 14 });
@@ -58,8 +64,11 @@ describe('Style Utilities Integration', () => {
 
     it('should adapt to different screen sizes', () => {
       // Test with tablet dimensions (800px is 'md' breakpoint)
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 800, height: 1024 });
-      
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 800,
+        height: 1024,
+      });
+
       const responsiveStyles = {
         container: {
           xs: { padding: 8 },
@@ -68,7 +77,10 @@ describe('Style Utilities Integration', () => {
         },
       };
 
-      const result = StyleUtils.createResponsiveThemedStyles(responsiveStyles, lightTheme);
+      const result = StyleUtils.createResponsiveThemedStyles(
+        responsiveStyles,
+        lightTheme
+      );
 
       // 800px should match 'md' breakpoint (768px), so padding should be 16
       expect(result.container).toEqual({ padding: 16 });
@@ -113,7 +125,10 @@ describe('Style Utilities Integration', () => {
         borderColor: 'primary.500',
       });
 
-      const mergedStyles = StyleUtils.merge.mergeStyles(layoutStyles, themedStyles);
+      const mergedStyles = StyleUtils.merge.mergeStyles(
+        layoutStyles,
+        themedStyles
+      );
 
       expect(mergedStyles).toEqual({
         display: 'flex',
@@ -130,17 +145,20 @@ describe('Style Utilities Integration', () => {
   describe('Conditional + Responsive Integration', () => {
     it('should apply conditional styles based on device type', () => {
       const baseStyles = { padding: 16 };
-      
-      const conditionalStyles = StyleUtils.theme.applyConditionalStyles(baseStyles, [
-        {
-          condition: responsiveUtils.isTablet(),
-          style: { padding: 24 },
-        },
-        {
-          condition: responsiveUtils.isLandscape(),
-          style: { flexDirection: 'row' as const },
-        },
-      ]);
+
+      const conditionalStyles = StyleUtils.theme.applyConditionalStyles(
+        baseStyles,
+        [
+          {
+            condition: responsiveUtils.isTablet(),
+            style: { padding: 24 },
+          },
+          {
+            condition: responsiveUtils.isLandscape(),
+            style: { flexDirection: 'row' as const },
+          },
+        ]
+      );
 
       // Should not apply tablet styles on phone
       expect(conditionalStyles.padding).toBe(16);
@@ -148,16 +166,22 @@ describe('Style Utilities Integration', () => {
 
     it('should apply tablet-specific styles on tablet', () => {
       // Mock tablet dimensions
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 768, height: 1024 });
-      
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 768,
+        height: 1024,
+      });
+
       const baseStyles = { padding: 16 };
-      
-      const conditionalStyles = StyleUtils.theme.applyConditionalStyles(baseStyles, [
-        {
-          condition: responsiveUtils.isTablet(),
-          style: { padding: 24 },
-        },
-      ]);
+
+      const conditionalStyles = StyleUtils.theme.applyConditionalStyles(
+        baseStyles,
+        [
+          {
+            condition: responsiveUtils.isTablet(),
+            style: { padding: 24 },
+          },
+        ]
+      );
 
       expect(conditionalStyles.padding).toBe(24);
     });
@@ -166,8 +190,11 @@ describe('Style Utilities Integration', () => {
   describe('Complete Style Pipeline', () => {
     it('should handle complete style creation pipeline', () => {
       // Mock tablet landscape
-      (Dimensions.get as jest.Mock).mockReturnValue({ width: 1024, height: 768 });
-      
+      (Dimensions.get as jest.Mock).mockReturnValue({
+        width: 1024,
+        height: 768,
+      });
+
       // 1. Create responsive base styles
       const responsiveStyles = {
         container: {
@@ -190,15 +217,12 @@ describe('Style Utilities Integration', () => {
       });
 
       // 4. Add conditional styles
-      const conditionalStyles = StyleUtils.theme.applyConditionalStyles(
-        {},
-        [
-          {
-            condition: responsiveUtils.isLandscape(),
-            style: { marginHorizontal: 32 },
-          },
-        ]
-      );
+      const conditionalStyles = StyleUtils.theme.applyConditionalStyles({}, [
+        {
+          condition: responsiveUtils.isLandscape(),
+          style: { marginHorizontal: 32 },
+        },
+      ]);
 
       // 5. Merge everything
       const finalStyles = StyleUtils.merge.mergeStyles(
@@ -246,7 +270,7 @@ describe('Style Utilities Integration', () => {
 
       const stats = PerformanceStyleUtils.monitor.getStats();
       expect(Object.keys(stats)).toContain('themed-styles-complex-test');
-      
+
       PerformanceStyleUtils.monitor.setEnabled(false);
     });
   });

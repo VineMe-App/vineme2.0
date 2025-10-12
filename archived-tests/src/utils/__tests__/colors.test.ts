@@ -82,7 +82,7 @@ describe('Color Conversion Functions', () => {
       testCases.forEach(({ r, g, b }) => {
         const hsl = rgbToHsl(r, g, b);
         const backToRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
-        
+
         // Allow for small rounding differences
         expect(Math.abs(backToRgb.r - r)).toBeLessThanOrEqual(1);
         expect(Math.abs(backToRgb.g - g)).toBeLessThanOrEqual(1);
@@ -110,7 +110,7 @@ describe('Color Manipulation Functions', () => {
     it('should lighten colors correctly', () => {
       const darkBlue = '#000080';
       const lightened = lighten(darkBlue, 20);
-      
+
       // Should be lighter than original
       const originalLum = getLuminance(darkBlue);
       const lightenedLum = getLuminance(lightened);
@@ -128,7 +128,7 @@ describe('Color Manipulation Functions', () => {
     it('should darken colors correctly', () => {
       const lightBlue = '#87ceeb';
       const darkened = darken(lightBlue, 20);
-      
+
       // Should be darker than original
       const originalLum = getLuminance(lightBlue);
       const darkenedLum = getLuminance(darkened);
@@ -147,7 +147,7 @@ describe('Color Manipulation Functions', () => {
       const gray = '#808080';
       const saturated = saturate(gray, 50);
       const desaturated = desaturate(saturated, 25);
-      
+
       // Saturated should be more colorful than gray
       // Desaturated should be less colorful than saturated
       expect(saturated).not.toBe(gray);
@@ -161,7 +161,7 @@ describe('Accessibility Functions', () => {
     it('should calculate luminance correctly for known values', () => {
       expect(getLuminance('#ffffff')).toBeCloseTo(1, 2);
       expect(getLuminance('#000000')).toBeCloseTo(0, 2);
-      
+
       // Gray should be in between
       const grayLum = getLuminance('#808080');
       expect(grayLum).toBeGreaterThan(0);
@@ -174,7 +174,7 @@ describe('Accessibility Functions', () => {
       // Black on white should have maximum contrast
       const blackWhiteRatio = getContrastRatio('#000000', '#ffffff');
       expect(blackWhiteRatio).toBeCloseTo(21, 0);
-      
+
       // Same colors should have minimum contrast
       const sameColorRatio = getContrastRatio('#ff0000', '#ff0000');
       expect(sameColorRatio).toBeCloseTo(1, 1);
@@ -185,7 +185,7 @@ describe('Accessibility Functions', () => {
     it('should correctly identify WCAG AA compliance', () => {
       // Black on white meets AA
       expect(meetsWCAGAA('#000000', '#ffffff')).toBe(true);
-      
+
       // Light gray on white fails AA
       expect(meetsWCAGAA('#cccccc', '#ffffff')).toBe(false);
     });
@@ -193,7 +193,7 @@ describe('Accessibility Functions', () => {
     it('should correctly identify WCAG AAA compliance', () => {
       // Black on white meets AAA
       expect(meetsWCAGAAA('#000000', '#ffffff')).toBe(true);
-      
+
       // Dark gray on white might meet AA but not AAA
       expect(meetsWCAGAAA('#666666', '#ffffff')).toBe(false);
     });
@@ -219,10 +219,10 @@ describe('Accessibility Functions', () => {
     it('should find accessible color from palette', () => {
       const palette = ['#cccccc', '#999999', '#666666', '#333333', '#000000'];
       const background = '#ffffff';
-      
+
       const accessibleColor = findAccessibleColor(background, palette, 'AA');
       expect(accessibleColor).not.toBeNull();
-      
+
       if (accessibleColor) {
         expect(meetsWCAGAA(accessibleColor, background)).toBe(true);
       }
@@ -231,7 +231,7 @@ describe('Accessibility Functions', () => {
     it('should return null if no accessible color found', () => {
       const palette = ['#f0f0f0', '#e0e0e0', '#d0d0d0'];
       const background = '#ffffff';
-      
+
       const accessibleColor = findAccessibleColor(background, palette, 'AA');
       expect(accessibleColor).toBeNull();
     });
@@ -241,7 +241,7 @@ describe('Accessibility Functions', () => {
     it('should return appropriate text color for backgrounds', () => {
       // Light background should get dark text
       expect(getAccessibleTextColor('#ffffff')).toBe('#000000');
-      
+
       // Dark background should get light text
       expect(getAccessibleTextColor('#000000')).toBe('#ffffff');
     });
@@ -252,16 +252,16 @@ describe('Color Generation Functions', () => {
   describe('generateColorVariants', () => {
     it('should generate complete color palette', () => {
       const variants = generateColorVariants('#3b82f6');
-      
+
       expect(variants).toHaveProperty('50');
       expect(variants).toHaveProperty('500', '#3b82f6');
       expect(variants).toHaveProperty('900');
-      
+
       // Lighter variants should have higher luminance
       const lum50 = getLuminance(variants[50]);
       const lum500 = getLuminance(variants[500]);
       const lum900 = getLuminance(variants[900]);
-      
+
       expect(lum50).toBeGreaterThan(lum500);
       expect(lum500).toBeGreaterThan(lum900);
     });
@@ -274,7 +274,7 @@ describe('Color Generation Functions', () => {
   describe('generateSemanticVariants', () => {
     it('should generate semantic color variants', () => {
       const variants = generateSemanticVariants('#3b82f6');
-      
+
       expect(variants).toHaveProperty('default', '#3b82f6');
       expect(variants).toHaveProperty('hover');
       expect(variants).toHaveProperty('active');
@@ -290,10 +290,10 @@ describe('Color Generation Functions', () => {
         primary: '#3b82f6',
         secondary: '#6b7280',
       };
-      
+
       const lightTheme = generateThemeColors(baseColors, false);
       const darkTheme = generateThemeColors(baseColors, true);
-      
+
       expect(lightTheme).toHaveProperty('primary');
       expect(lightTheme).toHaveProperty('secondary');
       expect(darkTheme).toHaveProperty('primary');
@@ -305,15 +305,18 @@ describe('Color Generation Functions', () => {
     it('should adjust color to meet accessibility requirements', () => {
       const inaccessibleColor = '#cccccc';
       const background = '#ffffff';
-      
-      const accessibleColor = ensureAccessibleColor(inaccessibleColor, background);
+
+      const accessibleColor = ensureAccessibleColor(
+        inaccessibleColor,
+        background
+      );
       expect(meetsWCAGAA(accessibleColor, background)).toBe(true);
     });
 
     it('should return original color if already accessible', () => {
       const accessibleColor = '#000000';
       const background = '#ffffff';
-      
+
       const result = ensureAccessibleColor(accessibleColor, background);
       expect(result).toBe(accessibleColor);
     });
@@ -326,7 +329,7 @@ describe('Color Harmony Functions', () => {
       const red = '#ff0000';
       const blue = '#0000ff';
       const mixed = mixColors(red, blue, 0.5);
-      
+
       // Should be purple-ish
       const rgb = hexToRgb(mixed);
       expect(rgb?.r).toBeGreaterThan(0);
@@ -337,7 +340,7 @@ describe('Color Harmony Functions', () => {
     it('should handle edge ratios', () => {
       const red = '#ff0000';
       const blue = '#0000ff';
-      
+
       expect(mixColors(red, blue, 0)).toBe(red);
       expect(mixColors(red, blue, 1)).toBe(blue);
     });
@@ -347,13 +350,13 @@ describe('Color Harmony Functions', () => {
     it('should generate complementary colors', () => {
       const red = '#ff0000';
       const complementary = getComplementaryColor(red);
-      
+
       // Complementary of red should be cyan-ish
       expect(complementary).not.toBe(red);
-      
+
       const redRgb = hexToRgb(red);
       const compRgb = hexToRgb(complementary);
-      
+
       if (redRgb && compRgb) {
         // Red component should be low in complementary
         expect(compRgb.r).toBeLessThan(redRgb.r);
@@ -365,7 +368,7 @@ describe('Color Harmony Functions', () => {
     it('should generate analogous colors', () => {
       const base = '#ff0000';
       const [analog1, analog2] = getAnalogousColors(base);
-      
+
       expect(analog1).not.toBe(base);
       expect(analog2).not.toBe(base);
       expect(analog1).not.toBe(analog2);
@@ -379,7 +382,7 @@ describe('Validation Functions', () => {
       expect(isValidHexColor('#ffffff')).toBe(true);
       expect(isValidHexColor('#fff')).toBe(true);
       expect(isValidHexColor('#123abc')).toBe(true);
-      
+
       expect(isValidHexColor('ffffff')).toBe(false);
       expect(isValidHexColor('#gggggg')).toBe(false);
       expect(isValidHexColor('#12345')).toBe(false);
@@ -411,10 +414,13 @@ describe('Integration Tests', () => {
     const brandColor = '#3b82f6';
     const variants = generateColorVariants(brandColor);
     const backgrounds = ['#ffffff', '#f8fafc', '#1e293b'];
-    
+
     // Ensure we can find accessible combinations
-    backgrounds.forEach(bg => {
-      const accessibleVariant = findAccessibleColor(bg, Object.values(variants));
+    backgrounds.forEach((bg) => {
+      const accessibleVariant = findAccessibleColor(
+        bg,
+        Object.values(variants)
+      );
       expect(accessibleVariant).not.toBeNull();
     });
   });
@@ -423,12 +429,12 @@ describe('Integration Tests', () => {
     const baseColor = '#3b82f6';
     const lightened = lighten(baseColor, 20);
     const darkened = darken(baseColor, 20);
-    
+
     // Verify luminance relationships
     const baseLum = getLuminance(baseColor);
     const lightLum = getLuminance(lightened);
     const darkLum = getLuminance(darkened);
-    
+
     expect(lightLum).toBeGreaterThan(baseLum);
     expect(darkLum).toBeLessThan(baseLum);
   });

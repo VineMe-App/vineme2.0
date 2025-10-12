@@ -15,7 +15,6 @@ import {
   useSentFriendRequests,
   useReceivedFriendRequests,
   useRemoveFriend,
-  useBlockUser,
   useAcceptFriendRequest,
   useRejectFriendRequest,
 } from '../../hooks/useFriendships';
@@ -38,7 +37,6 @@ export function FriendsList({ userId }: FriendsListProps) {
 
   // Mutations
   const removeFriendMutation = useRemoveFriend();
-  const blockUserMutation = useBlockUser();
   const acceptRequestMutation = useAcceptFriendRequest();
   const rejectRequestMutation = useRejectFriendRequest();
 
@@ -59,22 +57,7 @@ export function FriendsList({ userId }: FriendsListProps) {
     );
   };
 
-  const handleBlockUser = (friendId: string) => {
-    Alert.alert(
-      'Block User',
-      'Are you sure you want to block this user? They will not be able to send you friend requests.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Block',
-          style: 'destructive',
-          onPress: () => {
-            blockUserMutation.mutate(friendId);
-          },
-        },
-      ]
-    );
-  };
+  // Block user functionality removed per product decision
 
   const handleAcceptRequest = (friendshipId: string) => {
     acceptRequestMutation.mutate(friendshipId);
@@ -84,7 +67,11 @@ export function FriendsList({ userId }: FriendsListProps) {
     rejectRequestMutation.mutate(friendshipId);
   };
 
-  const handleCancelRequest = (friendshipId: string) => {
+  const handleCancelRequest = (friendship: FriendshipWithUser) => {
+    if (friendship.status !== 'pending') {
+      return;
+    }
+
     Alert.alert(
       'Cancel Request',
       'Are you sure you want to cancel this friend request?',
@@ -93,8 +80,9 @@ export function FriendsList({ userId }: FriendsListProps) {
         {
           text: 'Yes',
           onPress: () => {
-            // For sent requests, we can remove the friendship
-            removeFriendMutation.mutate(friendshipId);
+            if (friendship.friend_id) {
+              removeFriendMutation.mutate(friendship.friend_id);
+            }
           },
         },
       ]
@@ -218,7 +206,6 @@ export function FriendsList({ userId }: FriendsListProps) {
         <FriendCard
           friendship={item}
           onRemoveFriend={handleRemoveFriend}
-          onBlockUser={handleBlockUser}
         />
       );
     } else {

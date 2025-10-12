@@ -22,9 +22,15 @@ export const ModalExamples: React.FC = () => {
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [overlayModalVisible, setOverlayModalVisible] = useState(false);
   const [portalModalVisible, setPortalModalVisible] = useState(false);
-  const [currentSize, setCurrentSize] = useState<'small' | 'medium' | 'large' | 'fullscreen'>('medium');
-  const [currentVariant, setCurrentVariant] = useState<'default' | 'centered' | 'bottom-sheet' | 'fullscreen'>('default');
-  const [currentAnimation, setCurrentAnimation] = useState<'fade' | 'slide' | 'scale' | 'none'>('fade');
+  const [currentSize, setCurrentSize] = useState<
+    'small' | 'medium' | 'large' | 'fullscreen'
+  >('medium');
+  const [currentVariant, setCurrentVariant] = useState<
+    'default' | 'centered' | 'bottom-sheet' | 'fullscreen'
+  >('default');
+  const [currentAnimation, setCurrentAnimation] = useState<
+    'fade' | 'slide' | 'scale' | 'none'
+  >('fade');
   const [formData, setFormData] = useState({ name: '', email: '' });
 
   const styles = createStyles(colors, spacing);
@@ -32,7 +38,10 @@ export const ModalExamples: React.FC = () => {
   return (
     <View style={styles.container}>
       <PortalHost />
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         <Text style={styles.title}>Modal Component Examples</Text>
 
         {/* Basic Modal */}
@@ -48,8 +57,9 @@ export const ModalExamples: React.FC = () => {
             title="Basic Modal"
           >
             <Text style={styles.modalText}>
-              This is a basic modal with default settings. It includes a title, close button, 
-              and can be closed by pressing the overlay or the back button.
+              This is a basic modal with default settings. It includes a title,
+              close button, and can be closed by pressing the overlay or the
+              back button.
             </Text>
             <Button
               title="Close Modal"
@@ -103,7 +113,8 @@ export const ModalExamples: React.FC = () => {
             size={currentSize}
           >
             <Text style={styles.modalText}>
-              This is a {currentSize} modal. Notice how the width and height change based on the size prop.
+              This is a {currentSize} modal. Notice how the width and height
+              change based on the size prop.
             </Text>
             <Button
               title="Close"
@@ -157,7 +168,8 @@ export const ModalExamples: React.FC = () => {
             variant={currentVariant}
           >
             <Text style={styles.modalText}>
-              This is a {currentVariant} variant modal. Each variant has different positioning and styling.
+              This is a {currentVariant} variant modal. Each variant has
+              different positioning and styling.
             </Text>
             <Button
               title="Close"
@@ -211,7 +223,8 @@ export const ModalExamples: React.FC = () => {
             animationType={currentAnimation}
           >
             <Text style={styles.modalText}>
-              This modal uses {currentAnimation} animation. Try opening it again to see the effect.
+              This modal uses {currentAnimation} animation. Try opening it again
+              to see the effect.
             </Text>
             <Button
               title="Close"
@@ -239,13 +252,17 @@ export const ModalExamples: React.FC = () => {
               <Input
                 label="Name"
                 value={formData.name}
-                onChangeText={(text) => setFormData({ ...formData, name: text })}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, name: text })
+                }
                 placeholder="Enter your name"
               />
               <Input
                 label="Email"
                 value={formData.email}
-                onChangeText={(text) => setFormData({ ...formData, email: text })}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, email: text })
+                }
                 placeholder="Enter your email"
                 keyboardType="email-address"
               />
@@ -287,8 +304,8 @@ export const ModalExamples: React.FC = () => {
               closeOnOverlayPress={false}
             >
               <Text style={styles.modalText}>
-                This modal uses a custom red overlay with higher opacity. 
-                The overlay press is handled by the Overlay component.
+                This modal uses a custom red overlay with higher opacity. The
+                overlay press is handled by the Overlay component.
               </Text>
               <Button
                 title="Close"
@@ -315,8 +332,9 @@ export const ModalExamples: React.FC = () => {
                 variant="bottom-sheet"
               >
                 <Text style={styles.modalText}>
-                  This modal is rendered through a Portal, which ensures proper z-index management 
-                  and can be rendered outside the normal component tree.
+                  This modal is rendered through a Portal, which ensures proper
+                  z-index management and can be rendered outside the normal
+                  component tree.
                 </Text>
                 <Button
                   title="Close"
@@ -346,61 +364,62 @@ export const ModalExamples: React.FC = () => {
   );
 };
 
-const createStyles = (colors: any, spacing: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    marginBottom: spacing.xl,
-    textAlign: 'center',
-  },
-  section: {
-    marginBottom: spacing.xl,
-    padding: spacing.lg,
-    backgroundColor: colors.background.secondary,
-    borderRadius: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  description: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    lineHeight: 20,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  modalText: {
-    fontSize: 16,
-    color: colors.text.primary,
-    lineHeight: 24,
-    marginBottom: spacing.lg,
-  },
-  formContainer: {
-    gap: spacing.md,
-  },
-  formButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-});
+const createStyles = (colors: any, spacing: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.text.primary,
+      marginBottom: spacing.xl,
+      textAlign: 'center',
+    },
+    section: {
+      marginBottom: spacing.xl,
+      padding: spacing.lg,
+      backgroundColor: colors.background.secondary,
+      borderRadius: 8,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text.primary,
+      marginBottom: spacing.md,
+    },
+    description: {
+      fontSize: 14,
+      color: colors.text.secondary,
+      lineHeight: 20,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    modalText: {
+      fontSize: 16,
+      color: colors.text.primary,
+      lineHeight: 24,
+      marginBottom: spacing.lg,
+    },
+    formContainer: {
+      gap: spacing.md,
+    },
+    formButtons: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+      marginTop: spacing.lg,
+    },
+  });
 
 export default ModalExamples;

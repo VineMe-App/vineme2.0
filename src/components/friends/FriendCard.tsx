@@ -9,14 +9,12 @@ import type { FriendshipWithUser } from '../../services/friendships';
 interface FriendCardProps {
   friendship: FriendshipWithUser;
   onRemoveFriend?: (friendId: string) => void;
-  onBlockUser?: (friendId: string) => void;
   showActions?: boolean;
 }
 
 export function FriendCard({
   friendship,
   onRemoveFriend,
-  onBlockUser,
   showActions = true,
 }: FriendCardProps) {
   const friend = friendship.friend;
@@ -25,7 +23,10 @@ export function FriendCard({
     return null;
   }
 
-  const shortName = getDisplayName(friend, { lastInitial: true, fallback: 'full' });
+  const shortName = getDisplayName(friend, {
+    lastInitial: true,
+    fallback: 'full',
+  });
   const fullName = getFullName(friend);
 
   const handleRemoveFriend = () => {
@@ -34,11 +35,7 @@ export function FriendCard({
     }
   };
 
-  const handleBlockUser = () => {
-    if (friend?.id) {
-      onBlockUser?.(friend.id);
-    }
-  };
+  // Block user action removed
 
   return (
     <View style={styles.container}>
@@ -62,12 +59,6 @@ export function FriendCard({
             onPress={handleRemoveFriend}
           >
             <Text style={styles.removeButtonText}>Remove</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.blockButton]}
-            onPress={handleBlockUser}
-          >
-            <Text style={styles.blockButtonText}>Block</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -130,16 +121,6 @@ const styles = StyleSheet.create({
   },
   removeButtonText: {
     color: '#374151',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  blockButton: {
-    backgroundColor: '#fee2e2',
-    borderWidth: 1,
-    borderColor: '#fca5a5',
-  },
-  blockButtonText: {
-    color: '#dc2626',
     fontSize: 12,
     fontWeight: '500',
   },

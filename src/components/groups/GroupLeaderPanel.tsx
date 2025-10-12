@@ -11,6 +11,8 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../ui/Avatar';
 import { JoinRequestsPanel } from './JoinRequestsPanel';
+import { ArchiveModal } from './ArchiveModal';
+import { MemberManagementModal } from './MemberManagementModal';
 import { useRouter } from 'expo-router';
 import type {
   GroupWithDetails,
@@ -34,6 +36,10 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   const router = useRouter();
   // Inline actions on each card
   const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [selectedMember, setSelectedMember] =
+    useState<GroupMembershipWithUser | null>(null);
+  const [showMemberModal, setShowMemberModal] = useState(false);
 
   const { data: members, isLoading: membersLoading } = useGroupMembers(
     group.id
@@ -46,6 +52,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
     promoteToLeaderMutation,
     demoteFromLeaderMutation,
     removeMemberMutation,
+    toggleGroupCapacityMutation,
   } = useGroupLeaderActions();
 
   // Check if current user is a leader of this group
@@ -201,6 +208,53 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
     demoteFromLeaderMutation.isPending ||
     removeMemberMutation.isPending;
 
+  const handleMemberClick = (member: GroupMembershipWithUser) => {
+    setSelectedMember(member);
+    setShowMemberModal(true);
+  };
+
+  const handleCloseMemberModal = () => {
+    setShowMemberModal(false);
+    setSelectedMember(null);
+  };
+
+  const handleToggleCapacity = async () => {
+    if (!userProfile?.id) return;
+
+    const newCapacityStatus = !group.at_capacity;
+    const message = newCapacityStatus
+      ? 'This will mark the group as full. Members can still apply but will see a warning that acceptance is unlikely.'
+      : 'This will mark the group as accepting new members.';
+
+    Alert.alert(
+      newCapacityStatus ? 'Mark as Full?' : 'Mark as Available?',
+      message,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              await toggleGroupCapacityMutation.mutateAsync({
+                groupId: group.id,
+                userId: userProfile.id,
+                atCapacity: newCapacityStatus,
+              });
+              onGroupUpdated?.();
+            } catch (error) {
+              Alert.alert(
+                'Error',
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to update capacity status'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -208,12 +262,77 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           <Ionicons name="settings-outline" size={24} color="#007AFF" />
           <Text style={styles.title}>Group Management</Text>
         </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => setShowArchiveModal(true)}
+            style={styles.archiveButton}
+          >
+            <Ionicons name="archive-outline" size={20} color="#6b7280" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push(`/group-management/${group.id}/edit`)}
+            style={styles.editButton}
+          >
+            <Ionicons name="pencil-outline" size={20} color="#007AFF" />
+            <Text style={styles.editButtonText}>Edit Details</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Capacity Status */}
+      <View style={styles.capacitySection}>
+        <View style={styles.capacityInfo}>
+          <Ionicons
+            name={group.at_capacity ? 'people' : 'checkmark-circle'}
+            size={20}
+            color={group.at_capacity ? '#f97316' : '#10b981'}
+          />
+          <View style={styles.capacityTextContainer}>
+            <Text style={styles.capacityLabel}>
+              {group.at_capacity ? 'Group is Full' : 'Accepting New Members'}
+            </Text>
+            <Text style={styles.capacityDescription}>
+              {group.at_capacity
+                ? 'Members can still apply but will see a warning'
+                : 'Group is open for new member applications'}
+            </Text>
+          </View>
+        </View>
         <TouchableOpacity
-          onPress={() => router.push(`/group-management/${group.id}/edit`)}
-          style={styles.editButton}
+          onPress={handleToggleCapacity}
+          style={[
+            styles.capacityToggle,
+            group.at_capacity
+              ? styles.capacityToggleFull
+              : styles.capacityToggleAvailable,
+          ]}
+          disabled={toggleGroupCapacityMutation.isPending}
         >
-          <Ionicons name="pencil-outline" size={20} color="#007AFF" />
-          <Text style={styles.editButtonText}>Edit Details</Text>
+          {toggleGroupCapacityMutation.isPending ? (
+            <LoadingSpinner size="small" />
+          ) : (
+            <>
+              <Ionicons
+                name={
+                  group.at_capacity
+                    ? 'checkmark-circle-outline'
+                    : 'close-circle-outline'
+                }
+                size={16}
+                color={group.at_capacity ? '#10b981' : '#f97316'}
+              />
+              <Text
+                style={[
+                  styles.capacityToggleText,
+                  group.at_capacity
+                    ? styles.capacityToggleTextAvailable
+                    : styles.capacityToggleTextFull,
+                ]}
+              >
+                {group.at_capacity ? 'Mark as Available' : 'Mark as Full'}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -264,7 +383,12 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
             ) : (
               <View style={styles.membersList}>
                 {leaders.map((leader) => (
-                  <View key={leader.id} style={styles.memberItem}>
+                  <TouchableOpacity
+                    key={leader.id}
+                    style={styles.memberItem}
+                    onPress={() => handleMemberClick(leader)}
+                    activeOpacity={0.7}
+                  >
                     <Avatar
                       size={40}
                       imageUrl={leader.user?.avatar_url}
@@ -276,41 +400,12 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                       </Text>
                       <Text style={styles.memberRole}>Leader</Text>
                     </View>
-                    <View style={styles.memberActionsRow}>
-                      <TouchableOpacity
-                        style={[
-                          styles.smallAction,
-                          (isLoading || leaders.length === 1) &&
-                            styles.smallActionDisabled,
-                        ]}
-                        onPress={() => handleDemoteFromLeader(leader)}
-                        disabled={isLoading || leaders.length === 1}
-                      >
-                        <Ionicons name="arrow-down" size={18} color="#666" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          styles.smallAction,
-                          (isLoading || leaders.length === 1) &&
-                            styles.smallActionDisabled,
-                        ]}
-                        onPress={() => handleRemoveMember(leader)}
-                        disabled={isLoading || leaders.length === 1}
-                      >
-                        <Ionicons
-                          name="person-remove"
-                          size={18}
-                          color="#b91c1c"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    {leaders.length === 1 && (
-                      <Text style={styles.helperText}>
-                        Promote another member before demoting or removing the
-                        last leader.
-                      </Text>
-                    )}
-                  </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color="#9ca3af"
+                    />
+                  </TouchableOpacity>
                 ))}
               </View>
             )}
@@ -329,7 +424,12 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
               >
                 <View style={styles.membersList}>
                   {regularMembers.map((member) => (
-                    <View key={member.id} style={styles.memberItem}>
+                    <TouchableOpacity
+                      key={member.id}
+                      style={styles.memberItem}
+                      onPress={() => handleMemberClick(member)}
+                      activeOpacity={0.7}
+                    >
                       <Avatar
                         size={40}
                         imageUrl={member.user?.avatar_url}
@@ -344,27 +444,12 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                           {new Date(member.joined_at).toLocaleDateString()}
                         </Text>
                       </View>
-                      <View style={styles.memberActionsRow}>
-                        <TouchableOpacity
-                          style={styles.smallAction}
-                          onPress={() => handlePromoteToLeader(member)}
-                          disabled={isLoading}
-                        >
-                          <Ionicons name="arrow-up" size={18} color="#2563eb" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.smallAction}
-                          onPress={() => handleRemoveMember(member)}
-                          disabled={isLoading}
-                        >
-                          <Ionicons
-                            name="person-remove"
-                            size={18}
-                            color="#b91c1c"
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color="#9ca3af"
+                      />
+                    </TouchableOpacity>
                   ))}
                 </View>
               </ScrollView>
@@ -380,6 +465,41 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           />
         </View>
       )}
+
+      <ArchiveModal
+        visible={showArchiveModal}
+        groupId={group.id}
+        leaderId={userProfile?.id || ''}
+        onClose={() => setShowArchiveModal(false)}
+      />
+
+      <MemberManagementModal
+        visible={showMemberModal}
+        member={selectedMember}
+        isLastLeader={leaders.length === 1 && selectedMember?.role === 'leader'}
+        groupId={group.id}
+        leaderId={userProfile?.id || ''}
+        onClose={handleCloseMemberModal}
+        onPromoteToLeader={() => {
+          if (selectedMember) {
+            handlePromoteToLeader(selectedMember);
+            handleCloseMemberModal();
+          }
+        }}
+        onDemoteFromLeader={() => {
+          if (selectedMember) {
+            handleDemoteFromLeader(selectedMember);
+            handleCloseMemberModal();
+          }
+        }}
+        onRemoveMember={() => {
+          if (selectedMember) {
+            handleRemoveMember(selectedMember);
+            handleCloseMemberModal();
+          }
+        }}
+        loading={isLoading}
+      />
     </View>
   );
 };
@@ -407,6 +527,19 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginLeft: 8,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  archiveButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+  },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -420,6 +553,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  capacitySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    marginBottom: 16,
+  },
+  capacityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  capacityTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  capacityLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 2,
+  },
+  capacityDescription: {
+    fontSize: 12,
+    color: '#6b7280',
+    lineHeight: 16,
+  },
+  capacityToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginLeft: 12,
+  },
+  capacityToggleFull: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#10b981',
+  },
+  capacityToggleAvailable: {
+    backgroundColor: '#fff7ed',
+    borderColor: '#f97316',
+  },
+  capacityToggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  capacityToggleTextAvailable: {
+    color: '#10b981',
+  },
+  capacityToggleTextFull: {
+    color: '#f97316',
   },
   section: {
     marginBottom: 16,
@@ -462,24 +654,6 @@ const styles = StyleSheet.create({
   memberJoinDate: {
     fontSize: 14,
     color: '#666',
-  },
-  memberActionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  smallAction: {
-    padding: 8,
-    backgroundColor: '#eef2f7',
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  smallActionDisabled: {
-    opacity: 0.4,
-  },
-  helperText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#b45309',
   },
   loader: {
     marginVertical: 16,

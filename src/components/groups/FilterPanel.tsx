@@ -47,6 +47,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setCategories,
     setSearchQuery,
     setOnlyWithFriends,
+    setHideFullGroups,
     clearFilters,
   } = useGroupFiltersStore();
 
@@ -80,7 +81,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   const hasActiveFilters =
     filters.meetingDays.length > 0 ||
     filters.categories.length > 0 ||
-    filters.searchQuery.length > 0;
+    filters.searchQuery.length > 0 ||
+    filters.onlyWithFriends ||
+    filters.hideFullGroups;
 
   return (
     <View style={styles.overlay}>
@@ -161,6 +164,29 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                   ]}
                 >
                   Only groups with my friends
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Availability Filters */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Availability</Text>
+            <View style={styles.buttonGrid}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  filters.hideFullGroups && styles.filterButtonActive,
+                ]}
+                onPress={() => setHideFullGroups(!filters.hideFullGroups)}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    filters.hideFullGroups && styles.filterButtonTextActive,
+                  ]}
+                >
+                  Show only available groups
                 </Text>
               </TouchableOpacity>
             </View>

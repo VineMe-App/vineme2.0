@@ -11,11 +11,9 @@ import { ThemeProvider } from '../../../theme/provider/ThemeProvider';
 import { lightTheme } from '../../../theme/themes/light';
 
 // Mock theme provider wrapper
-const ThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider initialTheme="light">
-    {children}
-  </ThemeProvider>
-);
+const ThemeWrapper: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => <ThemeProvider initialTheme="light">{children}</ThemeProvider>;
 
 // Test content component
 const TestContent: React.FC = () => (
@@ -168,7 +166,7 @@ describe('Card Component', () => {
   describe('Interactive Behavior', () => {
     it('handles onPress events', () => {
       const mockOnPress = jest.fn();
-      
+
       render(
         <ThemeWrapper>
           <Card onPress={mockOnPress} testID="pressable-card">
@@ -179,13 +177,13 @@ describe('Card Component', () => {
 
       const card = screen.getByTestId('pressable-card');
       fireEvent.press(card);
-      
+
       expect(mockOnPress).toHaveBeenCalledTimes(1);
     });
 
     it('handles onLongPress events', () => {
       const mockOnLongPress = jest.fn();
-      
+
       render(
         <ThemeWrapper>
           <Card onLongPress={mockOnLongPress} testID="long-pressable-card">
@@ -196,13 +194,13 @@ describe('Card Component', () => {
 
       const card = screen.getByTestId('long-pressable-card');
       fireEvent(card, 'longPress');
-      
+
       expect(mockOnLongPress).toHaveBeenCalledTimes(1);
     });
 
     it('renders as TouchableOpacity by default for interactive cards', () => {
       const mockOnPress = jest.fn();
-      
+
       render(
         <ThemeWrapper>
           <Card onPress={mockOnPress} testID="touchable-card">
@@ -216,7 +214,7 @@ describe('Card Component', () => {
 
     it('renders as TouchableOpacity for interactive cards', () => {
       const mockOnPress = jest.fn();
-      
+
       render(
         <ThemeWrapper>
           <Card onPress={mockOnPress} testID="interactive-card">
@@ -256,7 +254,7 @@ describe('Card Component', () => {
 
     it('does not trigger onPress when disabled', () => {
       const mockOnPress = jest.fn();
-      
+
       const { getByTestId } = render(
         <ThemeWrapper>
           <Card onPress={mockOnPress} disabled testID="disabled-pressable-card">
@@ -266,11 +264,11 @@ describe('Card Component', () => {
       );
 
       const card = getByTestId('disabled-pressable-card');
-      
+
       // The card should be rendered as a View when disabled, not TouchableOpacity
       expect(card.type).toBe('View');
       expect(card.props.onPress).toBeUndefined();
-      
+
       // Since it's rendered as a View without onPress, it should be non-interactive
       // We don't need to test fireEvent.press as the component structure is correct
       expect(mockOnPress).not.toHaveBeenCalled();
@@ -278,10 +276,14 @@ describe('Card Component', () => {
 
     it('renders as View when disabled even with onPress', () => {
       const mockOnPress = jest.fn();
-      
+
       render(
         <ThemeWrapper>
-          <Card onPress={mockOnPress} disabled testID="disabled-interactive-card">
+          <Card
+            onPress={mockOnPress}
+            disabled
+            testID="disabled-interactive-card"
+          >
             <TestContent />
           </Card>
         </ThemeWrapper>
@@ -294,7 +296,7 @@ describe('Card Component', () => {
   describe('Accessibility', () => {
     it('applies correct accessibility role for interactive cards', () => {
       const mockOnPress = jest.fn();
-      
+
       render(
         <ThemeWrapper>
           <Card onPress={mockOnPress} testID="accessible-card">
@@ -399,7 +401,7 @@ describe('Card Component', () => {
 
     it('applies custom style prop', () => {
       const customStyle = { marginTop: 20 };
-      
+
       render(
         <ThemeWrapper>
           <Card style={customStyle} testID="custom-style-card">
@@ -419,11 +421,11 @@ describe('Card Component', () => {
         delayPressIn: 100,
         delayPressOut: 100,
       };
-      
+
       render(
         <ThemeWrapper>
-          <Card 
-            onPress={mockOnPress} 
+          <Card
+            onPress={mockOnPress}
             touchableProps={touchableProps}
             testID="touchable-props-card"
           >
@@ -437,25 +439,21 @@ describe('Card Component', () => {
 
     it('handles disabled state correctly', () => {
       const mockOnPress = jest.fn();
-      
+
       const { getByTestId } = render(
         <ThemeWrapper>
-          <Card 
-            onPress={mockOnPress} 
-            disabled
-            testID="disabled-touchable-card"
-          >
+          <Card onPress={mockOnPress} disabled testID="disabled-touchable-card">
             <TestContent />
           </Card>
         </ThemeWrapper>
       );
 
       const card = getByTestId('disabled-touchable-card');
-      
+
       // Check that it's rendered as View and onPress is not attached when disabled
       expect(card.type).toBe('View');
       expect(card.props.onPress).toBeUndefined();
-      
+
       // The function should not have been called during render
       expect(mockOnPress).not.toHaveBeenCalled();
     });
@@ -465,9 +463,7 @@ describe('Card Component', () => {
     it('handles undefined children gracefully', () => {
       render(
         <ThemeWrapper>
-          <Card testID="empty-card">
-            {undefined}
-          </Card>
+          <Card testID="empty-card">{undefined}</Card>
         </ThemeWrapper>
       );
 
@@ -477,9 +473,7 @@ describe('Card Component', () => {
     it('handles null children gracefully', () => {
       render(
         <ThemeWrapper>
-          <Card testID="null-card">
-            {null}
-          </Card>
+          <Card testID="null-card">{null}</Card>
         </ThemeWrapper>
       );
 

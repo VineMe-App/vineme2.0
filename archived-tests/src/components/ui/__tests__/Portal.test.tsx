@@ -63,9 +63,7 @@ describe('Portal Components', () => {
 
     it('applies custom style', () => {
       const customStyle = { backgroundColor: 'red' };
-      const { container } = render(
-        <PortalHost style={customStyle} />
-      );
+      const { container } = render(<PortalHost style={customStyle} />);
 
       // Should render without error
       expect(container).toBeTruthy();

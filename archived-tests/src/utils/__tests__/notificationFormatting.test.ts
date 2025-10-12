@@ -12,7 +12,10 @@ import {
   createFormattedNotification,
   NOTIFICATION_TEMPLATES,
 } from '../notificationFormatting';
-import type { NotificationTriggerData, CreateNotificationInput } from '../../types/notifications';
+import type {
+  NotificationTriggerData,
+  CreateNotificationInput,
+} from '../../types/notifications';
 
 describe('Notification Formatting', () => {
   describe('formatNotificationMessage', () => {
@@ -24,12 +27,18 @@ describe('Notification Formatting', () => {
     });
 
     it('should handle conditional sections', () => {
-      const template = 'Hello {{name}}{{#reason}}. Reason: {{reason}}{{/reason}}';
-      
-      const withReason = formatNotificationMessage(template, { name: 'John', reason: 'Test' });
+      const template =
+        'Hello {{name}}{{#reason}}. Reason: {{reason}}{{/reason}}';
+
+      const withReason = formatNotificationMessage(template, {
+        name: 'John',
+        reason: 'Test',
+      });
       expect(withReason).toBe('Hello John. Reason: Test');
-      
-      const withoutReason = formatNotificationMessage(template, { name: 'John' });
+
+      const withoutReason = formatNotificationMessage(template, {
+        name: 'John',
+      });
       expect(withoutReason).toBe('Hello John');
     });
 
@@ -49,8 +58,11 @@ describe('Notification Formatting', () => {
         fromUserName: 'John Doe',
       };
 
-      const result = generateNotificationContent('friend_request_received', triggerData);
-      
+      const result = generateNotificationContent(
+        'friend_request_received',
+        triggerData
+      );
+
       expect(result.title).toBe('New Friend Request');
       expect(result.body).toBe('John Doe wants to be your friend');
       expect(result.actionUrl).toBe('/profile/user123');
@@ -65,10 +77,15 @@ describe('Notification Formatting', () => {
         churchId: 'church123',
       };
 
-      const result = generateNotificationContent('group_request_submitted', triggerData);
-      
+      const result = generateNotificationContent(
+        'group_request_submitted',
+        triggerData
+      );
+
       expect(result.title).toBe('New Group Request');
-      expect(result.body).toBe('John Doe has requested to create "Bible Study"');
+      expect(result.body).toBe(
+        'John Doe has requested to create "Bible Study"'
+      );
       expect(result.actionUrl).toBe('/admin/groups/group123');
     });
 
@@ -81,10 +98,15 @@ describe('Notification Formatting', () => {
         reason: 'Duplicate group',
       };
 
-      const result = generateNotificationContent('group_request_denied', triggerData);
-      
+      const result = generateNotificationContent(
+        'group_request_denied',
+        triggerData
+      );
+
       expect(result.title).toBe('Group Request Declined');
-      expect(result.body).toBe('Your group "Bible Study" was declined by Admin. Reason: Duplicate group');
+      expect(result.body).toBe(
+        'Your group "Bible Study" was declined by Admin. Reason: Duplicate group'
+      );
     });
   });
 
@@ -176,7 +198,7 @@ describe('Notification Formatting', () => {
         '/(tabs)/profile',
       ];
 
-      validUrls.forEach(url => {
+      validUrls.forEach((url) => {
         const result = validateActionUrl(url);
         expect(result.isValid).toBe(true);
       });
@@ -190,7 +212,7 @@ describe('Notification Formatting', () => {
         '/profile/../admin',
       ];
 
-      invalidUrls.forEach(url => {
+      invalidUrls.forEach((url) => {
         const result = validateActionUrl(url);
         expect(result.isValid).toBe(false);
         expect(result.error?.code).toBe('INVALID_ACTION_URL');
@@ -243,7 +265,7 @@ describe('Notification Formatting', () => {
       };
 
       validateNotificationInput(input);
-      
+
       expect(input.title).toBe('New alert("xss") Request');
       expect(input.body).toBe('John wants to be your friend');
     });
@@ -257,8 +279,12 @@ describe('Notification Formatting', () => {
         fromUserName: 'John Doe',
       };
 
-      const result = createFormattedNotification('user456', 'friend_request_received', triggerData);
-      
+      const result = createFormattedNotification(
+        'user456',
+        'friend_request_received',
+        triggerData
+      );
+
       expect(result.user_id).toBe('user456');
       expect(result.type).toBe('friend_request_received');
       expect(result.title).toBe('New Friend Request');
@@ -274,7 +300,11 @@ describe('Notification Formatting', () => {
       };
 
       expect(() => {
-        createFormattedNotification('user456', 'friend_request_received', invalidTriggerData as any);
+        createFormattedNotification(
+          'user456',
+          'friend_request_received',
+          invalidTriggerData as any
+        );
       }).toThrow('Invalid trigger data');
     });
   });
@@ -296,13 +326,15 @@ describe('Notification Formatting', () => {
         'event_reminder',
       ];
 
-      expectedTypes.forEach(type => {
-        expect(NOTIFICATION_TEMPLATES[type as keyof typeof NOTIFICATION_TEMPLATES]).toBeDefined();
+      expectedTypes.forEach((type) => {
+        expect(
+          NOTIFICATION_TEMPLATES[type as keyof typeof NOTIFICATION_TEMPLATES]
+        ).toBeDefined();
       });
     });
 
     it('should have valid template structure', () => {
-      Object.values(NOTIFICATION_TEMPLATES).forEach(template => {
+      Object.values(NOTIFICATION_TEMPLATES).forEach((template) => {
         expect(template.type).toBeDefined();
         expect(template.titleTemplate).toBeDefined();
         expect(template.bodyTemplate).toBeDefined();

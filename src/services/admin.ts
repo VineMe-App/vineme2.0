@@ -92,9 +92,12 @@ export interface UpdateGroupData {
   location?: any;
   whatsapp_link?: string;
   image_url?: string;
+  at_capacity?: boolean;
 }
 
-const withDisplayName = <T extends { first_name?: string | null; last_name?: string | null }>(
+const withDisplayName = <
+  T extends { first_name?: string | null; last_name?: string | null },
+>(
   user: (T & { name?: string | null }) | null | undefined
 ) =>
   user
@@ -160,6 +163,23 @@ export class GroupAdminService {
         };
       }
 
+      // Get current user's service ID to filter groups by service
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          data: null,
+          error: new Error('User not authenticated'),
+        };
+      }
+
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('service_id')
+        .eq('id', user.id)
+        .single();
+
       let query = supabase
         .from('groups')
         .select(
@@ -181,6 +201,11 @@ export class GroupAdminService {
         )
         .eq('church_id', churchId)
         .order('created_at', { ascending: false });
+
+      // Filter by service_id if user has one (church admins only see their service's groups)
+      if (userProfile?.service_id) {
+        query = query.eq('service_id', userProfile.service_id);
+      }
 
       if (!includeAll) {
         query = query.in('status', ['pending', 'approved']);
@@ -835,6 +860,82 @@ export class GroupAdminService {
     } catch (error) {
       // Don't fail the main operation if logging fails
       console.error('Failed to log group action:', error);
+    }
+  }
+
+  /**
+   * Get all pending join requests for a specific service
+   */
+  async getServiceJoinRequests(
+    serviceId: string
+  ): Promise<AdminServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      // Check permission to manage church groups
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_groups'
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to view join requests'
+          ),
+        };
+      }
+
+      // Get all groups for this service
+      const { data: serviceGroups, error: groupsError } = await supabase
+        .from('groups')
+        .select('id')
+        .eq('service_id', serviceId);
+
+      if (groupsError) {
+        return { data: null, error: new Error(groupsError.message) };
+      }
+
+      const groupIds = serviceGroups?.map((g) => g.id) || [];
+
+      if (groupIds.length === 0) {
+        return { data: [], error: null };
+      }
+
+      // Get all pending join requests for these groups
+      const { data: requests, error: requestsError } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, first_name, last_name, avatar_url),
+          group:groups(
+            id,
+            title,
+            service_id,
+            memberships:group_memberships!inner(
+              user_id,
+              role,
+              status,
+              user:users(id, first_name, last_name, avatar_url)
+            )
+          )
+        `
+        )
+        .in('group_id', groupIds)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (requestsError) {
+        return { data: null, error: new Error(requestsError.message) };
+      }
+
+      return { data: requests || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get service join requests'),
+      };
     }
   }
 }

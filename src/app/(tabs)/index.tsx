@@ -49,7 +49,7 @@ const buildJoinRequestMessage = (
 };
 
 export default function HomeScreen() {
-  const { user, userProfile } = useAuthStore();
+  const { user, userProfile, loadUserProfile } = useAuthStore();
   const { theme } = useTheme();
 
   // Get user's church ID for filtering data
@@ -105,12 +105,19 @@ export default function HomeScreen() {
   const handleRefresh = React.useCallback(async () => {
     await Promise.all([
       // refetchEvents(), // Events disabled
+      loadUserProfile(),
       refetchGroups(),
       refetchFriends(),
       refetchRequests(),
       refetchJoinRequests(),
     ]);
-  }, [refetchGroups, refetchFriends, refetchRequests, refetchJoinRequests]);
+  }, [
+    loadUserProfile,
+    refetchGroups,
+    refetchFriends,
+    refetchRequests,
+    refetchJoinRequests,
+  ]);
 
   if (isLoading && !userGroupMemberships) {
     return (

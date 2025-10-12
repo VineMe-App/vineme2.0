@@ -1,10 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { authService } from '../../services/auth';
 import { useAuthStore } from '../../stores/auth';
@@ -17,7 +12,7 @@ export default function VerifyEmailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { initialize } = useAuthStore();
-  
+
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationResult, setVerificationResult] = useState<{
     success: boolean;
@@ -50,11 +45,11 @@ export default function VerifyEmailScreen() {
       );
 
       setVerificationResult(result);
-      
+
       if (result.success) {
         // Reinitialize auth state to reflect the verified user
         await initialize();
-        
+
         // Show success message briefly before redirecting
         setTimeout(() => {
           router.replace('/(auth)/onboarding');
@@ -74,7 +69,7 @@ export default function VerifyEmailScreen() {
   const handleResendEmail = async () => {
     try {
       const result = await authService.resendVerificationEmail();
-      
+
       if (result.success) {
         Alert.alert(
           'Email Sent',
@@ -127,7 +122,8 @@ export default function VerifyEmailScreen() {
             </View>
             <Text style={styles.title}>Email Verified!</Text>
             <Text style={styles.message}>
-              Your email has been successfully verified. You'll be redirected to complete your profile setup.
+              Your email has been successfully verified. You'll be redirected to
+              complete your profile setup.
             </Text>
           </View>
         </Card>
@@ -145,9 +141,10 @@ export default function VerifyEmailScreen() {
           </View>
           <Text style={styles.title}>Verification Failed</Text>
           <Text style={styles.message}>
-            {verificationResult?.error || 'Unable to verify your email address.'}
+            {verificationResult?.error ||
+              'Unable to verify your email address.'}
           </Text>
-          
+
           <View style={styles.buttonContainer}>
             <Button
               title="Resend Verification Email"

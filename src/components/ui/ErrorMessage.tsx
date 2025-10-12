@@ -45,7 +45,9 @@ export function ErrorMessage({
       <Text style={styles.message}>{getMessage()}</Text>
       {showRetry && canRetry() && onRetry && (
         <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-          <Text weight="semiBold" style={styles.retryText}>Try Again</Text>
+          <Text weight="semiBold" style={styles.retryText}>
+            Try Again
+          </Text>
         </TouchableOpacity>
       )}
     </View>

@@ -7,8 +7,14 @@ import { Card } from '../ui/Card';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { Text } from '../ui/Text';
-import { useNotificationSettings, useNotificationPermissions } from '../../hooks/useNotifications';
-import { registerForPushNotifications, unregisterFromPushNotifications } from '../../services/notifications';
+import {
+  useNotificationSettings,
+  useNotificationPermissions,
+} from '../../hooks/useNotifications';
+import {
+  registerForPushNotifications,
+  unregisterFromPushNotifications,
+} from '../../services/notifications';
 
 interface NotificationSettingsModalProps {
   visible: boolean;
@@ -16,12 +22,11 @@ interface NotificationSettingsModalProps {
   userId: string;
 }
 
-export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({
-  visible,
-  onClose,
-  userId,
-}) => {
-  const { settings, isLoading, error, updateSettings, isUpdating } = useNotificationSettings(userId);
+export const NotificationSettingsModal: React.FC<
+  NotificationSettingsModalProps
+> = ({ visible, onClose, userId }) => {
+  const { settings, isLoading, error, updateSettings, isUpdating } =
+    useNotificationSettings(userId);
   const { checkPermissions, requestPermissions } = useNotificationPermissions();
 
   const [localState, setLocalState] = useState({
@@ -75,7 +80,10 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
   const handleSave = async () => {
     try {
       // Handle push registration/unregistration if changed
-      if (settings && localState.push_notifications !== settings.push_notifications) {
+      if (
+        settings &&
+        localState.push_notifications !== settings.push_notifications
+      ) {
         if (localState.push_notifications) {
           // Enabling push
           const granted = await checkPermissions();
@@ -124,10 +132,16 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
 
   if (isLoading && !settings) {
     return (
-      <Modal isVisible={visible} onClose={handleClose} title="Notification Settings">
+      <Modal
+        isVisible={visible}
+        onClose={handleClose}
+        title="Notification Settings"
+      >
         <View style={styles.loadingContainer}>
           <LoadingSpinner size="large" />
-          <Text style={styles.loadingText}>Loading notification settings...</Text>
+          <Text style={styles.loadingText}>
+            Loading notification settings...
+          </Text>
         </View>
       </Modal>
     );
@@ -135,14 +149,25 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
 
   if (error) {
     return (
-      <Modal isVisible={visible} onClose={handleClose} title="Notification Settings">
-        <ErrorMessage message="Failed to load notification settings" onRetry={() => {}} />
+      <Modal
+        isVisible={visible}
+        onClose={handleClose}
+        title="Notification Settings"
+      >
+        <ErrorMessage
+          message="Failed to load notification settings"
+          onRetry={() => {}}
+        />
       </Modal>
     );
   }
 
   return (
-    <Modal isVisible={visible} onClose={handleClose} title="Notification Settings">
+    <Modal
+      isVisible={visible}
+      onClose={handleClose}
+      title="Notification Settings"
+    >
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Card style={styles.settingsCard}>
           <Text style={styles.sectionTitle}>Push Notifications</Text>
@@ -162,7 +187,10 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
                   const granted = await requestPermissions();
                   setPushGranted(granted);
                   if (!granted) {
-                    Alert.alert('Permission not granted', 'Please enable notifications in system settings.');
+                    Alert.alert(
+                      'Permission not granted',
+                      'Please enable notifications in system settings.'
+                    );
                   }
                 }}
                 variant="secondary"

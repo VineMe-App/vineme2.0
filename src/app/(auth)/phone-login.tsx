@@ -41,6 +41,11 @@ export default function PhoneLoginScreen() {
   };
 
   const handleVerify = async () => {
+    if (code.length !== 6) {
+      Alert.alert('Error', 'Please enter the complete 6-digit code');
+      return;
+    }
+
     const result = await verifyOtp(fullPhone, code, 'sms');
 
     if (result.success) {

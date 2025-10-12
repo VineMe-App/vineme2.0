@@ -100,12 +100,23 @@ export class GroupCreationService {
       // Debug diagnostics to validate auth context and derived values
       try {
         const [userRes, svcRes, jwtRes] = await Promise.all([
-          supabase.from('users').select('id, service_id, church_id, roles').eq('id', creatorId).single(),
-          supabase.from('services').select('id, church_id').eq('id', groupData.service_id).single(),
+          supabase
+            .from('users')
+            .select('id, service_id, church_id, roles')
+            .eq('id', creatorId)
+            .single(),
+          supabase
+            .from('services')
+            .select('id, church_id')
+            .eq('id', groupData.service_id)
+            .single(),
           supabase.auth.getSession(),
         ]);
         if (__DEV__) {
-          console.log('[CreateGroupDebug] session uid:', jwtRes?.data?.session?.user?.id);
+          console.log(
+            '[CreateGroupDebug] session uid:',
+            jwtRes?.data?.session?.user?.id
+          );
           console.log('[CreateGroupDebug] user row:', userRes.data);
           console.log('[CreateGroupDebug] svc row:', svcRes.data);
           console.log('[CreateGroupDebug] payload:', {
@@ -116,7 +127,8 @@ export class GroupCreationService {
           });
         }
       } catch (e) {
-        if (__DEV__) console.warn('[CreateGroupDebug] pre-insert diagnostics failed', e);
+        if (__DEV__)
+          console.warn('[CreateGroupDebug] pre-insert diagnostics failed', e);
       }
 
       // Create the group with pending status (service_id will be enforced server-side)
@@ -158,17 +170,16 @@ export class GroupCreationService {
           .select('roles')
           .eq('id', creatorId)
           .single();
-        const isChurchAdmin = Array.isArray(me?.roles) && me.roles.includes('church_admin');
+        const isChurchAdmin =
+          Array.isArray(me?.roles) && me.roles.includes('church_admin');
         if (isChurchAdmin) {
-          const result = await supabase
-            .from('group_memberships')
-            .insert({
-              group_id: group.id,
-              user_id: creatorId,
-              role: 'leader',
-              status: 'active',
-              joined_at: new Date().toISOString(),
-            });
+          const result = await supabase.from('group_memberships').insert({
+            group_id: group.id,
+            user_id: creatorId,
+            role: 'leader',
+            status: 'active',
+            joined_at: new Date().toISOString(),
+          });
           membershipError = result.error;
         }
       } catch {}
@@ -279,6 +290,31 @@ export class GroupCreationService {
   }
 
   /**
+   * Toggle group capacity status
+   */
+  async toggleGroupCapacity(
+    groupId: string,
+    userId: string,
+    atCapacity: boolean
+  ): Promise<AdminServiceResponse<Group>> {
+    try {
+      return this.updateGroupDetails(
+        groupId,
+        { at_capacity: atCapacity },
+        userId
+      );
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to toggle group capacity'),
+      };
+    }
+  }
+
+  /**
    * Promote a member to leader
    */
   async promoteToLeader(
@@ -356,6 +392,26 @@ export class GroupCreationService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Create note for the role change
+      try {
+        const { groupMembershipNotesService } = await import(
+          './groupMembershipNotes'
+        );
+        await groupMembershipNotesService.createRoleChangeNote(
+          {
+            membership_id: targetMembership.id,
+            group_id: groupId,
+            user_id: userId,
+            previous_role: targetMembership.role,
+            new_role: 'leader',
+          },
+          promoterId
+        );
+      } catch (noteError) {
+        if (__DEV__)
+          console.warn('Failed to create promotion note:', noteError);
       }
 
       return { data, error: null };
@@ -477,6 +533,25 @@ export class GroupCreationService {
         return { data: null, error: new Error(error.message) };
       }
 
+      // Create note for the role change
+      try {
+        const { groupMembershipNotesService } = await import(
+          './groupMembershipNotes'
+        );
+        await groupMembershipNotesService.createRoleChangeNote(
+          {
+            membership_id: targetMembership.id,
+            group_id: groupId,
+            user_id: userId,
+            previous_role: 'leader',
+            new_role: 'member',
+          },
+          demoterId
+        );
+      } catch (noteError) {
+        if (__DEV__) console.warn('Failed to create demotion note:', noteError);
+      }
+
       return { data, error: null };
     } catch (error) {
       return {
@@ -572,6 +647,22 @@ export class GroupCreationService {
         }
       }
 
+      // Get the membership record before updating (need ID for notes)
+      const { data: membershipRecord, error: fetchError } = await supabase
+        .from('group_memberships')
+        .select('id, status')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (fetchError || !membershipRecord) {
+        return {
+          data: null,
+          error: new Error('Membership not found'),
+        };
+      }
+
       // Remove the member by setting status to inactive
       const { error } = await supabase
         .from('group_memberships')
@@ -581,6 +672,28 @@ export class GroupCreationService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Create note for the member removal
+      try {
+        const { groupMembershipNotesService } = await import(
+          './groupMembershipNotes'
+        );
+        await groupMembershipNotesService.createStatusChangeNote(
+          {
+            membership_id: membershipRecord.id,
+            group_id: groupId,
+            user_id: userId,
+            note_type: 'member_left',
+            previous_status: 'active',
+            new_status: 'inactive',
+            note_text: 'Removed by group leader',
+          },
+          removerId
+        );
+      } catch (noteError) {
+        if (__DEV__)
+          console.warn('Failed to create member removal note:', noteError);
       }
 
       return { data: true, error: null };
@@ -636,10 +749,13 @@ export class GroupCreationService {
       // Check if user is already a member or has a pending request
       const { data: existingMembership } = await supabase
         .from('group_memberships')
-        .select('status')
+        .select('id, status, role')
         .eq('group_id', groupId)
         .eq('user_id', userId)
         .single();
+
+      let data: any = null;
+      let error: any = null;
 
       if (existingMembership) {
         if (existingMembership.status === 'active') {
@@ -656,20 +772,72 @@ export class GroupCreationService {
             ),
           };
         }
-      }
 
-      // Create pending membership
-      const { data, error } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: groupId,
-          user_id: userId,
-          role: 'member',
-          status: 'pending',
-          joined_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        // If they were inactive or archived, reuse the existing membership row
+        if (
+          existingMembership.status === 'inactive' ||
+          existingMembership.status === 'archived'
+        ) {
+          const updateResult = await supabase
+            .from('group_memberships')
+            .update({
+              status: 'pending',
+              journey_status: null, // Reset journey status for new request
+            })
+            .eq('id', existingMembership.id)
+            .select()
+            .single();
+
+          data = updateResult.data;
+          error = updateResult.error;
+
+          // Create note for the status change (rejoin request)
+          if (!error && data) {
+            try {
+              const { groupMembershipNotesService } = await import(
+                './groupMembershipNotes'
+              );
+
+              // Use appropriate note_type based on previous status
+              const noteType: 'request_archived' | 'member_left' =
+                existingMembership.status === 'inactive'
+                  ? 'member_left'
+                  : 'request_archived';
+
+              await groupMembershipNotesService.createStatusChangeNote(
+                {
+                  membership_id: existingMembership.id,
+                  group_id: groupId,
+                  user_id: userId,
+                  note_type: noteType,
+                  previous_status: existingMembership.status,
+                  new_status: 'pending',
+                  note_text: 'User requested to rejoin the group',
+                },
+                userId
+              );
+            } catch (noteError) {
+              if (__DEV__)
+                console.warn('Failed to create rejoin note:', noteError);
+            }
+          }
+        }
+      } else {
+        // No existing membership, create new one
+        const insertResult = await supabase
+          .from('group_memberships')
+          .insert({
+            group_id: groupId,
+            user_id: userId,
+            role: 'member',
+            status: 'pending',
+          })
+          .select()
+          .single();
+
+        data = insertResult.data;
+        error = insertResult.error;
+      }
 
       if (error) {
         return { data: null, error: new Error(error.message) };

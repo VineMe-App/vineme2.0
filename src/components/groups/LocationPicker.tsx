@@ -12,11 +12,37 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
 import { Input } from '../ui';
 import { locationService, type Coordinates } from '../../services/location';
 import { debounce } from '../../utils';
+import { MapViewFallback } from './MapViewFallback';
+
+// Dynamically import MapView - not available in Expo Go or on web
+// Using Platform check and try-catch to gracefully handle when the module isn't available
+let MapView: any = null;
+let Marker: any = null;
+let PROVIDER_GOOGLE: any = null;
+
+// Only try to import react-native-maps on native platforms (not web)
+if (Platform.OS !== 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-commonjs
+    const maps = require('react-native-maps');
+    MapView = maps.default;
+    Marker = maps.Marker;
+    PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+  } catch {
+    // react-native-maps not available (Expo Go) - will show fallback UI
+    console.log(
+      '[LocationPicker] react-native-maps not available - using fallback'
+    );
+  }
+} else {
+  console.log(
+    '[LocationPicker] react-native-maps not available on web - using fallback'
+  );
+}
 
 const DEFAULT_COORDINATES: Coordinates = {
   latitude: 51.4953,
@@ -38,9 +64,19 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   value,
   onChange,
 }) => {
+  // Check if MapView is available BEFORE any hooks
+  const inExpoGo = !MapView;
+
   const [search, setSearch] = useState<string>(value?.address || '');
-  const [previousSearchLength, setPreviousSearchLength] = useState((value?.address || '').length);
-  const [region, setRegion] = useState<Region>({
+  const [previousSearchLength, setPreviousSearchLength] = useState(
+    (value?.address || '').length
+  );
+  const [region, setRegion] = useState<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  }>({
     latitude: value?.coordinates?.latitude || DEFAULT_COORDINATES.latitude,
     longitude: value?.coordinates?.longitude || DEFAULT_COORDINATES.longitude,
     latitudeDelta: 0.05,
@@ -51,9 +87,12 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   );
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
-  const [userZoomLevel, setUserZoomLevel] = useState<{latitudeDelta: number, longitudeDelta: number} | null>(null);
+  const [userZoomLevel, setUserZoomLevel] = useState<{
+    latitudeDelta: number;
+    longitudeDelta: number;
+  } | null>(null);
   const [inputKey, setInputKey] = useState(0);
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const inputRef = useRef<any>(null);
 
   // Ensure marker is always visible immediately
@@ -110,23 +149,26 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           console.log('Getting current location...');
           const currentLocation = await locationService.getCurrentLocation();
           console.log('Current location received:', currentLocation);
-          
+
           if (currentLocation) {
             setSelectedCoords(currentLocation);
             const newRegion = {
               latitude: currentLocation.latitude,
               longitude: currentLocation.longitude,
-              latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-              longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
+              latitudeDelta:
+                userZoomLevel?.latitudeDelta || region.latitudeDelta,
+              longitudeDelta:
+                userZoomLevel?.longitudeDelta || region.longitudeDelta,
             };
             setRegion(newRegion);
-            
+
             // Animate map to the new location
             mapRef.current?.animateToRegion(newRegion, 1000);
-            
+
             // Get address for current location
             try {
-              const address = await locationService.reverseGeocode(currentLocation);
+              const address =
+                await locationService.reverseGeocode(currentLocation);
               console.log('Reverse geocoded address:', address);
               if (address?.formattedAddress) {
                 setSearch(address.formattedAddress);
@@ -156,8 +198,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             const newRegion = {
               latitude: DEFAULT_COORDINATES.latitude,
               longitude: DEFAULT_COORDINATES.longitude,
-              latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-              longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
+              latitudeDelta:
+                userZoomLevel?.latitudeDelta || region.latitudeDelta,
+              longitudeDelta:
+                userZoomLevel?.longitudeDelta || region.longitudeDelta,
             };
             setRegion(newRegion);
             setSearch('Default Location');
@@ -174,7 +218,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             latitude: DEFAULT_COORDINATES.latitude,
             longitude: DEFAULT_COORDINATES.longitude,
             latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-            longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
+            longitudeDelta:
+              userZoomLevel?.longitudeDelta || region.longitudeDelta,
           };
           setRegion(newRegion);
           setSearch('Default Location');
@@ -194,82 +239,81 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     initializeLocation();
   }, [value?.coordinates, onChange]);
 
-  const geocode = useMemo(
-    () => {
-      // Create different debounced functions for different delays
-      const standardGeocode = debounce(async (query: string) => {
-        if (!query.trim() || query.trim().length < 3) return;
-        setIsGeocoding(true);
-        try {
-          const coords = await locationService.geocodeAddress(query.trim());
-          if (coords) {
-            setSelectedCoords(coords);
-            const newRegion = {
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-              longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
-            };
-            setRegion(newRegion);
-            mapRef.current?.animateToRegion(newRegion, 600);
-            onChange({ address: query.trim(), coordinates: coords });
-          }
-        } finally {
-          setIsGeocoding(false);
+  const geocode = useMemo(() => {
+    // Create different debounced functions for different delays
+    const standardGeocode = debounce(async (query: string) => {
+      if (!query.trim() || query.trim().length < 3) return;
+      setIsGeocoding(true);
+      try {
+        const coords = await locationService.geocodeAddress(query.trim());
+        if (coords) {
+          setSelectedCoords(coords);
+          const newRegion = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
+            longitudeDelta:
+              userZoomLevel?.longitudeDelta || region.longitudeDelta,
+          };
+          setRegion(newRegion);
+          mapRef.current?.animateToRegion(newRegion, 600);
+          onChange({ address: query.trim(), coordinates: coords });
         }
-      }, 2000); // Standard 2-second delay
+      } finally {
+        setIsGeocoding(false);
+      }
+    }, 2000); // Standard 2-second delay
 
-      const numberGeocode = debounce(async (query: string) => {
-        if (!query.trim() || query.trim().length < 3) return;
-        setIsGeocoding(true);
-        try {
-          const coords = await locationService.geocodeAddress(query.trim());
-          if (coords) {
-            setSelectedCoords(coords);
-            const newRegion = {
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-              longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
-            };
-            setRegion(newRegion);
-            mapRef.current?.animateToRegion(newRegion, 600);
-            onChange({ address: query.trim(), coordinates: coords });
-          }
-        } finally {
-          setIsGeocoding(false);
+    const numberGeocode = debounce(async (query: string) => {
+      if (!query.trim() || query.trim().length < 3) return;
+      setIsGeocoding(true);
+      try {
+        const coords = await locationService.geocodeAddress(query.trim());
+        if (coords) {
+          setSelectedCoords(coords);
+          const newRegion = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
+            longitudeDelta:
+              userZoomLevel?.longitudeDelta || region.longitudeDelta,
+          };
+          setRegion(newRegion);
+          mapRef.current?.animateToRegion(newRegion, 600);
+          onChange({ address: query.trim(), coordinates: coords });
         }
-      }, 3000); // Longer 3-second delay for numbers
+      } finally {
+        setIsGeocoding(false);
+      }
+    }, 3000); // Longer 3-second delay for numbers
 
-      return (query: string) => {
-        // Check if first character is a number
-        const firstChar = query.trim().charAt(0);
-        const isNumber = /^\d/.test(firstChar);
-        
-        if (isNumber) {
-          numberGeocode(query);
-        } else {
-          standardGeocode(query);
-        }
-      };
-    },
-    [onChange, region, userZoomLevel]
-  );
+    return (query: string) => {
+      // Check if first character is a number
+      const firstChar = query.trim().charAt(0);
+      const isNumber = /^\d/.test(firstChar);
+
+      if (isNumber) {
+        numberGeocode(query);
+      } else {
+        standardGeocode(query);
+      }
+    };
+  }, [onChange, region, userZoomLevel]);
 
   const forceInputRecreation = () => {
-    setInputKey(prev => prev + 1);
+    setInputKey((prev) => prev + 1);
   };
 
   const handleSearchChange = (text: string) => {
     setSearch(text);
-    
+
     // Only geocode if:
     // 1. User is actively typing (text length is increasing)
     // 2. Text is at least 3 characters long
     // 3. Text is not empty
     const isTyping = text.length > previousSearchLength;
     setPreviousSearchLength(text.length);
-    
+
     // Only trigger geocoding when actively typing, not when deleting or clearing
     if (isTyping && text.length >= 3) {
       geocode(text);
@@ -278,23 +322,33 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   };
 
   const handleRegionChangeComplete = useCallback(
-    async (newRegion: Region) => {
+    async (newRegion: {
+      latitude: number;
+      longitude: number;
+      latitudeDelta: number;
+      longitudeDelta: number;
+    }) => {
       console.log('Region changed:', newRegion);
-      
+
       // Store the user's zoom level if it's different from our current zoom
-      if (!userZoomLevel || 
-          Math.abs(newRegion.latitudeDelta - userZoomLevel.latitudeDelta) > 0.001 ||
-          Math.abs(newRegion.longitudeDelta - userZoomLevel.longitudeDelta) > 0.001) {
+      if (
+        !userZoomLevel ||
+        Math.abs(newRegion.latitudeDelta - userZoomLevel.latitudeDelta) >
+          0.001 ||
+        Math.abs(newRegion.longitudeDelta - userZoomLevel.longitudeDelta) >
+          0.001
+      ) {
         setUserZoomLevel({
           latitudeDelta: newRegion.latitudeDelta,
           longitudeDelta: newRegion.longitudeDelta,
         });
       }
-      
+
       // Check if the center has changed significantly (not just zoom)
-      const centerChanged = Math.abs(newRegion.latitude - region.latitude) > 0.0001 || 
-                           Math.abs(newRegion.longitude - region.longitude) > 0.0001;
-      
+      const centerChanged =
+        Math.abs(newRegion.latitude - region.latitude) > 0.0001 ||
+        Math.abs(newRegion.longitude - region.longitude) > 0.0001;
+
       if (centerChanged) {
         setRegion(newRegion);
         const coords = {
@@ -325,6 +379,29 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     },
     [onChange, region.latitude, region.longitude, userZoomLevel]
   );
+
+  // Check if MapView is available after all hooks
+  if (!MapView) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.searchContainer}>
+          <Input
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search for a location..."
+            containerStyle={styles.searchInputContainer}
+            inputStyle={styles.searchInput}
+            accessibilityLabel="Search for a location"
+            disabled
+          />
+          <Text style={styles.searchHelper}>
+            Location search requires a development build
+          </Text>
+        </View>
+        <MapViewFallback height={300} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -360,11 +437,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           <Text style={styles.searchHelper}>Getting your location…</Text>
         )}
         {search.length > 0 && search.length < 3 && (
-          <Text style={styles.searchHelper}>Type at least 3 characters to search</Text>
+          <Text style={styles.searchHelper}>
+            Type at least 3 characters to search
+          </Text>
         )}
         {search.length > 0 && (
-          <TouchableOpacity 
-            style={styles.clearButton} 
+          <TouchableOpacity
+            style={styles.clearButton}
             onPress={() => {
               setSearch('');
               setPreviousSearchLength(0);
@@ -380,7 +459,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      
+
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}

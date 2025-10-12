@@ -71,7 +71,7 @@ export function OfflineBanner() {
 
   const getBackgroundColor = () => {
     if (showReconnected) {
-      return theme.name === 'dark' 
+      return theme.name === 'dark'
         ? 'rgba(72, 187, 120, 0.3)' // Green for reconnected (dark theme)
         : 'rgba(72, 187, 120, 0.3)'; // Green for reconnected (light theme)
     }
@@ -126,7 +126,9 @@ export function OfflineBanner() {
           </Text>
           {isOffline && (
             <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
-              <Text style={[styles.retryText, { color: theme.colors.text.primary }]}>
+              <Text
+                style={[styles.retryText, { color: theme.colors.text.primary }]}
+              >
                 Retry
               </Text>
             </TouchableOpacity>

@@ -89,6 +89,27 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       return;
     }
 
+    // Show warning if group is at capacity
+    if (group.at_capacity) {
+      Alert.alert(
+        'Group is Full',
+        'This group is currently at capacity. You can still apply, but acceptance is unlikely. Do you want to continue?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Continue',
+            onPress: () => showJoinConsent(),
+          },
+        ]
+      );
+    } else {
+      showJoinConsent();
+    }
+  };
+
+  const showJoinConsent = () => {
+    if (!userProfile) return;
+
     Alert.alert(
       'Send Join Request?',
       'By requesting to join this group, you consent to sharing your contact details with the leaders. Do you wish to send your join request?',
@@ -207,7 +228,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   // Check if current user is a leader of this group
   const userMembership = members?.find((m) => m.user_id === userProfile?.id);
   const isGroupLeader = userMembership?.role === 'leader';
-  const canManageGroup = Boolean(isGroupLeader || isChurchAdminForService);
   // removed duplicate isChurchAdminForService
 
   // Friends in group - use the same logic as groups list
@@ -303,6 +323,20 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
       <View style={styles.content}>
         <Text style={styles.description}>{group.description}</Text>
+
+        {/* Full Badge */}
+        {group.at_capacity && (
+          <View style={styles.capacityBanner}>
+            <Ionicons name="people" size={20} color="#c2410c" />
+            <View style={styles.capacityBannerTextContainer}>
+              <Text style={styles.capacityBannerTitle}>Group is Full</Text>
+              <Text style={styles.capacityBannerDescription}>
+                This group is currently at capacity. You can still apply, but
+                acceptance is unlikely.
+              </Text>
+            </View>
+          </View>
+        )}
 
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Meeting Details</Text>
@@ -490,13 +524,17 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                   </Text>
                 </View>
                 <Text style={styles.pendingRequestSubtext}>
-                  Group leaders will review your request and get back to you soon.
+                  Group leaders will review your request and get back to you
+                  soon.
                 </Text>
               </View>
               <Button
                 title="Refer a Friend"
                 onPress={() => {
-                  console.log('Refer a Friend button pressed for group:', group.id);
+                  console.log(
+                    'Refer a Friend button pressed for group:',
+                    group.id
+                  );
                   router.push({
                     pathname: '/referral',
                     params: { groupId: group.id, groupName: group.title },
@@ -691,6 +729,32 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 24,
     marginBottom: 24,
+  },
+  capacityBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff7ed',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+    marginBottom: 20,
+    gap: 12,
+  },
+  capacityBannerTextContainer: {
+    flex: 1,
+  },
+  capacityBannerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#9a3412',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  capacityBannerDescription: {
+    fontSize: 13,
+    color: '#7c2d12',
+    lineHeight: 18,
   },
   infoSection: {
     marginBottom: 24,

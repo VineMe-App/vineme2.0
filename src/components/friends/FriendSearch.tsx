@@ -14,6 +14,7 @@ import { useSearchUsers } from '../../hooks/useUsers';
 import {
   useFriendshipStatus,
   useSendFriendRequest,
+  useAcceptRejectedFriendRequest,
 } from '../../hooks/useFriendships';
 import { useAuth } from '../../hooks/useAuth';
 import { router } from 'expo-router';
@@ -133,20 +134,40 @@ function UserSearchItem({
   isLoading,
 }: UserSearchItemProps) {
   const { user: currentUser } = useAuth();
+  const shortName = getDisplayName(user, {
+    lastInitial: true,
+    fallback: 'full',
+  });
+  const fullName = getFullName(user);
   const friendshipStatusQuery = useFriendshipStatus(
     user.id || '',
     currentUser?.id
   );
+  const acceptRejected = useAcceptRejectedFriendRequest();
+  const statusDetails = friendshipStatusQuery.data;
+  const status = statusDetails?.status;
+  const isIncoming = statusDetails?.direction === 'incoming';
 
   const handleSendRequest = () => {
-    if (user.id) {
-      onSendFriendRequest(user.id, fullName || shortName || 'this person');
+    if (!user.id) return;
+
+    if (status === 'rejected' && isIncoming) {
+      acceptRejected.mutate(user.id, {
+        onSuccess: () => {
+          Alert.alert('Success', 'Friend request accepted!');
+          friendshipStatusQuery.refetch();
+        },
+        onError: (error) => {
+          Alert.alert('Error', error.message);
+        },
+      });
+      return;
     }
+
+    onSendFriendRequest(user.id, fullName || shortName || 'this person');
   };
 
   const getButtonState = () => {
-    const status = friendshipStatusQuery.data;
-
     if (friendshipStatusQuery.isLoading) {
       return {
         text: 'Loading...',
@@ -169,17 +190,19 @@ function UserSearchItem({
           variant: 'secondary' as const,
         };
       case 'rejected':
+        if (isIncoming) {
+          return {
+            text: 'Add Friend',
+            disabled: acceptRejected.isPending,
+            variant: 'primary' as const,
+          };
+        }
         return {
-          text: 'Request Rejected',
+          text: 'Request Sent',
           disabled: true,
           variant: 'secondary' as const,
         };
-      case 'blocked':
-        return {
-          text: 'Blocked',
-          disabled: true,
-          variant: 'secondary' as const,
-        };
+      // 'blocked' status removed
       default:
         return {
           text: 'Add Friend',
@@ -190,8 +213,6 @@ function UserSearchItem({
   };
 
   const buttonState = getButtonState();
-  const shortName = getDisplayName(user, { lastInitial: true, fallback: 'full' });
-  const fullName = getFullName(user);
 
   return (
     <View style={styles.userItem}>
@@ -211,7 +232,12 @@ function UserSearchItem({
       <Button
         title={buttonState.text}
         onPress={handleSendRequest}
-        disabled={buttonState.disabled || isLoading}
+        disabled={
+          buttonState.disabled ||
+          isLoading ||
+          acceptRejected.isPending ||
+          friendshipStatusQuery.isLoading
+        }
         variant={buttonState.variant}
         size="small"
       />

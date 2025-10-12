@@ -6,7 +6,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
+import {
   useOptimizedStyles,
   useStylePerformanceMonitor,
   useOptimizedThemeSwitch,
@@ -21,7 +21,10 @@ import { StylePerformanceMonitor } from '../components/debug/StylePerformanceMon
 import { Theme } from '../theme/themes/types';
 
 // Example of a performance-optimized component
-const OptimizedCard: React.FC<{ title: string; content: string }> = ({ title, content }) => {
+const OptimizedCard: React.FC<{ title: string; content: string }> = ({
+  title,
+  content,
+}) => {
   const styles = useOptimizedStyles(
     (theme: Theme) => ({
       card: {
@@ -68,7 +71,7 @@ const OptimizedCard: React.FC<{ title: string; content: string }> = ({ title, co
 const BatchOperationsDemo: React.FC = () => {
   const { theme } = useTheme();
   const { batchOperations, batchStyleUpdates } = useBatchedStyleOperations();
-  const [items, setItems] = useState<Array<{ id: number; color: string }>>([]);
+  const [items, setItems] = useState<{ id: number; color: string }[]>([]);
 
   const handleBatchCreate = useCallback(() => {
     const operations = Array.from({ length: 10 }, (_, i) => () => ({
@@ -77,7 +80,7 @@ const BatchOperationsDemo: React.FC = () => {
     }));
 
     const newItems = batchOperations(operations);
-    setItems(prev => [...prev, ...newItems]);
+    setItems((prev) => [...prev, ...newItems]);
   }, [batchOperations]);
 
   const handleBatchUpdate = useCallback(() => {
@@ -141,7 +144,7 @@ const BatchOperationsDemo: React.FC = () => {
         />
       </View>
       <View style={styles.itemsContainer}>
-        {items.map(item => (
+        {items.map((item) => (
           <View
             key={item.id}
             style={[styles.item, { backgroundColor: item.color }]}
@@ -157,9 +160,10 @@ export default function StylingSystemPerformanceDemo() {
   const { theme } = useTheme();
   const [showMonitor, setShowMonitor] = useState(false);
   const [cardCount, setCardCount] = useState(5);
-  
+
   const { optimizedToggleTheme } = useOptimizedThemeSwitch();
-  const { logPerformanceInfo, getPerformanceAnalysis } = useStylePerformanceDebug('PerformanceDemo');
+  const { logPerformanceInfo, getPerformanceAnalysis } =
+    useStylePerformanceDebug('PerformanceDemo');
   const { clearCache, getCacheStats } = useStyleCacheManagement();
 
   const styles = useOptimizedStyles(
@@ -230,13 +234,17 @@ export default function StylingSystemPerformanceDemo() {
   );
 
   const handleAddCards = useCallback(() => {
-    logPerformanceInfo('user_action', 'Adding cards', { newCount: cardCount + 5 });
-    setCardCount(prev => prev + 5);
+    logPerformanceInfo('user_action', 'Adding cards', {
+      newCount: cardCount + 5,
+    });
+    setCardCount((prev) => prev + 5);
   }, [cardCount, logPerformanceInfo]);
 
   const handleRemoveCards = useCallback(() => {
-    logPerformanceInfo('user_action', 'Removing cards', { newCount: Math.max(0, cardCount - 5) });
-    setCardCount(prev => Math.max(0, prev - 5));
+    logPerformanceInfo('user_action', 'Removing cards', {
+      newCount: Math.max(0, cardCount - 5),
+    });
+    setCardCount((prev) => Math.max(0, prev - 5));
   }, [cardCount, logPerformanceInfo]);
 
   const handleClearCache = useCallback(() => {
@@ -247,15 +255,17 @@ export default function StylingSystemPerformanceDemo() {
   const handleShowStats = useCallback(() => {
     const stats = getCacheStats();
     const analysis = getPerformanceAnalysis();
-    
+
     logPerformanceInfo('stats_request', 'Performance stats requested', {
       cacheSize: stats.size,
       hitRate: stats.hitRate,
       recommendations: analysis.recommendations.length,
       warnings: analysis.warnings.length,
     });
-    
-    alert(`Cache Size: ${stats.size}\nHit Rate: ${(stats.hitRate * 100).toFixed(1)}%\nMemory: ${(stats.totalMemoryUsage / 1000).toFixed(1)}KB`);
+
+    alert(
+      `Cache Size: ${stats.size}\nHit Rate: ${(stats.hitRate * 100).toFixed(1)}%\nMemory: ${(stats.totalMemoryUsage / 1000).toFixed(1)}KB`
+    );
   }, [getCacheStats, getPerformanceAnalysis, logPerformanceInfo]);
 
   return (
@@ -264,8 +274,9 @@ export default function StylingSystemPerformanceDemo() {
         <View style={styles.header}>
           <Text style={styles.title}>Performance Demo</Text>
           <Text style={styles.subtitle}>
-            Demonstrates styling system performance optimizations including caching, 
-            memoization, efficient theme switching, and performance monitoring.
+            Demonstrates styling system performance optimizations including
+            caching, memoization, efficient theme switching, and performance
+            monitoring.
           </Text>
         </View>
 
@@ -302,7 +313,9 @@ export default function StylingSystemPerformanceDemo() {
 
         {/* Dynamic Content */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dynamic Content ({cardCount} cards)</Text>
+          <Text style={styles.sectionTitle}>
+            Dynamic Content ({cardCount} cards)
+          </Text>
           <View style={styles.controlsRow}>
             <Button
               title="Add 5 Cards"
@@ -317,7 +330,7 @@ export default function StylingSystemPerformanceDemo() {
               onPress={handleRemoveCards}
             />
           </View>
-          
+
           {Array.from({ length: cardCount }, (_, i) => (
             <OptimizedCard
               key={i}
@@ -335,12 +348,11 @@ export default function StylingSystemPerformanceDemo() {
           <Text style={styles.sectionTitle}>Performance Tips</Text>
           <Card>
             <Text style={styles.subtitle}>
-              • Use useOptimizedStyles for component styles{'\n'}
-              • Enable performance monitoring in development{'\n'}
-              • Batch style operations when possible{'\n'}
-              • Use optimized theme switching{'\n'}
-              • Monitor cache hit rates and memory usage{'\n'}
-              • Preload critical styles for better performance
+              • Use useOptimizedStyles for component styles{'\n'}• Enable
+              performance monitoring in development{'\n'}• Batch style
+              operations when possible{'\n'}• Use optimized theme switching
+              {'\n'}• Monitor cache hit rates and memory usage{'\n'}• Preload
+              critical styles for better performance
             </Text>
           </Card>
         </View>

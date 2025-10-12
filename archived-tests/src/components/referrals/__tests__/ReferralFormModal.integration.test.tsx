@@ -14,8 +14,12 @@ import { useAuthStore } from '../../../stores/auth';
 jest.mock('../../../services/referrals');
 jest.mock('../../../stores/auth');
 
-const mockReferralService = referralService as jest.Mocked<typeof referralService>;
-const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
+const mockReferralService = referralService as jest.Mocked<
+  typeof referralService
+>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<
+  typeof useAuthStore
+>;
 
 // Test wrapper with QueryClient
 const createWrapper = () => {
@@ -122,7 +126,9 @@ describe('ReferralFormModal Integration Tests', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Too Many Referrals')).toBeTruthy();
-        expect(screen.getByText('Too many referrals in the last hour')).toBeTruthy();
+        expect(
+          screen.getByText('Too many referrals in the last hour')
+        ).toBeTruthy();
       });
 
       // Modal should not close on error
@@ -158,7 +164,9 @@ describe('ReferralFormModal Integration Tests', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Already Referred')).toBeTruthy();
-        expect(screen.getByText('This person already has an account')).toBeTruthy();
+        expect(
+          screen.getByText('This person already has an account')
+        ).toBeTruthy();
       });
     });
 
@@ -209,7 +217,9 @@ describe('ReferralFormModal Integration Tests', () => {
         </Wrapper>
       );
 
-      expect(screen.getByText('Refer a friend to Bible Study Group')).toBeTruthy();
+      expect(
+        screen.getByText('Refer a friend to Bible Study Group')
+      ).toBeTruthy();
       expect(screen.getByText(/Help someone join this group/)).toBeTruthy();
 
       // Fill out and submit form

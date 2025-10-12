@@ -1,14 +1,8 @@
 import React from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  TouchableOpacity,
-  SafeAreaView,
-  Image
-} from 'react-native';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
-import { useRouter, Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -17,34 +11,38 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text variant="h1" weight="bold" style={styles.title}>Welcome to VineMe</Text>
+          <Text variant="h1" weight="bold" style={styles.title}>
+            Welcome to VineMe
+          </Text>
           <Text variant="bodyLarge" color="secondary" style={styles.subtitle}>
             Connect with your church community and grow together in faith
           </Text>
         </View>
 
         <View style={styles.actions}>
-          <Button 
-            title="Sign up with Phone" 
+          <Button
+            title="Sign up with Phone"
             onPress={() => router.push('/(auth)/phone-signup')}
             style={styles.primaryButton}
           />
-          
+
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text variant="body" color="secondary" style={styles.dividerText}>or</Text>
+            <Text variant="body" color="secondary" style={styles.dividerText}>
+              or
+            </Text>
             <View style={styles.dividerLine} />
           </View>
 
-          <Button 
-            title="Sign in with Phone" 
+          <Button
+            title="Sign in with Phone"
             onPress={() => router.push('/(auth)/phone-login')}
             variant="secondary"
             style={styles.secondaryButton}
           />
 
-          <Button 
-            title="Sign in with Email" 
+          <Button
+            title="Sign in with Email"
             onPress={() => router.push('/(auth)/email-login')}
             variant="secondary"
             style={styles.secondaryButton}

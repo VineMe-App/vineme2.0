@@ -6,6 +6,8 @@
 import React, { createContext } from 'react';
 import { ThemeContextValue } from '../themes/types';
 
-export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextValue | undefined>(
+  undefined
+);
 
 ThemeContext.displayName = 'ThemeContext';

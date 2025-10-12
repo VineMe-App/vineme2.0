@@ -3,7 +3,13 @@
  * Provides utilities for dynamic styling, responsive design, and performance optimization
  */
 
-import { StyleSheet, ViewStyle, TextStyle, ImageStyle, Dimensions } from 'react-native';
+import {
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
+  Dimensions,
+} from 'react-native';
 import { Theme, ThemeColors, ThemeSpacing } from '../theme/themes/types';
 
 // Get device dimensions (will be updated dynamically)
@@ -37,7 +43,9 @@ export const deviceSizes = {
 
 // Style types
 export type StyleValue = ViewStyle | TextStyle | ImageStyle;
-export type ResponsiveStyleValue<T = StyleValue> = T | Partial<Record<Breakpoint, T>>;
+export type ResponsiveStyleValue<T = StyleValue> =
+  | T
+  | Partial<Record<Breakpoint, T>>;
 export type ThemeStyleFunction<T = StyleValue> = (theme: Theme) => T;
 export type ConditionalStyle<T = StyleValue> = {
   condition: boolean;
@@ -76,14 +84,14 @@ export class ResponsiveUtils {
       updateDimensions();
       const currentBreakpoint = this.getCurrentBreakpoint();
       const breakpointOrder: Breakpoint[] = ['xl', 'lg', 'md', 'sm', 'xs'];
-      
+
       // Find the best matching breakpoint value
       for (const bp of breakpointOrder) {
         if (breakpoints[bp] <= screenWidth && value[bp] !== undefined) {
           return value[bp] as T;
         }
       }
-      
+
       // Fallback to smallest available value
       for (const bp of ['xs', 'sm', 'md', 'lg', 'xl'] as Breakpoint[]) {
         if (value[bp] !== undefined) {
@@ -91,7 +99,7 @@ export class ResponsiveUtils {
         }
       }
     }
-    
+
     return value as T;
   }
 
@@ -102,11 +110,11 @@ export class ResponsiveUtils {
     styles: T
   ): Record<keyof T, StyleValue> {
     const result = {} as Record<keyof T, StyleValue>;
-    
+
     for (const [key, value] of Object.entries(styles)) {
       result[key as keyof T] = this.getResponsiveValue(value);
     }
-    
+
     return result;
   }
 
@@ -139,11 +147,11 @@ export class ThemeStyleUtils {
     theme: Theme
   ): Record<keyof T, StyleValue> {
     const styles = {} as Record<keyof T, StyleValue>;
-    
+
     for (const [key, styleFunction] of Object.entries(styleDefinitions)) {
       styles[key as keyof T] = styleFunction(theme);
     }
-    
+
     return styles;
   }
 
@@ -156,12 +164,12 @@ export class ThemeStyleUtils {
     theme?: Theme
   ): StyleValue {
     if (!overrideStyles) return baseStyles;
-    
+
     // Handle theme-dependent overrides
     if (typeof overrideStyles === 'function' && theme) {
       overrideStyles = (overrideStyles as ThemeStyleFunction)(theme);
     }
-    
+
     return {
       ...baseStyles,
       ...overrideStyles,
@@ -176,13 +184,13 @@ export class ThemeStyleUtils {
     conditionalStyles: ConditionalStyle[]
   ): StyleValue {
     let result = { ...baseStyles };
-    
+
     for (const { condition, style } of conditionalStyles) {
       if (condition) {
         result = { ...result, ...style };
       }
     }
-    
+
     return result;
   }
 
@@ -199,23 +207,26 @@ export class ThemeStyleUtils {
     }
   ): StyleValue {
     const styles: StyleValue = {};
-    
+
     if (options.backgroundColor) {
-      styles.backgroundColor = this.getThemeColor(theme, options.backgroundColor);
+      styles.backgroundColor = this.getThemeColor(
+        theme,
+        options.backgroundColor
+      );
     }
-    
+
     if (options.textColor) {
       styles.color = this.getThemeColor(theme, options.textColor);
     }
-    
+
     if (options.borderColor) {
       styles.borderColor = this.getThemeColor(theme, options.borderColor);
     }
-    
+
     if (options.opacity !== undefined) {
       styles.opacity = options.opacity;
     }
-    
+
     return styles;
   }
 
@@ -226,7 +237,7 @@ export class ThemeStyleUtils {
     // Check if it's a theme color path (e.g., 'primary.500', 'text.primary')
     const colorParts = color.split('.');
     let colorValue: any = theme.colors;
-    
+
     for (const part of colorParts) {
       if (colorValue && typeof colorValue === 'object' && part in colorValue) {
         colorValue = colorValue[part];
@@ -235,7 +246,7 @@ export class ThemeStyleUtils {
         return color;
       }
     }
-    
+
     return typeof colorValue === 'string' ? colorValue : color;
   }
 
@@ -254,43 +265,58 @@ export class ThemeStyleUtils {
     }
   ): StyleValue {
     const styles: StyleValue = {};
-    
+
     if (options.margin !== undefined) {
       styles.margin = this.getSpacingValue(theme, options.margin);
     }
-    
+
     if (options.marginHorizontal !== undefined) {
-      styles.marginHorizontal = this.getSpacingValue(theme, options.marginHorizontal);
+      styles.marginHorizontal = this.getSpacingValue(
+        theme,
+        options.marginHorizontal
+      );
     }
-    
+
     if (options.marginVertical !== undefined) {
-      styles.marginVertical = this.getSpacingValue(theme, options.marginVertical);
+      styles.marginVertical = this.getSpacingValue(
+        theme,
+        options.marginVertical
+      );
     }
-    
+
     if (options.padding !== undefined) {
       styles.padding = this.getSpacingValue(theme, options.padding);
     }
-    
+
     if (options.paddingHorizontal !== undefined) {
-      styles.paddingHorizontal = this.getSpacingValue(theme, options.paddingHorizontal);
+      styles.paddingHorizontal = this.getSpacingValue(
+        theme,
+        options.paddingHorizontal
+      );
     }
-    
+
     if (options.paddingVertical !== undefined) {
-      styles.paddingVertical = this.getSpacingValue(theme, options.paddingVertical);
+      styles.paddingVertical = this.getSpacingValue(
+        theme,
+        options.paddingVertical
+      );
     }
-    
+
     return styles;
   }
 
   /**
    * Get spacing value from theme or return as-is if it's a number
    */
-  private static getSpacingValue(theme: Theme, spacing: keyof ThemeSpacing | number): number {
+  private static getSpacingValue(
+    theme: Theme,
+    spacing: keyof ThemeSpacing | number
+  ): number {
     // Check if it's a theme spacing key
     if (spacing in theme.spacing) {
       return theme.spacing[spacing as keyof ThemeSpacing];
     }
-    
+
     // Otherwise, treat it as a direct number value
     return spacing as number;
   }
@@ -301,7 +327,7 @@ export class ThemeStyleUtils {
  */
 export class PerformantStyleUtils {
   private static styleCache = new Map<string, any>();
-  
+
   /**
    * Create cached StyleSheet to avoid recreation
    */
@@ -310,14 +336,14 @@ export class PerformantStyleUtils {
     cacheKey?: string
   ): T {
     const key = cacheKey || JSON.stringify(styles);
-    
+
     if (this.styleCache.has(key)) {
       return this.styleCache.get(key);
     }
-    
+
     const styleObject = typeof styles === 'function' ? styles() : styles;
     const createdStyles = StyleSheet.create(styleObject);
-    
+
     this.styleCache.set(key, createdStyles);
     return createdStyles;
   }
@@ -331,15 +357,17 @@ export class PerformantStyleUtils {
     additionalCacheKey?: string
   ): T {
     const themeKey = `${theme.name}-${theme.isDark ? 'dark' : 'light'}`;
-    const cacheKey = additionalCacheKey ? `${themeKey}-${additionalCacheKey}` : themeKey;
-    
+    const cacheKey = additionalCacheKey
+      ? `${themeKey}-${additionalCacheKey}`
+      : themeKey;
+
     if (this.styleCache.has(cacheKey)) {
       return this.styleCache.get(cacheKey);
     }
-    
+
     const styles = StyleSheet.create(styleFactory(theme));
     this.styleCache.set(cacheKey, styles);
-    
+
     return styles;
   }
 
@@ -348,10 +376,10 @@ export class PerformantStyleUtils {
    */
   static clearCache(pattern?: string): void {
     if (pattern) {
-      const keysToDelete = Array.from(this.styleCache.keys()).filter(key => 
+      const keysToDelete = Array.from(this.styleCache.keys()).filter((key) =>
         key.includes(pattern)
       );
-      keysToDelete.forEach(key => this.styleCache.delete(key));
+      keysToDelete.forEach((key) => this.styleCache.delete(key));
     } else {
       this.styleCache.clear();
     }
@@ -377,13 +405,13 @@ export class StyleMergeUtils {
    */
   static mergeStyles(...styles: (StyleValue | undefined | null)[]): StyleValue {
     const result: StyleValue = {};
-    
+
     for (const style of styles) {
       if (style && typeof style === 'object') {
         Object.assign(result, style);
       }
     }
-    
+
     return result;
   }
 
@@ -392,19 +420,19 @@ export class StyleMergeUtils {
    */
   static conditionalMerge(
     baseStyle: StyleValue,
-    conditionalStyles: Array<{
+    conditionalStyles: {
       condition: boolean;
       style: StyleValue;
-    }>
+    }[]
   ): StyleValue {
     let result = { ...baseStyle };
-    
+
     for (const { condition, style } of conditionalStyles) {
       if (condition && style) {
         result = this.mergeStyles(result, style);
       }
     }
-    
+
     return result;
   }
 
@@ -412,15 +440,15 @@ export class StyleMergeUtils {
    * Merge styles with priority (later styles override earlier ones)
    */
   static mergeWithPriority(
-    ...stylesWithPriority: Array<{
+    ...stylesWithPriority: {
       style: StyleValue;
       priority: number;
-    }>
+    }[]
   ): StyleValue {
     const sortedStyles = stylesWithPriority
       .sort((a, b) => a.priority - b.priority)
-      .map(item => item.style);
-    
+      .map((item) => item.style);
+
     return this.mergeStyles(...sortedStyles);
   }
 }
@@ -434,7 +462,13 @@ export class LayoutUtils {
    */
   static createFlexStyles(options: {
     direction?: 'row' | 'column';
-    justify?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
+    justify?:
+      | 'flex-start'
+      | 'flex-end'
+      | 'center'
+      | 'space-between'
+      | 'space-around'
+      | 'space-evenly';
     align?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
     wrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
     flex?: number;
@@ -461,14 +495,14 @@ export class LayoutUtils {
     zIndex?: number;
   }): ViewStyle {
     const styles: ViewStyle = {};
-    
+
     if (options.position) styles.position = options.position;
     if (options.top !== undefined) styles.top = options.top;
     if (options.right !== undefined) styles.right = options.right;
     if (options.bottom !== undefined) styles.bottom = options.bottom;
     if (options.left !== undefined) styles.left = options.left;
     if (options.zIndex !== undefined) styles.zIndex = options.zIndex;
-    
+
     return styles;
   }
 
@@ -485,15 +519,16 @@ export class LayoutUtils {
     aspectRatio?: number;
   }): ViewStyle {
     const styles: ViewStyle = {};
-    
+
     if (options.width !== undefined) styles.width = options.width;
     if (options.height !== undefined) styles.height = options.height;
     if (options.minWidth !== undefined) styles.minWidth = options.minWidth;
     if (options.minHeight !== undefined) styles.minHeight = options.minHeight;
     if (options.maxWidth !== undefined) styles.maxWidth = options.maxWidth;
     if (options.maxHeight !== undefined) styles.maxHeight = options.maxHeight;
-    if (options.aspectRatio !== undefined) styles.aspectRatio = options.aspectRatio;
-    
+    if (options.aspectRatio !== undefined)
+      styles.aspectRatio = options.aspectRatio;
+
     return styles;
   }
 }
@@ -521,17 +556,16 @@ export class StyleUtils {
         theme
       );
     }
-    
+
     return this.performant.createCachedStyles(styleDefinitions);
   }
 
   /**
    * Utility to create responsive, themed styles
    */
-  static createResponsiveThemedStyles<T extends Record<string, ResponsiveStyleValue>>(
-    styles: T,
-    theme: Theme
-  ): Record<keyof T, StyleValue> {
+  static createResponsiveThemedStyles<
+    T extends Record<string, ResponsiveStyleValue>,
+  >(styles: T, theme: Theme): Record<keyof T, StyleValue> {
     const responsiveStyles = this.responsive.createResponsiveStyles(styles);
     return this.performant.createThemedCachedStyles(
       () => responsiveStyles,
@@ -544,11 +578,11 @@ export class StyleUtils {
 // Export default instance
 export const styleUtils = StyleUtils;
 
-// Export individual utility classes for direct access
+// Export individual utility classes with renamed exports to avoid React 19 conflicts
 export {
-  ResponsiveUtils,
-  ThemeStyleUtils,
-  PerformantStyleUtils,
-  StyleMergeUtils,
-  LayoutUtils,
+  ResponsiveUtils as ResponsiveStyleUtils,
+  ThemeStyleUtils as ThemedStyleUtils,
+  PerformantStyleUtils as PerformantStyles,
+  StyleMergeUtils as MergedStyleUtils,
+  LayoutUtils as LayoutStyleUtils,
 };

@@ -42,7 +42,7 @@ describe('Referral Validation Edge Cases', () => {
         'info@café.fr',
       ];
 
-      internationalEmails.forEach(email => {
+      internationalEmails.forEach((email) => {
         const data = {
           email,
           phone: '+1234567890',
@@ -65,7 +65,7 @@ describe('Referral Validation Edge Cases', () => {
         '+81-3-3264-1234',
       ];
 
-      edgeCasePhones.forEach(phone => {
+      edgeCasePhones.forEach((phone) => {
         const data = {
           email: 'test@example.com',
           phone,
@@ -87,7 +87,7 @@ describe('Referral Validation Edge Cases', () => {
         '+1-000-000-0000',
       ];
 
-      invalidPhones.forEach(phone => {
+      invalidPhones.forEach((phone) => {
         const data = {
           email: 'test@example.com',
           phone,
@@ -132,7 +132,7 @@ describe('Referral Validation Edge Cases', () => {
         'Congratulations! You have won the lottery!',
       ];
 
-      suspiciousNotes.forEach(note => {
+      suspiciousNotes.forEach((note) => {
         const data = {
           email: 'test@example.com',
           phone: '+1234567890',
@@ -146,8 +146,9 @@ describe('Referral Validation Edge Cases', () => {
     });
 
     it('should handle mixed language content', () => {
-      const mixedLanguageNote = 'This person is great! 这个人很棒！ Esta persona es genial! Cette personne est formidable!';
-      
+      const mixedLanguageNote =
+        'This person is great! 这个人很棒！ Esta persona es genial! Cette personne est formidable!';
+
       const data = {
         email: 'test@example.com',
         phone: '+1234567890',
@@ -182,7 +183,7 @@ describe('Referral Validation Edge Cases', () => {
         '123e4567-e89b-12d3-a456-426614174000x', // too long
       ];
 
-      malformedUUIDs.forEach(uuid => {
+      malformedUUIDs.forEach((uuid) => {
         const data = {
           email: 'test@example.com',
           phone: '+1234567890',
@@ -226,7 +227,7 @@ describe('Referral Validation Edge Cases', () => {
         undefined as any,
       ];
 
-      edgeCaseGroupIds.forEach(groupId => {
+      edgeCaseGroupIds.forEach((groupId) => {
         const data = {
           email: 'test@example.com',
           phone: '+1234567890',
@@ -235,7 +236,7 @@ describe('Referral Validation Edge Cases', () => {
         const referrerId = '123e4567-e89b-12d3-a456-426614174000';
 
         const result = validateServerReferralData(data, referrerId, groupId);
-        
+
         if (groupId && groupId.trim()) {
           expect(result.isValid).toBe(false);
           expect(result.errors.groupId).toBe('Invalid group ID format');
@@ -323,7 +324,7 @@ describe('Referral Validation Edge Cases', () => {
         '1 555 123 4567',
       ];
 
-      phoneVariations.forEach(phone => {
+      phoneVariations.forEach((phone) => {
         const data = {
           email: 'test@example.com',
           phone,
@@ -344,7 +345,7 @@ describe('Referral Validation Edge Cases', () => {
 
     it('should handle rapid successive calls', () => {
       const userId = 'rapid-user';
-      
+
       // Make rapid successive calls
       for (let i = 0; i < 10; i++) {
         referralRateLimiter.recordReferral(userId);
@@ -357,25 +358,25 @@ describe('Referral Validation Edge Cases', () => {
 
     it('should handle concurrent rate limit checks', () => {
       const userId = 'concurrent-user';
-      
+
       // Simulate concurrent checks
-      const results = Array(5).fill(null).map(() => 
-        referralRateLimiter.canMakeReferral(userId)
-      );
+      const results = Array(5)
+        .fill(null)
+        .map(() => referralRateLimiter.canMakeReferral(userId));
 
       // All should return the same result
       const firstResult = results[0];
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.allowed).toBe(firstResult.allowed);
       });
     });
 
     it('should handle time boundary edge cases', () => {
       const userId = 'time-boundary-user';
-      
+
       // Record referrals at the edge of time boundaries
       referralRateLimiter.recordReferral(userId);
-      
+
       // Check status immediately
       const status = referralRateLimiter.getRateLimitStatus(userId);
       expect(status.hourlyUsed).toBe(1);
@@ -392,7 +393,7 @@ describe('Referral Validation Edge Cases', () => {
         '<script>alert("xss")</script>',
       ];
 
-      invalidUserIds.forEach(userId => {
+      invalidUserIds.forEach((userId) => {
         expect(() => {
           referralRateLimiter.canMakeReferral(userId);
         }).not.toThrow();
@@ -402,9 +403,11 @@ describe('Referral Validation Edge Cases', () => {
 
   describe('Error Message Creation Edge Cases', () => {
     it('should handle unknown error types', () => {
-      const unknownError = new Error('Something completely unexpected happened');
+      const unknownError = new Error(
+        'Something completely unexpected happened'
+      );
       const result = createReferralErrorMessage(unknownError);
-      
+
       expect(result.title).toBe('Referral Failed');
       expect(result.retryable).toBe(true);
       expect(result.suggestions).toContain('Please try again in a few moments');
@@ -413,16 +416,19 @@ describe('Referral Validation Edge Cases', () => {
     it('should handle errors with no message', () => {
       const emptyError = new Error('');
       const result = createReferralErrorMessage(emptyError);
-      
+
       expect(result.title).toBeDefined();
       expect(result.message).toBeDefined();
       expect(result.suggestions).toBeDefined();
     });
 
     it('should handle validation errors with specific field information', () => {
-      const validationError = new ValidationError('Invalid email format', 'email');
+      const validationError = new ValidationError(
+        'Invalid email format',
+        'email'
+      );
       const result = createReferralErrorMessage(validationError);
-      
+
       expect(result.title).toBe('Invalid Information');
       expect(result.actionable).toBe(true);
       expect(result.retryable).toBe(true);
@@ -430,22 +436,38 @@ describe('Referral Validation Edge Cases', () => {
 
     it('should provide contextual suggestions based on error type', () => {
       const errorTypes = [
-        { error: new Error('rate limit exceeded'), expectedSuggestion: 'wait before making' },
-        { error: new Error('already exists'), expectedSuggestion: 'already have an account' },
-        { error: new Error('network connection failed'), expectedSuggestion: 'internet connection' },
-        { error: new Error('email failed to send'), expectedSuggestion: 'create an account manually' },
+        {
+          error: new Error('rate limit exceeded'),
+          expectedSuggestion: 'wait before making',
+        },
+        {
+          error: new Error('already exists'),
+          expectedSuggestion: 'already have an account',
+        },
+        {
+          error: new Error('network connection failed'),
+          expectedSuggestion: 'internet connection',
+        },
+        {
+          error: new Error('email failed to send'),
+          expectedSuggestion: 'create an account manually',
+        },
       ];
 
       errorTypes.forEach(({ error, expectedSuggestion }) => {
         const result = createReferralErrorMessage(error);
-        expect(result.suggestions.some(s => s.toLowerCase().includes(expectedSuggestion))).toBe(true);
+        expect(
+          result.suggestions.some((s) =>
+            s.toLowerCase().includes(expectedSuggestion)
+          )
+        ).toBe(true);
       });
     });
 
     it('should handle circular reference errors', () => {
       const circularError: any = new Error('Circular reference error');
       circularError.circular = circularError;
-      
+
       expect(() => {
         createReferralErrorMessage(circularError);
       }).not.toThrow();
@@ -455,7 +477,7 @@ describe('Referral Validation Edge Cases', () => {
   describe('Performance Edge Cases', () => {
     it('should handle validation of large datasets efficiently', () => {
       const startTime = Date.now();
-      
+
       // Validate 1000 referrals
       for (let i = 0; i < 1000; i++) {
         const data = {
@@ -463,26 +485,26 @@ describe('Referral Validation Edge Cases', () => {
           phone: `+123456789${i % 10}`,
           note: `Test referral ${i}`,
         };
-        
+
         validateReferralForm(data);
       }
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       // Should complete within reasonable time (adjust threshold as needed)
       expect(duration).toBeLessThan(5000); // 5 seconds
     });
 
     it('should handle memory-intensive validation scenarios', () => {
       const largeNote = 'a'.repeat(100000); // 100KB note
-      
+
       const data = {
         email: 'test@example.com',
         phone: '+1234567890',
         note: largeNote,
       };
-      
+
       expect(() => {
         validateReferralForm(data);
       }).not.toThrow();

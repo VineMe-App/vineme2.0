@@ -28,7 +28,11 @@ describe('migrationHelpers', () => {
 
   describe('generateMigrationDocs', () => {
     it('should generate comprehensive migration documentation', () => {
-      const docs = migrationHelpers.generateMigrationDocs('TestComponent', mockMappings, mockConfig);
+      const docs = migrationHelpers.generateMigrationDocs(
+        'TestComponent',
+        mockMappings,
+        mockConfig
+      );
 
       expect(docs).toContain('# Migration Guide: TestComponent');
       expect(docs).toContain('## Style Mappings');
@@ -44,7 +48,11 @@ describe('migrationHelpers', () => {
     });
 
     it('should handle empty mappings', () => {
-      const docs = migrationHelpers.generateMigrationDocs('TestComponent', [], mockConfig);
+      const docs = migrationHelpers.generateMigrationDocs(
+        'TestComponent',
+        [],
+        mockConfig
+      );
 
       expect(docs).toContain('# Migration Guide: TestComponent');
       expect(docs).not.toContain('## Style Mappings');
@@ -52,8 +60,15 @@ describe('migrationHelpers', () => {
     });
 
     it('should exclude compatibility layer section when not enabled', () => {
-      const configWithoutCompatibility = { ...mockConfig, addCompatibilityLayer: false };
-      const docs = migrationHelpers.generateMigrationDocs('TestComponent', mockMappings, configWithoutCompatibility);
+      const configWithoutCompatibility = {
+        ...mockConfig,
+        addCompatibilityLayer: false,
+      };
+      const docs = migrationHelpers.generateMigrationDocs(
+        'TestComponent',
+        mockMappings,
+        configWithoutCompatibility
+      );
 
       expect(docs).not.toContain('## Compatibility Layer');
     });
@@ -61,11 +76,18 @@ describe('migrationHelpers', () => {
 
   describe('generateExampleUsage', () => {
     it('should generate valid React component example', () => {
-      const example = migrationHelpers.generateExampleUsage('TestComponent', lightTheme);
+      const example = migrationHelpers.generateExampleUsage(
+        'TestComponent',
+        lightTheme
+      );
 
       expect(example).toContain("import React from 'react';");
-      expect(example).toContain("import { TestComponent } from '../components/TestComponent';");
-      expect(example).toContain("import { ThemeProvider } from '../theme/provider/ThemeProvider';");
+      expect(example).toContain(
+        "import { TestComponent } from '../components/TestComponent';"
+      );
+      expect(example).toContain(
+        "import { ThemeProvider } from '../theme/provider/ThemeProvider';"
+      );
       expect(example).toContain('export function TestComponentExample()');
       expect(example).toContain('<ThemeProvider>');
       expect(example).toContain('<TestComponent />');
@@ -75,11 +97,18 @@ describe('migrationHelpers', () => {
 
   describe('generateMigrationTests', () => {
     it('should generate comprehensive test file', () => {
-      const tests = migrationHelpers.generateMigrationTests('TestComponent', mockMappings);
+      const tests = migrationHelpers.generateMigrationTests(
+        'TestComponent',
+        mockMappings
+      );
 
       expect(tests).toContain("import React from 'react';");
-      expect(tests).toContain("import { render } from '@testing-library/react-native';");
-      expect(tests).toContain("import { TestComponent } from '../TestComponent';");
+      expect(tests).toContain(
+        "import { render } from '@testing-library/react-native';"
+      );
+      expect(tests).toContain(
+        "import { TestComponent } from '../TestComponent';"
+      );
       expect(tests).toContain("describe('TestComponent Migration'");
       expect(tests).toContain('it("should render with theme styles"');
       expect(tests).toContain('it("should apply theme-based styles correctly"');
@@ -88,11 +117,16 @@ describe('migrationHelpers', () => {
     });
 
     it('should handle components without mappings', () => {
-      const tests = migrationHelpers.generateMigrationTests('TestComponent', []);
+      const tests = migrationHelpers.generateMigrationTests(
+        'TestComponent',
+        []
+      );
 
       expect(tests).toContain("describe('TestComponent Migration'");
       expect(tests).toContain('it("should render with theme styles"');
-      expect(tests).not.toContain('it("should apply theme-based styles correctly"');
+      expect(tests).not.toContain(
+        'it("should apply theme-based styles correctly"'
+      );
     });
   });
 
@@ -112,7 +146,11 @@ describe('migrationHelpers', () => {
         // Uses colors.background.primary
       `;
 
-      const result = migrationHelpers.validateMigration(originalCode, migratedCode, mockMappings);
+      const result = migrationHelpers.validateMigration(
+        originalCode,
+        migratedCode,
+        mockMappings
+      );
 
       expect(result.isValid).toBe(true);
       expect(result.issues).toHaveLength(0);
@@ -122,7 +160,11 @@ describe('migrationHelpers', () => {
       const originalCode = 'const styles = StyleSheet.create({});';
       const migratedCode = 'const styles = StyleSheet.create({});';
 
-      const result = migrationHelpers.validateMigration(originalCode, migratedCode, []);
+      const result = migrationHelpers.validateMigration(
+        originalCode,
+        migratedCode,
+        []
+      );
 
       expect(result.isValid).toBe(false);
       expect(result.issues).toContain('Missing useTheme hook import or usage');
@@ -130,19 +172,31 @@ describe('migrationHelpers', () => {
 
     it('should detect StyleSheet.create without theme usage', () => {
       const originalCode = 'const styles = StyleSheet.create({});';
-      const migratedCode = 'const styles = StyleSheet.create({ container: {} });';
+      const migratedCode =
+        'const styles = StyleSheet.create({ container: {} });';
 
-      const result = migrationHelpers.validateMigration(originalCode, migratedCode, []);
+      const result = migrationHelpers.validateMigration(
+        originalCode,
+        migratedCode,
+        []
+      );
 
       expect(result.isValid).toBe(false);
-      expect(result.issues).toContain('StyleSheet.create found but no theme usage detected');
+      expect(result.issues).toContain(
+        'StyleSheet.create found but no theme usage detected'
+      );
     });
 
     it('should detect unapplied high-confidence mappings', () => {
       const originalCode = 'const styles = StyleSheet.create({});';
-      const migratedCode = 'const theme = useTheme(); const styles = createStyles(theme);';
+      const migratedCode =
+        'const theme = useTheme(); const styles = createStyles(theme);';
 
-      const result = migrationHelpers.validateMigration(originalCode, migratedCode, mockMappings);
+      const result = migrationHelpers.validateMigration(
+        originalCode,
+        migratedCode,
+        mockMappings
+      );
 
       expect(result.isValid).toBe(false);
       expect(result.issues).toContain(
@@ -152,22 +206,34 @@ describe('migrationHelpers', () => {
 
     it('should detect TODO items', () => {
       const originalCode = 'const styles = StyleSheet.create({});';
-      const migratedCode = 'const theme = useTheme(); // TODO: Complete migration';
+      const migratedCode =
+        'const theme = useTheme(); // TODO: Complete migration';
 
-      const result = migrationHelpers.validateMigration(originalCode, migratedCode, []);
+      const result = migrationHelpers.validateMigration(
+        originalCode,
+        migratedCode,
+        []
+      );
 
       expect(result.isValid).toBe(false);
-      expect(result.issues).toContain('Migration contains TODO items that need attention');
+      expect(result.issues).toContain(
+        'Migration contains TODO items that need attention'
+      );
     });
   });
 
   describe('generateMigrationChecklist', () => {
     it('should generate comprehensive checklist', () => {
-      const checklist = migrationHelpers.generateMigrationChecklist('TestComponent', mockMappings);
+      const checklist = migrationHelpers.generateMigrationChecklist(
+        'TestComponent',
+        mockMappings
+      );
 
       expect(checklist).toContain('✅ Add theme imports to TestComponent');
       expect(checklist).toContain('✅ Add useTheme hook to TestComponent');
-      expect(checklist).toContain('✅ Convert StyleSheet.create to theme-aware styles');
+      expect(checklist).toContain(
+        '✅ Convert StyleSheet.create to theme-aware styles'
+      );
       expect(checklist).toContain('✅ Apply 2 style mappings');
       expect(checklist).toContain('⚠️ Review 1 low-confidence mappings');
       expect(checklist).toContain('✅ Update component props to accept theme');
@@ -177,7 +243,10 @@ describe('migrationHelpers', () => {
     });
 
     it('should handle components without mappings', () => {
-      const checklist = migrationHelpers.generateMigrationChecklist('TestComponent', []);
+      const checklist = migrationHelpers.generateMigrationChecklist(
+        'TestComponent',
+        []
+      );
 
       expect(checklist).not.toContain('Apply');
       expect(checklist).not.toContain('Review');
@@ -185,8 +254,14 @@ describe('migrationHelpers', () => {
     });
 
     it('should handle mappings without review items', () => {
-      const highConfidenceMappings = mockMappings.map(m => ({ ...m, needsReview: false }));
-      const checklist = migrationHelpers.generateMigrationChecklist('TestComponent', highConfidenceMappings);
+      const highConfidenceMappings = mockMappings.map((m) => ({
+        ...m,
+        needsReview: false,
+      }));
+      const checklist = migrationHelpers.generateMigrationChecklist(
+        'TestComponent',
+        highConfidenceMappings
+      );
 
       expect(checklist).toContain('✅ Apply 2 style mappings');
       expect(checklist).not.toContain('⚠️ Review');
@@ -213,8 +288,12 @@ describe('migrationHelpers', () => {
       expect(metadata.componentName).toBe('TestComponent');
       expect(metadata.hasStyleSheet).toBe(true);
       expect(metadata.importStatements).toHaveLength(2);
-      expect(metadata.importStatements[0]).toContain("import React from 'react'");
-      expect(metadata.exportStatement).toContain('export default function TestComponent');
+      expect(metadata.importStatements[0]).toContain(
+        "import React from 'react'"
+      );
+      expect(metadata.exportStatement).toContain(
+        'export default function TestComponent'
+      );
     });
 
     it('should handle components without StyleSheet', () => {
@@ -250,13 +329,16 @@ describe('migrationHelpers', () => {
 
       expect(instructions).toContain('# Rollback Instructions: TestComponent');
       expect(instructions).toContain('## Option 1: Restore from Backup');
-      expect(instructions).toContain('cp src/components/TestComponent.tsx.backup.123456');
+      expect(instructions).toContain(
+        'cp src/components/TestComponent.tsx.backup.123456'
+      );
       expect(instructions).toContain('## Option 2: Manual Rollback');
       expect(instructions).toContain('## Option 3: Git Revert');
     });
 
     it('should generate rollback instructions without backup', () => {
-      const instructions = migrationHelpers.generateRollbackInstructions('TestComponent');
+      const instructions =
+        migrationHelpers.generateRollbackInstructions('TestComponent');
 
       expect(instructions).toContain('# Rollback Instructions: TestComponent');
       expect(instructions).not.toContain('## Option 1: Restore from Backup');

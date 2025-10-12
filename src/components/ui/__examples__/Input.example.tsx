@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import { Input } from '../Input';
 import { useTheme } from '../../../theme/provider/useTheme';
 
@@ -36,73 +42,102 @@ export const InputExample: React.FC = () => {
     return password.length >= 8;
   };
 
-  const validateConfirmPassword = (password: string, confirmPassword: string) => {
+  const validateConfirmPassword = (
+    password: string,
+    confirmPassword: string
+  ) => {
     return password === confirmPassword;
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
 
     // Real-time validation
     switch (field) {
       case 'email':
         if (value && !validateEmail(value)) {
-          setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+          setErrors((prev) => ({
+            ...prev,
+            email: 'Please enter a valid email address',
+          }));
         }
         break;
       case 'password':
         if (value && !validatePassword(value)) {
-          setErrors(prev => ({ ...prev, password: 'Password must be at least 8 characters' }));
+          setErrors((prev) => ({
+            ...prev,
+            password: 'Password must be at least 8 characters',
+          }));
         }
         // Re-validate confirm password if it exists
-        if (formData.confirmPassword && !validateConfirmPassword(value, formData.confirmPassword)) {
-          setErrors(prev => ({ ...prev, confirmPassword: 'Passwords do not match' }));
+        if (
+          formData.confirmPassword &&
+          !validateConfirmPassword(value, formData.confirmPassword)
+        ) {
+          setErrors((prev) => ({
+            ...prev,
+            confirmPassword: 'Passwords do not match',
+          }));
         } else if (formData.confirmPassword) {
-          setErrors(prev => ({ ...prev, confirmPassword: '' }));
+          setErrors((prev) => ({ ...prev, confirmPassword: '' }));
         }
         break;
       case 'confirmPassword':
         if (value && !validateConfirmPassword(formData.password, value)) {
-          setErrors(prev => ({ ...prev, confirmPassword: 'Passwords do not match' }));
+          setErrors((prev) => ({
+            ...prev,
+            confirmPassword: 'Passwords do not match',
+          }));
         }
         break;
     }
   };
 
   const clearSearch = () => {
-    setFormData(prev => ({ ...prev, search: '' }));
+    setFormData((prev) => ({ ...prev, search: '' }));
   };
 
   const getSuccessMessage = (field: string, value: string) => {
     switch (field) {
       case 'email':
-        return value && validateEmail(value) ? 'Valid email address' : undefined;
+        return value && validateEmail(value)
+          ? 'Valid email address'
+          : undefined;
       case 'password':
         return value && validatePassword(value) ? 'Strong password' : undefined;
       case 'confirmPassword':
-        return value && validateConfirmPassword(formData.password, value) ? 'Passwords match' : undefined;
+        return value && validateConfirmPassword(formData.password, value)
+          ? 'Passwords match'
+          : undefined;
       default:
         return undefined;
     }
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <ScrollView
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
       <Text style={[styles.title, { color: theme.colors.text.primary }]}>
         Input Component Examples
       </Text>
 
       {/* Basic Inputs */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.text.primary }]}
+        >
           Basic Inputs
         </Text>
-        
+
         <Input
           label="Email Address"
           placeholder="Enter your email"
@@ -136,7 +171,10 @@ export const InputExample: React.FC = () => {
           value={formData.confirmPassword}
           onChangeText={(value) => handleInputChange('confirmPassword', value)}
           error={errors.confirmPassword}
-          successMessage={getSuccessMessage('confirmPassword', formData.confirmPassword)}
+          successMessage={getSuccessMessage(
+            'confirmPassword',
+            formData.confirmPassword
+          )}
           secureTextEntry={!showConfirmPassword}
           leftIcon={<PasswordIcon />}
           rightIcon={<EyeIcon visible={showConfirmPassword} />}
@@ -147,10 +185,12 @@ export const InputExample: React.FC = () => {
 
       {/* Variants */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.text.primary }]}
+        >
           Variants
         </Text>
-        
+
         <Input
           label="Default Variant"
           placeholder="Default input"
@@ -175,10 +215,12 @@ export const InputExample: React.FC = () => {
 
       {/* Sizes */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.text.primary }]}
+        >
           Sizes
         </Text>
-        
+
         <Input
           label="Small Input"
           placeholder="Small size"
@@ -203,10 +245,12 @@ export const InputExample: React.FC = () => {
 
       {/* Validation States */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.text.primary }]}
+        >
           Validation States
         </Text>
-        
+
         <Input
           label="Error State"
           placeholder="Input with error"
@@ -238,10 +282,12 @@ export const InputExample: React.FC = () => {
 
       {/* Special Features */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.text.primary }]}
+        >
           Special Features
         </Text>
-        
+
         <Input
           label="Search Input"
           placeholder="Search..."
@@ -277,10 +323,12 @@ export const InputExample: React.FC = () => {
 
       {/* Accessibility Examples */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.text.primary }]}
+        >
           Accessibility Features
         </Text>
-        
+
         <Input
           label="Accessible Input"
           placeholder="Accessible input example"
@@ -300,10 +348,12 @@ export const InputExample: React.FC = () => {
 
       {/* Custom Styling */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[styles.sectionTitle, { color: theme.colors.text.primary }]}
+        >
           Custom Styling
         </Text>
-        
+
         <Input
           label="Custom Styled Input"
           placeholder="Custom styling example"

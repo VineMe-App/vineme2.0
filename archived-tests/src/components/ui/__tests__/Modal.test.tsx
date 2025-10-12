@@ -39,9 +39,7 @@ jest.mock('react-native/Libraries/Utilities/Dimensions', () => ({
 }));
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider initialTheme="light">
-    {children}
-  </ThemeProvider>
+  <ThemeProvider initialTheme="light">{children}</ThemeProvider>
 );
 
 describe('Modal Component', () => {
@@ -418,7 +416,9 @@ describe('Modal Component', () => {
 
       const closeButton = getByLabelText('Close modal');
       expect(closeButton.props.accessibilityRole).toBe('button');
-      expect(closeButton.props.accessibilityHint).toBe('Closes the modal dialog');
+      expect(closeButton.props.accessibilityHint).toBe(
+        'Closes the modal dialog'
+      );
     });
   });
 
@@ -448,7 +448,8 @@ describe('Modal Component', () => {
       );
 
       // Get the back handler callback
-      const backHandlerCallback = mockBackHandler.addEventListener.mock.calls[0][1];
+      const backHandlerCallback =
+        mockBackHandler.addEventListener.mock.calls[0][1];
       const result = backHandlerCallback();
 
       expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -465,7 +466,8 @@ describe('Modal Component', () => {
       );
 
       // Get the back handler callback
-      const backHandlerCallback = mockBackHandler.addEventListener.mock.calls[0][1];
+      const backHandlerCallback =
+        mockBackHandler.addEventListener.mock.calls[0][1];
       const result = backHandlerCallback();
 
       expect(mockOnClose).not.toHaveBeenCalled();
@@ -548,9 +550,9 @@ describe('Modal Component', () => {
       );
 
       const modal = getByLabelText('Modal dialog');
-      expect(modal.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining(customStyle)
-      ]));
+      expect(modal.props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining(customStyle)])
+      );
     });
 
     it('applies custom contentStyle prop', () => {
@@ -564,9 +566,9 @@ describe('Modal Component', () => {
       );
 
       const modal = getByLabelText('Modal dialog');
-      expect(modal.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining(customContentStyle)
-      ]));
+      expect(modal.props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining(customContentStyle)])
+      );
     });
   });
 

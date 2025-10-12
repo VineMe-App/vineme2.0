@@ -159,30 +159,38 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             </View>
           )}
 
-          {/* Top Left - Pending Badge */}
-          {showPendingBadge && (
-            <TouchableOpacity
-              style={styles.pendingBadge}
-              onPress={() => setShowPendingTip((v) => !v)}
-              activeOpacity={0.85}
-              accessibilityRole={tooltipMessage ? 'button' : 'text'}
-              accessibilityLabel={tooltipMessage ? badgeLabel : undefined}
-              accessibilityHint={
-                tooltipMessage ? 'Tap to view details' : undefined
-              }
-            >
-              <Ionicons name="time-outline" size={16} color="#b45309" />
-              <Text style={styles.pendingText}>{badgeLabel}</Text>
-              {tooltipMessage && (
-                <Ionicons
-                  name="information-circle"
-                  size={16}
-                  color="#b45309"
-                  style={{ marginLeft: 6 }}
-                />
-              )}
-            </TouchableOpacity>
-          )}
+          {/* Top Left - Badges */}
+          <View style={styles.topLeftBadges}>
+            {showPendingBadge && (
+              <TouchableOpacity
+                style={styles.pendingBadge}
+                onPress={() => setShowPendingTip((v) => !v)}
+                activeOpacity={0.85}
+                accessibilityRole={tooltipMessage ? 'button' : 'text'}
+                accessibilityLabel={tooltipMessage ? badgeLabel : undefined}
+                accessibilityHint={
+                  tooltipMessage ? 'Tap to view details' : undefined
+                }
+              >
+                <Ionicons name="time-outline" size={16} color="#b45309" />
+                <Text style={styles.pendingText}>{badgeLabel}</Text>
+                {tooltipMessage && (
+                  <Ionicons
+                    name="information-circle"
+                    size={16}
+                    color="#b45309"
+                    style={{ marginLeft: 6 }}
+                  />
+                )}
+              </TouchableOpacity>
+            )}
+            {group.at_capacity && (
+              <View style={styles.fullBadge}>
+                <Ionicons name="people" size={14} color="#c2410c" />
+                <Text style={styles.fullText}>Full</Text>
+              </View>
+            )}
+          </View>
 
           {/* Bottom Right - Friend Avatars */}
           {friendsInGroup && friendsInGroup.length > 0 && (
@@ -198,7 +206,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   >
                     <Avatar
                       imageUrl={friend.avatar_url}
-                      name={friend.name}
+                      name={friend.name || undefined}
                       size={24}
                     />
                   </View>
@@ -303,7 +311,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                       >
                         <Avatar
                           imageUrl={leader.avatar_url}
-                          name={leader.name}
+                          name={leader.name || undefined}
                           size={20}
                         />
                       </View>
@@ -489,16 +497,21 @@ const styles = StyleSheet.create({
     color: '#888',
     fontStyle: 'italic',
   },
-  pendingBadge: {
+  topLeftBadges: {
     position: 'absolute',
     top: 8,
     left: 8,
     zIndex: 2,
     flexDirection: 'row',
+    gap: 6,
+  },
+  pendingBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#fffbeb',
     paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   pendingText: {
@@ -527,5 +540,22 @@ const styles = StyleSheet.create({
   tooltipText: {
     color: '#1f2937',
     lineHeight: 18,
+  },
+  fullBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#fff7ed',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+  },
+  fullText: {
+    color: '#c2410c',
+    fontWeight: '700',
+    fontSize: 11,
+    letterSpacing: 0.5,
   },
 });

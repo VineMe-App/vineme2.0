@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useContext } from 'react';
 import { ActivityIndicator, StyleSheet, Animated } from 'react-native';
 import { Text } from './Text';
-import { useTheme } from '../../theme/provider/useTheme';
+import { ThemeContext } from '../../theme/provider/ThemeContext';
 import { fadeIn, pulse } from '../../utils/animations';
 
 interface LoadingSpinnerProps {
@@ -21,8 +21,11 @@ export function LoadingSpinner({
   testID,
   animated = true,
 }: LoadingSpinnerProps) {
-  const { theme } = useTheme();
-  const spinnerColor = color || theme.colors.primary[500];
+  // Safely access theme context - won't throw if provider isn't ready
+  const themeContext = useContext(ThemeContext);
+  const spinnerColor =
+    color || themeContext?.theme?.colors?.primary?.[500] || '#f10078';
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 

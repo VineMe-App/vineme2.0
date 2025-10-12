@@ -44,7 +44,7 @@ export {
   useSendFriendRequest,
   useAcceptFriendRequest,
   useRejectFriendRequest,
-  useBlockUser,
+  useAcceptRejectedFriendRequest,
   useRemoveFriend,
   useFriendshipData,
   friendshipKeys,

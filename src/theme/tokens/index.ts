@@ -20,33 +20,17 @@ export {
 } from './colors';
 
 // Re-export commonly used types and utilities
-export type {
-  ColorToken,
-  SemanticColors,
-  ThemeColors,
-} from './colors';
+export type { ColorToken, SemanticColors, ThemeColors } from './colors';
 
-export type {
-  ThemeTypography,
-  TypographyVariant,
-} from './typography';
+export type { ThemeTypography, TypographyVariant } from './typography';
 
-export type {
-  ThemeSpacing,
-} from './spacing';
+export type { ThemeSpacing } from './spacing';
 
-export type {
-  ThemeShadows,
-  ShadowToken,
-} from './shadows';
+export type { ThemeShadows, ShadowToken } from './shadows';
 
-export type {
-  ThemeBorderRadius,
-} from './borderRadius';
+export type { ThemeBorderRadius } from './borderRadius';
 
-export type {
-  AnimationConfig,
-} from './animations';
+export type { AnimationConfig } from './animations';
 
 export { colorUtils } from './colors';
 export { spacingUtils } from './spacing';

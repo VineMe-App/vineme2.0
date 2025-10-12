@@ -63,8 +63,7 @@ export default function NameStep({
     if (lastNameError) setLastNameError(null);
   };
 
-  const disableContinue =
-    !firstName.trim() || !lastName.trim() || isLoading;
+  const disableContinue = !firstName.trim() || !lastName.trim() || isLoading;
 
   return (
     <View style={styles.container}>

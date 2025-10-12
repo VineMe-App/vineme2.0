@@ -4,7 +4,12 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../utils/constants';
-import type { NotificationType, Notification, NotificationSettings, NotificationTriggerData } from '../types/database';
+import type {
+  NotificationType,
+  Notification,
+  NotificationSettings,
+  NotificationTriggerData,
+} from '../types/database';
 import { getFullName } from '../utils/name';
 
 // Configure notification behavior
@@ -37,7 +42,13 @@ const ensureAndroidNotificationChannel = async () => {
 };
 
 export interface NotificationData {
-  type: NotificationType | 'friend_request' | 'event_reminder' | 'group_update' | 'group_request' | 'join_request'; // Legacy types for backward compatibility
+  type:
+    | NotificationType
+    | 'friend_request'
+    | 'event_reminder'
+    | 'group_update'
+    | 'group_request'
+    | 'join_request'; // Legacy types for backward compatibility
   id: string;
   title: string;
   body: string;
@@ -183,11 +194,17 @@ export const registerForPushNotifications = async (
       .maybeSingle();
 
     if (userCheckError) {
-      console.warn('[Notifications] Skipping push token save: user check failed', userCheckError);
+      console.warn(
+        '[Notifications] Skipping push token save: user check failed',
+        userCheckError
+      );
       return;
     }
     if (!userRow) {
-      if (__DEV__) console.warn('[Notifications] Skipping push token save: no users row yet');
+      if (__DEV__)
+        console.warn(
+          '[Notifications] Skipping push token save: no users row yet'
+        );
       return;
     }
 
@@ -291,27 +308,35 @@ export const handleNotificationResponse = (
   response: Notifications.NotificationResponse,
   router: any
 ) => {
-  const { type, id } = response.notification.request.content.data;
+  const { actionUrl } = response.notification.request.content.data;
 
-  switch (type) {
-    case 'friend_request':
-      router.push('/(tabs)/profile');
+  // this logic is handled when the notification is created
+  // the actionUrl holds this data. we just need to route to it
+  /* switch (type) {
+    case 'friend_request_accepted':
+    case 'friend_request_received':
+      console.log(actionUrl, type);
+      router.replace(actionUrl);
       break;
     case 'event_reminder':
-      router.push(`/event/${id}`);
+      router.replace(`/event/${id}`);
       break;
     case 'group_update':
-      router.push(`/group/${id}`);
+      router.replace(`/group/${id}`);
       break;
     case 'group_request':
       // Navigate to admin groups management screen
-      router.push('/(tabs)/profile'); // TODO: Update when admin screens are implemented
+      router.replace('/(tabs)/profile'); // TODO: Update when admin screens are implemented
       break;
     case 'join_request':
-      router.push(`/group/${id}`);
+      router.replace(`/group/${id}`);
       break;
     default:
-      router.push('/(tabs)');
+      console.log('notification type: ', type);
+      router.replace('/(tabs)');
+  } */
+  if (actionUrl) {
+    router.replace(actionUrl);
   }
 };
 
@@ -781,7 +806,7 @@ export const triggerFriendRequestNotification = async (
         fromUserId: data.fromUserId,
         fromUserName: data.fromUserName,
       },
-      action_url: `/profile/${data.fromUserId}`,
+      action_url: `/user/${data.fromUserId}`,
     });
 
     if (notification) {
@@ -804,7 +829,11 @@ export const triggerFriendRequestNotification = async (
       await sendPushToUser(data.toUserId, {
         title: 'New Friend Request',
         body: `${data.fromUserName} wants to be your friend`,
-        data: { type: 'friend_request_received', id: notification.id, ...notification.data },
+        data: {
+          type: 'friend_request_received',
+          id: notification.id,
+          ...notification.data,
+        },
       });
     }
   } catch (error) {
@@ -820,7 +849,9 @@ export const triggerFriendRequestAcceptedNotification = async (
 ): Promise<void> => {
   try {
     // Check if user has friend request accepted notifications enabled
-    const settings = await getEnhancedNotificationSettings(data.originalRequesterId);
+    const settings = await getEnhancedNotificationSettings(
+      data.originalRequesterId
+    );
     if (settings && !settings.friend_request_accepted) {
       return; // User has disabled friend request accepted notifications
     }
@@ -834,7 +865,7 @@ export const triggerFriendRequestAcceptedNotification = async (
         acceptedByUserId: data.acceptedByUserId,
         acceptedByUserName: data.acceptedByUserName,
       },
-      action_url: `/profile/${data.acceptedByUserId}`,
+      action_url: `/user/${data.acceptedByUserId}`,
     });
 
     if (notification) {
@@ -856,11 +887,18 @@ export const triggerFriendRequestAcceptedNotification = async (
       await sendPushToUser(data.originalRequesterId, {
         title: 'Friend Request Accepted',
         body: `${data.acceptedByUserName} accepted your friend request`,
-        data: { type: 'friend_request_accepted', id: notification.id, ...notification.data },
+        data: {
+          type: 'friend_request_accepted',
+          id: notification.id,
+          ...notification.data,
+        },
       });
     }
   } catch (error) {
-    console.error('Error triggering friend request accepted notification:', error);
+    console.error(
+      'Error triggering friend request accepted notification:',
+      error
+    );
   }
 };
 
@@ -915,7 +953,7 @@ export const triggerGroupRequestSubmittedNotification = async (
     );
 
     // Schedule local notifications for admins with notifications enabled
-    const validNotifications = notifications.filter(n => n !== null);
+    const validNotifications = notifications.filter((n) => n !== null);
     for (const notification of validNotifications) {
       if (notification) {
         await scheduleLocalNotification({
@@ -928,9 +966,14 @@ export const triggerGroupRequestSubmittedNotification = async (
       }
     }
 
-    console.log(`Group request notifications sent to ${validNotifications.length} admins`);
+    console.log(
+      `Group request notifications sent to ${validNotifications.length} admins`
+    );
   } catch (error) {
-    console.error('Error triggering group request submitted notification:', error);
+    console.error(
+      'Error triggering group request submitted notification:',
+      error
+    );
   }
 };
 
@@ -971,7 +1014,10 @@ export const triggerGroupRequestApprovedNotification = async (
       });
     }
   } catch (error) {
-    console.error('Error triggering group request approved notification:', error);
+    console.error(
+      'Error triggering group request approved notification:',
+      error
+    );
   }
 };
 
@@ -988,7 +1034,7 @@ export const triggerGroupRequestDeniedNotification = async (
       return; // User has disabled group request response notifications
     }
 
-    const bodyText = data.reason 
+    const bodyText = data.reason
       ? `Your group "${data.groupTitle}" was declined by ${data.deniedByName}. Reason: ${data.reason}`
       : `Your group "${data.groupTitle}" was declined by ${data.deniedByName}`;
 
@@ -1054,7 +1100,7 @@ export const triggerJoinRequestReceivedNotification = async (
     );
 
     // Schedule local notifications and send remote push for leaders with notifications enabled
-    const validNotifications = notifications.filter(n => n !== null);
+    const validNotifications = notifications.filter((n) => n !== null);
     for (const notification of validNotifications) {
       if (!notification) continue;
       // Local (only shows if current device belongs to leader)
@@ -1069,13 +1115,22 @@ export const triggerJoinRequestReceivedNotification = async (
       await sendPushToUser(notification.user_id, {
         title: notification.title,
         body: notification.body,
-        data: { type: 'join_request_received', id: notification.id, ...notification.data },
+        data: {
+          type: 'join_request_received',
+          id: notification.id,
+          ...notification.data,
+        },
       });
     }
 
-    console.log(`Join request notifications sent to ${validNotifications.length} leaders`);
+    console.log(
+      `Join request notifications sent to ${validNotifications.length} leaders`
+    );
   } catch (error) {
-    console.error('Error triggering join request received notification:', error);
+    console.error(
+      'Error triggering join request received notification:',
+      error
+    );
   }
 };
 
@@ -1118,11 +1173,18 @@ export const triggerJoinRequestApprovedNotification = async (
       await sendPushToUser(data.requesterId, {
         title: notification.title,
         body: notification.body,
-        data: { type: 'join_request_approved', id: notification.id, ...notification.data },
+        data: {
+          type: 'join_request_approved',
+          id: notification.id,
+          ...notification.data,
+        },
       });
     }
   } catch (error) {
-    console.error('Error triggering join request approved notification:', error);
+    console.error(
+      'Error triggering join request approved notification:',
+      error
+    );
   }
 };
 
@@ -1165,7 +1227,11 @@ export const triggerJoinRequestDeniedNotification = async (
       await sendPushToUser(data.requesterId, {
         title: notification.title,
         body: notification.body,
-        data: { type: 'join_request_denied', id: notification.id, ...notification.data },
+        data: {
+          type: 'join_request_denied',
+          id: notification.id,
+          ...notification.data,
+        },
       });
     }
   } catch (error) {
@@ -1195,7 +1261,7 @@ export const triggerReferralAcceptedNotification = async (
         referredUserId: data.referredUserId,
         referredUserName: data.referredUserName,
       },
-      action_url: `/profile/${data.referredUserId}`,
+      action_url: `/user/${data.referredUserId}`,
     });
 
     if (notification) {
@@ -1251,7 +1317,10 @@ export const triggerReferralJoinedGroupNotification = async (
       });
     }
   } catch (error) {
-    console.error('Error triggering referral joined group notification:', error);
+    console.error(
+      'Error triggering referral joined group notification:',
+      error
+    );
   }
 };
 
@@ -1312,7 +1381,11 @@ export const createNotifications = async (
  */
 export const getUserNotificationsPaginated = async (
   options: NotificationQueryOptions
-): Promise<{ notifications: Notification[]; hasMore: boolean; total: number }> => {
+): Promise<{
+  notifications: Notification[];
+  hasMore: boolean;
+  total: number;
+}> => {
   try {
     const {
       userId,
@@ -1323,7 +1396,7 @@ export const getUserNotificationsPaginated = async (
       startDate,
       endDate,
       sortBy = 'created_at',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
     } = options;
 
     let query = supabase
@@ -1418,7 +1491,11 @@ export const getAllowedNotificationTypesForUser = async (
  */
 export const getUserNotificationsPaginatedWithSettings = async (
   options: NotificationQueryOptions
-): Promise<{ notifications: Notification[]; hasMore: boolean; total: number }> => {
+): Promise<{
+  notifications: Notification[];
+  hasMore: boolean;
+  total: number;
+}> => {
   const types = await getAllowedNotificationTypesForUser(options.userId);
   return getUserNotificationsPaginated({ ...options, types });
 };
@@ -1478,10 +1555,10 @@ export const markNotificationsAsRead = async (
   try {
     const { error } = await supabase
       .from('notifications')
-      .update({ 
-        read: true, 
+      .update({
+        read: true,
         read_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .in('id', notificationIds);
 
@@ -1500,7 +1577,9 @@ export const markNotificationsAsRead = async (
 /**
  * Delete a single notification
  */
-export const deleteNotification = async (notificationId: string): Promise<boolean> => {
+export const deleteNotification = async (
+  notificationId: string
+): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('notifications')
@@ -1568,22 +1647,24 @@ export const getEnhancedNotificationSettings = async (
     }
 
     // Return default settings if none exist
-    return data || {
-      id: '',
-      user_id: userId,
-      friend_requests: true,
-      friend_request_accepted: true,
-      group_requests: true,
-      group_request_responses: true,
-      join_requests: true,
-      join_request_responses: true,
-      referral_updates: true,
-      event_reminders: true,
-      push_notifications: true,
-      email_notifications: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    return (
+      data || {
+        id: '',
+        user_id: userId,
+        friend_requests: true,
+        friend_request_accepted: true,
+        group_requests: true,
+        group_request_responses: true,
+        join_requests: true,
+        join_request_responses: true,
+        referral_updates: true,
+        event_reminders: true,
+        push_notifications: true,
+        email_notifications: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    );
   } catch (error) {
     console.error('Error getting enhanced notification settings:', error);
     return null;
@@ -1595,21 +1676,21 @@ export const getEnhancedNotificationSettings = async (
  */
 export const updateEnhancedNotificationSettings = async (
   userId: string,
-  settings: Partial<Omit<NotificationSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+  settings: Partial<
+    Omit<NotificationSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+  >
 ): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('user_notification_settings')
-      .upsert(
-        {
-          user_id: userId,
-          ...settings,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id',
-        }
-      );
+    const { error } = await supabase.from('user_notification_settings').upsert(
+      {
+        user_id: userId,
+        ...settings,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'user_id',
+      }
+    );
 
     if (error) {
       console.error('Error updating enhanced notification settings:', error);
@@ -1660,7 +1741,9 @@ export interface NotificationSubscriptionOptions {
   onNotificationReceived?: (notification: Notification) => void;
   onNotificationUpdated?: (notification: Notification) => void;
   onNotificationDeleted?: (notificationId: string) => void;
-  onConnectionStateChange?: (state: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR') => void;
+  onConnectionStateChange?: (
+    state: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR'
+  ) => void;
   onError?: (error: Error) => void;
   autoReconnect?: boolean;
   reconnectDelay?: number;
@@ -1689,7 +1772,7 @@ export const subscribeToUserNotifications = (
     onError,
     autoReconnect = true,
     reconnectDelay = 5000,
-    maxReconnectAttempts = 5
+    maxReconnectAttempts = 5,
   } = options;
 
   let subscription: any = null;
@@ -1754,7 +1837,7 @@ export const subscribeToUserNotifications = (
         )
         .subscribe((status) => {
           onConnectionStateChange?.(status);
-          
+
           if (status === 'SUBSCRIBED') {
             reconnectAttempts = 0; // Reset on successful connection
             if (reconnectTimer) {
@@ -1762,7 +1845,11 @@ export const subscribeToUserNotifications = (
               reconnectTimer = null;
             }
           } else if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
-            if (autoReconnect && !isManuallyDisconnected && reconnectAttempts < maxReconnectAttempts) {
+            if (
+              autoReconnect &&
+              !isManuallyDisconnected &&
+              reconnectAttempts < maxReconnectAttempts
+            ) {
               scheduleReconnect();
             }
           }
@@ -1780,9 +1867,12 @@ export const subscribeToUserNotifications = (
     if (reconnectTimer || isManuallyDisconnected) return;
 
     reconnectAttempts++;
-    const delay = reconnectDelay * Math.pow(2, Math.min(reconnectAttempts - 1, 4)); // Exponential backoff
+    const delay =
+      reconnectDelay * Math.pow(2, Math.min(reconnectAttempts - 1, 4)); // Exponential backoff
 
-    console.log(`Scheduling notification subscription reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${delay}ms`);
+    console.log(
+      `Scheduling notification subscription reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${delay}ms`
+    );
 
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
@@ -1801,7 +1891,7 @@ export const subscribeToUserNotifications = (
     } catch (error) {
       console.error('Error reconnecting notification subscription:', error);
       onError?.(error as Error);
-      
+
       if (autoReconnect && reconnectAttempts < maxReconnectAttempts) {
         scheduleReconnect();
       }
@@ -1810,7 +1900,7 @@ export const subscribeToUserNotifications = (
 
   const unsubscribe = () => {
     isManuallyDisconnected = true;
-    
+
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
@@ -1871,7 +1961,8 @@ export const subscribeToNotificationCount = (
     onNotificationReceived: () => updateCount(),
     onNotificationUpdated: () => updateCount(),
     onNotificationDeleted: () => updateCount(),
-    onError: (error) => console.error('Notification count subscription error:', error),
+    onError: (error) =>
+      console.error('Notification count subscription error:', error),
   });
 
   return () => {
@@ -1889,9 +1980,12 @@ export class NotificationSubscriptionManager {
   /**
    * Subscribe to notifications for a user
    */
-  subscribe(userId: string, options: Omit<NotificationSubscriptionOptions, 'userId'>): string {
+  subscribe(
+    userId: string,
+    options: Omit<NotificationSubscriptionOptions, 'userId'>
+  ): string {
     const subscriptionId = `notifications_${userId}_${Date.now()}`;
-    
+
     const subscription = subscribeToUserNotifications({
       userId,
       ...options,
@@ -1906,10 +2000,10 @@ export class NotificationSubscriptionManager {
    */
   subscribeToCount(userId: string, callback: (count: number) => void): string {
     const subscriptionId = `count_${userId}_${Date.now()}`;
-    
+
     const unsubscribe = subscribeToNotificationCount(userId, callback);
     this.countSubscriptions.set(subscriptionId, unsubscribe);
-    
+
     return subscriptionId;
   }
 
@@ -1950,13 +2044,15 @@ export class NotificationSubscriptionManager {
     });
 
     // Unsubscribe count subscriptions
-    Array.from(this.countSubscriptions.entries()).forEach(([id, unsubscribe]) => {
-      if (id.includes(`_${userId}_`)) {
-        unsubscribe();
-        this.countSubscriptions.delete(id);
-        unsubscribed++;
+    Array.from(this.countSubscriptions.entries()).forEach(
+      ([id, unsubscribe]) => {
+        if (id.includes(`_${userId}_`)) {
+          unsubscribe();
+          this.countSubscriptions.delete(id);
+          unsubscribed++;
+        }
       }
-    });
+    );
 
     return unsubscribed;
   }
@@ -1968,14 +2064,14 @@ export class NotificationSubscriptionManager {
     let unsubscribed = 0;
 
     // Unsubscribe all notification subscriptions
-    Array.from(this.subscriptions.values()).forEach(subscription => {
+    Array.from(this.subscriptions.values()).forEach((subscription) => {
       subscription.unsubscribe();
       unsubscribed++;
     });
     this.subscriptions.clear();
 
     // Unsubscribe all count subscriptions
-    Array.from(this.countSubscriptions.values()).forEach(unsubscribe => {
+    Array.from(this.countSubscriptions.values()).forEach((unsubscribe) => {
       unsubscribe();
       unsubscribed++;
     });
@@ -1989,7 +2085,7 @@ export class NotificationSubscriptionManager {
    */
   getConnectionStatus(): Record<string, string> {
     const status: Record<string, string> = {};
-    
+
     Array.from(this.subscriptions.entries()).forEach(([id, subscription]) => {
       status[id] = subscription.getConnectionState();
     });
@@ -2002,7 +2098,7 @@ export class NotificationSubscriptionManager {
    */
   async reconnectAll(): Promise<void> {
     const reconnectPromises = Array.from(this.subscriptions.values()).map(
-      subscription => subscription.reconnect()
+      (subscription) => subscription.reconnect()
     );
 
     await Promise.allSettled(reconnectPromises);
@@ -2011,7 +2107,11 @@ export class NotificationSubscriptionManager {
   /**
    * Get subscription count
    */
-  getSubscriptionCount(): { notifications: number; counts: number; total: number } {
+  getSubscriptionCount(): {
+    notifications: number;
+    counts: number;
+    total: number;
+  } {
     return {
       notifications: this.subscriptions.size,
       counts: this.countSubscriptions.size,
@@ -2021,7 +2121,8 @@ export class NotificationSubscriptionManager {
 }
 
 // Global subscription manager instance
-export const notificationSubscriptionManager = new NotificationSubscriptionManager();
+export const notificationSubscriptionManager =
+  new NotificationSubscriptionManager();
 
 /**
  * Cleanup function for component unmount
@@ -2075,8 +2176,8 @@ export const createNotificationsBatch = async (
     const batchSize = 50;
     for (let i = 0; i < inputs.length; i += batchSize) {
       const batch = inputs.slice(i, i + batchSize);
-      
-      const notifications = batch.map(input => ({
+
+      const notifications = batch.map((input) => ({
         user_id: input.user_id,
         type: input.type,
         title: input.title,
@@ -2130,10 +2231,10 @@ export const markNotificationsAsReadBatch = async (
         try {
           const { error } = await supabase
             .from('notifications')
-            .update({ 
-              read: true, 
+            .update({
+              read: true,
               read_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
             .in('id', batch);
 
@@ -2146,11 +2247,16 @@ export const markNotificationsAsReadBatch = async (
         } catch (error) {
           retries++;
           if (retries >= maxRetries) {
-            console.error(`Failed to mark notifications as read after ${maxRetries} retries:`, error);
+            console.error(
+              `Failed to mark notifications as read after ${maxRetries} retries:`,
+              error
+            );
             failed.push(...batch);
           } else {
             // Wait before retrying (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.pow(2, retries) * 1000)
+            );
           }
         }
       }
@@ -2184,9 +2290,9 @@ export const deleteNotificationsBatch = async (
           // Soft delete by setting expires_at to current time
           const { error } = await supabase
             .from('notifications')
-            .update({ 
+            .update({
               expires_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
             .in('id', batch);
 
@@ -2237,7 +2343,11 @@ export interface NotificationQueryOptions {
 
 export const queryNotifications = async (
   options: NotificationQueryOptions
-): Promise<{ notifications: Notification[]; totalCount: number; hasMore: boolean }> => {
+): Promise<{
+  notifications: Notification[];
+  totalCount: number;
+  hasMore: boolean;
+}> => {
   try {
     const {
       userId,
@@ -2249,7 +2359,7 @@ export const queryNotifications = async (
       endDate,
       searchTerm,
       sortBy = 'created_at',
-      sortOrder = 'desc'
+      sortOrder = 'desc',
     } = options;
 
     let query = supabase
@@ -2275,7 +2385,9 @@ export const queryNotifications = async (
     }
 
     if (searchTerm) {
-      query = query.or(`title.ilike.%${searchTerm}%,body.ilike.%${searchTerm}%`);
+      query = query.or(
+        `title.ilike.%${searchTerm}%,body.ilike.%${searchTerm}%`
+      );
     }
 
     // Apply sorting and pagination
@@ -2319,7 +2431,9 @@ export interface NotificationStats {
   };
 }
 
-export const getNotificationStats = async (userId: string): Promise<NotificationStats> => {
+export const getNotificationStats = async (
+  userId: string
+): Promise<NotificationStats> => {
   try {
     // Get all notifications for the user
     const { data: allNotifications, error } = await supabase
@@ -2347,8 +2461,8 @@ export const getNotificationStats = async (userId: string): Promise<Notification
     // Calculate statistics
     const stats: NotificationStats = {
       totalNotifications: notifications.length,
-      unreadCount: notifications.filter(n => !n.read).length,
-      readCount: notifications.filter(n => n.read).length,
+      unreadCount: notifications.filter((n) => !n.read).length,
+      readCount: notifications.filter((n) => n.read).length,
       countsByType: {} as Record<NotificationType, number>,
       recentActivity: {
         today: 0,
@@ -2358,9 +2472,10 @@ export const getNotificationStats = async (userId: string): Promise<Notification
     };
 
     // Count by type and recent activity
-    notifications.forEach(notification => {
+    notifications.forEach((notification) => {
       // Count by type
-      stats.countsByType[notification.type] = (stats.countsByType[notification.type] || 0) + 1;
+      stats.countsByType[notification.type] =
+        (stats.countsByType[notification.type] || 0) + 1;
 
       // Count recent activity
       const createdAt = new Date(notification.created_at);
@@ -2403,9 +2518,9 @@ export const archiveOldNotifications = async (
     // In a production system, you might move to an archive table
     const { data, error } = await supabase
       .from('notifications')
-      .update({ 
+      .update({
         expires_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId)
       .lt('created_at', cutoffDate.toISOString())

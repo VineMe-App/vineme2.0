@@ -129,10 +129,13 @@ export const Text: React.FC<TextProps> = ({
 
   // Determine the effective weight: prop > style > variant
   // We only need this to pick the correct fontFamily
-  const incomingStyle = StyleSheet.flatten(style as any) as TextStyle | undefined;
+  const incomingStyle = StyleSheet.flatten(style as any) as
+    | TextStyle
+    | undefined;
   const styleWeightKey = normalizeWeightKey(incomingStyle?.fontWeight as any);
   const variantWeightKey = normalizeWeightKey(typographyConfig.fontWeight);
-  const effectiveWeight: TextProps['weight'] = weight || styleWeightKey || variantWeightKey || 'normal';
+  const effectiveWeight: TextProps['weight'] =
+    weight || styleWeightKey || variantWeightKey || 'normal';
 
   // Get text color from theme
   const getTextColor = (): string => {
@@ -177,7 +180,10 @@ export const Text: React.FC<TextProps> = ({
         case 'bold':
           return theme.typography.fontFamily.bold;
         case 'extraBold':
-          return theme.typography.fontFamily.extraBold || theme.typography.fontFamily.bold;
+          return (
+            theme.typography.fontFamily.extraBold ||
+            theme.typography.fontFamily.bold
+          );
         case 'black':
           // Manrope may not include Black; fall back to ExtraBold, then Bold
           return (

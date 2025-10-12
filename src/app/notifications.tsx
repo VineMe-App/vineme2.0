@@ -71,7 +71,12 @@ export default function NotificationsScreen() {
   }, [isLoadingMore, hasNextPage, notifications.length, theme.colors]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }] }>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
       <Stack.Screen options={{ title: 'Notifications' }} />
 
       {isLoading && notifications.length === 0 ? (
@@ -100,7 +105,10 @@ export default function NotificationsScreen() {
             ListEmptyComponent={listEmpty}
             ListFooterComponent={listFooter}
             refreshControl={
-              <RefreshControl refreshing={isLoading} onRefresh={refreshNotifications} />
+              <RefreshControl
+                refreshing={isLoading}
+                onRefresh={refreshNotifications}
+              />
             }
             onEndReached={() => {
               if (hasNextPage && !isLoadingMore) fetchNextPage();
@@ -148,4 +156,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-

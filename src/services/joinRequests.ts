@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import { contactAuditService } from './contactAudit';
+import { groupMembershipNotesService } from './groupMembershipNotes';
 import {
   triggerJoinRequestApprovedNotification,
   triggerJoinRequestDeniedNotification,
@@ -43,6 +44,9 @@ export class JoinRequestService {
         .eq('user_id', requestData.user_id)
         .single();
 
+      let data: any = null;
+      let error: any = null;
+
       if (existingMembership) {
         if (existingMembership.status === 'active') {
           return {
@@ -58,20 +62,70 @@ export class JoinRequestService {
             ),
           };
         }
-      }
 
-      // No separate join requests table. Create/ensure a pending membership instead
-      const { data, error } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: requestData.group_id,
-          user_id: requestData.user_id,
-          role: 'member',
-          status: 'pending',
-          // joined_at is set when request is approved
-        })
-        .select()
-        .single();
+        // If they were inactive or archived, reuse the existing membership row
+        if (
+          existingMembership.status === 'inactive' ||
+          existingMembership.status === 'archived'
+        ) {
+          const updateResult = await supabase
+            .from('group_memberships')
+            .update({
+              status: 'pending',
+              journey_status: null, // Reset journey status for new request
+              contact_consent: requestData.contact_consent || false,
+            })
+            .eq('id', existingMembership.id)
+            .select()
+            .single();
+
+          data = updateResult.data;
+          error = updateResult.error;
+
+          // Create note for the status change (rejoin request)
+          if (!error && data) {
+            try {
+              // Use appropriate note_type based on previous status
+              const noteType: 'request_archived' | 'member_left' =
+                existingMembership.status === 'inactive'
+                  ? 'member_left'
+                  : 'request_archived';
+
+              await groupMembershipNotesService.createStatusChangeNote(
+                {
+                  membership_id: existingMembership.id,
+                  group_id: requestData.group_id,
+                  user_id: requestData.user_id,
+                  note_type: noteType,
+                  previous_status: existingMembership.status,
+                  new_status: 'pending',
+                  note_text: 'User requested to rejoin the group',
+                },
+                requestData.user_id
+              );
+            } catch (noteError) {
+              if (__DEV__)
+                console.warn('Failed to create rejoin note:', noteError);
+            }
+          }
+        }
+      } else {
+        // No existing membership, create new one
+        const insertResult = await supabase
+          .from('group_memberships')
+          .insert({
+            group_id: requestData.group_id,
+            user_id: requestData.user_id,
+            role: 'member',
+            status: 'pending',
+            contact_consent: requestData.contact_consent || false,
+          })
+          .select()
+          .single();
+
+        data = insertResult.data;
+        error = insertResult.error;
+      }
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -381,6 +435,23 @@ export class JoinRequestService {
         return { data: null, error: new Error(updateError.message) };
       }
 
+      // Create note for the approval
+      try {
+        await groupMembershipNotesService.createStatusChangeNote(
+          {
+            membership_id: requestId,
+            group_id: membershipRecord.group_id,
+            user_id: membershipRecord.user_id,
+            note_type: 'request_approved',
+            previous_status: 'pending',
+            new_status: 'active',
+          },
+          approverId
+        );
+      } catch (noteError) {
+        if (__DEV__) console.warn('Failed to create approval note:', noteError);
+      }
+
       // Notify requester of approval
       try {
         const [groupRes, userRes] = await Promise.all([
@@ -475,6 +546,25 @@ export class JoinRequestService {
         return { data: null, error: new Error(error.message) };
       }
 
+      // Create note for the journey status change
+      if (journeyStatus !== null) {
+        try {
+          await groupMembershipNotesService.createJourneyChangeNote(
+            {
+              membership_id: membershipId,
+              group_id: membershipRecord.group_id,
+              user_id: membershipRecord.user_id || data.user_id,
+              previous_journey_status: membershipRecord.journey_status,
+              new_journey_status: journeyStatus,
+            },
+            leaderId
+          );
+        } catch (noteError) {
+          if (__DEV__)
+            console.warn('Failed to create journey status note:', noteError);
+        }
+      }
+
       return { data, error: null };
     } catch (error) {
       return {
@@ -488,11 +578,13 @@ export class JoinRequestService {
   }
 
   /**
-   * Decline a join request
+   * Archive a join request
    */
-  async declineJoinRequest(
+  async archiveJoinRequest(
     requestId: string,
-    declinerId: string
+    declinerId: string,
+    reason?: string,
+    notes?: string
   ): Promise<GroupServiceResponse<boolean>> {
     try {
       // Get the pending membership record
@@ -524,14 +616,33 @@ export class JoinRequestService {
         };
       }
 
-      // Update the join request status (delete pending membership)
+      // Update the membership status to archived
       const { error: updateError } = await supabase
         .from('group_memberships')
-        .delete()
+        .update({ status: 'archived' })
         .eq('id', requestId);
 
       if (updateError) {
         return { data: null, error: new Error(updateError.message) };
+      }
+
+      // Create note for the archiving
+      try {
+        await groupMembershipNotesService.createStatusChangeNote(
+          {
+            membership_id: requestId,
+            group_id: membershipRecord.group_id,
+            user_id: membershipRecord.user_id,
+            note_type: 'request_archived',
+            previous_status: 'pending',
+            new_status: 'archived',
+            reason: reason,
+            note_text: notes,
+          },
+          declinerId
+        );
+      } catch (noteError) {
+        if (__DEV__) console.warn('Failed to create archived note:', noteError);
       }
 
       // Notify requester of denial
@@ -573,9 +684,20 @@ export class JoinRequestService {
         error:
           error instanceof Error
             ? error
-            : new Error('Failed to decline join request'),
+            : new Error('Failed to archive join request'),
       };
     }
+  }
+
+  /**
+   * Decline a join request (deprecated - use archiveJoinRequest instead)
+   * This method is kept for backward compatibility
+   */
+  async declineJoinRequest(
+    requestId: string,
+    declinerId: string
+  ): Promise<GroupServiceResponse<boolean>> {
+    return this.archiveJoinRequest(requestId, declinerId);
   }
 
   /**

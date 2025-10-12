@@ -3,6 +3,7 @@ import {
   friendshipService,
   type FriendshipWithUser,
   type FriendshipStatus,
+  type FriendshipStatusDetails,
 } from '../services/friendships';
 import { useAuth } from './useAuth';
 
@@ -87,7 +88,7 @@ export function useFriendshipStatus(friendId: string, userId?: string) {
   const { user } = useAuth();
   const targetUserId = userId || user?.id;
 
-  return useQuery({
+  return useQuery<FriendshipStatusDetails | null>({
     queryKey: friendshipKeys.status(targetUserId || '', friendId),
     queryFn: async () => {
       if (!targetUserId) throw new Error('User ID is required');
@@ -349,28 +350,7 @@ export function useRejectFriendRequest() {
   });
 }
 
-/**
- * Hook to block user
- */
-export function useBlockUser() {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async (friendId: string) => {
-      if (!user?.id) throw new Error('User must be authenticated');
-      const result = await friendshipService.blockUser(user.id, friendId);
-      if (result.error) throw result.error;
-      return result.data;
-    },
-    onSuccess: () => {
-      if (user?.id) {
-        // Invalidate all friendship-related queries
-        queryClient.invalidateQueries({ queryKey: friendshipKeys.all });
-      }
-    },
-  });
-}
+// Block user hook removed per product decision
 
 /**
  * Hook to remove/unfriend user
@@ -393,6 +373,41 @@ export function useRemoveFriend() {
           queryKey: friendshipKeys.friends(user.id),
         });
         queryClient.invalidateQueries({ queryKey: friendshipKeys.all });
+      }
+    },
+  });
+}
+
+/**
+ * Hook to accept a previously rejected incoming friend request
+ */
+export function useAcceptRejectedFriendRequest() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (senderId: string) => {
+      if (!user?.id) throw new Error('User must be authenticated');
+      const result = await friendshipService.acceptRejectedFriendRequest(
+        user.id,
+        senderId
+      );
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: (_data, senderId) => {
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: friendshipKeys.all });
+        queryClient.invalidateQueries({ queryKey: friendshipKeys.friends(user.id) });
+        queryClient.invalidateQueries({
+          queryKey: friendshipKeys.status(user.id, senderId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: friendshipKeys.receivedRequests(user.id),
+        });
+        queryClient.invalidateQueries({
+          queryKey: friendshipKeys.sentRequests(user.id),
+        });
       }
     },
   });

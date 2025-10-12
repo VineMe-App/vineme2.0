@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -74,7 +75,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             </Text>
             {(notificationCount ?? 0) > 0 && (
               <NotificationBadge
-                count={notificationCount}
+                count={notificationCount ?? 0}
                 size="small"
                 style={styles.titleBadge}
               />
@@ -127,7 +128,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
  * Breadcrumb Navigation Component
  */
 interface BreadcrumbProps {
-  items: Array<{ label: string; route?: string }>;
+  items: { label: string; route?: string }[];
 }
 
 export const AdminBreadcrumb: React.FC<BreadcrumbProps> = ({ items }) => {
@@ -157,7 +158,7 @@ export const AdminBreadcrumb: React.FC<BreadcrumbProps> = ({ items }) => {
             <Text
               style={[
                 styles.breadcrumbText,
-                !item.route && styles.breadcrumbTextCurrent,
+                ...(item.route ? [] : [styles.breadcrumbTextCurrent]),
               ]}
             >
               {item.label}
@@ -181,7 +182,7 @@ interface AdminPageLayoutProps {
   onHelpPress?: () => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
-  breadcrumbs?: Array<{ label: string; route?: string }>;
+  breadcrumbs?: { label: string; route?: string }[];
   rightActions?: React.ReactNode;
   children: React.ReactNode;
 }
@@ -276,8 +277,8 @@ const styles = StyleSheet.create({
   },
   titleBadge: {
     position: 'absolute',
-    top: -8,
-    right: -16,
+    top: -14, // Half of 28px small badge height for proper positioning
+    right: -24, // Half of 48px large badge height for proper positioning
   },
   subtitle: {
     fontSize: 14,

@@ -25,3 +25,6 @@ export * from './performanceStyleUtils';
 
 // Notification utilities
 export * from './notificationFormatting';
+
+// Expo Go detection
+export * from './expoGoDetection';

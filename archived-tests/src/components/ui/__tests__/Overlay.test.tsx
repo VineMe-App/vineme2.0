@@ -12,9 +12,7 @@ import { ThemeProvider } from '../../../theme/provider/ThemeProvider';
 // Simple test without complex mocks
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ThemeProvider initialTheme="light">
-    {children}
-  </ThemeProvider>
+  <ThemeProvider initialTheme="light">{children}</ThemeProvider>
 );
 
 describe('Overlay Component', () => {
@@ -115,7 +113,11 @@ describe('Overlay Component', () => {
     it('applies custom color', () => {
       const { getByTestId } = render(
         <TestWrapper>
-          <Overlay {...defaultProps} color="rgba(255, 0, 0, 0.5)" testID="overlay" />
+          <Overlay
+            {...defaultProps}
+            color="rgba(255, 0, 0, 0.5)"
+            testID="overlay"
+          />
         </TestWrapper>
       );
 
@@ -143,9 +145,9 @@ describe('Overlay Component', () => {
       );
 
       const overlay = getByTestId('overlay');
-      expect(overlay.props.style).toEqual(expect.arrayContaining([
-        expect.objectContaining(customStyle)
-      ]));
+      expect(overlay.props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining(customStyle)])
+      );
     });
   });
 
