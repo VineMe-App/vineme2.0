@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ViewStyle,
+  Animated,
+  Easing,
+} from 'react-native';
 import { Text } from '../ui/Text';
 import type { GroupWithDetails, User } from '../../types/database';
 import { OptimizedImage } from '../ui/OptimizedImage';
@@ -11,7 +18,7 @@ import { useTheme } from '../../theme/provider/useTheme';
 
 interface GroupCardProps {
   group: GroupWithDetails;
-  onPress: () => void;
+  onPress?: () => void;
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
   friendsCount?: number;
   friendsInGroup?: User[];
@@ -19,6 +26,8 @@ interface GroupCardProps {
   onPressFriends?: () => void;
   style?: ViewStyle;
   distanceKm?: number;
+  pendingLabel?: string;
+  pendingTooltip?: string;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -31,10 +40,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onPressFriends,
   style,
   distanceKm,
+  pendingLabel,
+  pendingTooltip,
 }) => {
   const { theme } = useTheme();
 
-  if (!group) return null;
   const formatMeetingTime = (day: string, time: string) => {
     const date = new Date(`2000-01-01T${time}`);
     const formattedTime = date.toLocaleTimeString('en-US', {
@@ -55,6 +65,45 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     return 'Location TBD';
   };
 
+  const [showPendingTip, setShowPendingTip] = React.useState(false);
+
+  const isAwaitingVerification = group.status === 'pending';
+  const hasCustomPending = Boolean(pendingLabel);
+  const badgeLabel = hasCustomPending
+    ? pendingLabel || 'Join request pending'
+    : 'Awaiting Confirmation';
+  const tooltipMessage = hasCustomPending
+    ? pendingTooltip
+    : 'A member of your clergy has received your request and will be in touch to approve or discuss.';
+  const showPendingBadge = isAwaitingVerification || hasCustomPending;
+  const shouldBlockNavigation = showPendingBadge;
+  const pressAnim = React.useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = React.useCallback(() => {
+    if (!shouldBlockNavigation) return;
+    Animated.timing(pressAnim, {
+      toValue: 1,
+      duration: 120,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [pressAnim, shouldBlockNavigation]);
+
+  const handlePressOut = React.useCallback(() => {
+    if (!shouldBlockNavigation) return;
+    Animated.timing(pressAnim, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [pressAnim, shouldBlockNavigation]);
+
+  const pulseOpacity = pressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.18],
+  });
+
   return (
     <TouchableOpacity
       style={[
@@ -62,9 +111,27 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         { backgroundColor: theme.colors.surface.secondary }, // Faded pink background
         style,
       ]}
-      onPress={onPress}
+      onPress={shouldBlockNavigation ? undefined : onPress}
       activeOpacity={0.7}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     >
+      {showPendingBadge && (
+        <View pointerEvents="none" style={styles.pendingWash} />
+      )}
+      {shouldBlockNavigation && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFillObject as any,
+            {
+              backgroundColor: '#fff',
+              opacity: pulseOpacity,
+              borderRadius: 12,
+            },
+          ]}
+        />
+      )}
       <View style={styles.content}>
         {/* Group Image with Friend Avatars Overlay */}
         <View style={styles.imageContainer}>
@@ -94,11 +161,28 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
           {/* Top Left - Badges */}
           <View style={styles.topLeftBadges}>
-            {group.status === 'pending' && (
-              <View style={styles.pendingBadge}>
+            {showPendingBadge && (
+              <TouchableOpacity
+                style={styles.pendingBadge}
+                onPress={() => setShowPendingTip((v) => !v)}
+                activeOpacity={0.85}
+                accessibilityRole={tooltipMessage ? 'button' : 'text'}
+                accessibilityLabel={tooltipMessage ? badgeLabel : undefined}
+                accessibilityHint={
+                  tooltipMessage ? 'Tap to view details' : undefined
+                }
+              >
                 <Ionicons name="time-outline" size={16} color="#b45309" />
-                <Text style={styles.pendingText}>Pending</Text>
-              </View>
+                <Text style={styles.pendingText}>{badgeLabel}</Text>
+                {tooltipMessage && (
+                  <Ionicons
+                    name="information-circle"
+                    size={16}
+                    color="#b45309"
+                    style={{ marginLeft: 6 }}
+                  />
+                )}
+              </TouchableOpacity>
             )}
             {group.at_capacity && (
               <View style={styles.fullBadge}>
@@ -251,6 +335,21 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           )}
         </View>
       </View>
+
+      {showPendingTip && tooltipMessage && (
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowPendingTip(false)}
+          style={styles.pendingTooltip}
+          accessibilityRole="button"
+          accessibilityLabel="Hide pending information"
+          accessibilityHint="Tap to dismiss"
+        >
+          <Text variant="caption" style={styles.tooltipText}>
+            {tooltipMessage}
+          </Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 };
@@ -265,6 +364,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    position: 'relative',
+    zIndex: 1,
   },
   imageContainer: {
     position: 'relative',
@@ -299,6 +400,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '500',
+  },
+  pendingWash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    zIndex: 0,
   },
   bottomLeftIndicator: {
     position: 'absolute',
@@ -395,7 +501,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     left: 8,
-    zIndex: 1,
+    zIndex: 2,
     flexDirection: 'row',
     gap: 6,
   },
@@ -412,6 +518,28 @@ const styles = StyleSheet.create({
     color: '#92400e',
     fontWeight: '600',
     fontSize: 12,
+  },
+  pendingTooltip: {
+    position: 'absolute',
+    top: 20,
+    left: 16,
+    right: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(0,0,0,0.1)',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+    zIndex: 3,
+  },
+  tooltipText: {
+    color: '#1f2937',
+    lineHeight: 18,
   },
   fullBadge: {
     flexDirection: 'row',

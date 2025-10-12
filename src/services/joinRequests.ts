@@ -275,7 +275,17 @@ export class JoinRequestService {
           journey_status,
           joined_at,
           created_at,
-          group:groups(id, title, description, meeting_day, meeting_time)
+          group:groups(
+            id,
+            title,
+            description,
+            meeting_day,
+            meeting_time,
+            image_url,
+            location,
+            status,
+            service:services(id, name)
+          )
         `
         )
         .eq('user_id', userId)
@@ -290,7 +300,56 @@ export class JoinRequestService {
         (data || []) as GroupJoinRequestWithUser[]
       );
 
-      return { data: requestsWithConsent, error: null };
+      const groupIds = (requestsWithConsent || [])
+        .map((request) => request.group?.id)
+        .filter((id): id is string => Boolean(id));
+
+      let leadersByGroup: Record<string, any[]> = {};
+      if (groupIds.length > 0) {
+        const { data: leaderRows } = await supabase
+          .from('group_memberships')
+          .select(
+            `
+            group_id,
+            role,
+            status,
+            user:users(id, first_name, last_name)
+          `
+          )
+          .in('group_id', groupIds)
+          .in('role', ['leader', 'admin'])
+          .eq('status', 'active');
+
+        if (leaderRows) {
+          leadersByGroup = leaderRows.reduce<Record<string, any[]>>(
+            (acc, row) => {
+              if (!row.user || !row.group_id) return acc;
+              const name = row.user.first_name?.trim()
+                ? row.user.first_name.trim()
+                : getFullName(row.user) || 'Group leader';
+              const leaderWithName = {
+                ...row.user,
+                name,
+              };
+              acc[row.group_id] = acc[row.group_id]
+                ? [...acc[row.group_id], leaderWithName]
+                : [leaderWithName];
+              return acc;
+            },
+            {}
+          );
+        }
+      }
+
+      const enriched = (requestsWithConsent || []).map((request) => {
+        const leaders = leadersByGroup[request.group_id] || [];
+        return {
+          ...request,
+          group_leaders: leaders,
+        };
+      });
+
+      return { data: enriched, error: null };
     } catch (error) {
       return {
         data: null,

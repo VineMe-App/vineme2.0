@@ -28,6 +28,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { useTheme } from '@/theme/provider/useTheme';
 
+const formatNameList = (names: string[]): string => {
+  const filtered = names.filter((name) => name && name.trim().length > 0);
+  if (filtered.length === 0) return '';
+  if (filtered.length === 1) return filtered[0];
+  if (filtered.length === 2) return `${filtered[0]} and ${filtered[1]}`;
+  const head = filtered.slice(0, -1).join(', ');
+  return `${head} and ${filtered[filtered.length - 1]}`;
+};
+
+const buildJoinRequestMessage = (
+  groupTitle: string,
+  leaderNames: string[]
+): string => {
+  const formattedLeaders = formatNameList(leaderNames);
+  if (!formattedLeaders) {
+    return `Your request to join ${groupTitle} has been sent. A group leader will be in touch.`;
+  }
+  return `Your request to join ${groupTitle} has been sent to ${formattedLeaders}. They will be in touch.`;
+};
+
 export default function HomeScreen() {
   const { user, userProfile, loadUserProfile } = useAuthStore();
   const { theme } = useTheme();
@@ -56,6 +76,11 @@ export default function HomeScreen() {
     isLoading: joinRequestsLoading,
     refetch: refetchJoinRequests,
   } = useUserJoinRequests(userId);
+
+  const activeMemberships = userGroupMemberships || [];
+  const pendingJoinRequestsList = userJoinRequests || [];
+  const showGroupCards =
+    activeMemberships.length > 0 || pendingJoinRequestsList.length > 0;
 
   const {
     data: friends,
@@ -239,13 +264,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {userGroupMemberships && userGroupMemberships.length > 0 ? (
+          {showGroupCards ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalScroll}
             >
-              {userGroupMemberships.map((membership) => (
+              {activeMemberships.map((membership) => (
                 <View key={membership.group_id} style={styles.horizontalCard}>
                   <GroupCard
                     group={membership.group}
@@ -255,21 +280,37 @@ export default function HomeScreen() {
                   />
                 </View>
               ))}
+              {pendingJoinRequestsList.length > 0 &&
+                pendingJoinRequestsList.map((request) => {
+                  if (!request.group) return null;
+                  const leaderNames = (request.group_leaders || [])
+                    .map((l) => l?.name)
+                    .filter(Boolean) as string[];
+                  const message = buildJoinRequestMessage(
+                    request.group?.title || 'this group',
+                    leaderNames
+                  );
+                  return (
+                    <View
+                      key={`join-${request.id}`}
+                      style={styles.horizontalCard}
+                    >
+                      <GroupCard
+                        group={request.group as any}
+                        membershipStatus={null}
+                        onPress={undefined}
+                        style={{
+                          width: 260,
+                          minHeight: 374,
+                          marginHorizontal: 0,
+                        }}
+                        pendingLabel="Join request pending"
+                        pendingTooltip={message}
+                      />
+                    </View>
+                  );
+                })}
             </ScrollView>
-          ) : userJoinRequests && userJoinRequests.length > 0 ? (
-            <EmptyState
-              title={
-                userJoinRequests.length === 1
-                  ? 'Join request pending'
-                  : 'Join requests pending'
-              }
-              message={
-                userJoinRequests.length === 1
-                  ? `You have requested to join ${userJoinRequests[0].group.title} - a leader will be in touch with more details`
-                  : `You have requested to join ${userJoinRequests.length} groups - a leader will be in touch with more details`
-              }
-              icon={null}
-            />
           ) : (
             <EmptyState
               title="No groups yet"
