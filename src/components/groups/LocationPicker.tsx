@@ -18,21 +18,29 @@ import { locationService, type Coordinates } from '../../services/location';
 import { debounce } from '../../utils';
 import { MapViewFallback } from './MapViewFallback';
 
-// Dynamically import MapView - not available in Expo Go
-// Using try-catch to gracefully handle when the module isn't available
+// Dynamically import MapView - not available in Expo Go or on web
+// Using Platform check and try-catch to gracefully handle when the module isn't available
 let MapView: any = null;
 let Marker: any = null;
 let PROVIDER_GOOGLE: any = null;
 
-try {
-  const maps = require('react-native-maps');
-  MapView = maps.default;
-  Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-} catch (error) {
-  // react-native-maps not available (Expo Go) - will show fallback UI
+// Only try to import react-native-maps on native platforms (not web)
+if (Platform.OS !== 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-commonjs
+    const maps = require('react-native-maps');
+    MapView = maps.default;
+    Marker = maps.Marker;
+    PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+  } catch {
+    // react-native-maps not available (Expo Go) - will show fallback UI
+    console.log(
+      '[LocationPicker] react-native-maps not available - using fallback'
+    );
+  }
+} else {
   console.log(
-    '[LocationPicker] react-native-maps not available - using fallback'
+    '[LocationPicker] react-native-maps not available on web - using fallback'
   );
 }
 

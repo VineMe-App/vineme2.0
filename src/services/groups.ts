@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
+import { groupMembershipNotesService } from './groupMembershipNotes';
 import { triggerJoinRequestReceivedNotification } from './notifications';
 import { getFullName } from '../utils/name';
 import type {
@@ -341,6 +342,21 @@ export class GroupService {
         };
       }
 
+      // Get membership record before updating
+      const { data: membership, error: fetchError } = await supabase
+        .from('group_memberships')
+        .select('id, status')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !membership) {
+        return {
+          data: null,
+          error: new Error('Membership not found'),
+        };
+      }
+
       const { error } = await supabase
         .from('group_memberships')
         .update({ status: 'inactive' })
@@ -349,6 +365,26 @@ export class GroupService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Create note for the member leaving
+      if (membership.status === 'active') {
+        try {
+          await groupMembershipNotesService.createStatusChangeNote(
+            {
+              membership_id: membership.id,
+              group_id: groupId,
+              user_id: userId,
+              note_type: 'member_left',
+              previous_status: 'active',
+              new_status: 'inactive',
+            },
+            userId
+          );
+        } catch (noteError) {
+          if (__DEV__)
+            console.warn('Failed to create member left note:', noteError);
+        }
       }
 
       return { data: true, error: null };
@@ -439,6 +475,62 @@ export class GroupService {
           error instanceof Error
             ? error
             : new Error('Failed to get group members'),
+      };
+    }
+  }
+
+  /**
+   * Get all group memberships (including archived and inactive)
+   * Only for group leaders
+   */
+  async getAllGroupMemberships(
+    groupId: string,
+    userId: string
+  ): Promise<GroupServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      // Check if user is a leader
+      const permissionCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        userId
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to view all memberships'
+          ),
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, first_name, last_name, avatar_url, newcomer),
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
+        `
+        )
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      const normalized = (data || []).map((m: any) => ({
+        ...m,
+        user: withDisplayName(m.user),
+      }));
+
+      return { data: normalized, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get all group memberships'),
       };
     }
   }

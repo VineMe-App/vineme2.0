@@ -13,6 +13,7 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import {
@@ -42,15 +43,23 @@ let MapView: any = null;
 let Marker: any = null;
 let PROVIDER_GOOGLE: any = null;
 
-try {
-  const maps = require('react-native-maps');
-  MapView = maps.default;
-  Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-} catch (error) {
-  // react-native-maps not available (Expo Go) - will show fallback UI
+// Only try to import react-native-maps on native platforms (not web)
+if (Platform.OS !== 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-commonjs
+    const maps = require('react-native-maps');
+    MapView = maps.default;
+    Marker = maps.Marker;
+    PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+  } catch {
+    // react-native-maps not available (Expo Go) - will show fallback UI
+    console.log(
+      '[GroupsMapView] react-native-maps not available - using fallback'
+    );
+  }
+} else {
   console.log(
-    '[GroupsMapView] react-native-maps not available - using fallback'
+    '[GroupsMapView] react-native-maps not available on web - using fallback'
   );
 }
 

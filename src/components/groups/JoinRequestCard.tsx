@@ -14,9 +14,11 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Ionicons } from '@expo/vector-icons';
+import { MembershipNotesSection } from './MembershipNotesSection';
+import { ArchiveRequestModal } from './ArchiveRequestModal';
 import {
   useApproveJoinRequest,
-  useDeclineJoinRequest,
+  useArchiveJoinRequest,
   useGetContactInfo,
   useInitiateContactAction,
   useUpdateMembershipJourneyStatus,
@@ -44,9 +46,10 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   onRequestProcessed,
 }) => {
   const [showContactInfo, setShowContactInfo] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
 
   const approveRequestMutation = useApproveJoinRequest();
-  const declineRequestMutation = useDeclineJoinRequest();
+  const archiveRequestMutation = useArchiveJoinRequest();
   const initiateContactMutation = useInitiateContactAction();
   const updateJourneyStatusMutation = useUpdateMembershipJourneyStatus();
 
@@ -164,40 +167,29 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
     );
   };
 
-  const handleDecline = () => {
-    Alert.alert(
-      'Decline Request',
-      `Are you sure you want to decline ${requesterFriendlyName}'s request to join the group?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Decline',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await declineRequestMutation.mutateAsync({
-                requestId: request.id,
-                declinerId: leaderId,
-                groupId: request.group_id,
-              });
+  const handleArchive = () => {
+    setShowArchiveModal(true);
+  };
 
-              Alert.alert(
-                'Request Declined',
-                'The join request has been declined.'
-              );
-              onRequestProcessed?.();
-            } catch (error) {
-              Alert.alert(
-                'Error',
-                error instanceof Error
-                  ? error.message
-                  : 'Failed to decline request'
-              );
-            }
-          },
-        },
-      ]
-    );
+  const handleConfirmArchive = async (reason: string, notes?: string) => {
+    try {
+      await archiveRequestMutation.mutateAsync({
+        requestId: request.id,
+        declinerId: leaderId,
+        groupId: request.group_id,
+        reason: reason,
+        notes: notes,
+      });
+
+      setShowArchiveModal(false);
+      Alert.alert('Request Archived', 'The join request has been archived.');
+      onRequestProcessed?.();
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to archive request'
+      );
+    }
   };
 
   const handleContactPress = async (type: 'email' | 'phone', value: string) => {
@@ -294,7 +286,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
 
   const isProcessing =
     approveRequestMutation.isPending ||
-    declineRequestMutation.isPending ||
+    archiveRequestMutation.isPending ||
     journeyUpdating;
 
   const requestedTimestamp =
@@ -498,14 +490,21 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
         </View>
       )}
 
+      <MembershipNotesSection
+        membershipId={request.id}
+        groupId={request.group_id}
+        userId={request.user_id}
+        leaderId={leaderId}
+      />
+
       <View style={styles.actions}>
         <Button
-          title="Decline"
-          onPress={handleDecline}
+          title="Archive"
+          onPress={handleArchive}
           variant="secondary"
           size="small"
           disabled={isProcessing}
-          style={styles.declineButton}
+          style={styles.archiveButton}
         />
         <Button
           title="Add to group"
@@ -517,6 +516,14 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
           style={styles.approveButton}
         />
       </View>
+
+      <ArchiveRequestModal
+        visible={showArchiveModal}
+        requesterName={requesterFriendlyName}
+        onClose={() => setShowArchiveModal(false)}
+        onArchive={handleConfirmArchive}
+        loading={archiveRequestMutation.isPending}
+      />
     </Card>
   );
 };
@@ -723,7 +730,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 12,
   },
-  declineButton: {
+  archiveButton: {
     flex: 1,
     marginRight: 8,
   },
