@@ -70,10 +70,11 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
 
   const handleContactPress = async (type: 'phone' | 'email', value: string) => {
     try {
+      const actionType = type === 'phone' ? 'call' : 'email';
       await initiateContactMutation.mutateAsync({
         requestId: member.id,
         leaderId,
-        contactType: type,
+        actionType,
         contactValue: value,
       });
 

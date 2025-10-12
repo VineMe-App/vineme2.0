@@ -679,7 +679,7 @@ export class GroupCreationService {
         const { groupMembershipNotesService } = await import(
           './groupMembershipNotes'
         );
-        await groupMembershipNotesService.createNote(
+        await groupMembershipNotesService.createStatusChangeNote(
           {
             membership_id: membershipRecord.id,
             group_id: groupId,
