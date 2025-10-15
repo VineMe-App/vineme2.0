@@ -73,7 +73,7 @@ export class JoinRequestService {
             .update({
               status: 'pending',
               journey_status: null, // Reset journey status for new request
-              contact_consent: requestData.contact_consent || false,
+              //contact_consent: requestData.contact_consent || false,
             })
             .eq('id', existingMembership.id)
             .select()
@@ -118,7 +118,7 @@ export class JoinRequestService {
             user_id: requestData.user_id,
             role: 'member',
             status: 'pending',
-            contact_consent: requestData.contact_consent || false,
+            //contact_consent: requestData.contact_consent || false,
           })
           .select()
           .single();
