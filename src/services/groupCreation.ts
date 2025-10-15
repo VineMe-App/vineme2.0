@@ -10,6 +10,7 @@ import type {
   UpdateGroupData,
   AdminServiceResponse,
 } from './admin';
+import { getFullName } from '@/utils/name';
 
 /**
  * Service for group creation and leader management
