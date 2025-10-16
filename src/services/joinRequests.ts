@@ -225,7 +225,7 @@ export class JoinRequestService {
         )
         .eq('group_id', groupId)
         .eq('status', 'pending')
-        .order('joined_at', { ascending: false });
+        .order('created_at', { ascending: false, nullsFirst: false });
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -284,7 +284,7 @@ export class JoinRequestService {
         )
         .eq('user_id', userId)
         .eq('status', 'pending')
-        .order('joined_at', { ascending: false });
+        .order('created_at', { ascending: false, nullsFirst: false });
 
       if (error) {
         return { data: null, error: new Error(error.message) };
