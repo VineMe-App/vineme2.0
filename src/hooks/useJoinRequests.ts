@@ -343,12 +343,6 @@ export const useInitiateContactAction = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      // Invalidate contact audit logs
-      queryClient.invalidateQueries({
-        queryKey: ['contactAudit'],
-      });
-    },
     onError: (error) => {
       console.error('Failed to initiate contact action:', error);
     },

@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
-import { contactAuditService } from './contactAudit';
 import { groupMembershipNotesService } from './groupMembershipNotes';
 import {
   triggerJoinRequestApprovedNotification,
@@ -9,7 +8,6 @@ import {
 } from './notifications';
 import { getFullName } from '../utils/name';
 import type {
-  ContactPrivacySettings,
   GroupJoinRequest,
   GroupJoinRequestWithUser,
   GroupMembership,
@@ -24,7 +22,6 @@ export interface GroupServiceResponse<T = any> {
 export interface CreateJoinRequestData {
   group_id: string;
   user_id: string;
-  contact_consent?: boolean;
   message?: string;
 }
 
@@ -228,7 +225,7 @@ export class JoinRequestService {
         )
         .eq('group_id', groupId)
         .eq('status', 'pending')
-        .order('joined_at', { ascending: false });
+        .order('created_at', { ascending: false, nullsFirst: false });
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -241,10 +238,7 @@ export class JoinRequestService {
           : item.user,
       })) as GroupJoinRequestWithUser[];
 
-      const requestsWithConsent =
-        await this.attachContactConsent(normalizedRequests);
-
-      return { data: requestsWithConsent, error: null };
+      return { data: normalizedRequests, error: null };
     } catch (error) {
       return {
         data: null,
@@ -290,17 +284,15 @@ export class JoinRequestService {
         )
         .eq('user_id', userId)
         .eq('status', 'pending')
-        .order('joined_at', { ascending: false });
+        .order('created_at', { ascending: false, nullsFirst: false });
 
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
 
-      const requestsWithConsent = await this.attachContactConsent(
-        (data || []) as GroupJoinRequestWithUser[]
-      );
+      const requests = (data || []) as GroupJoinRequestWithUser[];
 
-      const groupIds = (requestsWithConsent || [])
+      const groupIds = (requests || [])
         .map((request) => request.group?.id)
         .filter((id): id is string => Boolean(id));
 
@@ -341,7 +333,7 @@ export class JoinRequestService {
         }
       }
 
-      const enriched = (requestsWithConsent || []).map((request) => {
+      const enriched = (requests || []).map((request) => {
         const leaders = leadersByGroup[request.group_id] || [];
         return {
           ...request,
@@ -820,53 +812,13 @@ export class JoinRequestService {
         name: contact?.name || '',
       };
 
-      const contactFields: string[] = [];
-
+      // Contact details are always accessible to group leaders
       if (contact?.email) {
-        const emailAllowed = await contactAuditService.canShareContact(
-          membership.user_id,
-          'email',
-          leaderId,
-          membership.group_id
-        );
-
-        if (emailAllowed.error) {
-          return { data: null, error: emailAllowed.error };
-        }
-
-        if (emailAllowed.data === true) {
-          contactInfo.email = contact.email;
-          contactFields.push('email');
-        }
+        contactInfo.email = contact.email;
       }
 
       if (contact?.phone) {
-        const phoneAllowed = await contactAuditService.canShareContact(
-          membership.user_id,
-          'phone',
-          leaderId,
-          membership.group_id
-        );
-
-        if (phoneAllowed.error) {
-          return { data: null, error: phoneAllowed.error };
-        }
-
-        if (phoneAllowed.data === true) {
-          contactInfo.phone = contact.phone;
-          contactFields.push('phone');
-        }
-      }
-
-      if (contactFields.length > 0) {
-        await contactAuditService.logContactAccess({
-          user_id: membership.user_id,
-          accessor_id: leaderId,
-          group_id: membership.group_id,
-          join_request_id: requestId,
-          access_type: 'view',
-          contact_fields: contactFields,
-        });
+        contactInfo.phone = contact.phone;
       }
 
       return {
@@ -945,34 +897,7 @@ export class JoinRequestService {
         };
       }
 
-      // Check global privacy settings for the specific contact type
-      const contactType = actionType === 'call' ? 'phone' : 'email';
-      const canContact = await contactAuditService.canShareContact(
-        membership.user.id,
-        contactType,
-        leaderId,
-        membership.group_id
-      );
-
-      if (!canContact.data) {
-        return {
-          data: null,
-          error: new Error(
-            `Contact via ${actionType} not allowed by user privacy settings`
-          ),
-        };
-      }
-
-      // Log the contact action
-      await contactAuditService.logContactAccess({
-        user_id: membership.user.id,
-        accessor_id: leaderId,
-        group_id: membership.group_id,
-        join_request_id: requestId,
-        access_type: actionType,
-        contact_fields: [contactType],
-      });
-
+      // Contact actions are always allowed for group leaders
       return { data: true, error: null };
     } catch (error) {
       return {
@@ -983,69 +908,6 @@ export class JoinRequestService {
             : new Error('Failed to initiate contact action'),
       };
     }
-  }
-
-  private async attachContactConsent<
-    T extends { user_id: string; contact_consent?: boolean | null },
-  >(records: T[]): Promise<T[]> {
-    if (!records || records.length === 0) {
-      return records;
-    }
-
-    const userIds = Array.from(
-      new Set(records.map((record) => record.user_id).filter(Boolean))
-    );
-
-    if (userIds.length === 0) {
-      return records;
-    }
-
-    type PrivacySettingRecord = Pick<
-      ContactPrivacySettings,
-      'user_id' | 'allow_contact_by_leaders'
-    >;
-
-    let privacySettings: PrivacySettingRecord[] = [];
-
-    const { data, error } = await supabase
-      .from('contact_privacy_settings')
-      .select('user_id, allow_contact_by_leaders')
-      .in('user_id', userIds);
-
-    if (error) {
-      console.error(
-        'Failed to fetch contact privacy settings for join requests:',
-        error
-      );
-
-      return records.map(
-        (record) =>
-          ({
-            ...record,
-            contact_consent: false,
-          }) as T
-      );
-    }
-
-    if (data) {
-      privacySettings = data as PrivacySettingRecord[];
-    }
-
-    const privacyMap = new Map<string, boolean>(
-      privacySettings.map((setting) => [
-        setting.user_id,
-        setting.allow_contact_by_leaders === true,
-      ])
-    );
-
-    return records.map((record) => {
-      const consent = privacyMap.get(record.user_id);
-
-      return {
-        ...record,
-        contact_consent: consent ?? true,
-      } as T;
-    });
   }
 }
 

@@ -11,7 +11,6 @@ export { groupAdminService, userAdminService } from './admin';
 export { groupCreationService } from './groupCreation';
 export { joinRequestService } from './joinRequests';
 export { locationService } from './location';
-export { contactAuditService } from './contactAudit';
 export { groupMediaService } from './groupMedia';
 export {
   referralService,
@@ -51,11 +50,6 @@ export type {
   Address,
   LocationPermissionStatus,
 } from './location';
-export type {
-  ContactAuditServiceResponse,
-  LogContactAccessData,
-  UpdatePrivacySettingsData,
-} from './contactAudit';
 export type {
   CreateReferralData,
   ReferralResponse,

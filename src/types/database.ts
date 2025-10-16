@@ -74,14 +74,12 @@ export interface GroupMembership {
   status: 'active' | 'inactive' | 'pending' | 'archived';
   referral_id?: string | null;
   journey_status?: MembershipJourneyStatus | null;
-  contact_consent?: boolean | null;
 }
 
 export interface GroupJoinRequest {
   id: string;
   group_id: string;
   user_id: string;
-  contact_consent?: boolean | null;
   message?: string | null;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;
@@ -212,47 +210,6 @@ export interface UserWithDetails extends User {
   service?: Service;
   group_memberships?: GroupMembership[];
   friendships?: Friendship[];
-}
-
-// Contact sharing and privacy types
-export interface ContactAuditLog {
-  id: string;
-  user_id: string; // User whose contact was accessed
-  accessor_id: string; // User who accessed the contact
-  group_id: string; // Group context for the access
-  join_request_id?: string; // Related join request if applicable
-  access_type: 'view' | 'call' | 'email' | 'message';
-  contact_fields: string[]; // Which fields were accessed (email, phone, etc.)
-  created_at: string;
-}
-
-export interface ContactPrivacySettings {
-  user_id: string; // Primary key
-  allow_email_sharing: boolean;
-  allow_phone_sharing: boolean;
-  allow_contact_by_leaders: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface ContactAuditLogWithDetails extends ContactAuditLog {
-  user?: {
-    id: string;
-    first_name?: string | null;
-    last_name?: string | null;
-    name?: string | null;
-    email?: string;
-  };
-  accessor?: {
-    id: string;
-    first_name?: string | null;
-    last_name?: string | null;
-    name?: string | null;
-  };
-  group?: {
-    id: string;
-    title: string;
-  };
 }
 
 // Referral system types

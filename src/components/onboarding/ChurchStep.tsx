@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import type { OnboardingStepProps } from '@/types/app';
-import type { Church, Service } from '@/types/database';
+import type { Church, Service, User } from '@/types/database';
 import { churchService } from '@/services/churches';
 import { supportService } from '@/services/support';
 import {
@@ -18,7 +18,9 @@ import {
 } from './MissingServiceModal';
 import { useAuthStore } from '@/stores/auth';
 import { Button } from '@/components/ui/Button';
-import { getFullName } from '@/utils/name';
+import { Avatar } from '@/components/ui/Avatar';
+import { getFullName, getDisplayName } from '@/utils/name';
+import { supabase } from '@/services/supabase';
 
 export default function ChurchStep({
   data,
@@ -51,6 +53,8 @@ export default function ChurchStep({
   const [missingServiceLastMode, setMissingServiceLastMode] = useState<
     'church' | 'service' | null
   >(null);
+  const [serviceAdmins, setServiceAdmins] = useState<User[]>([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
 
   const { user } = useAuthStore();
 
@@ -71,6 +75,14 @@ export default function ChurchStep({
       setMissingServiceRequestError(null);
     }
   }, [selectedChurchId, missingServiceLastMode]);
+
+  useEffect(() => {
+    if (selectedServiceId) {
+      loadServiceAdmins(selectedServiceId);
+    } else {
+      setServiceAdmins([]);
+    }
+  }, [selectedServiceId]);
 
   const loadChurches = async () => {
     try {
@@ -111,6 +123,27 @@ export default function ChurchStep({
       // Non-blocking
     } finally {
       setServicesLoading(false);
+    }
+  };
+
+  const loadServiceAdmins = async (serviceId: string) => {
+    try {
+      setAdminsLoading(true);
+      // Get church admins for this service
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, avatar_url')
+        .eq('service_id', serviceId)
+        .contains('roles', ['church_admin'])
+        .order('first_name');
+
+      if (!error && data) {
+        setServiceAdmins(data);
+      }
+    } catch {
+      // Non-blocking
+    } finally {
+      setAdminsLoading(false);
     }
   };
 
@@ -302,6 +335,50 @@ export default function ChurchStep({
               </View>
             )}
 
+            {selectedServiceId && (
+              <View style={styles.adminDisclosureContainer}>
+                <Text style={styles.adminDisclosureTitle}>
+                  📋 Privacy Notice
+                </Text>
+                <Text style={styles.adminDisclosureText}>
+                  Your contact details (name, email, and phone) will be visible
+                  to the church admins for this service. This helps them support
+                  you and connect you with relevant groups.
+                </Text>
+
+                {adminsLoading ? (
+                  <View style={styles.adminsLoading}>
+                    <LoadingSpinner size="small" />
+                    <Text style={styles.adminsLoadingText}>
+                      Loading admins...
+                    </Text>
+                  </View>
+                ) : serviceAdmins.length > 0 ? (
+                  <>
+                    <Text style={styles.adminListTitle}>Church Admins:</Text>
+                    <View style={styles.adminsList}>
+                      {serviceAdmins.map((admin) => (
+                        <View key={admin.id} style={styles.adminItem}>
+                          <Avatar
+                            imageUrl={admin.avatar_url}
+                            name={getFullName(admin)}
+                            size={32}
+                          />
+                          <Text style={styles.adminName}>
+                            {getDisplayName(admin, { fallback: 'full' })}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                ) : (
+                  <Text style={styles.noAdminsText}>
+                    No admins assigned to this service yet.
+                  </Text>
+                )}
+              </View>
+            )}
+
             <TouchableOpacity
               style={styles.otherServiceCard}
               onPress={() => handleOpenMissingServiceModal('service')}
@@ -388,6 +465,7 @@ export default function ChurchStep({
           style={styles.churchList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.churchListContent}
+          scrollEnabled={false}
           ListFooterComponent={() => (
             <View style={styles.listFooter}>
               <TouchableOpacity
@@ -820,5 +898,60 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#19478a',
     lineHeight: 20,
+  },
+  adminDisclosureContainer: {
+    marginTop: 16,
+    backgroundColor: '#fff8e5',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#ffd966',
+  },
+  adminDisclosureTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  adminDisclosureText: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  adminsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  adminsLoadingText: {
+    marginLeft: 8,
+    fontSize: 13,
+    color: '#856404',
+  },
+  adminListTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  adminsList: {
+    gap: 8,
+  },
+  adminItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  adminName: {
+    fontSize: 14,
+    color: '#856404',
+    fontWeight: '500',
+  },
+  noAdminsText: {
+    fontSize: 13,
+    color: '#856404',
+    fontStyle: 'italic',
   },
 });
