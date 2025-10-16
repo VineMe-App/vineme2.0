@@ -19,15 +19,6 @@ function buildFullName(firstName?: string, lastName?: string): string {
   return firstName?.trim() || '';
 }
 
-function generateSecurePassword(): string {
-  const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < 16; i++)
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  return password;
-}
-
 function normalizePhone(phone?: string | null): string | null {
   if (!phone) return null;
   const digits = phone.replace(/[^0-9+]/g, '');
@@ -156,28 +147,26 @@ serve(async (req) => {
       reusedExistingUser = true;
       console.log('Reusing existing user:', userId);
     } else {
-      // Create new auth user
-      const tempPassword = generateSecurePassword();
+      // Invite new user via Supabase's built-in invitation system
       const normalizedPhone = normalizePhone(payload.phone);
       const { data: authData, error: authError } =
-        await supabase.auth.admin.createUser({
-          email: payload.email,
-          password: tempPassword,
-          email_confirm: false,
-          phone: normalizedPhone ?? undefined,
-          user_metadata: {
+        await supabase.auth.admin.inviteUserByEmail(payload.email, {
+          data: {
             name: buildFullName(payload.firstName, payload.lastName),
             phone: normalizedPhone || payload.phone || '',
             referred: true,
             referrer_id: payload.referrerId,
+            church_id: churchId,
+            service_id: serviceId,
           },
+          redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify`,
         });
 
       if (authError) {
         return new Response(
           JSON.stringify({
             ok: false,
-            error: `Failed to create auth user: ${authError.message}`,
+            error: `Failed to invite user: ${authError.message}`,
           }),
           { status: 200 }
         );
@@ -187,7 +176,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             ok: false,
-            error: 'Auth user creation returned no user data',
+            error: 'User invitation returned no user data',
           }),
           { status: 200 }
         );
@@ -195,13 +184,27 @@ serve(async (req) => {
 
       userId = authData.user.id;
       createdAuthUser = true;
-      console.log('Created new user:', userId);
+      console.log('Invited new user:', userId);
+
+      // Update the user to set the phone field for proper phone authentication
+      if (normalizedPhone) {
+        const { error: phoneUpdateError } = await supabase.auth.admin.updateUserById(userId, {
+          phone: normalizedPhone,
+        });
+
+        if (phoneUpdateError) {
+          console.log('Failed to update user phone:', phoneUpdateError.message);
+          // Non-fatal error - continue without phone update
+        } else {
+          console.log('Updated user phone number for authentication');
+        }
+      }
     }
 
     // Check if user profile already exists
     const { data: existingProfile } = await supabase
       .from('users')
-      .select('id, name, church_id, service_id')
+      .select('id, first_name, last_name, church_id, service_id')
       .eq('id', userId)
       .single();
 
@@ -209,10 +212,8 @@ serve(async (req) => {
       // Create user profile
       const { error: profileError } = await supabase.from('users').insert({
         id: userId,
-        name:
-          buildFullName(payload.firstName, payload.lastName) ||
-          existingUser?.user_metadata?.name ||
-          'New User',
+        first_name: payload.firstName || null,
+        last_name: payload.lastName || null,
         newcomer: true,
         onboarding_complete: false,
         roles: ['user'],
