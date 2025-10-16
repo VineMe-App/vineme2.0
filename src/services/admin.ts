@@ -324,14 +324,14 @@ export class GroupAdminService {
       }
 
       // Fetch the updated group to return
-      const { data, error: fetchError } = await supabase
+      const { data, error: refetchError } = await supabase
         .from('groups')
         .select('*')
         .eq('id', groupId)
         .single();
 
-      if (fetchError) {
-        return { data: null, error: new Error(fetchError.message) };
+      if (refetchError) {
+        return { data: null, error: new Error(refetchError.message) };
       }
 
       // Log the approval action
@@ -436,14 +436,14 @@ export class GroupAdminService {
       }
 
       // Fetch the updated group to return
-      const { data, error: fetchError } = await supabase
+      const { data, error: refetchError } = await supabase
         .from('groups')
         .select('*')
         .eq('id', groupId)
         .single();
 
-      if (fetchError) {
-        return { data: null, error: new Error(fetchError.message) };
+      if (refetchError) {
+        return { data: null, error: new Error(refetchError.message) };
       }
 
       // Log the decline action
