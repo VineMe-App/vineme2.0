@@ -201,6 +201,18 @@ export default function ReferralPage() {
             : "Help someone join the VineMe community. They'll receive an email to set up their account and our team will help match them to a group."}
         </Text>
 
+        <View style={styles.privacyNotice}>
+          <View style={styles.privacyNoticeHeader}>
+            <Ionicons name="information-circle-outline" size={20} color="#856404" />
+            <Text style={styles.privacyNoticeTitle}>Privacy Notice</Text>
+          </View>
+          <Text style={styles.privacyNoticeText}>
+            {isGroupReferral
+              ? "Please inform the person you're referring that their contact details will be shared with church admins and the connect group leaders for this group."
+              : "Please inform the person you're referring that their contact details will be shared with church admins."}
+          </Text>
+        </View>
+
         <View style={styles.sectionHeader}>
           <Ionicons name="person-add-outline" size={18} color="#374151" />
           <Text style={styles.sectionTitle}>Referral details</Text>
@@ -404,7 +416,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#374151',
     lineHeight: 22,
+    marginBottom: 16,
+  },
+  privacyNotice: {
+    backgroundColor: '#fff8e5',
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#ffd966',
+  },
+  privacyNoticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  privacyNoticeTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#856404',
+  },
+  privacyNoticeText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#856404',
   },
   sectionHeader: {
     flexDirection: 'row',

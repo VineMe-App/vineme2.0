@@ -24,10 +24,6 @@ import {
 } from '@/services/notifications';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
-import {
-  usePrivacySettings,
-  useUpdatePrivacySettings,
-} from '@/hooks/useContactAudit';
 
 export default function CommunicationAndSecurityScreen() {
   const { user, userProfile, linkEmail, linkPhone, verifyOtp, isLoading } =
@@ -178,59 +174,6 @@ export default function CommunicationAndSecurityScreen() {
       Alert.alert('Success', 'Phone has been linked to your account!');
     } else {
       Alert.alert('Verification Failed', result.error || 'Invalid code');
-    }
-  };
-
-  // Privacy: contact sharing with group leaders
-  const { data: privacySettings, isLoading: privacyLoading } =
-    usePrivacySettings(userId!);
-  const updatePrivacyMutation = useUpdatePrivacySettings();
-  const [allowEmailSharing, setAllowEmailSharing] = useState(true);
-  const [allowPhoneSharing, setAllowPhoneSharing] = useState(true);
-  const [allowContactByLeaders, setAllowContactByLeaders] = useState(true);
-  const [hasPrivacyChanges, setHasPrivacyChanges] = useState(false);
-
-  useEffect(() => {
-    if (privacySettings) {
-      setAllowEmailSharing(privacySettings.allow_email_sharing);
-      setAllowPhoneSharing(privacySettings.allow_phone_sharing);
-      setAllowContactByLeaders(privacySettings.allow_contact_by_leaders);
-      setHasPrivacyChanges(false);
-    }
-  }, [privacySettings]);
-
-  const togglePrivacy = (key: 'email' | 'phone' | 'leaders') => {
-    setHasPrivacyChanges(true);
-    if (key === 'leaders') {
-      const next = !allowContactByLeaders;
-      setAllowContactByLeaders(next);
-      if (!next) {
-        // If disabling leader contact, also disable specific channels
-        setAllowEmailSharing(false);
-        setAllowPhoneSharing(false);
-      }
-    } else if (key === 'email') {
-      setAllowEmailSharing(!allowEmailSharing);
-    } else if (key === 'phone') {
-      setAllowPhoneSharing(!allowPhoneSharing);
-    }
-  };
-
-  const savePrivacy = async () => {
-    if (!userId) return;
-    try {
-      await updatePrivacyMutation.mutateAsync({
-        userId,
-        updates: {
-          allow_email_sharing: allowEmailSharing,
-          allow_phone_sharing: allowPhoneSharing,
-          allow_contact_by_leaders: allowContactByLeaders,
-        },
-      });
-      Alert.alert('Saved', 'Contact privacy settings updated.');
-      setHasPrivacyChanges(false);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to update privacy settings.');
     }
   };
 
@@ -465,58 +408,6 @@ export default function CommunicationAndSecurityScreen() {
               </View>
             )}
           </View>
-        </Card>
-
-        {/* Privacy Section */}
-        <Card style={styles.card}>
-          <Text style={styles.cardTitle}>Contact Privacy</Text>
-          {privacyLoading && !privacySettings ? (
-            <RNText>Loading...</RNText>
-          ) : (
-            <>
-              <View style={styles.settingItem}>
-                <Checkbox
-                  checked={allowContactByLeaders}
-                  onPress={() => togglePrivacy('leaders')}
-                  label="Allow group leaders to contact me"
-                />
-                <Text style={styles.helperText}>
-                  When enabled, leaders can access your contact info when you
-                  request to join.
-                </Text>
-              </View>
-
-              {allowContactByLeaders && (
-                <>
-                  <View style={styles.settingItem}>
-                    <Checkbox
-                      checked={allowEmailSharing}
-                      onPress={() => togglePrivacy('email')}
-                      label="Share email address"
-                    />
-                  </View>
-                  <View style={styles.settingItem}>
-                    <Checkbox
-                      checked={allowPhoneSharing}
-                      onPress={() => togglePrivacy('phone')}
-                      label="Share phone number"
-                    />
-                  </View>
-                </>
-              )}
-
-              <View style={styles.actionsRow}>
-                <Button
-                  title="Save Privacy"
-                  onPress={savePrivacy}
-                  loading={updatePrivacyMutation.isPending}
-                  disabled={
-                    !hasPrivacyChanges || updatePrivacyMutation.isPending
-                  }
-                />
-              </View>
-            </>
-          )}
         </Card>
       </ScrollView>
     </SafeAreaView>

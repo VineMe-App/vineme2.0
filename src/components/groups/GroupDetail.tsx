@@ -112,7 +112,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
     Alert.alert(
       'Send Join Request?',
-      'By requesting to join this group, you consent to sharing your contact details with the leaders. Do you wish to send your join request?',
+      'Please note: The connect group leaders will be able to see your contact details when you request to join. Do you wish to send your join request?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -122,7 +122,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               await createJoinRequestMutation.mutateAsync({
                 group_id: group.id,
                 user_id: userProfile.id,
-                contact_consent: true,
               });
               onMembershipChange?.();
               Alert.alert(

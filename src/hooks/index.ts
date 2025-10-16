@@ -81,14 +81,6 @@ export {
   joinRequestKeys,
 } from './useJoinRequests';
 export {
-  useUserContactLogs,
-  useGroupContactLogs,
-  usePrivacySettings,
-  useUpdatePrivacySettings,
-  useCanShareContact,
-  contactAuditKeys,
-} from './useContactAudit';
-export {
   useUserReferrals,
   useGroupReferrals,
   useReferralsForUser,

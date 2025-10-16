@@ -59,9 +59,8 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
   );
   const [journeyStatus, setJourneyStatus] =
     useState<MembershipJourneyStatus | null>(initialJourneyStatus);
-  const hasContactConsent = request.contact_consent === true;
   const { data: contactInfo } = useGetContactInfo(
-    showContactInfo && hasContactConsent ? request.id : undefined,
+    showContactInfo ? request.id : undefined,
     leaderId
   );
   const isReferral = Boolean(request.referral_id);
@@ -389,29 +388,15 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
       )}
 
       <View style={styles.contactSection}>
-        <View style={styles.contactHeader}>
-          <Text style={styles.contactTitle}>Contact details</Text>
-          <Badge
-            variant={hasContactConsent ? 'success' : 'secondary'}
-            style={styles.badge}
-          >
-            {hasContactConsent ? 'Contact allowed' : 'No consent'}
-          </Badge>
-        </View>
-        {hasContactConsent ? (
-          <TouchableOpacity
-            onPress={() => setShowContactInfo(!showContactInfo)}
-            style={styles.contactToggle}
-          >
-            <Text style={styles.contactToggleText}>
-              {showContactInfo ? 'Hide contact info' : 'Show contact info'}
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <Text style={styles.noContactText}>
-            This person has not yet shared their contact details with leaders.
+        <Text style={styles.contactTitle}>Contact details</Text>
+        <TouchableOpacity
+          onPress={() => setShowContactInfo(!showContactInfo)}
+          style={styles.contactToggle}
+        >
+          <Text style={styles.contactToggleText}>
+            {showContactInfo ? 'Hide contact info' : 'Show contact info'}
           </Text>
-        )}
+        </TouchableOpacity>
       </View>
 
       {showContactInfo && contactInfo && (

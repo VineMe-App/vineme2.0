@@ -41,7 +41,6 @@ export interface GroupJoinRequest {
   group_id: string;
   user_id: string;
   user?: User;
-  contact_consent?: boolean;
   message?: string;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;

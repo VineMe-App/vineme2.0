@@ -42,11 +42,10 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
 
   const userName = getDisplayName(request.user, { fallback: 'full' });
   const fullName = getFullName(request.user);
-  const hasContactConsent = request.user?.contact_consent === true;
 
   const { data: contactInfo, isLoading: isLoadingContactInfo } =
     useGetContactInfo(
-      showContactInfo && hasContactConsent ? request.id : undefined,
+      showContactInfo ? request.id : undefined,
       userProfile?.id
     );
 
@@ -179,29 +178,16 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
 
       {/* Contact Info Section */}
       <View style={styles.contactSection}>
-        <View style={styles.contactHeader}>
-          <Text style={styles.contactTitle}>Contact Details</Text>
-          <Badge variant={hasContactConsent ? 'success' : 'secondary'}>
-            <Text style={{ color: 'white' }}>
-              {hasContactConsent ? 'Contact Allowed' : 'No Consent'}
-            </Text>
-          </Badge>
-        </View>
-        {hasContactConsent ? (
-          <TouchableOpacity
-            onPress={() => setShowContactInfo(!showContactInfo)}
-            style={styles.contactToggle}
-          >
-            <Text style={styles.contactToggleText}>
-              {showContactInfo ? 'Hide' : 'Show'} contact info
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <Text style={styles.noContactText}>
-            This person has not yet shared their contact details with leaders.
+        <Text style={styles.contactTitle}>Contact Details</Text>
+        <TouchableOpacity
+          onPress={() => setShowContactInfo(!showContactInfo)}
+          style={styles.contactToggle}
+        >
+          <Text style={styles.contactToggleText}>
+            {showContactInfo ? 'Hide' : 'Show'} contact info
           </Text>
-        )}
-        {showContactInfo && hasContactConsent && (
+        </TouchableOpacity>
+        {showContactInfo && (
           <View style={styles.contactInfoContainer}>
             {isLoadingContactInfo ? (
               <LoadingSpinner />
