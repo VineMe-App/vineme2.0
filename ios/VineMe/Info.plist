@@ -42,6 +42,11 @@
     <string>1</string>
     <key>GMSApiKey</key>
     <string>$(EXPO_PUBLIC_GOOGLE_MAPS_API_KEY)</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>comgooglemaps</string>
+      <string>googlemaps</string>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
