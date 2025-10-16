@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -11,11 +10,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
 import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
 import { Input } from '../ui';
 import { locationService, type Coordinates } from '../../services/location';
-import { debounce } from '../../utils';
 import { MapViewFallback } from './MapViewFallback';
 
 // Dynamically import MapView - not available in Expo Go or on web
@@ -68,9 +67,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const inExpoGo = !MapView;
 
   const [search, setSearch] = useState<string>(value?.address || '');
-  const [previousSearchLength, setPreviousSearchLength] = useState(
-    (value?.address || '').length
-  );
   const [region, setRegion] = useState<{
     latitude: number;
     longitude: number;
@@ -93,7 +89,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   } | null>(null);
   const [inputKey, setInputKey] = useState(0);
   const mapRef = useRef<any>(null);
-  const inputRef = useRef<any>(null);
 
   // Ensure marker is always visible immediately
   useEffect(() => {
@@ -239,65 +234,34 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     initializeLocation();
   }, [value?.coordinates, onChange]);
 
-  const geocode = useMemo(() => {
-    // Create different debounced functions for different delays
-    const standardGeocode = debounce(async (query: string) => {
-      if (!query.trim() || query.trim().length < 3) return;
-      setIsGeocoding(true);
-      try {
-        const coords = await locationService.geocodeAddress(query.trim());
-        if (coords) {
-          setSelectedCoords(coords);
-          const newRegion = {
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-            longitudeDelta:
-              userZoomLevel?.longitudeDelta || region.longitudeDelta,
-          };
-          setRegion(newRegion);
-          mapRef.current?.animateToRegion(newRegion, 600);
-          onChange({ address: query.trim(), coordinates: coords });
-        }
-      } finally {
-        setIsGeocoding(false);
-      }
-    }, 2000); // Standard 2-second delay
-
-    const numberGeocode = debounce(async (query: string) => {
-      if (!query.trim() || query.trim().length < 3) return;
-      setIsGeocoding(true);
-      try {
-        const coords = await locationService.geocodeAddress(query.trim());
-        if (coords) {
-          setSelectedCoords(coords);
-          const newRegion = {
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-            longitudeDelta:
-              userZoomLevel?.longitudeDelta || region.longitudeDelta,
-          };
-          setRegion(newRegion);
-          mapRef.current?.animateToRegion(newRegion, 600);
-          onChange({ address: query.trim(), coordinates: coords });
-        }
-      } finally {
-        setIsGeocoding(false);
-      }
-    }, 3000); // Longer 3-second delay for numbers
-
-    return (query: string) => {
-      // Check if first character is a number
-      const firstChar = query.trim().charAt(0);
-      const isNumber = /^\d/.test(firstChar);
-
-      if (isNumber) {
-        numberGeocode(query);
+  const geocode = useCallback(async (query: string) => {
+    if (!query.trim() || query.trim().length < 3) {
+      Alert.alert('Search Error', 'Please enter at least 3 characters to search');
+      return;
+    }
+    setIsGeocoding(true);
+    try {
+      const coords = await locationService.geocodeAddress(query.trim());
+      if (coords) {
+        setSelectedCoords(coords);
+        const newRegion = {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
+          longitudeDelta:
+            userZoomLevel?.longitudeDelta || region.longitudeDelta,
+        };
+        setRegion(newRegion);
+        mapRef.current?.animateToRegion(newRegion, 600);
+        onChange({ address: query.trim(), coordinates: coords });
       } else {
-        standardGeocode(query);
+        Alert.alert('Location Not Found', 'Unable to find the location you searched for. Please try a different search.');
       }
-    };
+    } catch (error) {
+      Alert.alert('Search Error', 'Failed to search for location. Please try again.');
+    } finally {
+      setIsGeocoding(false);
+    }
   }, [onChange, region, userZoomLevel]);
 
   const forceInputRecreation = () => {
@@ -306,19 +270,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
   const handleSearchChange = (text: string) => {
     setSearch(text);
+  };
 
-    // Only geocode if:
-    // 1. User is actively typing (text length is increasing)
-    // 2. Text is at least 3 characters long
-    // 3. Text is not empty
-    const isTyping = text.length > previousSearchLength;
-    setPreviousSearchLength(text.length);
-
-    // Only trigger geocoding when actively typing, not when deleting or clearing
-    if (isTyping && text.length >= 3) {
-      geocode(text);
-    }
-    // Don't geocode when deleting, clearing, or when text length stays the same
+  const handleSearchPress = () => {
+    geocode(search);
   };
 
   const handleRegionChangeComplete = useCallback(
@@ -392,7 +347,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             containerStyle={styles.searchInputContainer}
             inputStyle={styles.searchInput}
             accessibilityLabel="Search for a location"
-            disabled
+            editable={false}
           />
           <Text style={styles.searchHelper}>
             Location search requires a development build
@@ -407,7 +362,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <Input
-          ref={inputRef}
           key={`search-input-${inputKey}`}
           value={search}
           onChangeText={handleSearchChange}
@@ -415,20 +369,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           containerStyle={styles.searchInputContainer}
           inputStyle={styles.searchInput}
           accessibilityLabel="Search for a location"
-          accessibilityHint="Enter an address, place name, or postcode to move the map"
-          autoComplete="off"
-          autoCorrect={false}
-          spellCheck={false}
-          autoCapitalize="none"
-          textContentType="none"
-          keyboardType="default"
-          importantForAutofill="no"
-          autoCompleteType="off"
-          dataDetectorTypes="none"
-          clearButtonMode="never"
-          enablesReturnKeyAutomatically={false}
+          accessibilityHint="Enter an address, place name, or postcode, then press Enter to search"
           returnKeyType="search"
-          blurOnSubmit={false}
+          onSubmitEditing={handleSearchPress}
         />
         {isGeocoding && (
           <Text style={styles.searchHelper}>Finding location…</Text>
@@ -438,7 +381,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         )}
         {search.length > 0 && search.length < 3 && (
           <Text style={styles.searchHelper}>
-            Type at least 3 characters to search
+            Type at least 3 characters, then press Enter to search
           </Text>
         )}
         {search.length > 0 && (
@@ -446,12 +389,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             style={styles.clearButton}
             onPress={() => {
               setSearch('');
-              setPreviousSearchLength(0);
               forceInputRecreation();
-              // Focus the input after clearing to keep keyboard up
-              setTimeout(() => {
-                inputRef.current?.focus();
-              }, 100);
             }}
             accessibilityLabel="Clear search"
           >
