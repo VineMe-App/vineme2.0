@@ -201,7 +201,7 @@ serve(async (req) => {
     // Check if user profile already exists
     const { data: existingProfile } = await supabase
       .from('users')
-      .select('id, name, church_id, service_id')
+      .select('id, first_name, last_name, church_id, service_id')
       .eq('id', userId)
       .single();
 
@@ -209,10 +209,8 @@ serve(async (req) => {
       // Create user profile
       const { error: profileError } = await supabase.from('users').insert({
         id: userId,
-        name:
-          buildFullName(payload.firstName, payload.lastName) ||
-          existingUser?.user_metadata?.name ||
-          'New User',
+        first_name: payload.firstName || null,
+        last_name: payload.lastName || null,
         newcomer: true,
         onboarding_complete: false,
         roles: ['user'],

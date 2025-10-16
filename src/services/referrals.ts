@@ -1,9 +1,6 @@
 import { supabase } from './supabase';
 import { authService } from './auth';
-import { emailVerificationService } from './emailVerification';
 import type {
-  GroupReferral,
-  GeneralReferral,
   GroupReferralWithDetails,
   GeneralReferralWithDetails,
 } from '../types/database';
@@ -18,7 +15,6 @@ import {
   sanitizeReferralInput,
   referralRateLimiter,
   createReferralErrorMessage,
-  type ReferralFormData,
 } from '../utils/referralValidation';
 import { getFullName } from '../utils/name';
 
@@ -456,57 +452,6 @@ export class ReferralService {
             ? error
             : new Error('Failed to get group referrals'),
       };
-    }
-  }
-
-  /**
-   * Private helper: Create user account for referred person
-   * Requirement 5.1: Send verification email to referred person's email address
-   * Requirement 5.2: Include "verify email" link for account activation
-   */
-  private async createUserAccount(
-    data: CreateReferralData
-  ): Promise<string | null> {
-    try {
-      // Use the enhanced auth service to create referred user
-      const result = await authService.createReferredUser({
-        email: data.email,
-        phone: data.phone,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        note: data.note,
-        referrerId: data.referrerId,
-      });
-
-      if (result.error || !result.userId) {
-        console.error('Failed to create referred user:', result.error);
-        return null;
-      }
-
-      // Send verification email using the dedicated email verification service
-      try {
-        const emailResult =
-          await emailVerificationService.sendVerificationEmail(
-            data.email,
-            true // Mark as referral email
-          );
-
-        if (!emailResult.success) {
-          console.error('Email verification failed:', emailResult.error);
-          // Log the error but don't fail the referral creation
-          // The user account was created successfully
-        } else {
-          console.log(`Verification email sent successfully to ${data.email}`);
-        }
-      } catch (emailError) {
-        console.error('Error sending verification email:', emailError);
-        // Don't fail the referral creation due to email issues
-      }
-
-      return result.userId;
-    } catch (error) {
-      console.error('Error creating user account:', error);
-      return null;
     }
   }
 
