@@ -314,19 +314,24 @@ export class GroupAdminService {
         };
       }
 
-      // Update group status to approved
-      const { data, error } = await supabase
-        .from('groups')
-        .update({
-          status: 'approved',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', groupId)
-        .select()
-        .single();
+      // Use the approve_group RPC which handles status update and membership activation
+      const { error } = await supabase.rpc('approve_group', {
+        p_group_id: groupId,
+      });
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Fetch the updated group to return
+      const { data, error: refetchError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('id', groupId)
+        .single();
+
+      if (refetchError) {
+        return { data: null, error: new Error(refetchError.message) };
       }
 
       // Log the approval action
@@ -421,19 +426,24 @@ export class GroupAdminService {
         };
       }
 
-      // Update group status to denied
-      const { data, error } = await supabase
-        .from('groups')
-        .update({
-          status: 'denied',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', groupId)
-        .select()
-        .single();
+      // Use the deny_group RPC which handles status update and membership deactivation
+      const { error } = await supabase.rpc('deny_group', {
+        p_group_id: groupId,
+      });
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Fetch the updated group to return
+      const { data, error: refetchError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('id', groupId)
+        .single();
+
+      if (refetchError) {
+        return { data: null, error: new Error(refetchError.message) };
       }
 
       // Log the decline action

@@ -132,65 +132,46 @@ export class GroupCreationService {
           console.warn('[CreateGroupDebug] pre-insert diagnostics failed', e);
       }
 
-      // Create the group with pending status (service_id will be enforced server-side)
-      const { data: group, error: groupError } = await supabase
-        .from('groups')
-        .insert({
-          ...groupData,
-          meeting_time: normalizeMeetingTime(groupData.meeting_time),
-          created_by: creatorId,
-          status: 'pending',
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      // Use the request_group RPC which handles both group creation and pending membership
+      const { data: groupId, error: groupError } = await supabase.rpc(
+        'request_group',
+        {
+          p_title: groupData.title,
+          p_description: groupData.description,
+          p_meeting_day: groupData.meeting_day,
+          p_location: groupData.location,
+          p_meeting_time: normalizeMeetingTime(groupData.meeting_time),
+          p_service_id: groupData.service_id,
+          p_church_id: groupData.church_id,
+          p_whatsapp_link: groupData.whatsapp_link || null,
+          p_image_url: groupData.image_url || null,
+        }
+      );
 
       if (groupError) {
         if (__DEV__) {
           // eslint-disable-next-line no-console
-          console.error('[CreateGroupDebug] insert failed', {
+          console.error('[CreateGroupDebug] RPC request_group failed', {
             message: groupError.message,
             details: (groupError as any).details,
             hint: (groupError as any).hint,
             code: (groupError as any).code,
           });
         }
-        // Provide clearer message for UI but keep full context in console
-        const message = groupError.message?.includes('RLS')
-          ? 'RLS policy violation for groups.insert'
-          : groupError.message;
-        return { data: null, error: new Error(message) };
+        return { data: null, error: new Error(groupError.message) };
       }
 
-      // Automatically add creator as leader only if they are a church admin.
-      // Regular users submit for approval and do not get active leadership until approved.
-      let membershipError: any = null;
-      try {
-        const { data: me } = await supabase
-          .from('users')
-          .select('roles')
-          .eq('id', creatorId)
-          .single();
-        const isChurchAdmin =
-          Array.isArray(me?.roles) && me.roles.includes('church_admin');
-        if (isChurchAdmin) {
-          const result = await supabase.from('group_memberships').insert({
-            group_id: group.id,
-            user_id: creatorId,
-            role: 'leader',
-            status: 'active',
-            joined_at: new Date().toISOString(),
-          });
-          membershipError = result.error;
-        }
-      } catch {}
+      // Fetch the created group to return it
+      const { data: group, error: fetchError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('id', groupId)
+        .single();
 
-      if (membershipError) {
-        // If membership creation fails, we should clean up the group
-        await supabase.from('groups').delete().eq('id', group.id);
+      if (fetchError || !group) {
         return {
           data: null,
-          error: new Error('Failed to create group leadership'),
+          error: new Error('Group created but failed to fetch details'),
         };
       }
 
