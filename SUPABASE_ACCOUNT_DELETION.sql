@@ -77,16 +77,9 @@ begin
   delete from public.notification_settings
   where user_id = v_user_id;
 
-  -- 7. Handle groups created by the user
-  -- Option A: Delete groups if they have no other leaders
-  -- Option B: Transfer ownership to another leader
-  -- Option C: Just mark groups as needing new leader
-  -- For now, we'll mark them and let church admins handle it
-  update public.groups
-  set status = 'pending',
-      updated_at = now()
-  where created_by = v_user_id
-    and status = 'approved';
+  -- 7. No need to change group status
+  -- Since we block deletion if user is sole leader,
+  -- any groups they created will have other leaders and remain active
 
   -- 8. Finally, delete the user record
   delete from public.users
