@@ -206,20 +206,24 @@ export default function ProfileScreen() {
               await signOut();
               router.replace({ pathname: '/(auth)/sign-in' as any });
             } catch (error) {
-              // Check if it's a sole leader error
+              // Check if it's a sole leader error (expected validation error)
               const errorMessage = error instanceof Error ? error.message : '';
               if (errorMessage.includes('sole leader')) {
+                // This is expected user feedback, not a system error
                 Alert.alert(
                   'Cannot Delete Account',
                   errorMessage,
                   [{ text: 'OK' }]
                 );
-              } else {
-                Alert.alert(
-                  'Error',
-                  'Failed to delete account. Please try again.'
-                );
+                // Prevent error from being logged as global error
+                return;
               }
+              
+              // For unexpected errors, show generic message
+              Alert.alert(
+                'Error',
+                'Failed to delete account. Please try again.'
+              );
             }
           },
         },

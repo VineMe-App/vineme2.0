@@ -228,9 +228,18 @@ export const useDeleteAccount = () => {
   return useMutation({
     mutationFn: async (userId: string) => {
       const { data, error } = await userService.deleteAccount(userId);
-      if (error) throw error;
+      if (error) {
+        // Mark sole leader errors as validation errors to prevent retries
+        if (error.message.includes('sole leader')) {
+          const validationError = new Error(error.message) as any;
+          validationError.type = 'validation';
+          throw validationError;
+        }
+        throw error;
+      }
       return data;
     },
+    retry: false, // Don't retry account deletion - it's a user-initiated action
     onSettled: () => {
       // Clear cached user data on delete attempts
       queryClient.clear();
