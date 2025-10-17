@@ -24,7 +24,7 @@ import {
 } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
-import { ErrorMessage, EmptyState, LoadingSpinner } from '../../components/ui';
+import { ErrorMessage, EmptyState, LoadingSpinner, Modal } from '../../components/ui';
 import {
   applyGroupFilters,
   getActiveFiltersDescription,
@@ -44,6 +44,7 @@ export default function GroupsScreen() {
   const friendsQuery = useFriends(userProfile?.id);
   const [showSearch, setShowSearch] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [sortBy, setSortBy] = useState<
     'none' | 'distance' | 'alphabetical' | 'friends'
   >('none');
@@ -379,6 +380,20 @@ export default function GroupsScreen() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={[
+              styles.iconButton,
+              { backgroundColor: theme.colors.secondary[100] },
+            ]}
+            onPress={() => setShowInfoModal(true)}
+            accessibilityLabel="Information about groups"
+          >
+            <Ionicons
+              name="information-circle-outline"
+              size={20}
+              color={theme.colors.primary[500]}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
               styles.toggleButton,
               {
                 backgroundColor:
@@ -618,6 +633,50 @@ export default function GroupsScreen() {
         {currentView === 'list' ? renderListView() : renderMapView()}
       </View>
 
+      <Modal
+        isVisible={showInfoModal}
+        onClose={() => setShowInfoModal(false)}
+        title="Groups Overview"
+        scrollable
+      >
+        <View style={styles.infoModalContent}>
+          <Text variant="body" style={styles.infoModalParagraph}>
+            Explore Bible study groups from here, switch between the list and map views, and tap any card
+            to see full details or request to join.
+          </Text>
+
+          <View style={styles.infoModalSection}>
+            <Text variant="h6" style={styles.infoModalHeading}>
+              Visibility rules
+            </Text>
+            <Text variant="body" style={styles.infoModalBullet}>
+              • Members see groups in their own service. Groups with your friends outside the service appear in grey.
+            </Text>
+            <Text variant="body" style={styles.infoModalBullet}>
+              • Group leaders see every group in their church plus grey markers for friend groups in other churches.
+            </Text>
+            <Text variant="body" style={styles.infoModalBullet}>
+              • Church admins see every approved group. Groups outside your church are tinted grey for context.
+            </Text>
+          </View>
+
+          <View style={styles.infoModalSection}>
+            <Text variant="h6" style={styles.infoModalHeading}>
+              Helpful tips
+            </Text>
+            <Text variant="body" style={styles.infoModalBullet}>
+              • Use filters and search to narrow by day, category, or friends in a group.
+            </Text>
+            <Text variant="body" style={styles.infoModalBullet}>
+              • Switch to the map to browse by location and tap pins for quick access to the group card.
+            </Text>
+            <Text variant="body" style={styles.infoModalBullet}>
+              • Grey groups are outside your immediate scope but include friends—reach out if you&apos;re interested.
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
       <FilterPanel
         isVisible={showFilterPanel}
         onClose={() => setShowFilterPanel(false)}
@@ -784,5 +843,24 @@ const styles = StyleSheet.create({
   },
   sortOptionTextSelected: {
     color: '#fff',
+  },
+  infoModalContent: {
+    paddingVertical: 4,
+  },
+  infoModalParagraph: {
+    color: '#374151',
+    marginBottom: 12,
+  },
+  infoModalSection: {
+    marginBottom: 16,
+  },
+  infoModalHeading: {
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  infoModalBullet: {
+    color: '#374151',
+    marginBottom: 8,
   },
 });
