@@ -1035,21 +1035,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f10078', // Primary brand pink
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#f10078',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
   },
   markerBubbleActive: {
     backgroundColor: '#f472b6', // Lighter pink for active state
   },
   markerBubbleGrey: {
     backgroundColor: '#6b7280', // Slate gray for external groups
-    shadowColor: '#6b7280',
   },
   calloutContainer: {
     width: 250,
@@ -1140,14 +1131,6 @@ const styles = StyleSheet.create({
   clusterBubble: {
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
   },
   clusterCount: {
     color: '#ffffff',
