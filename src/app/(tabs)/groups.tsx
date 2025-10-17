@@ -6,13 +6,12 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { useRouter } from 'expo-router';
 import {
   GroupCard,
   GroupsMapView,
-  ViewToggle,
   FilterPanel,
   SearchBar,
   type ViewMode,
@@ -30,7 +29,7 @@ import {
   getActiveFiltersDescription,
   getActiveFiltersCount,
 } from '../../utils/groupFilters';
-import type { GroupWithDetails, User } from '../../types/database';
+import type { GroupWithDetails } from '../../types/database';
 import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
@@ -43,7 +42,10 @@ export default function GroupsScreen() {
   const { theme } = useTheme();
   const friendsQuery = useFriends(userProfile?.id);
   const [showSearch, setShowSearch] = useState(false);
-  const [sortByDistance, setSortByDistance] = useState(false);
+  const [showSortOptions, setShowSortOptions] = useState(false);
+  const [sortBy, setSortBy] = useState<
+    'none' | 'distance' | 'alphabetical' | 'friends'
+  >('none');
   const [userCoords, setUserCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -53,6 +55,14 @@ export default function GroupsScreen() {
   // Create flow now navigates to dedicated page
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [currentView, setCurrentView] = useState<ViewMode>('list');
+
+  // Hide sort options when switching to map view
+  const handleViewChange = (view: ViewMode) => {
+    setCurrentView(view);
+    if (view === 'map') {
+      setShowSortOptions(false);
+    }
+  };
 
   const {
     data: allGroups,
@@ -80,13 +90,13 @@ export default function GroupsScreen() {
     return base;
   }, [allGroups, filters, friendsQuery.data]);
 
-  // Distance-sorted groups with computed distance
+  // Sorted groups with computed distance and friend counts
   const groupsWithDistance = useMemo(() => {
     if (!filteredGroups) return [] as typeof filteredGroups & any[];
     return filteredGroups
       .map((g) => {
         let distanceKm: number | undefined;
-        if (sortByDistance && userCoords) {
+        if (sortBy === 'distance' && userCoords) {
           const parsed = locationService.parseGroupLocation(g.location);
           if (parsed.coordinates) {
             distanceKm = locationService.calculateDistance(
@@ -95,18 +105,39 @@ export default function GroupsScreen() {
             );
           }
         }
-        return { ...g, __distanceKm: distanceKm } as any;
+
+        // Calculate friends count for sorting
+        const friendIds = new Set(
+          (friendsQuery.data || [])
+            .map((f) => f.friend?.id)
+            .filter((id): id is string => !!id)
+        );
+        const friendsCount = (g.memberships || []).filter(
+          (m: any) => m.status === 'active' && friendIds.has(m.user_id)
+        ).length;
+
+        return {
+          ...g,
+          __distanceKm: distanceKm,
+          __friendsCount: friendsCount,
+        } as any;
       })
       .sort((a: any, b: any) => {
-        if (!sortByDistance || !userCoords) return 0;
-        const da = a.__distanceKm;
-        const db = b.__distanceKm;
-        if (da == null && db == null) return 0;
-        if (da == null) return 1;
-        if (db == null) return -1;
-        return da - db;
+        if (sortBy === 'distance' && userCoords) {
+          const da = a.__distanceKm;
+          const db = b.__distanceKm;
+          if (da == null && db == null) return 0;
+          if (da == null) return 1;
+          if (db == null) return -1;
+          return da - db;
+        } else if (sortBy === 'alphabetical') {
+          return (a.name || '').localeCompare(b.name || '');
+        } else if (sortBy === 'friends') {
+          return b.__friendsCount - a.__friendsCount;
+        }
+        return 0;
       });
-  }, [filteredGroups, sortByDistance, userCoords]);
+  }, [filteredGroups, sortBy, userCoords, friendsQuery.data]);
 
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {
@@ -256,6 +287,45 @@ export default function GroupsScreen() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={[
+              styles.toggleButton,
+              {
+                backgroundColor:
+                  currentView === 'map'
+                    ? theme.colors.primary[500]
+                    : theme.colors.secondary[100],
+              },
+            ]}
+            onPress={() =>
+              handleViewChange(currentView === 'list' ? 'map' : 'list')
+            }
+            accessibilityLabel={`Switch to ${currentView === 'list' ? 'map' : 'list'} view`}
+          >
+            <Ionicons
+              name={currentView === 'list' ? 'map-outline' : 'list-outline'}
+              size={16}
+              color={
+                currentView === 'map'
+                  ? theme.colors.secondary[100]
+                  : theme.colors.primary[500]
+              }
+            />
+            <Text
+              variant="caption"
+              style={{
+                color:
+                  currentView === 'map'
+                    ? theme.colors.secondary[100]
+                    : theme.colors.primary[500],
+                marginLeft: 4,
+                fontSize: 12,
+                fontWeight: '500',
+              }}
+            >
+              {currentView === 'list' ? 'Map' : 'List'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
               styles.iconButton,
               { backgroundColor: theme.colors.secondary[100] },
             ]}
@@ -295,29 +365,28 @@ export default function GroupsScreen() {
             style={[
               styles.iconButton,
               {
-                backgroundColor: sortByDistance
-                  ? theme.colors.primary[500] // Pink when toggled
-                  : theme.colors.secondary[100], // Green when not toggled
+                backgroundColor: currentView === 'map'
+                  ? theme.colors.secondary[200] // Grayed out when disabled
+                  : sortBy !== 'none'
+                  ? theme.colors.primary[500] // Pink when sorted
+                  : theme.colors.secondary[100], // Green when not sorted
+                opacity: currentView === 'map' ? 0.5 : 1, // Dimmed when disabled
               },
             ]}
-            onPress={async () => {
-              const next = !sortByDistance;
-              setSortByDistance(next);
-              if (next && !userCoords) {
-                const coords = await locationService.getCurrentLocation();
-                if (coords) setUserCoords(coords);
-              }
-            }}
-            accessibilityLabel="Sort by distance"
+            onPress={() => currentView !== 'map' && setShowSortOptions((s) => !s)}
+            accessibilityLabel={currentView === 'map' ? 'Sort not available in map view' : 'Sort options'}
+            disabled={currentView === 'map'}
           >
             <Ionicons
-              name="navigate-outline"
+              name="swap-vertical-outline"
               size={20}
               color={
-                sortByDistance
-                  ? theme.colors.secondary[100] // Green when toggled
-                  : theme.colors.primary[500]
-              } // Pink when not toggled
+                currentView === 'map'
+                  ? theme.colors.text.secondary // Grayed out when disabled
+                  : sortBy !== 'none'
+                  ? theme.colors.secondary[100] // Green when sorted
+                  : theme.colors.primary[500] // Pink when not sorted
+              }
             />
           </TouchableOpacity>
           {userProfile?.church_id && (
@@ -341,9 +410,117 @@ export default function GroupsScreen() {
 
       {showSearch && <SearchBar placeholder="Search groups..." />}
 
-      <View style={styles.controlsRow}>
-        <ViewToggle currentView={currentView} onViewChange={setCurrentView} />
-      </View>
+      {showSortOptions && (
+        <View style={[styles.sortOptionsPanel, { backgroundColor: theme.colors.surface.primary }]}>
+          <TouchableOpacity
+            style={[
+              styles.sortOption,
+              sortBy === 'none' && styles.sortOptionSelected,
+            ]}
+            onPress={() => {
+              setSortBy('none');
+              setShowSortOptions(false);
+            }}
+          >
+            <Ionicons
+              name="remove-outline"
+              size={20}
+              color={sortBy === 'none' ? theme.colors.secondary[100] : theme.colors.text.primary}
+            />
+            <Text
+              variant="body"
+              style={[
+                styles.sortOptionText,
+                sortBy === 'none' ? styles.sortOptionTextSelected : {},
+              ]}
+            >
+              No sorting
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.sortOption,
+              sortBy === 'distance' && styles.sortOptionSelected,
+            ]}
+            onPress={async () => {
+              if (!userCoords) {
+                const coords = await locationService.getCurrentLocation();
+                if (coords) setUserCoords(coords);
+              }
+              setSortBy('distance');
+              setShowSortOptions(false);
+            }}
+          >
+            <Ionicons
+              name="navigate-outline"
+              size={20}
+              color={sortBy === 'distance' ? theme.colors.secondary[100] : theme.colors.text.primary}
+            />
+            <Text
+              variant="body"
+              style={[
+                styles.sortOptionText,
+                sortBy === 'distance' ? styles.sortOptionTextSelected : {},
+              ]}
+            >
+              By distance
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.sortOption,
+              sortBy === 'alphabetical' && styles.sortOptionSelected,
+            ]}
+            onPress={() => {
+              setSortBy('alphabetical');
+              setShowSortOptions(false);
+            }}
+          >
+            <Ionicons
+              name="text-outline"
+              size={20}
+              color={sortBy === 'alphabetical' ? theme.colors.secondary[100] : theme.colors.text.primary}
+            />
+            <Text
+              variant="body"
+              style={[
+                styles.sortOptionText,
+                sortBy === 'alphabetical' ? styles.sortOptionTextSelected : {},
+              ]}
+            >
+              Alphabetically
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.sortOption,
+              sortBy === 'friends' && styles.sortOptionSelected,
+            ]}
+            onPress={() => {
+              setSortBy('friends');
+              setShowSortOptions(false);
+            }}
+          >
+            <Ionicons
+              name="people-outline"
+              size={20}
+              color={sortBy === 'friends' ? theme.colors.secondary[100] : theme.colors.text.primary}
+            />
+            <Text
+              variant="body"
+              style={[
+                styles.sortOptionText,
+                sortBy === 'friends' ? styles.sortOptionTextSelected : {},
+              ]}
+            >
+              By number of friends
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={styles.contentContainer}>
         {currentView === 'list' ? renderListView() : renderMapView()}
@@ -448,6 +625,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 17,
+    minWidth: 60,
+  },
   badge: {
     position: 'absolute',
     top: -4,
@@ -461,7 +647,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: { color: '#fff' },
-  controlsRow: { paddingHorizontal: 12, paddingTop: 8 },
   contentContainer: {
     flex: 1,
   },
@@ -483,5 +668,29 @@ const styles = StyleSheet.create({
   },
   createButton: {
     marginTop: 16,
+  },
+  sortOptionsPanel: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  sortOptionSelected: {
+    backgroundColor: '#8b5cf6',
+  },
+  sortOptionText: {
+    marginLeft: 12,
+    color: '#1a1a1a',
+  },
+  sortOptionTextSelected: {
+    color: '#fff',
   },
 });
