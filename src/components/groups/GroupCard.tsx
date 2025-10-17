@@ -45,6 +45,12 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 }) => {
   const { theme } = useTheme();
 
+  const churchName = group.church?.name?.trim();
+  const serviceName = group.service?.name?.trim();
+  const churchAndServiceLabel = [churchName, serviceName]
+    .filter((value) => !!value && value.length > 0)
+    .join(', ');
+
   const formatMeetingTime = (day: string, time: string) => {
     const date = new Date(`2000-01-01T${time}`);
     const formattedTime = date.toLocaleTimeString('en-US', {
@@ -322,7 +328,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             )}
           </View>
 
-          {group.service?.name && (
+          {churchAndServiceLabel && (
             <Text
               variant="caption"
               color="tertiary"
@@ -330,7 +336,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              Service: {group.service.name}
+              {churchAndServiceLabel}
             </Text>
           )}
         </View>
