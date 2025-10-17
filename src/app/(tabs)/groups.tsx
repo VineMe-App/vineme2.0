@@ -5,8 +5,8 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView} from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { useRouter } from 'expo-router';
 import {
