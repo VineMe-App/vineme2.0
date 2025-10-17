@@ -581,8 +581,6 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         <Marker
           key={`group-${group.id}`}
           coordinate={{ latitude, longitude }}
-          title={group.title}
-          description={group.description}
           tracksViewChanges={shouldTrackViewChanges}
           onPress={() => {
             setSelectedItems([group]);
