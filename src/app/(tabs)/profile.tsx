@@ -6,11 +6,11 @@ import {
   RefreshControl,
   Alert,
   TouchableOpacity,
-  SafeAreaView,
   Modal,
   Dimensions,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '@/stores/auth';
 import {

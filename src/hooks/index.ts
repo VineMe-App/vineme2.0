@@ -16,6 +16,7 @@ export {
   useUserGroups,
   useGroupMembers,
   useGroupMembership,
+  useAllApprovedGroups,
   useSearchGroups,
   useJoinGroup,
   useLeaveGroup,

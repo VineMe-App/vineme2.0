@@ -575,13 +575,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     (point: ClusterPoint, _index: number) => {
       const { data: group, latitude, longitude } = point;
       const isActive = activeGroupId === group.id;
+      const isGreyedOut = Boolean((group as any).__isGreyedOut);
 
       return (
         <Marker
           key={`group-${group.id}`}
           coordinate={{ latitude, longitude }}
-          title={group.title}
-          description={group.description}
           tracksViewChanges={shouldTrackViewChanges}
           onPress={() => {
             setSelectedItems([group]);
@@ -596,7 +595,11 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           anchor={{ x: 0.5, y: 0.5 }}
         >
           <View
-            style={[styles.markerBubble, isActive && styles.markerBubbleActive]}
+            style={[
+              styles.markerBubble,
+              isActive && styles.markerBubbleActive,
+              isGreyedOut && styles.markerBubbleGrey,
+            ]}
           >
             <Ionicons name="people" size={16} color="#ffffff" />
           </View>
@@ -1030,17 +1033,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f10078', // Primary brand pink
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#f10078',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
   },
   markerBubbleActive: {
     backgroundColor: '#f472b6', // Lighter pink for active state
+  },
+  markerBubbleGrey: {
+    backgroundColor: '#6b7280', // Slate gray for external groups
   },
   calloutContainer: {
     width: 250,
@@ -1131,14 +1129,6 @@ const styles = StyleSheet.create({
   clusterBubble: {
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
   },
   clusterCount: {
     color: '#ffffff',
