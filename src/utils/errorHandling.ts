@@ -110,6 +110,11 @@ export function handleSupabaseError(error: PostgrestError | Error): AppError {
     );
   }
 
+  // Handle sole leader errors (expected validation error)
+  if (error.message.includes('sole leader')) {
+    return new ValidationError(error.message, error);
+  }
+
   // Default to unknown error
   return {
     type: 'unknown',
