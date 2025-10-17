@@ -70,15 +70,23 @@ Call deleteAccount(userId)
     ↓
 Verify user owns account
     ↓
-Call RPC: delete_my_account()
+Check if sole leader ← NEW!
     ↓
-Cascades through all tables
-    ↓
-User record deleted
-    ↓
-Sign out user
-    ↓
-Redirect to sign-in
+├─ Is sole leader?
+│  └─ BLOCK deletion
+│     └─ Show error message
+│        "You are the sole leader of [Group Name]"
+│        "Please assign a new leader or close the group"
+└─ Not sole leader?
+   └─ Call RPC: delete_my_account()
+      ↓
+      Cascades through all tables
+      ↓
+      User record deleted
+      ↓
+      Sign out user
+      ↓
+      Redirect to sign-in
 ```
 
 ## ⚠️ Auth User Deletion
@@ -208,12 +216,19 @@ If you want to also delete the auth user, use one of the options above.
 - Trying to delete another user's account
 - Session mismatch
 
+### Error: "You are the sole leader of..."
+- **NEW!** User is the only leader of one or more active groups
+- **Solution:** User must either:
+  1. Assign another member as leader (promote someone)
+  2. Close the group (if no longer needed)
+  3. Have another admin/leader added first
+
 ### Error: "permission denied for function delete_my_account"
 - Run the GRANT statement in the SQL
 - User not in `authenticated` role
 
 ### Groups Still Showing After Deletion
-- Expected behavior
+- Expected behavior (if user was co-leader)
 - Groups are marked as pending for admin review
 - Admins can reassign or delete them
 
