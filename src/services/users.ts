@@ -78,15 +78,32 @@ export class UserService {
   }
 
   /**
-   * Delete user account (soft delete recommended). This implementation
-   * removes the row from 'users' and signs out; ensure RLS and cascades as needed.
+   * Delete user account and all related data
+   * Uses RPC function to properly cascade deletion across all tables
    */
   async deleteAccount(userId: string): Promise<UserServiceResponse<boolean>> {
     try {
-      const { error } = await supabase.from('users').delete().eq('id', userId);
-      if (error) {
-        return { data: null, error: new Error(error.message) };
+      // Verify the user is deleting their own account
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id || session.session.user.id !== userId) {
+        return {
+          data: null,
+          error: new Error('You can only delete your own account'),
+        };
       }
+
+      // Call the RPC function to delete all user data
+      const { error: rpcError } = await supabase.rpc('delete_my_account');
+      
+      if (rpcError) {
+        return { data: null, error: new Error(rpcError.message) };
+      }
+
+      // Note: We don't delete the auth user here because:
+      // 1. This is a React Native app (no server-side code)
+      // 2. Supabase will handle auth cleanup based on your database triggers
+      // 3. Or you can set up a database webhook to call auth.admin.deleteUser
+      
       return { data: true, error: null };
     } catch (error) {
       return {
