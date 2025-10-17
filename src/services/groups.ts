@@ -123,6 +123,74 @@ export class GroupService {
   }
 
   /**
+   * Get all approved groups (church admin only)
+   */
+  async getAllApprovedGroups(): Promise<
+    GroupServiceResponse<GroupWithDetails[]>
+  > {
+    try {
+      // Ensure caller has church admin privileges
+      const adminCheck = await permissionService.isChurchAdmin();
+      if (!adminCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            adminCheck.reason || 'Church admin role required to view all groups'
+          ),
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('groups')
+        .select(
+          `
+          *,
+          service:services(*),
+          
+          memberships:group_memberships(
+            id,
+            user_id,
+            role,
+            status,
+            joined_at,
+            journey_status,
+            referral_id,
+            user:users(id, first_name, last_name, avatar_url)
+          )
+        `
+        )
+        .eq('status', 'approved')
+        .order('title');
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      const groupsWithCount =
+        data?.map((group) => ({
+          ...group,
+          memberships: group.memberships?.map((m: any) => ({
+            ...m,
+            user: withDisplayName(m.user),
+          })),
+          member_count:
+            group.memberships?.filter((m: any) => m.status === 'active')
+              .length || 0,
+        })) || [];
+
+      return { data: groupsWithCount, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get groups for church admin'),
+      };
+    }
+  }
+
+  /**
    * Get group by ID with detailed information
    */
   async getGroupById(

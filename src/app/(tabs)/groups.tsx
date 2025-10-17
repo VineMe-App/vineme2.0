@@ -20,6 +20,7 @@ import {
   useGroupsByChurch,
   useGroupMembership,
   useGroupMembers,
+  useAllApprovedGroups,
 } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
@@ -64,23 +65,119 @@ export default function GroupsScreen() {
     }
   };
 
+  const isChurchAdmin =
+    userProfile?.roles?.includes('church_admin') ?? false;
+
   const {
-    data: allGroups,
-    isLoading,
-    error,
-    refetch,
-  } = useGroupsByChurch(userProfile?.church_id);
+    data: churchGroups,
+    isLoading: isLoadingChurchGroups,
+    error: churchGroupsError,
+    refetch: refetchChurchGroups,
+  } = useGroupsByChurch(!isChurchAdmin ? userProfile?.church_id : undefined);
+
+  const {
+    data: adminGroups,
+    isLoading: isLoadingAdminGroups,
+    error: adminGroupsError,
+    refetch: refetchAdminGroups,
+  } = useAllApprovedGroups(isChurchAdmin);
+
+  const allGroups = isChurchAdmin ? adminGroups : churchGroups;
+  const isLoading = isChurchAdmin ? isLoadingAdminGroups : isLoadingChurchGroups;
+  const error = isChurchAdmin ? adminGroupsError : churchGroupsError;
+  const refetch = isChurchAdmin ? refetchAdminGroups : refetchChurchGroups;
+
+  const friendIds = useMemo(
+    () =>
+      new Set(
+        (friendsQuery.data || [])
+          .map((friendship) => friendship.friend?.id)
+          .filter((id): id is string => !!id)
+      ),
+    [friendsQuery.data]
+  );
+
+  const isGroupLeader = useMemo(() => {
+    if (!userProfile?.id) return false;
+
+    const hasLeaderRole = userProfile.roles?.includes('group_leader') ?? false;
+
+    if (hasLeaderRole) return true;
+    if (!allGroups) return false;
+
+    return allGroups.some((group) =>
+      (group.memberships || []).some(
+        (membership: any) =>
+          membership.user_id === userProfile.id &&
+          membership.status === 'active' &&
+          (membership.role === 'leader' || membership.role === 'admin')
+      )
+    );
+  }, [allGroups, userProfile?.id, userProfile?.roles]);
+
+  const groupsWithVisibility = useMemo(() => {
+    if (!allGroups) return [];
+
+    const userChurchId = userProfile?.church_id;
+    const userServiceId = userProfile?.service_id;
+
+    return allGroups.reduce<(GroupWithDetails & { __isGreyedOut?: boolean })[]>(
+      (acc, group) => {
+        const isInUserChurch =
+          !!userChurchId && group.church_id === userChurchId;
+        const isInUserService =
+          !!userServiceId && group.service_id === userServiceId;
+        const friendInGroup = (group.memberships || []).some(
+          (membership: any) =>
+            membership.status === 'active' && friendIds.has(membership.user_id)
+        );
+
+        let include = false;
+        let isGreyedOut = false;
+
+        if (isChurchAdmin) {
+          include = true;
+          isGreyedOut = userChurchId
+            ? group.church_id !== userChurchId
+            : false;
+        } else if (isGroupLeader) {
+          if (isInUserChurch) {
+            include = true;
+          } else if (friendInGroup) {
+            include = true;
+            isGreyedOut = true;
+          }
+        } else {
+          if (isInUserService) {
+            include = true;
+          } else if (friendInGroup) {
+            include = true;
+            isGreyedOut = true;
+          }
+        }
+
+        if (include) {
+          acc.push({ ...group, __isGreyedOut: isGreyedOut });
+        }
+
+        return acc;
+      },
+      []
+    );
+  }, [
+    allGroups,
+    friendIds,
+    isChurchAdmin,
+    isGroupLeader,
+    userProfile?.church_id,
+    userProfile?.service_id,
+  ]);
 
   // Apply filters to groups (including "only with friends")
   const filteredGroups = useMemo(() => {
-    if (!allGroups) return [];
-    let base = applyGroupFilters(allGroups, filters);
+    if (!groupsWithVisibility) return [];
+    let base = applyGroupFilters(groupsWithVisibility, filters);
     if (filters.onlyWithFriends) {
-      const friendIds = new Set(
-        (friendsQuery.data || [])
-          .map((f) => f.friend?.id)
-          .filter((id): id is string => !!id)
-      );
       base = base.filter((g) =>
         (g.memberships || []).some(
           (m: any) => m.status === 'active' && friendIds.has(m.user_id)
@@ -88,7 +185,7 @@ export default function GroupsScreen() {
       );
     }
     return base;
-  }, [allGroups, filters, friendsQuery.data]);
+  }, [groupsWithVisibility, filters, friendIds]);
 
   // Sorted groups with computed distance and friend counts
   const groupsWithDistance = useMemo(() => {
@@ -107,11 +204,6 @@ export default function GroupsScreen() {
         }
 
         // Calculate friends count for sorting
-        const friendIds = new Set(
-          (friendsQuery.data || [])
-            .map((f) => f.friend?.id)
-            .filter((id): id is string => !!id)
-        );
         const friendsCount = (g.memberships || []).filter(
           (m: any) => m.status === 'active' && friendIds.has(m.user_id)
         ).length;
@@ -137,7 +229,7 @@ export default function GroupsScreen() {
         }
         return 0;
       });
-  }, [filteredGroups, sortBy, userCoords, friendsQuery.data]);
+  }, [filteredGroups, sortBy, userCoords, friendIds]);
 
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {

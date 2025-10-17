@@ -7,6 +7,7 @@ import { performanceMonitor } from '../utils/performance';
 // Query keys
 export const groupKeys = {
   all: ['groups'] as const,
+  allApproved: ['groups', 'allApproved'] as const,
   byChurch: (churchId: string) =>
     [...groupKeys.all, 'byChurch', churchId] as const,
   byId: (groupId: string) => [...groupKeys.all, 'byId', groupId] as const,
@@ -51,6 +52,26 @@ export const useGroupsByChurch = (churchId: string | undefined) => {
     meta: {
       // Add metadata for React Query DevTools
       description: 'Fetch groups by church with performance monitoring',
+    },
+  });
+};
+
+/**
+ * Hook to get all approved groups (church admin)
+ */
+export const useAllApprovedGroups = (enabled?: boolean) => {
+  return useQuery({
+    queryKey: groupKeys.allApproved,
+    queryFn: async () => {
+      const { data, error } = await groupService.getAllApprovedGroups();
+      if (error) throw error;
+      return data;
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    meta: {
+      description: 'Fetch all approved groups for church admins',
     },
   });
 };
