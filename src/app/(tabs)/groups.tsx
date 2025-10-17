@@ -46,8 +46,8 @@ export default function GroupsScreen() {
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [sortBy, setSortBy] = useState<
-    'none' | 'distance' | 'alphabetical' | 'friends'
-  >('none');
+    'alphabetical' | 'distance' | 'friends'
+  >('alphabetical');
   const [userCoords, setUserCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -224,7 +224,7 @@ export default function GroupsScreen() {
           if (db == null) return -1;
           return da - db;
         } else if (sortBy === 'alphabetical') {
-          return (a.name || '').localeCompare(b.name || '');
+          return (a.title || '').localeCompare(b.title || '');
         } else if (sortBy === 'friends') {
           return b.__friendsCount - a.__friendsCount;
         }
@@ -474,7 +474,7 @@ export default function GroupsScreen() {
               {
                 backgroundColor: currentView === 'map'
                   ? theme.colors.secondary[200] // Grayed out when disabled
-                  : sortBy !== 'none'
+                  : sortBy !== 'alphabetical'
                   ? theme.colors.primary[500] // Pink when sorted
                   : theme.colors.secondary[100], // Green when not sorted
                 opacity: currentView === 'map' ? 0.5 : 1, // Dimmed when disabled
@@ -490,7 +490,7 @@ export default function GroupsScreen() {
               color={
                 currentView === 'map'
                   ? theme.colors.text.secondary // Grayed out when disabled
-                  : sortBy !== 'none'
+                  : sortBy !== 'alphabetical'
                   ? theme.colors.secondary[100] // Green when sorted
                   : theme.colors.primary[500] // Pink when not sorted
               }
@@ -522,26 +522,30 @@ export default function GroupsScreen() {
           <TouchableOpacity
             style={[
               styles.sortOption,
-              sortBy === 'none' && styles.sortOptionSelected,
+              sortBy === 'alphabetical' && styles.sortOptionSelected,
             ]}
             onPress={() => {
-              setSortBy('none');
+              setSortBy('alphabetical');
               setShowSortOptions(false);
             }}
           >
             <Ionicons
-              name="remove-outline"
+              name="text-outline"
               size={20}
-              color={sortBy === 'none' ? theme.colors.secondary[100] : theme.colors.text.primary}
+              color={
+                sortBy === 'alphabetical'
+                  ? theme.colors.secondary[100]
+                  : theme.colors.text.primary
+              }
             />
             <Text
               variant="body"
               style={[
                 styles.sortOptionText,
-                sortBy === 'none' ? styles.sortOptionTextSelected : {},
+                sortBy === 'alphabetical' ? styles.sortOptionTextSelected : {},
               ]}
             >
-              No sorting
+              Alphabetically
             </Text>
           </TouchableOpacity>
 
@@ -562,7 +566,11 @@ export default function GroupsScreen() {
             <Ionicons
               name="navigate-outline"
               size={20}
-              color={sortBy === 'distance' ? theme.colors.secondary[100] : theme.colors.text.primary}
+              color={
+                sortBy === 'distance'
+                  ? theme.colors.secondary[100]
+                  : theme.colors.text.primary
+              }
             />
             <Text
               variant="body"
@@ -572,32 +580,6 @@ export default function GroupsScreen() {
               ]}
             >
               By distance
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.sortOption,
-              sortBy === 'alphabetical' && styles.sortOptionSelected,
-            ]}
-            onPress={() => {
-              setSortBy('alphabetical');
-              setShowSortOptions(false);
-            }}
-          >
-            <Ionicons
-              name="text-outline"
-              size={20}
-              color={sortBy === 'alphabetical' ? theme.colors.secondary[100] : theme.colors.text.primary}
-            />
-            <Text
-              variant="body"
-              style={[
-                styles.sortOptionText,
-                sortBy === 'alphabetical' ? styles.sortOptionTextSelected : {},
-              ]}
-            >
-              Alphabetically
             </Text>
           </TouchableOpacity>
 
