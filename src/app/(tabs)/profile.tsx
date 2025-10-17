@@ -205,11 +205,21 @@ export default function ProfileScreen() {
               await deleteAccountMutation.mutateAsync(user.id);
               await signOut();
               router.replace({ pathname: '/(auth)/sign-in' as any });
-            } catch {
-              Alert.alert(
-                'Error',
-                'Failed to delete account. Please try again.'
-              );
+            } catch (error) {
+              // Check if it's a sole leader error
+              const errorMessage = error instanceof Error ? error.message : '';
+              if (errorMessage.includes('sole leader')) {
+                Alert.alert(
+                  'Cannot Delete Account',
+                  errorMessage,
+                  [{ text: 'OK' }]
+                );
+              } else {
+                Alert.alert(
+                  'Error',
+                  'Failed to delete account. Please try again.'
+                );
+              }
             }
           },
         },

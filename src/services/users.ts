@@ -96,13 +96,17 @@ export class UserService {
       const { error: rpcError } = await supabase.rpc('delete_my_account');
       
       if (rpcError) {
+        // Check if error is due to being sole leader
+        if (rpcError.message?.includes('SOLE_LEADER:')) {
+          // Extract the message after the prefix
+          const message = rpcError.message.replace('SOLE_LEADER: ', '');
+          return { 
+            data: null, 
+            error: new Error(message)
+          };
+        }
         return { data: null, error: new Error(rpcError.message) };
       }
-
-      // Note: We don't delete the auth user here because:
-      // 1. This is a React Native app (no server-side code)
-      // 2. Supabase will handle auth cleanup based on your database triggers
-      // 3. Or you can set up a database webhook to call auth.admin.deleteUser
       
       return { data: true, error: null };
     } catch (error) {
