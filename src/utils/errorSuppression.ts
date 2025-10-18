@@ -75,10 +75,15 @@ export function shouldSuppressError(error: ErrorLike, context?: Record<string, a
  * Create a silent error that won't be logged or shown to user
  */
 export function createSilentError(originalError: ErrorLike, message: string = 'Operation completed (expected behavior)') {
+  // Convert ErrorLike to Error to satisfy AppError.originalError type
+  const errorInstance = originalError instanceof Error 
+    ? originalError 
+    : new Error(originalError.message || 'Unknown error');
+  
   return {
     type: 'unknown' as const,
     message,
-    originalError,
+    originalError: errorInstance,
     retryable: false,
     silent: true,
   };
