@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js';
 import type { DatabaseUser } from '../types/database';
 import { authService } from '../services/auth';
 import { getFullName } from '../utils/name';
+import { setDeletionFlowActive } from '../utils/errorSuppression';
 
 interface AuthState {
   // State
@@ -191,10 +192,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      // Set flag to suppress expected post-sign-out errors
+      setDeletionFlowActive(true);
+      
       const { error } = await authService.signOut();
 
       if (error) {
         set({ error: error.message, isLoading: false });
+        setDeletionFlowActive(false);
         return;
       }
 
@@ -204,10 +209,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         error: null,
       });
+      
+      // Reset flag after a short delay to allow queries to complete
+      setTimeout(() => setDeletionFlowActive(false), 2000);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Sign out failed';
       set({ error: errorMessage, isLoading: false });
+      setDeletionFlowActive(false);
     }
   },
 

@@ -9,10 +9,43 @@
 type ErrorLike = Error | { message: string };
 
 /**
- * Check if an error is likely a post-account-deletion error that should be suppressed
- * Accepts both Error and PostgrestError types
+ * Global flag to track when we're in a post-deletion or sign-out flow
+ * This prevents us from hiding legitimate errors in normal app operation
  */
-export function isPostDeletionError(error: ErrorLike): boolean {
+let isInDeletionFlow = false;
+
+/**
+ * Set the deletion flow flag - call this when starting account deletion or sign-out
+ */
+export function setDeletionFlowActive(active: boolean) {
+  isInDeletionFlow = active;
+}
+
+/**
+ * Check if we're currently in a deletion flow
+ */
+export function isDeletionFlowActive(): boolean {
+  return isInDeletionFlow;
+}
+
+/**
+ * Check if an error is likely a post-account-deletion error that should be suppressed
+ * IMPORTANT: Only call this when context indicates we're in a post-deletion or sign-out flow
+ * to avoid hiding legitimate errors in normal app operation
+ * 
+ * @param error - The error to check
+ * @param context - Context about when/where the error occurred
+ */
+export function isPostDeletionError(error: ErrorLike, context?: Record<string, any>): boolean {
+  // CRITICAL: Only suppress errors if we have explicit context that we're in a
+  // post-deletion or sign-out flow. Without this, we'd hide real bugs!
+  const contextIndicatesDeletion = context?.isSigningOut || context?.isDeletingAccount || context?.isPostDeletion;
+  const globalFlagActive = isDeletionFlowActive();
+  
+  if (!contextIndicatesDeletion && !globalFlagActive) {
+    return false; // Not in deletion flow, don't suppress ANY errors
+  }
+  
   const errorMessage = error.message?.toLowerCase() || '';
   
   // Check for the specific "JSON object requested, multiple (or no) rows returned" error
@@ -45,26 +78,22 @@ export function isPostDeletionError(error: ErrorLike): boolean {
     errorMessage.includes(table.toLowerCase())
   );
   
-  // Suppress 406 errors only if they're related to user data tables
+  // Only suppress 406 errors if:
+  // 1. We're in a deletion/sign-out flow (checked above)
+  // 2. It's a 406 error
+  // 3. It's related to user data tables
   return is406Error && isUserDataError;
 }
 
 /**
  * Check if an error should be suppressed based on context
+ * This function passes context to isPostDeletionError to ensure
+ * we only suppress errors that occur in specific deletion/sign-out flows
  */
 export function shouldSuppressError(error: ErrorLike, context?: Record<string, any>): boolean {
-  // Suppress post-deletion errors
-  if (isPostDeletionError(error)) {
-    return true;
-  }
-  
-  // Suppress errors during sign-out process
-  if (context?.isSigningOut) {
-    return true;
-  }
-  
-  // Suppress errors during account deletion process
-  if (context?.isDeletingAccount) {
+  // Suppress post-deletion errors ONLY if we have explicit context
+  // that we're in a deletion/sign-out flow
+  if (isPostDeletionError(error, context)) {
     return true;
   }
   

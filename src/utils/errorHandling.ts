@@ -61,7 +61,10 @@ export class PermissionError extends Error implements AppError {
   }
 }
 
-export function handleSupabaseError(error: PostgrestError | Error): AppError {
+export function handleSupabaseError(
+  error: PostgrestError | Error,
+  context?: Record<string, any>
+): AppError {
   if ('code' in error && error.code) {
     // Handle specific Supabase error codes
     switch (error.code) {
@@ -93,7 +96,8 @@ export function handleSupabaseError(error: PostgrestError | Error): AppError {
   }
 
   // Handle post-deletion errors that should be suppressed
-  if (isPostDeletionError(error)) {
+  // IMPORTANT: Only suppress if context indicates we're in a deletion/sign-out flow
+  if (isPostDeletionError(error, context)) {
     return createSilentError(error, 'Resource not found (expected after account deletion)');
   }
 

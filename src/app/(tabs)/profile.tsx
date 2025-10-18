@@ -28,6 +28,7 @@ import { FriendRequestNotifications } from '@/components/friends/FriendRequestNo
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
 import { useTheme } from '@/theme/provider/useTheme';
 import { getDisplayName, getFullName } from '@/utils/name';
+import { setDeletionFlowActive } from '@/utils/errorSuppression';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 // Admin dashboard summary moved to /admin route
@@ -203,11 +204,20 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Set flag to suppress expected post-deletion errors
+              setDeletionFlowActive(true);
+              
               await deleteAccountMutation.mutateAsync(user.id);
               await signOut();
               // Don't navigate manually - let the root layout handle it
               // This prevents race conditions with the layout's navigation logic
+              
+              // Reset flag after a short delay to allow queries to complete
+              setTimeout(() => setDeletionFlowActive(false), 2000);
             } catch (error) {
+              // Reset flag on error
+              setDeletionFlowActive(false);
+              
               // Check if it's a sole leader error (expected validation error)
               const errorMessage = error instanceof Error ? error.message : '';
               if (errorMessage.includes('sole leader')) {
