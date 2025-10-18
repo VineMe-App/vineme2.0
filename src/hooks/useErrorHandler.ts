@@ -30,6 +30,11 @@ export function useErrorHandler() {
 
       const appError = 'type' in error ? error : handleSupabaseError(error);
 
+      // Skip handling if this is a silent error (e.g., expected post-deletion errors)
+      if (appError.silent) {
+        return;
+      }
+
       // Log error if requested
       if (logError) {
         globalErrorHandler.logError(appError, context, user?.id);

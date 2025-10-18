@@ -18,6 +18,11 @@ class GlobalErrorHandler {
   ) {
     const appError = 'type' in error ? error : handleSupabaseError(error);
 
+    // Skip logging if this is a silent error (e.g., expected post-deletion errors)
+    if (appError.silent) {
+      return;
+    }
+
     const report: ErrorReport = {
       error: appError,
       timestamp: new Date(),
