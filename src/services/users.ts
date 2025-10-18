@@ -78,16 +78,42 @@ export class UserService {
   }
 
   /**
-   * Delete user account (soft delete recommended). This implementation
-   * removes the row from 'users' and signs out; ensure RLS and cascades as needed.
+   * Delete user account and all related data
+   * Uses RPC function to properly cascade deletion across all tables
    */
   async deleteAccount(userId: string): Promise<UserServiceResponse<boolean>> {
     try {
-      const { error } = await supabase.from('users').delete().eq('id', userId);
-      if (error) {
-        return { data: null, error: new Error(error.message) };
+      // Verify the user is deleting their own account
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id || session.session.user.id !== userId) {
+        return {
+          data: null,
+          error: new Error('You can only delete your own account'),
+        };
       }
-      return { data: true, error: null };
+
+      // Call the RPC function to delete all user data
+      const { data: rpcData, error: rpcError } = await supabase.rpc('delete_my_account');
+      
+      if (rpcError) {
+        // Check if error is due to being sole leader
+        if (rpcError.message?.includes('SOLE_LEADER:')) {
+          // Extract the message after the prefix
+          const message = rpcError.message.replace('SOLE_LEADER: ', '');
+          return { 
+            data: null, 
+            error: new Error(message)
+          };
+        }
+        return { data: null, error: new Error(rpcError.message) };
+      }
+      
+      // Check if the RPC call was successful
+      if (rpcData && rpcData.success) {
+        return { data: true, error: null };
+      } else {
+        return { data: null, error: new Error('Account deletion failed') };
+      }
     } catch (error) {
       return {
         data: null,

@@ -38,11 +38,14 @@ export const queryClient = new QueryClient({
       retry: (failureCount, error) => {
         const appError = handleSupabaseError(error as Error);
 
-        // Log errors for monitoring
-        globalErrorHandler.logError(appError, {
-          queryRetry: true,
-          failureCount,
-        });
+        // Skip logging if this is a silent error (e.g., expected post-deletion errors)
+        if (!appError.silent) {
+          // Log errors for monitoring
+          globalErrorHandler.logError(appError, {
+            queryRetry: true,
+            failureCount,
+          });
+        }
 
         // Record query performance metrics
         performanceMonitor.recordMetric('query_retry', failureCount, {
