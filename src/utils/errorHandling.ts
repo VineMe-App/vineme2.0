@@ -1,10 +1,12 @@
 import { PostgrestError } from '@supabase/supabase-js';
+import { isPostDeletionError, createSilentError } from './errorSuppression';
 
 export interface AppError {
   type: 'network' | 'auth' | 'validation' | 'permission' | 'unknown';
   message: string;
   originalError?: Error;
   retryable?: boolean;
+  silent?: boolean; // Flag to suppress logging and user alerts
 }
 
 export class NetworkError extends Error implements AppError {
@@ -90,6 +92,11 @@ export function handleSupabaseError(error: PostgrestError | Error): AppError {
     }
   }
 
+  // Handle post-deletion errors that should be suppressed
+  if (isPostDeletionError(error)) {
+    return createSilentError(error, 'Resource not found (expected after account deletion)');
+  }
+
   // Handle network errors
   if (error.message.includes('fetch') || error.message.includes('network')) {
     return new NetworkError(
@@ -108,6 +115,11 @@ export function handleSupabaseError(error: PostgrestError | Error): AppError {
       'Authentication required. Please sign in again.',
       error
     );
+  }
+
+  // Handle sole leader errors (expected validation error)
+  if (error.message.includes('sole leader')) {
+    return new ValidationError(error.message, error);
   }
 
   // Default to unknown error

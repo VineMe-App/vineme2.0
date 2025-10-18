@@ -1,0 +1,9 @@
+# Supabase local development
+.branches
+.temp
+.env*
+!.env.example
+
+# Build artifacts
+*.js.map
+
