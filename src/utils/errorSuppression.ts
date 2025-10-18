@@ -3,10 +3,17 @@
  */
 
 /**
- * Check if an error is likely a post-account-deletion error that should be suppressed
+ * Type that accepts both Error and PostgrestError
+ * PostgrestError has a message property but doesn't extend Error
  */
-export function isPostDeletionError(error: Error): boolean {
-  const errorMessage = error.message.toLowerCase();
+type ErrorLike = Error | { message: string };
+
+/**
+ * Check if an error is likely a post-account-deletion error that should be suppressed
+ * Accepts both Error and PostgrestError types
+ */
+export function isPostDeletionError(error: ErrorLike): boolean {
+  const errorMessage = error.message?.toLowerCase() || '';
   
   // Check for the specific "JSON object requested, multiple (or no) rows returned" error
   // This is a PostgREST error that occurs when trying to fetch data for a deleted user
@@ -45,7 +52,7 @@ export function isPostDeletionError(error: Error): boolean {
 /**
  * Check if an error should be suppressed based on context
  */
-export function shouldSuppressError(error: Error, context?: Record<string, any>): boolean {
+export function shouldSuppressError(error: ErrorLike, context?: Record<string, any>): boolean {
   // Suppress post-deletion errors
   if (isPostDeletionError(error)) {
     return true;
@@ -67,7 +74,7 @@ export function shouldSuppressError(error: Error, context?: Record<string, any>)
 /**
  * Create a silent error that won't be logged or shown to user
  */
-export function createSilentError(originalError: Error, message: string = 'Operation completed (expected behavior)') {
+export function createSilentError(originalError: ErrorLike, message: string = 'Operation completed (expected behavior)') {
   return {
     type: 'unknown' as const,
     message,
