@@ -93,7 +93,7 @@ export class UserService {
       }
 
       // Call the RPC function to delete all user data
-      const { error: rpcError } = await supabase.rpc('delete_my_account');
+      const { data: rpcData, error: rpcError } = await supabase.rpc('delete_my_account');
       
       if (rpcError) {
         // Check if error is due to being sole leader
@@ -108,7 +108,12 @@ export class UserService {
         return { data: null, error: new Error(rpcError.message) };
       }
       
-      return { data: true, error: null };
+      // Check if the RPC call was successful
+      if (rpcData && rpcData.success) {
+        return { data: true, error: null };
+      } else {
+        return { data: null, error: new Error('Account deletion failed') };
+      }
     } catch (error) {
       return {
         data: null,

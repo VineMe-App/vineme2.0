@@ -184,7 +184,8 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await signOut();
-          router.replace({ pathname: '/(auth)/sign-in' as any });
+          // Don't navigate manually - let the root layout handle it
+          // This prevents race conditions with the layout's navigation logic
         },
       },
     ]);
@@ -204,7 +205,8 @@ export default function ProfileScreen() {
             try {
               await deleteAccountMutation.mutateAsync(user.id);
               await signOut();
-              router.replace({ pathname: '/(auth)/sign-in' as any });
+              // Don't navigate manually - let the root layout handle it
+              // This prevents race conditions with the layout's navigation logic
             } catch (error) {
               // Check if it's a sole leader error (expected validation error)
               const errorMessage = error instanceof Error ? error.message : '';

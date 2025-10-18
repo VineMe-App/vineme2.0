@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
-import { router } from 'expo-router';
 import {
   AppError,
   getErrorMessage,
@@ -47,14 +46,16 @@ export function useErrorHandler() {
                 text: 'Sign In',
                 onPress: () => {
                   signOut();
-                  router.replace('/(auth)/sign-in');
+                  // Don't navigate manually - let the root layout handle it
+                  // This prevents race conditions with the layout's navigation logic
                 },
               },
             ]
           );
         } else {
           signOut();
-          router.replace('/(auth)/sign-in');
+          // Don't navigate manually - let the root layout handle it
+          // This prevents race conditions with the layout's navigation logic
         }
         return;
       }
