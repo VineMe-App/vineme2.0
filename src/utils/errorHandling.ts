@@ -65,6 +65,13 @@ export function handleSupabaseError(
   error: PostgrestError | Error,
   context?: Record<string, any>
 ): AppError {
+  // CRITICAL: Check for post-deletion errors FIRST, before processing error codes
+  // This ensures we suppress expected errors during deletion/sign-out flows
+  // BEFORE they get converted to ValidationError or other types
+  if (isPostDeletionError(error, context)) {
+    return createSilentError(error, 'Resource not found (expected after account deletion)');
+  }
+
   if ('code' in error && error.code) {
     // Handle specific Supabase error codes
     switch (error.code) {
@@ -93,12 +100,6 @@ export function handleSupabaseError(
           error
         );
     }
-  }
-
-  // Handle post-deletion errors that should be suppressed
-  // IMPORTANT: Only suppress if context indicates we're in a deletion/sign-out flow
-  if (isPostDeletionError(error, context)) {
-    return createSilentError(error, 'Resource not found (expected after account deletion)');
   }
 
   // Handle network errors
