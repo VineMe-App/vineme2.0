@@ -278,7 +278,8 @@ export class JoinRequestService {
             image_url,
             location,
             status,
-            service:services(id, name)
+            service:services(id, name),
+            church:churches(id, name)
           )
         `
         )
