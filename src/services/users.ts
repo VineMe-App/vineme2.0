@@ -424,7 +424,8 @@ export class UserService {
         `
         )
         .eq('user_id', userId)
-        .in('status', ['active', 'pending'])
+        // Only show active memberships in "My Groups"
+        .eq('status', 'active')
         // Ensure related group is visible/valid and not closed
         .in('group.status', ['approved', 'pending']);
 
