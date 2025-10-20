@@ -268,13 +268,15 @@ export class GroupService {
         `
         )
         .eq('user_id', userId)
-        .eq('status', 'active');
+        .in('status', ['active', 'pending'])
+        // Only include memberships where the related group is approved or pending
+        .in('group.status', ['approved', 'pending']);
 
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
 
-      // Extract groups from memberships
+      // Extract groups from memberships; filter out any null groups due to RLS
       const groups =
         data?.map((membership) => membership.group).filter(Boolean) || [];
 

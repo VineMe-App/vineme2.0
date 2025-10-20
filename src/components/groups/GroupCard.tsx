@@ -17,7 +17,7 @@ import { locationService } from '../../services/location';
 import { useTheme } from '../../theme/provider/useTheme';
 
 interface GroupCardProps {
-  group: GroupWithDetails;
+  group: GroupWithDetails | null | undefined;
   onPress?: () => void;
   membershipStatus?: 'member' | 'leader' | 'admin' | null;
   friendsCount?: number;
@@ -45,8 +45,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  const churchName = group.church?.name?.trim();
-  const serviceName = group.service?.name?.trim();
+  // Guard against null/undefined groups coming from callers
+  if (!group) return null;
+
+  const churchName = group?.church?.name?.trim();
+  const serviceName = group?.service?.name?.trim();
   const churchAndServiceLabel = [churchName, serviceName]
     .filter((value) => !!value && value.length > 0)
     .join(', ');
