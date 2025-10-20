@@ -554,6 +554,18 @@ export class GroupAdminService {
         return { data: null, error: new Error(error.message) };
       }
 
+      // Set all related memberships to inactive to prevent dangling active/pending memberships
+      try {
+        await supabase
+          .from('group_memberships')
+          .update({ status: 'inactive', joined_at: null, /* preserve updated_at via trigger if present */ })
+          .eq('group_id', groupId)
+          .in('status', ['active', 'pending']);
+      } catch (e) {
+        // Non-fatal: log but do not block closing the group
+        if (__DEV__) console.warn('Failed to inactivate memberships when closing group', e);
+      }
+
       // Log the close action
       await this.logGroupAction(groupId, adminId, 'closed', reason);
 
