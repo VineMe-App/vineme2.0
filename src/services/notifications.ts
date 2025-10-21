@@ -184,7 +184,6 @@ export const registerForPushNotifications = async (
 ): Promise<void> => {
   try {
     const token = await getPushToken();
-    console.warn('TOKEN', token);
     if (!token) return;
 
     // Ensure a users row exists before attempting to upsert FK-dependent token
@@ -193,7 +192,6 @@ export const registerForPushNotifications = async (
       .select('id')
       .eq('id', userId)
       .maybeSingle();
-    debugger;
 
     if (userCheckError) {
       console.warn(
@@ -222,7 +220,6 @@ export const registerForPushNotifications = async (
         onConflict: 'user_id,platform',
       }
     );
-    debugger;
 
     if (error) {
       console.error('Error storing push token:', error);
@@ -1101,32 +1098,6 @@ export const triggerJoinRequestReceivedNotification = async (
         });
       })
     );
-
-    // Schedule local notifications and send remote push for leaders with notifications enabled
-    const validNotifications = notifications.filter((n) => n !== null);
-    debugger;
-    for (const notification of validNotifications) {
-      if (!notification) continue;
-      // Local (only shows if current device belongs to leader)
-      debugger;
-      await scheduleLocalNotification({
-        type: 'join_request_received',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      });
-      // Remote push
-      await sendPushToUser(notification.user_id, {
-        title: notification.title,
-        body: notification.body,
-        data: {
-          type: 'join_request_received',
-          id: notification.id,
-          ...notification.data,
-        },
-      });
-    }
 
     console.log(
       `Join request notifications sent to ${validNotifications.length} leaders`
