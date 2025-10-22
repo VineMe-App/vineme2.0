@@ -1099,30 +1099,6 @@ export const triggerJoinRequestReceivedNotification = async (
       })
     );
 
-    // Schedule local notifications and send remote push for leaders with notifications enabled
-    const validNotifications = notifications.filter((n) => n !== null);
-    for (const notification of validNotifications) {
-      if (!notification) continue;
-      // Local (only shows if current device belongs to leader)
-      await scheduleLocalNotification({
-        type: 'join_request_received',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      });
-      // Remote push
-      await sendPushToUser(notification.user_id, {
-        title: notification.title,
-        body: notification.body,
-        data: {
-          type: 'join_request_received',
-          id: notification.id,
-          ...notification.data,
-        },
-      });
-    }
-
     console.log(
       `Join request notifications sent to ${validNotifications.length} leaders`
     );
