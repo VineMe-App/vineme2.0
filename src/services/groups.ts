@@ -313,6 +313,9 @@ export class GroupService {
         .eq('user_id', userId)
         .single();
 
+      let data: any = null;
+      let error: any = null;
+
       if (existingMembership) {
         if (existingMembership.status === 'active') {
           return {
@@ -328,20 +331,44 @@ export class GroupService {
             ),
           };
         }
-      }
 
-      // Create pending membership instead of active membership
-      const { data, error } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: groupId,
-          user_id: userId,
-          role,
-          status: 'pending',
-          joined_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        // If they were inactive or archived, reuse the existing membership row
+        if (
+          existingMembership.status === 'inactive' ||
+          existingMembership.status === 'archived'
+        ) {
+          const updateResult = await supabase
+            .from('group_memberships')
+            .update({
+              status: 'pending',
+              joined_at: null, // Reset joined_at for pending status (required by constraint)
+              journey_status: null, // Reset journey status for new request
+              created_at: new Date().toISOString(), // Update timestamp so rejoin request appears at top of list
+            })
+            .eq('id', existingMembership.id)
+            .select()
+            .single();
+
+          data = updateResult.data;
+          error = updateResult.error;
+        }
+      } else {
+        // No existing membership, create new one
+        const insertResult = await supabase
+          .from('group_memberships')
+          .insert({
+            group_id: groupId,
+            user_id: userId,
+            role,
+            status: 'pending',
+            joined_at: null, // Must be null for pending status (required by constraint)
+          })
+          .select()
+          .single();
+
+        data = insertResult.data;
+        error = insertResult.error;
+      }
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -419,7 +446,7 @@ export class GroupService {
       // Get membership record before updating
       const { data: membership, error: fetchError } = await supabase
         .from('group_memberships')
-        .select('id, status')
+        .select('id, status, role')
         .eq('group_id', groupId)
         .eq('user_id', userId)
         .single();
@@ -429,6 +456,36 @@ export class GroupService {
           data: null,
           error: new Error('Membership not found'),
         };
+      }
+
+      // Check if user is a leader
+      if (membership.role === 'leader') {
+        // Get all leaders in the group
+        const { data: allLeaders, error: leadersError } = await supabase
+          .from('group_memberships')
+          .select('id, user_id')
+          .eq('group_id', groupId)
+          .eq('role', 'leader')
+          .eq('status', 'active');
+
+        if (leadersError) {
+          return {
+            data: null,
+            error: new Error('Failed to check group leadership'),
+          };
+        }
+
+        // Prevent the last leader from leaving
+        if (
+          allLeaders &&
+          allLeaders.length === 1 &&
+          allLeaders[0].user_id === userId
+        ) {
+          return {
+            data: null,
+            error: new Error('Cannot leave group as the last leader. Promote another member to leader first or transfer leadership.'),
+          };
+        }
       }
 
       const { error } = await supabase

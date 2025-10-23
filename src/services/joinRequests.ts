@@ -69,7 +69,9 @@ export class JoinRequestService {
             .from('group_memberships')
             .update({
               status: 'pending',
+              joined_at: null, // Reset joined_at for pending status (required by constraint)
               journey_status: null, // Reset journey status for new request
+              created_at: new Date().toISOString(), // Update timestamp so rejoin request appears at top of list
               //contact_consent: requestData.contact_consent || false,
             })
             .eq('id', existingMembership.id)
@@ -115,6 +117,7 @@ export class JoinRequestService {
             user_id: requestData.user_id,
             role: 'member',
             status: 'pending',
+            joined_at: null, // Must be null for pending status (required by constraint)
             //contact_consent: requestData.contact_consent || false,
           })
           .select()

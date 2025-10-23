@@ -726,6 +726,7 @@ const GroupItemWithMembership: React.FC<{
       friendsCount={friendsCount}
       friendsInGroup={friendsInGroup}
       leaders={leaders}
+      currentUserId={userProfile?.id}
       onPressFriends={() => {
         // Navigate to group detail and open friends modal
         onPress();
