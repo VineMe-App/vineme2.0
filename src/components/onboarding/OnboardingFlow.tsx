@@ -122,7 +122,9 @@ export default function OnboardingFlow() {
       setCurrentStepIndex((prev) => prev - 1);
     } else {
       // If on first step, sign out and navigate to welcome/sign-in page
-      signOut().then(() => {
+      signOut().then(async () => {
+        // Clear onboarding data to prevent data leakage between users
+        await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
         router.replace('/(auth)/welcome');
       });
     }
