@@ -62,7 +62,7 @@ export default function OnboardingFlow() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { createUserProfile, user } = useAuthStore();
+  const { createUserProfile, user, signOut } = useAuthStore();
 
   useEffect(() => {
     // Load any existing onboarding data from storage
@@ -117,9 +117,13 @@ export default function OnboardingFlow() {
     }
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
+    } else {
+      // If on first step, sign out and navigate to welcome/sign-in page
+      await signOut();
+      router.replace('/(auth)/welcome');
     }
   };
 
@@ -218,7 +222,7 @@ export default function OnboardingFlow() {
             data={onboardingData}
             onNext={handleNext}
             onBack={handleBack}
-            canGoBack={currentStepIndex > 0}
+            canGoBack={true}
             isLoading={isLoading}
             error={error}
           />
