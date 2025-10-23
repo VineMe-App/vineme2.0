@@ -424,13 +424,18 @@ export class UserService {
         `
         )
         .eq('user_id', userId)
-        .eq('status', 'active');
+        // Only show active memberships in "My Groups"
+        .eq('status', 'active')
+        // Ensure related group is visible/valid and not closed
+        .in('group.status', ['approved', 'pending']);
 
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      // Filter any rows where group is null due to RLS
+      const safe = (data || []).filter((m: any) => !!m.group);
+      return { data: safe, error: null };
     } catch (error) {
       return {
         data: null,
