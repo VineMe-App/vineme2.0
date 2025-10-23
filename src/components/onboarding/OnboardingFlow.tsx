@@ -117,13 +117,14 @@ export default function OnboardingFlow() {
     }
   };
 
-  const handleBack = async () => {
+  const handleBack = () => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
     } else {
       // If on first step, sign out and navigate to welcome/sign-in page
-      await signOut();
-      router.replace('/(auth)/welcome');
+      signOut().then(() => {
+        router.replace('/(auth)/welcome');
+      });
     }
   };
 
