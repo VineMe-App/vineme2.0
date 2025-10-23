@@ -392,8 +392,8 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           )}
         </View>
 
-        {/* Leaders Section - hidden when current user is a leader */}
-        {!isGroupLeader && leaders.length > 0 && (
+        {/* Leaders Section - always shown when leaders exist */}
+        {leaders.length > 0 && (
           <View style={styles.membersSection}>
             <Text style={styles.sectionTitle}>
               Leader{leaders.length > 1 ? 's' : ''}
