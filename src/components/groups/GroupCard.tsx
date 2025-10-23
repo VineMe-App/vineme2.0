@@ -43,10 +43,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   pendingLabel,
   pendingTooltip,
 }) => {
-  const { theme } = useTheme();
-
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
+
+  const { theme } = useTheme();
 
   const churchName = group?.church?.name?.trim();
   const serviceName = group?.service?.name?.trim();
