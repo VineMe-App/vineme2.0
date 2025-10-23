@@ -28,6 +28,7 @@ interface GroupCardProps {
   distanceKm?: number;
   pendingLabel?: string;
   pendingTooltip?: string;
+  currentUserId?: string; // ID of the current user to determine if they're the creator
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -42,6 +43,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   distanceKm,
   pendingLabel,
   pendingTooltip,
+  currentUserId,
 }) => {
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
@@ -78,11 +80,17 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   const isAwaitingVerification = group.status === 'pending';
   const hasCustomPending = Boolean(pendingLabel);
+  const isCreator = currentUserId && group.created_by === currentUserId;
+  
   const badgeLabel = hasCustomPending
     ? pendingLabel || 'Join request pending'
+    : isCreator
+    ? 'Group creation pending'
     : 'Awaiting Confirmation';
   const tooltipMessage = hasCustomPending
     ? pendingTooltip
+    : isCreator
+    ? 'Your group request has been sent to church administrators for approval. They will be in touch to discuss your group.'
     : 'A member of your clergy has received your request and will be in touch to approve or discuss.';
   const showPendingBadge = isAwaitingVerification || hasCustomPending;
   const shouldBlockNavigation = showPendingBadge;

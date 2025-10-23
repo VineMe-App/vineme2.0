@@ -183,6 +183,7 @@ const GroupCardWithData: React.FC<{
       friendsCount={friendsCount}
       friendsInGroup={friendsInGroup}
       leaders={leaders}
+      currentUserId={userProfile?.id}
       onPressFriends={() => onPress()}
       style={styles.mapGroupCard}
     />

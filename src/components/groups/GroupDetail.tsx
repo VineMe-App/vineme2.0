@@ -16,7 +16,6 @@ import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
 import {
-  useJoinGroup,
   useLeaveGroup,
   useGroupMembers,
   useGroupLeaders,
@@ -56,7 +55,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const [showFriendsModal, setShowFriendsModal] = useState(openFriendsOnMount);
   // Referral modal removed in favor of navigation
 
-  const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
   const createJoinRequestMutation = useCreateJoinRequest();
   const [canSeeMembers, setCanSeeMembers] = useState(false);
@@ -220,7 +218,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     : regularMembers.slice(0, 6);
 
   const isLoading =
-    joinGroupMutation.isPending ||
     leaveGroupMutation.isPending ||
     createJoinRequestMutation.isPending;
 

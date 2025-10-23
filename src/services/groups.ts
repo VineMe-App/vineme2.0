@@ -313,6 +313,9 @@ export class GroupService {
         .eq('user_id', userId)
         .single();
 
+      let data: any = null;
+      let error: any = null;
+
       if (existingMembership) {
         if (existingMembership.status === 'active') {
           return {
@@ -328,20 +331,43 @@ export class GroupService {
             ),
           };
         }
-      }
 
-      // Create pending membership instead of active membership
-      const { data, error } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: groupId,
-          user_id: userId,
-          role,
-          status: 'pending',
-          joined_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        // If they were inactive or archived, reuse the existing membership row
+        if (
+          existingMembership.status === 'inactive' ||
+          existingMembership.status === 'archived'
+        ) {
+          const updateResult = await supabase
+            .from('group_memberships')
+            .update({
+              status: 'pending',
+              joined_at: null, // Reset joined_at for pending status (required by constraint)
+              journey_status: null, // Reset journey status for new request
+            })
+            .eq('id', existingMembership.id)
+            .select()
+            .single();
+
+          data = updateResult.data;
+          error = updateResult.error;
+        }
+      } else {
+        // No existing membership, create new one
+        const insertResult = await supabase
+          .from('group_memberships')
+          .insert({
+            group_id: groupId,
+            user_id: userId,
+            role,
+            status: 'pending',
+            joined_at: null, // Must be null for pending status (required by constraint)
+          })
+          .select()
+          .single();
+
+        data = insertResult.data;
+        error = insertResult.error;
+      }
 
       if (error) {
         return { data: null, error: new Error(error.message) };
