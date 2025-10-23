@@ -141,6 +141,16 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   };
 
   const handleLeaveGroup = () => {
+    // Check if user is the last leader
+    if (isGroupLeader && leaders.length === 1) {
+      Alert.alert(
+        'Cannot Leave Group',
+        'You are the only leader of this group. You must promote another member to leader or transfer leadership before you can leave the group.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     Alert.alert('Leave Group', 'Are you sure you want to leave this group?', [
       { text: 'Cancel', style: 'cancel' },
       {

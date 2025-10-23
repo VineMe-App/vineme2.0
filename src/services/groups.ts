@@ -445,7 +445,7 @@ export class GroupService {
       // Get membership record before updating
       const { data: membership, error: fetchError } = await supabase
         .from('group_memberships')
-        .select('id, status')
+        .select('id, status, role')
         .eq('group_id', groupId)
         .eq('user_id', userId)
         .single();
@@ -455,6 +455,36 @@ export class GroupService {
           data: null,
           error: new Error('Membership not found'),
         };
+      }
+
+      // Check if user is a leader
+      if (membership.role === 'leader') {
+        // Get all leaders in the group
+        const { data: allLeaders, error: leadersError } = await supabase
+          .from('group_memberships')
+          .select('id, user_id')
+          .eq('group_id', groupId)
+          .eq('role', 'leader')
+          .eq('status', 'active');
+
+        if (leadersError) {
+          return {
+            data: null,
+            error: new Error('Failed to check group leadership'),
+          };
+        }
+
+        // Prevent the last leader from leaving
+        if (
+          allLeaders &&
+          allLeaders.length === 1 &&
+          allLeaders[0].user_id === userId
+        ) {
+          return {
+            data: null,
+            error: new Error('Cannot leave group as the last leader. Promote another member to leader first or transfer leadership.'),
+          };
+        }
       }
 
       const { error } = await supabase
