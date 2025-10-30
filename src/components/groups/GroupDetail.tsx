@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -30,6 +30,12 @@ import { useFriends } from '../../hooks/useFriendships';
 import { Modal } from '../ui/Modal';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
+import {
+  getDisplayName,
+  getFirstName,
+  getFullName,
+  getLastName,
+} from '../../utils/name';
 // Referral handled via /referral page
 // import { referralService } from '../../services/referrals';
 
@@ -60,6 +66,63 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const [canSeeMembers, setCanSeeMembers] = useState(false);
   const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
   const friendsQuery = useFriends(userProfile?.id);
+
+  const friendIds = useMemo(
+    () =>
+      (friendsQuery.data || [])
+        .map((friendship) => friendship.friend?.id)
+        .filter((id): id is string => !!id),
+    [friendsQuery.data]
+  );
+
+  const friendIdSet = useMemo(() => new Set(friendIds), [friendIds]);
+
+  const viewerIsChurchAdmin = useMemo(
+    () =>
+      (userProfile?.roles || []).some(
+        (role) =>
+          typeof role === 'string' && role.toLowerCase().includes('church_admin')
+      ),
+    [userProfile?.roles]
+  );
+
+  const formatUserName = useCallback(
+    (user?: { id?: string | null } | null) => {
+      if (!user) return 'Unknown';
+      const userId = user.id ?? undefined;
+      const canReveal = Boolean(
+        viewerIsChurchAdmin ||
+          (userId && friendIdSet.has(userId)) ||
+          (userProfile?.id && userId === userProfile.id)
+      );
+
+      const first =
+        getFirstName(user) ||
+        (typeof (user as any)?.name === 'string'
+          ? (user as any).name.split(' ')[0]?.trim()
+          : undefined);
+      const fallback =
+        first || getDisplayName(user, { fallback: 'first' }) || 'Member';
+
+      if (canReveal) {
+        const full = getFullName(user);
+        if (full && full.trim().length > 0) return full;
+        if (first) {
+          const last = getLastName(user)?.trim();
+          if (last) return `${first} ${last}`;
+        }
+        return fallback;
+      }
+
+      const lastInitial = getLastName(user)?.trim().charAt(0).toUpperCase();
+      if (fallback && lastInitial) {
+        return `${fallback} ${lastInitial}.`;
+      }
+
+      return fallback;
+    },
+    [viewerIsChurchAdmin, friendIdSet, userProfile?.id]
+  );
 
   const formatMeetingTime = (day: string, time: string) => {
     const date = new Date(`2000-01-01T${time}`);
@@ -238,39 +301,29 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   // Friends in group - use the same logic as groups list
   const friendsInGroup = useMemo(() => {
-    if (!userProfile?.id || !friendsQuery.data) return [];
+    if (!userProfile?.id) return [];
 
-    // Get friend IDs from friendships
-    const friendIds = new Set(
-      (friendsQuery.data || [])
-        .map((f) => f.friend?.id)
-        .filter((id): id is string => !!id)
-    );
-
-    // If we have direct friends-in-group data, use it and extract users
     if (friendsInGroupMemberships && friendsInGroupMemberships.length > 0) {
       return (friendsInGroupMemberships || [])
         .map((m: any) => m.user)
         .filter((user: any) => user && user.id !== userProfile.id);
     }
 
-    // Fallback to filtering all members by friendship (same as groups list)
     if (allMembers && allMembers.length > 0) {
       return (allMembers || [])
         .filter(
-          (m) => m.status === 'active' && m.user?.id && friendIds.has(m.user.id)
+          (m) =>
+            m.status === 'active' &&
+            m.user?.id &&
+            friendIdSet.has(m.user.id) &&
+            m.user.id !== userProfile.id
         )
         .map((m) => m.user!)
-        .filter((u) => u.id !== userProfile.id);
+        .filter((u) => !!u);
     }
 
     return [];
-  }, [
-    friendsInGroupMemberships,
-    friendsQuery.data,
-    allMembers,
-    userProfile?.id,
-  ]);
+  }, [friendsInGroupMemberships, allMembers, userProfile?.id, friendIdSet]);
 
   // Check if user has a pending join request for this group
   const pendingRequest = userJoinRequests?.find(
@@ -407,16 +460,16 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                     member.user?.id && router.push(`/user/${member.user.id}`)
                   }
                   accessibilityRole="button"
-                  accessibilityLabel={`View ${member.user?.name || 'user'} profile`}
+                  accessibilityLabel={`View ${formatUserName(member.user) || 'user'} profile`}
                 >
                   <Avatar
                     size={40}
                     imageUrl={member.user?.avatar_url}
-                    name={member.user?.name || 'Unknown'}
+                    name={formatUserName(member.user)}
                   />
                   <View style={styles.memberInfo}>
                     <Text style={styles.memberName}>
-                      {member.user?.name || 'Unknown'}
+                      {formatUserName(member.user)}
                     </Text>
                     <Text style={styles.memberRole}>
                       {member.role === 'admin' ? 'Admin' : 'Leader'}
@@ -456,26 +509,26 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                     <TouchableOpacity
                       key={member.id}
                       style={styles.memberItem}
-                      onPress={() =>
-                        member.user?.id &&
-                        router.push(`/user/${member.user.id}`)
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel={`View ${member.user?.name || 'user'} profile`}
-                    >
-                      <Avatar
-                        size={40}
-                        imageUrl={member.user?.avatar_url}
-                        name={member.user?.name || 'Unknown'}
-                      />
-                      <View style={styles.memberInfo}>
-                        <Text style={styles.memberName}>
-                          {member.user?.name || 'Unknown'}
-                        </Text>
-                        <Text style={styles.memberJoinDate}>
-                          Joined{' '}
-                          {member.joined_at
-                            ? new Date(member.joined_at).toLocaleDateString()
+                  onPress={() =>
+                    member.user?.id &&
+                    router.push(`/user/${member.user.id}`)
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${formatUserName(member.user) || 'user'} profile`}
+                >
+                  <Avatar
+                    size={40}
+                    imageUrl={member.user?.avatar_url}
+                    name={formatUserName(member.user)}
+                  />
+                  <View style={styles.memberInfo}>
+                    <Text style={styles.memberName}>
+                      {formatUserName(member.user)}
+                    </Text>
+                    <Text style={styles.memberJoinDate}>
+                      Joined{' '}
+                      {member.joined_at
+                        ? new Date(member.joined_at).toLocaleDateString()
                             : 'Unknown'}
                         </Text>
                       </View>
@@ -597,10 +650,12 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                     <Avatar
                       size={50}
                       imageUrl={friend.avatar_url}
-                      name={friend.name}
+                      name={formatUserName(friend)}
                     />
                     <View style={styles.friendInfo}>
-                      <Text style={styles.friendName}>{friend.name}</Text>
+                      <Text style={styles.friendName}>
+                        {formatUserName(friend)}
+                      </Text>
                       {!!friend.email && (
                         <Text style={styles.friendEmail}>{friend.email}</Text>
                       )}

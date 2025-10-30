@@ -15,6 +15,12 @@ import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '../../theme/provider/useTheme';
+import {
+  getDisplayName,
+  getFirstName,
+  getLastName,
+  getFullName,
+} from '../../utils/name';
 
 interface GroupCardProps {
   group: GroupWithDetails | null | undefined;
@@ -29,7 +35,15 @@ interface GroupCardProps {
   pendingLabel?: string;
   pendingTooltip?: string;
   currentUserId?: string; // ID of the current user to determine if they're the creator
+  friendIds?: string[];
+  viewerIsChurchAdmin?: boolean;
 }
+
+type LeaderDisplay = {
+  id: string;
+  name: string;
+  avatar?: string | null;
+};
 
 export const GroupCard: React.FC<GroupCardProps> = ({
   group,
@@ -44,6 +58,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   pendingLabel,
   pendingTooltip,
   currentUserId,
+  friendIds,
+  viewerIsChurchAdmin = false,
 }) => {
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
@@ -77,6 +93,58 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   };
 
   const [showPendingTip, setShowPendingTip] = React.useState(false);
+
+  const friendIdSet = React.useMemo(() => {
+    return new Set((friendIds || []).filter((id): id is string => !!id));
+  }, [friendIds]);
+
+  const canRevealLeaderName = React.useCallback(
+    (leader: User | null | undefined) => {
+      if (!leader?.id) return viewerIsChurchAdmin;
+      if (viewerIsChurchAdmin) return true;
+      if (currentUserId && leader.id === currentUserId) return true;
+      return friendIdSet.has(leader.id);
+    },
+    [viewerIsChurchAdmin, currentUserId, friendIdSet]
+  );
+
+  const formatLeaderName = React.useCallback(
+    (leader: User) => {
+      const first = getFirstName(leader) || leader.name?.split(' ')[0]?.trim();
+      const last = getLastName(leader)?.trim();
+      const displayFirst = first || getDisplayName(leader, { fallback: 'first' });
+      const fallbackName = displayFirst || 'Group leader';
+      const lastInitial = last ? last.charAt(0).toUpperCase() : '';
+
+      if (canRevealLeaderName(leader)) {
+        const full = getFullName(leader);
+        if (full && full.trim().length > 0) {
+          return full;
+        }
+        if (displayFirst && last) {
+          return `${displayFirst} ${last}`;
+        }
+        return fallbackName;
+      }
+
+      if (displayFirst && lastInitial) {
+        return `${displayFirst} ${lastInitial}.`;
+      }
+
+      return fallbackName;
+    },
+    [canRevealLeaderName]
+  );
+
+  const formattedLeaders = React.useMemo<LeaderDisplay[]>(() => {
+    if (!leaders || leaders.length === 0) return [];
+
+    return leaders.slice(0, 3).map((leader) => ({
+      id: leader.id,
+      name: formatLeaderName(leader),
+      avatar: leader.avatar_url || null,
+    }));
+  }, [leaders, formatLeaderName]);
 
   const isAwaitingVerification = group.status === 'pending';
   const hasCustomPending = Boolean(pendingLabel);
@@ -301,7 +369,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 {formatLocation(group.location)}
               </Text>
             </View>
-            {leaders && leaders.length > 0 && (
+            {formattedLeaders.length > 0 && (
               <View style={styles.detailRow}>
                 <Ionicons name="star-outline" size={16} color="#6b7280" />
                 <View style={styles.leaderTextAndAvatars}>
@@ -311,14 +379,12 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                     numberOfLines={1}
                   >
                     Led by{' '}
-                    {leaders
-                      .slice(0, 3)
-                      .map((leader) => leader.name)
-                      .join(', ')}
-                    {leaders.length > 3 && ` and ${leaders.length - 3} others`}
+                    {formattedLeaders.map((leader) => leader.name).join(', ')}
+                    {leaders && leaders.length > 3 &&
+                      ` and ${leaders.length - 3} others`}
                   </Text>
                   <View style={styles.leaderAvatars}>
-                    {leaders.slice(0, 3).map((leader, index) => (
+                    {formattedLeaders.map((leader, index) => (
                       <View
                         key={leader.id}
                         style={[
@@ -327,7 +393,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                         ]}
                       >
                         <Avatar
-                          imageUrl={leader.avatar_url}
+                          imageUrl={leader.avatar || undefined}
                           name={leader.name || undefined}
                           size={20}
                         />

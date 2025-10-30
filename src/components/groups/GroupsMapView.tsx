@@ -145,20 +145,22 @@ const GroupCardWithData: React.FC<{
 
   const membershipStatus = membershipData?.membership?.role || null;
 
-  const friendUsers = React.useMemo(() => {
-    if (!userProfile?.id || !friendsQuery.data) return [];
+  const friendIds = React.useMemo(() => {
+    return (friendsQuery.data || [])
+      .map((f) => f.friend?.id)
+      .filter((id): id is string => !!id);
+  }, [friendsQuery.data]);
 
-    const friendIds = new Set(
-      (friendsQuery.data || [])
-        .map((f) => f.friend?.id)
-        .filter((id): id is string => !!id)
-    );
+  const friendUsers = React.useMemo(() => {
+    if (!userProfile?.id) return [];
+
+    const friendIdSet = new Set(friendIds);
 
     return (members || [])
-      .filter((m) => m.user?.id && friendIds.has(m.user.id))
+      .filter((m) => m.user?.id && friendIdSet.has(m.user.id))
       .map((m) => m.user)
       .filter((user): user is NonNullable<typeof user> => !!user);
-  }, [friendsQuery.data, members, userProfile?.id]);
+  }, [friendIds, members, userProfile?.id]);
 
   const friendsInGroup = React.useMemo(
     () => friendUsers.slice(0, 3),
@@ -175,6 +177,12 @@ const GroupCardWithData: React.FC<{
       .slice(0, 3);
   }, [members]);
 
+  const viewerIsChurchAdmin = React.useMemo(() => {
+    return (userProfile?.roles || []).some((role) =>
+      typeof role === 'string' && role.toLowerCase().includes('church_admin')
+    );
+  }, [userProfile?.roles]);
+
   return (
     <GroupCard
       group={group}
@@ -184,6 +192,8 @@ const GroupCardWithData: React.FC<{
       friendsInGroup={friendsInGroup}
       leaders={leaders}
       currentUserId={userProfile?.id}
+      viewerIsChurchAdmin={viewerIsChurchAdmin}
+      friendIds={friendIds}
       onPressFriends={() => onPress()}
       style={styles.mapGroupCard}
     />

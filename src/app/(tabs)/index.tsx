@@ -17,6 +17,7 @@ import {
   useFriends,
   useReceivedFriendRequests,
 } from '../../hooks/useFriendships';
+import { useGroupLeaders } from '../../hooks/useGroups';
 // import { EventCard } from '../../components/events/EventCard'; // Events disabled
 import { GroupCard } from '../../components/groups/GroupCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -97,6 +98,18 @@ export default function HomeScreen() {
   // Calculate dashboard stats
   const acceptedFriends = friends || [];
   const pendingRequests = pendingFriendRequests || [];
+
+  const friendIds = React.useMemo(() => {
+    return acceptedFriends
+      .map((friendship) => friendship.friend?.id)
+      .filter((id): id is string => !!id);
+  }, [acceptedFriends]);
+
+  const viewerIsChurchAdmin = React.useMemo(() => {
+    return (userProfile?.roles || []).some(
+      (role) => typeof role === 'string' && role.toLowerCase().includes('church_admin')
+    );
+  }, [userProfile?.roles]);
 
   const isLoading =
     groupsLoading || friendsLoading || requestsLoading || joinRequestsLoading;
@@ -272,12 +285,12 @@ export default function HomeScreen() {
             >
               {activeMemberships.map((membership) => (
                 <View key={membership.group_id} style={styles.horizontalCard}>
-                  <GroupCard
-                    group={membership.group}
-                    membershipStatus={membership.role}
+                  <MembershipGroupCard
+                    membership={membership}
                     currentUserId={userProfile?.id}
+                    viewerIsChurchAdmin={viewerIsChurchAdmin}
+                    friendIds={friendIds}
                     onPress={() => router.push(`/group/${membership.group.id}`)}
-                    style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
                   />
                 </View>
               ))}
@@ -300,6 +313,8 @@ export default function HomeScreen() {
                         group={request.group as any}
                         membershipStatus={null}
                         currentUserId={userProfile?.id}
+                        friendIds={friendIds}
+                        viewerIsChurchAdmin={viewerIsChurchAdmin}
                         onPress={undefined}
                         style={{
                           width: 260,
@@ -308,6 +323,7 @@ export default function HomeScreen() {
                         }}
                         pendingLabel="Join request pending"
                         pendingTooltip={message}
+                        leaders={request.group_leaders as any}
                       />
                     </View>
                   );
@@ -379,6 +395,44 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+const MembershipGroupCard: React.FC<{
+  membership: any;
+  currentUserId?: string;
+  viewerIsChurchAdmin: boolean;
+  friendIds: string[];
+  onPress: () => void;
+}> = ({
+  membership,
+  currentUserId,
+  viewerIsChurchAdmin,
+  friendIds,
+  onPress,
+}) => {
+  const groupId = membership?.group?.id || membership?.group_id;
+  const { data: leadersData } = useGroupLeaders(groupId);
+
+  const leaders = React.useMemo(
+    () =>
+      (leadersData || [])
+        .map((leader) => leader.user)
+        .filter((user): user is NonNullable<typeof user> => !!user),
+    [leadersData]
+  );
+
+  return (
+    <GroupCard
+      group={membership.group}
+      membershipStatus={membership.role}
+      currentUserId={currentUserId}
+      friendIds={friendIds}
+      viewerIsChurchAdmin={viewerIsChurchAdmin}
+      leaders={leaders}
+      onPress={onPress}
+      style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
+    />
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

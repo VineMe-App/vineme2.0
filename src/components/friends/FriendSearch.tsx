@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { DatabaseUser } from '../../types/database';
-import { getDisplayName, getFullName } from '@/utils/name';
+import {
+  getDisplayName,
+  getFullName,
+  getFirstName,
+  getLastName,
+} from '@/utils/name';
 
 interface FriendSearchProps {
   onClose?: () => void;
@@ -28,10 +33,19 @@ interface FriendSearchProps {
 
 export function FriendSearch({ onClose }: FriendSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   const searchUsersQuery = useSearchUsers(searchQuery, searchQuery.length >= 2);
   const sendFriendRequestMutation = useSendFriendRequest();
+
+  const viewerIsChurchAdmin = useMemo(
+    () =>
+      (userProfile?.roles || []).some(
+        (role) =>
+          typeof role === 'string' && role.toLowerCase().includes('church_admin')
+      ),
+    [userProfile?.roles]
+  );
 
   const handleSendFriendRequest = (friendId: string, friendName: string) => {
     Alert.alert(
@@ -67,6 +81,8 @@ export function FriendSearch({ onClose }: FriendSearchProps) {
         user={item}
         onSendFriendRequest={handleSendFriendRequest}
         isLoading={sendFriendRequestMutation.isPending}
+        currentUserId={user?.id}
+        viewerIsChurchAdmin={viewerIsChurchAdmin}
       />
     );
   };
@@ -126,27 +142,47 @@ interface UserSearchItemProps {
   user: Partial<DatabaseUser>;
   onSendFriendRequest: (friendId: string, friendName: string) => void;
   isLoading: boolean;
+  currentUserId?: string;
+  viewerIsChurchAdmin?: boolean;
 }
 
 function UserSearchItem({
   user,
   onSendFriendRequest,
   isLoading,
+  currentUserId,
+  viewerIsChurchAdmin = false,
 }: UserSearchItemProps) {
-  const { user: currentUser } = useAuth();
-  const shortName = getDisplayName(user, {
-    lastInitial: true,
-    fallback: 'full',
-  });
-  const fullName = getFullName(user);
   const friendshipStatusQuery = useFriendshipStatus(
     user.id || '',
-    currentUser?.id
+    currentUserId
   );
   const acceptRejected = useAcceptRejectedFriendRequest();
   const statusDetails = friendshipStatusQuery.data;
   const status = statusDetails?.status;
   const isIncoming = statusDetails?.direction === 'incoming';
+  const isFriend = status === 'accepted';
+  const canSeeFullName = Boolean(
+    viewerIsChurchAdmin || isFriend || (user.id && user.id === currentUserId)
+  );
+
+  const formattedName = useMemo(() => {
+    if (canSeeFullName) {
+      return (
+        getFullName(user) ||
+        getDisplayName(user, { fallback: 'full' }) ||
+        'User'
+      );
+    }
+    const first = getFirstName(user);
+    const lastInitial = getLastName(user)?.trim().charAt(0).toUpperCase();
+    if (first && lastInitial) {
+      return `${first} ${lastInitial}.`;
+    }
+    return (
+      getDisplayName(user, { lastInitial: true, fallback: 'first' }) || 'User'
+    );
+  }, [canSeeFullName, user]);
 
   const handleSendRequest = () => {
     if (!user.id) return;
@@ -164,7 +200,7 @@ function UserSearchItem({
       return;
     }
 
-    onSendFriendRequest(user.id, fullName || shortName || 'this person');
+    onSendFriendRequest(user.id, formattedName || 'this person');
   };
 
   const getButtonState = () => {
@@ -220,11 +256,11 @@ function UserSearchItem({
         style={styles.userInfo}
         onPress={() => user.id && router.push(`/user/${user.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={`View ${fullName || 'user'}'s profile`}
+        accessibilityLabel={`View ${formattedName || 'user'}'s profile`}
       >
-        <Avatar imageUrl={user.avatar_url} name={fullName} size={50} />
+        <Avatar imageUrl={user.avatar_url} name={formattedName} size={50} />
         <View style={styles.userDetails}>
-          <Text style={styles.userName}>{shortName || fullName || 'User'}</Text>
+          <Text style={styles.userName}>{formattedName}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
         </View>
       </TouchableOpacity>

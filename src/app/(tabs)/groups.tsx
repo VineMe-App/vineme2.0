@@ -42,6 +42,7 @@ export default function GroupsScreen() {
   const { filters } = useGroupFiltersStore();
   const { theme } = useTheme();
   const friendsQuery = useFriends(userProfile?.id);
+
   const [showSearch, setShowSearch] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -88,15 +89,21 @@ export default function GroupsScreen() {
   const error = isChurchAdmin ? adminGroupsError : churchGroupsError;
   const refetch = isChurchAdmin ? refetchAdminGroups : refetchChurchGroups;
 
+  const viewerIsChurchAdmin = useMemo(() => {
+    return (userProfile?.roles || []).some(
+      (role) => typeof role === 'string' && role.toLowerCase().includes('church_admin')
+    );
+  }, [userProfile?.roles]);
+
   const friendIds = useMemo(
     () =>
-      new Set(
-        (friendsQuery.data || [])
-          .map((friendship) => friendship.friend?.id)
-          .filter((id): id is string => !!id)
-      ),
+      (friendsQuery.data || [])
+        .map((friendship) => friendship.friend?.id)
+        .filter((id): id is string => !!id),
     [friendsQuery.data]
   );
+
+  const friendIdSet = useMemo(() => new Set(friendIds), [friendIds]);
 
   const isGroupLeader = useMemo(() => {
     if (!userProfile?.id) return false;
@@ -130,7 +137,7 @@ export default function GroupsScreen() {
           !!userServiceId && group.service_id === userServiceId;
         const friendInGroup = (group.memberships || []).some(
           (membership: any) =>
-            membership.status === 'active' && friendIds.has(membership.user_id)
+            membership.status === 'active' && friendIdSet.has(membership.user_id)
         );
 
         let include = false;
@@ -181,7 +188,7 @@ export default function GroupsScreen() {
     if (filters.onlyWithFriends) {
       base = base.filter((g) =>
         (g.memberships || []).some(
-          (m: any) => m.status === 'active' && friendIds.has(m.user_id)
+          (m: any) => m.status === 'active' && friendIdSet.has(m.user_id)
         )
       );
     }
@@ -206,7 +213,7 @@ export default function GroupsScreen() {
 
         // Calculate friends count for sorting
         const friendsCount = (g.memberships || []).filter(
-          (m: any) => m.status === 'active' && friendIds.has(m.user_id)
+          (m: any) => m.status === 'active' && friendIdSet.has(m.user_id)
         ).length;
 
         return {
@@ -271,6 +278,8 @@ export default function GroupsScreen() {
         group={group}
         onPress={() => handleGroupPress(group)}
         distanceKm={group.__distanceKm}
+        friendIds={friendIds}
+        viewerIsChurchAdmin={viewerIsChurchAdmin}
       />
     );
   };
@@ -672,7 +681,15 @@ const GroupItemWithMembership: React.FC<{
   group: GroupWithDetails & { __distanceKm?: number };
   onPress: () => void;
   distanceKm?: number;
-}> = ({ group, onPress, distanceKm }) => {
+  friendIds: string[];
+  viewerIsChurchAdmin: boolean;
+}> = ({
+  group,
+  onPress,
+  distanceKm,
+  friendIds,
+  viewerIsChurchAdmin,
+}) => {
   const { userProfile } = useAuthStore();
   const { data: membershipData } = useGroupMembership(
     group.id,
@@ -686,17 +703,13 @@ const GroupItemWithMembership: React.FC<{
   const membershipStatus = membershipData?.membership?.role || null;
 
   const friendUsers = React.useMemo(() => {
-    const friendIds = new Set(
-      (friendsQuery.data || [])
-        .map((f) => f.friend?.id)
-        .filter((id): id is string => !!id)
-    );
+    const friendIdSet = new Set(friendIds);
 
     return (members || [])
-      .filter((m) => m.user?.id && friendIds.has(m.user.id))
+      .filter((m) => m.user?.id && friendIdSet.has(m.user.id))
       .map((m) => m.user)
       .filter((user): user is NonNullable<typeof user> => !!user);
-  }, [friendsQuery.data, members]);
+  }, [friendIds, members]);
 
   const friendsInGroup = React.useMemo(
     () => friendUsers.slice(0, 3),
@@ -727,6 +740,8 @@ const GroupItemWithMembership: React.FC<{
       friendsInGroup={friendsInGroup}
       leaders={leaders}
       currentUserId={userProfile?.id}
+      viewerIsChurchAdmin={viewerIsChurchAdmin}
+      friendIds={friendIds}
       onPressFriends={() => {
         // Navigate to group detail and open friends modal
         onPress();

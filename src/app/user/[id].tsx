@@ -32,7 +32,7 @@ export default function OtherUserProfileScreen() {
     () => (Array.isArray(params.id) ? params.id[0] : params.id),
     [params.id]
   );
-  const { user } = useAuth();
+  const { user, userProfile: viewerProfile } = useAuth();
 
   const {
     data: profile,
@@ -50,14 +50,45 @@ export default function OtherUserProfileScreen() {
   const acceptRejected = useAcceptRejectedFriendRequest();
 
   const isSelf = user?.id && targetUserId === user.id;
+  // Restrict surnames and group visibility to accepted friends or church admins (self always allowed)
+  const viewerRoles: string[] = useMemo(() => {
+    if (Array.isArray(viewerProfile?.roles)) {
+      return viewerProfile.roles.filter((role): role is string => typeof role === 'string');
+    }
+    const raw = (user as any)?.user_metadata?.roles;
+    if (Array.isArray(raw)) {
+      return raw.filter((role: any): role is string => typeof role === 'string');
+    }
+    return [];
+  }, [viewerProfile?.roles, user]);
+
+  const viewerIsChurchAdmin = viewerRoles.some((role) =>
+    role.toLowerCase().includes('church_admin')
+  );
+  const isFriend = friendshipStatusQuery.data?.status === 'accepted';
+  const canSeeRestrictedDetails = Boolean(
+    isSelf || isFriend || viewerIsChurchAdmin
+  );
+
   const profileFullName = getFullName(profile);
-  const profileShortName = getDisplayName(profile, { fallback: 'full' });
+  const safeDisplayName = canSeeRestrictedDetails
+    ? profileFullName ||
+      getDisplayName(profile, {
+        lastInitial: false,
+        fallback: 'full',
+      })
+    : getDisplayName(profile, { lastInitial: true, fallback: 'first' });
+  const profileShortName = getDisplayName(profile, {
+    lastInitial: !canSeeRestrictedDetails,
+    fallback: canSeeRestrictedDetails ? 'full' : 'first',
+  });
 
   const handleAddFriend = () => {
-    if (!targetUserId || !profileFullName) return;
+    if (!targetUserId) return;
+    const promptName = safeDisplayName || profileShortName || 'this user';
     Alert.alert(
       'Add Friend',
-      `Send a friend request to ${profileShortName || profileFullName}?`,
+      `Send a friend request to ${promptName}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -205,11 +236,11 @@ export default function OtherUserProfileScreen() {
               <Avatar
                 size={100}
                 imageUrl={profile.avatar_url}
-                name={profileFullName}
+                name={safeDisplayName}
                 onPress={handleAvatarPress}
               />
               <Text style={styles.name}>
-                {profileFullName || profileShortName || 'User'}
+                {safeDisplayName || profileShortName || 'User'}
               </Text>
               {profile.email ? (
                 <Text style={styles.email}>{profile.email}</Text>
@@ -238,7 +269,7 @@ export default function OtherUserProfileScreen() {
               />
             </View>
 
-            {memberships && memberships.length > 0 && (
+            {canSeeRestrictedDetails && memberships && memberships.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Groups</Text>
                 {memberships.map((m: any) => (
