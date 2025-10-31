@@ -10,7 +10,6 @@ import type {
   NotificationSettings,
   NotificationTriggerData,
 } from '../types/database';
-import { getFullName } from '../utils/name';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
