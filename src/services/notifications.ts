@@ -633,18 +633,6 @@ export const sendGroupRequestNotification = async (
       console.error('Error storing notifications:', insertError);
     }
 
-    // Send push notifications to each admin
-    const notification: NotificationData = {
-      type: 'group_request',
-      id: groupId || churchId,
-      title: 'New Group Request',
-      body: `${creatorName} has requested to create "${groupTitle}"`,
-      data: { churchId, groupTitle, creatorName, groupId },
-    };
-
-    // Schedule local notification for immediate display
-    await scheduleLocalNotification(notification);
-
     console.log('Group request notifications sent to', admins.length, 'admins');
   } catch (error) {
     console.error('Error sending group request notification:', error);
