@@ -711,15 +711,6 @@ export const sendJoinRequestNotification = async (
       console.error('Error storing notifications:', insertError);
     }
 
-    // Send push notification to each leader
-    const notification: NotificationData = {
-      type: 'join_request',
-      id: groupId,
-      title: 'New Join Request',
-      body: `${requesterName} wants to join "${groupTitle}"`,
-      data: { groupId, groupTitle, requesterName, requesterId },
-    };
-
     console.log(
       'Join request notifications sent to',
       leaders.length,
@@ -729,12 +720,6 @@ export const sendJoinRequestNotification = async (
     console.error('Error sending join request notification:', error);
   }
 };
-
-/**
- * Enhanced notification service methods
- */
-
-// Enhanced notification trigger methods
 
 /**
  * Trigger friend request notification
@@ -780,7 +765,7 @@ export const triggerFriendRequestAcceptedNotification = async (
       return; // User has disabled friend request accepted notifications
     }
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.originalRequesterId,
       type: 'friend_request_accepted',
       title: 'Friend Request Accepted',
