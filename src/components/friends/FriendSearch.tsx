@@ -105,7 +105,7 @@ export function FriendSearch({ onClose }: FriendSearchProps) {
         placeholder="Search by name or email..."
         value={searchQuery}
         onChangeText={setSearchQuery}
-        style={styles.searchInput}
+        containerStyle={styles.searchInput}
         autoCapitalize="none"
         autoCorrect={false}
       />
@@ -175,7 +175,7 @@ function UserSearchItem({
       );
     }
     const first = getFirstName(user);
-    const lastInitial = getLastName(user)?.trim().charAt(0).toUpperCase();
+    const lastInitial = getLastName(user)?.trim()?.charAt(0)?.toUpperCase();
     if (first && lastInitial) {
       return `${first} ${lastInitial}.`;
     }

@@ -35,6 +35,7 @@ import {
   getFirstName,
   getFullName,
   getLastName,
+  type NameLike,
 } from '../../utils/name';
 // Referral handled via /referral page
 // import { referralService } from '../../services/referrals';
@@ -87,7 +88,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   );
 
   const formatUserName = useCallback(
-    (user?: { id?: string | null } | null) => {
+    (user?: NameLike & { id?: string | null } | null) => {
       if (!user) return 'Unknown';
       const userId = user.id ?? undefined;
       const canReveal = Boolean(
@@ -114,7 +115,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
         return fallback;
       }
 
-      const lastInitial = getLastName(user)?.trim().charAt(0).toUpperCase();
+      const lastInitial = getLastName(user)?.trim()?.charAt(0)?.toUpperCase();
       if (fallback && lastInitial) {
         return `${fallback} ${lastInitial}.`;
       }

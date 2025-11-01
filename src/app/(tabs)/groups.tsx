@@ -95,15 +95,16 @@ export default function GroupsScreen() {
     );
   }, [userProfile?.roles]);
 
-  const friendIds = useMemo(
-    () =>
+  const { friendIds, friendIdSet } = useMemo(() => {
+    const ids =
       (friendsQuery.data || [])
         .map((friendship) => friendship.friend?.id)
-        .filter((id): id is string => !!id),
-    [friendsQuery.data]
-  );
-
-  const friendIdSet = useMemo(() => new Set(friendIds), [friendIds]);
+        .filter((id): id is string => !!id);
+    return {
+      friendIds: ids,
+      friendIdSet: new Set(ids),
+    };
+  }, [friendsQuery.data]);
 
   const isGroupLeader = useMemo(() => {
     if (!userProfile?.id) return false;

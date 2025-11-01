@@ -99,17 +99,13 @@ export default function HomeScreen() {
   const acceptedFriends = friends || [];
   const pendingRequests = pendingFriendRequests || [];
 
-  const friendIds = React.useMemo(() => {
-    return acceptedFriends
-      .map((friendship) => friendship.friend?.id)
-      .filter((id): id is string => !!id);
-  }, [acceptedFriends]);
+  const friendIds = acceptedFriends
+    .map((friendship) => friendship.friend?.id)
+    .filter((id): id is string => !!id);
 
-  const viewerIsChurchAdmin = React.useMemo(() => {
-    return (userProfile?.roles || []).some(
-      (role) => typeof role === 'string' && role.toLowerCase().includes('church_admin')
-    );
-  }, [userProfile?.roles]);
+  const viewerIsChurchAdmin = (userProfile?.roles || []).some(
+    (role) => typeof role === 'string' && role.toLowerCase().includes('church_admin')
+  );
 
   const isLoading =
     groupsLoading || friendsLoading || requestsLoading || joinRequestsLoading;
@@ -412,13 +408,9 @@ const MembershipGroupCard: React.FC<{
   const groupId = membership?.group?.id || membership?.group_id;
   const { data: leadersData } = useGroupLeaders(groupId);
 
-  const leaders = React.useMemo(
-    () =>
-      (leadersData || [])
-        .map((leader) => leader.user)
-        .filter((user): user is NonNullable<typeof user> => !!user),
-    [leadersData]
-  );
+  const leaders = leadersData
+    ?.map((leader) => leader.user)
+    .filter((user): user is NonNullable<typeof user> => !!user);
 
   return (
     <GroupCard

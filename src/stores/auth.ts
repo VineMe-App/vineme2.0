@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { User } from '@supabase/supabase-js';
-import type { DatabaseUser } from '../types/database';
+import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { authService } from '../services/auth';
 import { getFullName } from '../utils/name';
 import { setDeletionFlowActive } from '../utils/errorSuppression';
@@ -8,7 +8,7 @@ import { setDeletionFlowActive } from '../utils/errorSuppression';
 interface AuthState {
   // State
   user: User | null;
-  userProfile: DatabaseUser | null;
+  userProfile: UserWithDetails | null;
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
