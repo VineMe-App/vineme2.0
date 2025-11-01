@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { secureStorage, SECURE_STORAGE_KEYS } from '../utils/secureStorage';
 import { permissionService } from './permissions';
 import type { User } from '@supabase/supabase-js';
-import type { DatabaseUser } from '../types/database';
+import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { handleSupabaseError, retryWithBackoff } from '../utils/errorHandling';
 
 export interface AuthResponse {
@@ -79,7 +79,7 @@ export class AuthService {
   /**
    * Get the current user's profile from the users table
    */
-  async getCurrentUserProfile(): Promise<DatabaseUser | null> {
+  async getCurrentUserProfile(): Promise<UserWithDetails | null> {
     try {
       const user = await this.getCurrentUser();
       if (!user) return null;
