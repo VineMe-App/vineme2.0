@@ -16,7 +16,6 @@ import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
 import {
-  useJoinGroup,
   useLeaveGroup,
   useGroupMembers,
   useGroupLeaders,
@@ -56,7 +55,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const [showFriendsModal, setShowFriendsModal] = useState(openFriendsOnMount);
   // Referral modal removed in favor of navigation
 
-  const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
   const createJoinRequestMutation = useCreateJoinRequest();
   const [canSeeMembers, setCanSeeMembers] = useState(false);
@@ -143,6 +141,16 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   };
 
   const handleLeaveGroup = () => {
+    // Check if user is the last leader
+    if (isGroupLeader && leaders.length === 1) {
+      Alert.alert(
+        'Cannot Leave Group',
+        'You are the only leader of this group. You must promote another member to leader or transfer leadership before you can leave the group.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     Alert.alert('Leave Group', 'Are you sure you want to leave this group?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -220,7 +228,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     : regularMembers.slice(0, 6);
 
   const isLoading =
-    joinGroupMutation.isPending ||
     leaveGroupMutation.isPending ||
     createJoinRequestMutation.isPending;
 
@@ -385,8 +392,8 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           )}
         </View>
 
-        {/* Leaders Section - hidden when current user is a leader */}
-        {!isGroupLeader && leaders.length > 0 && (
+        {/* Leaders Section - always shown when leaders exist */}
+        {leaders.length > 0 && (
           <View style={styles.membersSection}>
             <Text style={styles.sectionTitle}>
               Leader{leaders.length > 1 ? 's' : ''}

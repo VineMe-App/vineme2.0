@@ -275,6 +275,7 @@ export default function HomeScreen() {
                   <GroupCard
                     group={membership.group}
                     membershipStatus={membership.role}
+                    currentUserId={userProfile?.id}
                     onPress={() => router.push(`/group/${membership.group.id}`)}
                     style={{ width: 260, minHeight: 374, marginHorizontal: 0 }}
                   />
@@ -298,6 +299,7 @@ export default function HomeScreen() {
                       <GroupCard
                         group={request.group as any}
                         membershipStatus={null}
+                        currentUserId={userProfile?.id}
                         onPress={undefined}
                         style={{
                           width: 260,
