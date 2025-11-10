@@ -125,6 +125,7 @@ export default function NameStep({
       </View>
 
       <View style={styles.footer}>
+        <View style={styles.footerSpacer} />
         <AuthButton
           title="Next"
           onPress={handleContinue}
@@ -133,10 +134,10 @@ export default function NameStep({
         />
         <TouchableOpacity
           onPress={onBack}
-          disabled={!canGoBack || isLoading}
           accessibilityRole="button"
+          style={styles.backButton}
         >
-          <Text variant="body" color="secondary" align="center" style={styles.backText}>
+          <Text variant="body" color="secondary" align="center">
             Back
           </Text>
         </TouchableOpacity>
@@ -193,9 +194,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: 'center',
-    gap: 16,
+    width: '100%',
   },
-  backText: {
-    marginTop: 8,
+  footerSpacer: {
+    height: 32,
+  },
+  backButton: {
+    marginTop: 16,
   },
 });
