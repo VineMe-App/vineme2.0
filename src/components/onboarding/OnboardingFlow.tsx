@@ -114,16 +114,16 @@ export default function OnboardingFlow() {
   };
 
   const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-    } else {
-      // If on first step, sign out and navigate to welcome/sign-in page
+    if (currentStepIndex === 0) {
+      // First step: sign out and go back to welcome
       signOut().then(async () => {
-        // Clear onboarding data to prevent data leakage between users
         await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
         router.replace('/(auth)/welcome');
       });
+      return;
     }
+
+    setCurrentStepIndex((prev) => prev - 1);
   };
 
   const completeOnboarding = async (data: OnboardingData) => {
