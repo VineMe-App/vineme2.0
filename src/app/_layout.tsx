@@ -79,6 +79,9 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[1] === 'onboarding';
+    const inOnboardingLoader = segments[1] === 'onboarding-loader';
+    const inPhoneAuthFlow =
+      segments[1] === 'phone-signup' || segments[1] === 'phone-login';
     // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id], /admin/*)
     const inAllowedStacks =
       segments[0] === 'group' ||
@@ -118,10 +121,13 @@ function RootLayoutNav() {
 
     if (user) {
       // User is authenticated
-      if (!isOnboardingDone && !inOnboarding) {
-        if (__DEV__) console.log('[NavDebug] redirect -> /(auth)/onboarding');
-        // User needs onboarding
-        router.replace('/(auth)/onboarding');
+      if (!isOnboardingDone && !(inOnboarding || inOnboardingLoader)) {
+        const target = inPhoneAuthFlow
+          ? '/(auth)/onboarding-loader'
+          : '/(auth)/onboarding';
+        if (__DEV__)
+          console.log('[NavDebug] redirect ->', target);
+        router.replace(target);
       } else if (isOnboardingDone && !(inTabsGroup || inAllowedStacks)) {
         if (__DEV__) console.log('[NavDebug] redirect -> /(tabs)');
         // User completed onboarding, go to main app
@@ -158,6 +164,10 @@ function RootLayoutNav() {
         <Stack.Screen name="user" options={{ headerShown: false }} />
         <Stack.Screen
           name="group-management"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(auth)/onboarding-loader"
           options={{ headerShown: false }}
         />
       </Stack>

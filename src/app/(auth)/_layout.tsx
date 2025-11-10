@@ -40,6 +40,13 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="onboarding-loader"
+        options={{
+          title: 'Onboarding',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="verify-email"
         options={{
           title: 'Verify Email',
