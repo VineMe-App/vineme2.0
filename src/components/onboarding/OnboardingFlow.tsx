@@ -21,11 +21,7 @@ import GroupStatusStep from './GroupStatusStep';
 import ProfileDetailsStep from './ProfileDetailsStep';
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
-  {
-    id: 'name',
-    title: 'Your Name',
-    component: NameStep,
-  },
+  { id: 'name', title: 'Your Name', component: NameStep },
   {
     id: 'email',
     title: 'Your Email',
@@ -191,28 +187,16 @@ export default function OnboardingFlow() {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       <View style={styles.progressContainer} testID="progress-container">
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${((currentStepIndex + 1) / ONBOARDING_STEPS.length) * 100}%`,
-              },
-            ]}
-          />
-        </View>
-        <View style={styles.stepIndicator}>
-          <View style={styles.stepDots}>
-            {ONBOARDING_STEPS.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.stepDot,
-                  index <= currentStepIndex && styles.stepDotActive,
-                ]}
-              />
-            ))}
-          </View>
+        <View style={styles.stepDots}>
+          {ONBOARDING_STEPS.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.stepDot,
+                index === currentStepIndex && styles.stepDotActive,
+              ]}
+            />
+          ))}
         </View>
       </View>
 
@@ -225,7 +209,7 @@ export default function OnboardingFlow() {
             data={onboardingData}
             onNext={handleNext}
             onBack={handleBack}
-            canGoBack={true}
+            canGoBack={currentStepIndex > 0}
             isLoading={isLoading}
             error={error}
           />
@@ -241,38 +225,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   progressContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#007AFF',
-    borderRadius: 2,
-  },
-  stepIndicator: {
-    marginTop: 12,
+    paddingTop: 24,
+    paddingBottom: 16,
     alignItems: 'center',
   },
   stepDots: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   stepDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ddd',
-    marginHorizontal: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#EAEAEA',
+    marginHorizontal: 6,
   },
   stepDotActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#F10078',
   },
   stepContainer: {
     flex: 1,

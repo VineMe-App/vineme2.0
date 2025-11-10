@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
-import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { AuthButton } from '@/components/auth/AuthButton';
 
 export default function NameStep({
   data,
@@ -68,21 +69,24 @@ export default function NameStep({
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>What&apos;s your name?</Text>
-        <Text style={styles.subtitle}>
-          Share your first and last name so your church community can recognize
-          you.
+        <Text variant="h3" weight="black" align="center" style={styles.title}>
+          What’s your name?
+        </Text>
+        <Text variant="bodyLarge" color="secondary" align="center" style={styles.subtitle}>
+          Share your first and last name so your church community can recognize you.
         </Text>
 
         <View style={styles.inputGroup}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>First name</Text>
+            <Text variant="labelSmall" color="secondary" style={styles.label}>
+              First name
+            </Text>
             <TextInput
               style={[styles.input, firstNameError ? styles.inputError : null]}
               value={firstName}
               onChangeText={handleFirstChange}
               placeholder="First name"
-              placeholderTextColor="#666"
+              placeholderTextColor="#B4B4B4"
               autoCapitalize="words"
               autoCorrect={false}
               autoFocus
@@ -90,46 +94,52 @@ export default function NameStep({
               maxLength={50}
             />
             {firstNameError && (
-              <Text style={styles.errorText}>{firstNameError}</Text>
+              <Text variant="bodySmall" color="error" style={styles.errorText}>
+                {firstNameError}
+              </Text>
             )}
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Last name</Text>
+            <Text variant="labelSmall" color="secondary" style={styles.label}>
+              Last name
+            </Text>
             <TextInput
               style={[styles.input, lastNameError ? styles.inputError : null]}
               value={lastName}
               onChangeText={handleLastChange}
               placeholder="Last name"
-              placeholderTextColor="#666"
+              placeholderTextColor="#B4B4B4"
               autoCapitalize="words"
               autoCorrect={false}
               editable={!isLoading}
               maxLength={50}
             />
             {lastNameError && (
-              <Text style={styles.errorText}>{lastNameError}</Text>
+              <Text variant="bodySmall" color="error" style={styles.errorText}>
+                {lastNameError}
+              </Text>
             )}
           </View>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <Button
-          title="Back"
-          variant="ghost"
-          onPress={onBack}
-          disabled={!canGoBack || isLoading}
-          fullWidth
-        />
-        <Button
-          title="Continue"
+        <AuthButton
+          title="Next"
           onPress={handleContinue}
           loading={isLoading}
           disabled={disableContinue}
-          variant="primary"
-          fullWidth
         />
+        <TouchableOpacity
+          onPress={onBack}
+          disabled={!canGoBack || isLoading}
+          accessibilityRole="button"
+        >
+          <Text variant="body" color="secondary" align="center" style={styles.backText}>
+            Back
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -139,54 +149,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
-    padding: 24,
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
+    color: '#2C2235',
     marginBottom: 12,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: '#2C2235',
     marginBottom: 32,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   inputGroup: {
-    gap: 20,
+    gap: 24,
   },
   inputContainer: {
     gap: 8,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#2C2235',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    fontSize: 18,
-    backgroundColor: '#f9f9f9',
+    fontSize: 16,
+    backgroundColor: '#FFFFFF',
+    color: '#2C2235',
   },
   inputError: {
     borderColor: '#ff4444',
   },
   errorText: {
-    color: '#ff4444',
-    fontSize: 14,
+    marginTop: 4,
   },
   footer: {
-    gap: 12,
+    alignItems: 'center',
+    gap: 16,
+  },
+  backText: {
+    marginTop: 8,
   },
 });
