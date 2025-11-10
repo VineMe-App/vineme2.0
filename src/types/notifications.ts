@@ -15,7 +15,7 @@ export type NotificationType =
   | 'join_request_received'
   | 'join_request_approved'
   | 'join_request_denied'
-  | 'group_member_added'
+  | 'group_member_added' // missing
   | 'referral_accepted'
   | 'referral_joined_group'
   | 'event_reminder';
