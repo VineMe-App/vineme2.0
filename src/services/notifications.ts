@@ -10,7 +10,6 @@ import type {
   NotificationSettings,
   NotificationTriggerData,
 } from '../types/database';
-import { getFullName } from '../utils/name';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -54,27 +53,6 @@ export interface NotificationData {
   body: string;
   data?: Record<string, any>;
 }
-
-// Server-side push delivery via Supabase Edge Function
-// Invokes the `push-notify` function with recipient and payload.
-const sendPushToUser = async (
-  userId: string,
-  payload: { title: string; body: string; data?: Record<string, any> }
-) => {
-  try {
-    // Skip on web or if Functions unavailable
-    const fn = (supabase as any)?.functions?.invoke;
-    if (!fn) return;
-    const { data, error } = await supabase.functions.invoke('push-notify', {
-      body: { userId, ...payload },
-    });
-    if (__DEV__) {
-      console.log('[Push] invoke result:', { data, error });
-    }
-  } catch (e) {
-    if (__DEV__) console.warn('[Notifications] push-notify failed', e);
-  }
-};
 
 // Enhanced notification creation input
 export interface CreateNotificationInput {
@@ -341,30 +319,6 @@ export const handleNotificationResponse = (
 };
 
 /**
- * Send a friend request notification
- */
-export const sendFriendRequestNotification = async (
-  fromUserId: string,
-  toUserId: string,
-  fromUserName: string
-): Promise<void> => {
-  try {
-    // This would typically be handled by your backend
-    // For now, we'll just schedule a local notification if the user is the recipient
-    const notification: NotificationData = {
-      type: 'friend_request',
-      id: fromUserId,
-      title: 'New Friend Request',
-      body: `${fromUserName} wants to be your friend`,
-      data: { fromUserId, toUserId },
-    };
-
-    await scheduleLocalNotification(notification);
-  } catch (error) {
-    console.error('Error sending friend request notification:', error);
-  }
-};
-
 /**
  * Send an event reminder notification
  */
@@ -679,18 +633,6 @@ export const sendGroupRequestNotification = async (
       console.error('Error storing notifications:', insertError);
     }
 
-    // Send push notifications to each admin
-    const notification: NotificationData = {
-      type: 'group_request',
-      id: groupId || churchId,
-      title: 'New Group Request',
-      body: `${creatorName} has requested to create "${groupTitle}"`,
-      data: { churchId, groupTitle, creatorName, groupId },
-    };
-
-    // Schedule local notification for immediate display
-    await scheduleLocalNotification(notification);
-
     console.log('Group request notifications sent to', admins.length, 'admins');
   } catch (error) {
     console.error('Error sending group request notification:', error);
@@ -756,18 +698,6 @@ export const sendJoinRequestNotification = async (
       console.error('Error storing notifications:', insertError);
     }
 
-    // Send push notification to each leader
-    const notification: NotificationData = {
-      type: 'join_request',
-      id: groupId,
-      title: 'New Join Request',
-      body: `${requesterName} wants to join "${groupTitle}"`,
-      data: { groupId, groupTitle, requesterName, requesterId },
-    };
-
-    // Schedule local notification for immediate display
-    await scheduleLocalNotification(notification);
-
     console.log(
       'Join request notifications sent to',
       leaders.length,
@@ -777,12 +707,6 @@ export const sendJoinRequestNotification = async (
     console.error('Error sending join request notification:', error);
   }
 };
-
-/**
- * Enhanced notification service methods
- */
-
-// Enhanced notification trigger methods
 
 /**
  * Trigger friend request notification
@@ -797,7 +721,7 @@ export const triggerFriendRequestNotification = async (
       return; // User has disabled friend request notifications
     }
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.toUserId,
       type: 'friend_request_received',
       title: 'New Friend Request',
@@ -808,34 +732,6 @@ export const triggerFriendRequestNotification = async (
       },
       action_url: `/user/${data.fromUserId}`,
     });
-
-    if (notification) {
-      // Only schedule a local notification on this device if the
-      // current authenticated user is the recipient of the notification.
-      try {
-        const { data: authUser } = await supabase.auth.getUser();
-        if (authUser?.user?.id === data.toUserId) {
-          await scheduleLocalNotification({
-            type: 'friend_request_received',
-            id: notification.id,
-            title: notification.title,
-            body: notification.body,
-            data: notification.data,
-          });
-        }
-      } catch {}
-
-      // Remote push to recipient device(s)
-      await sendPushToUser(data.toUserId, {
-        title: 'New Friend Request',
-        body: `${data.fromUserName} wants to be your friend`,
-        data: {
-          type: 'friend_request_received',
-          id: notification.id,
-          ...notification.data,
-        },
-      });
-    }
   } catch (error) {
     console.error('Error triggering friend request notification:', error);
   }
@@ -856,7 +752,7 @@ export const triggerFriendRequestAcceptedNotification = async (
       return; // User has disabled friend request accepted notifications
     }
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.originalRequesterId,
       type: 'friend_request_accepted',
       title: 'Friend Request Accepted',
@@ -867,33 +763,6 @@ export const triggerFriendRequestAcceptedNotification = async (
       },
       action_url: `/user/${data.acceptedByUserId}`,
     });
-
-    if (notification) {
-      // Only schedule locally if the current user is the original requester
-      try {
-        const { data: authUser } = await supabase.auth.getUser();
-        if (authUser?.user?.id === data.originalRequesterId) {
-          await scheduleLocalNotification({
-            type: 'friend_request_accepted',
-            id: notification.id,
-            title: notification.title,
-            body: notification.body,
-            data: notification.data,
-          });
-        }
-      } catch {}
-
-      // Remote push to original requester device(s)
-      await sendPushToUser(data.originalRequesterId, {
-        title: 'Friend Request Accepted',
-        body: `${data.acceptedByUserName} accepted your friend request`,
-        data: {
-          type: 'friend_request_accepted',
-          id: notification.id,
-          ...notification.data,
-        },
-      });
-    }
   } catch (error) {
     console.error(
       'Error triggering friend request accepted notification:',
@@ -952,22 +821,8 @@ export const triggerGroupRequestSubmittedNotification = async (
       })
     );
 
-    // Schedule local notifications for admins with notifications enabled
-    const validNotifications = notifications.filter((n) => n !== null);
-    for (const notification of validNotifications) {
-      if (notification) {
-        await scheduleLocalNotification({
-          type: 'group_request_submitted',
-          id: notification.id,
-          title: notification.title,
-          body: notification.body,
-          data: notification.data,
-        });
-      }
-    }
-
     console.log(
-      `Group request notifications sent to ${validNotifications.length} admins`
+      `Group request notifications sent to ${notifications.length} admins`
     );
   } catch (error) {
     console.error(
@@ -990,7 +845,7 @@ export const triggerGroupRequestApprovedNotification = async (
       return; // User has disabled group request response notifications
     }
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.leaderId,
       type: 'group_request_approved',
       title: 'Group Request Approved',
@@ -1002,17 +857,6 @@ export const triggerGroupRequestApprovedNotification = async (
       },
       action_url: `/group/${data.groupId}`,
     });
-
-    if (notification) {
-      // Schedule local notification for immediate display
-      await scheduleLocalNotification({
-        type: 'group_request_approved',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      });
-    }
   } catch (error) {
     console.error(
       'Error triggering group request approved notification:',
@@ -1038,7 +882,7 @@ export const triggerGroupRequestDeniedNotification = async (
       ? `Your group "${data.groupTitle}" was declined by ${data.deniedByName}. Reason: ${data.reason}`
       : `Your group "${data.groupTitle}" was declined by ${data.deniedByName}`;
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.leaderId,
       type: 'group_request_denied',
       title: 'Group Request Declined',
@@ -1051,17 +895,6 @@ export const triggerGroupRequestDeniedNotification = async (
       },
       action_url: `/group/${data.groupId}`,
     });
-
-    if (notification) {
-      // Schedule local notification for immediate display
-      await scheduleLocalNotification({
-        type: 'group_request_denied',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      });
-    }
   } catch (error) {
     console.error('Error triggering group request denied notification:', error);
   }
@@ -1100,7 +933,7 @@ export const triggerJoinRequestReceivedNotification = async (
     );
 
     console.log(
-      `Join request notifications sent to ${validNotifications.length} leaders`
+      `Join request notifications sent to ${notifications.length} leaders`
     );
   } catch (error) {
     console.error(
@@ -1123,7 +956,7 @@ export const triggerJoinRequestApprovedNotification = async (
       return; // User has disabled join request response notifications
     }
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.requesterId,
       type: 'join_request_approved',
       title: 'Join Request Approved',
@@ -1135,27 +968,6 @@ export const triggerJoinRequestApprovedNotification = async (
       },
       action_url: `/group/${data.groupId}`,
     });
-
-    if (notification) {
-      // Local for requester if on this device
-      await scheduleLocalNotification({
-        type: 'join_request_approved',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      });
-      // Remote push to requester
-      await sendPushToUser(data.requesterId, {
-        title: notification.title,
-        body: notification.body,
-        data: {
-          type: 'join_request_approved',
-          id: notification.id,
-          ...notification.data,
-        },
-      });
-    }
   } catch (error) {
     console.error(
       'Error triggering join request approved notification:',
@@ -1177,7 +989,7 @@ export const triggerJoinRequestDeniedNotification = async (
       return; // User has disabled join request response notifications
     }
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.requesterId,
       type: 'join_request_denied',
       title: 'Join Request Declined',
@@ -1189,27 +1001,6 @@ export const triggerJoinRequestDeniedNotification = async (
       },
       action_url: `/group/${data.groupId}`,
     });
-
-    if (notification) {
-      // Local for requester if on this device
-      await scheduleLocalNotification({
-        type: 'join_request_denied',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      });
-      // Remote push to requester
-      await sendPushToUser(data.requesterId, {
-        title: notification.title,
-        body: notification.body,
-        data: {
-          type: 'join_request_denied',
-          id: notification.id,
-          ...notification.data,
-        },
-      });
-    }
   } catch (error) {
     console.error('Error triggering join request denied notification:', error);
   }
@@ -1239,17 +1030,6 @@ export const triggerReferralAcceptedNotification = async (
       },
       action_url: `/user/${data.referredUserId}`,
     });
-
-    if (notification) {
-      // Schedule local notification for immediate display
-      await scheduleLocalNotification({
-        type: 'referral_accepted',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      });
-    }
   } catch (error) {
     console.error('Error triggering referral accepted notification:', error);
   }
@@ -1281,17 +1061,6 @@ export const triggerReferralJoinedGroupNotification = async (
       },
       action_url: `/group/${data.groupId}`,
     });
-
-    if (notification) {
-      // Schedule local notification for immediate display
-      await scheduleLocalNotification({
-        type: 'referral_joined_group',
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      });
-    }
   } catch (error) {
     console.error(
       'Error triggering referral joined group notification:',
