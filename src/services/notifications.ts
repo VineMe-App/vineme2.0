@@ -581,134 +581,6 @@ export const getAdminNotificationCounts = async (userId: string) => {
 };
 
 /**
- * Send group creation request notification to church admins
- */
-export const sendGroupRequestNotification = async (
-  churchId: string,
-  groupTitle: string,
-  creatorName: string,
-  groupId?: string
-): Promise<void> => {
-  try {
-    // Get all church admins
-    const { data: admins, error } = await supabase
-      .from('users')
-      .select('id, name, roles')
-      .eq('church_id', churchId)
-      .contains('roles', ['church_admin']);
-
-    if (error) {
-      console.error('Error fetching church admins:', error);
-      return;
-    }
-
-    if (!admins || admins.length === 0) {
-      console.warn('No church admins found for notification');
-      return;
-    }
-
-    // Create notification record in database for each admin
-    const notifications = admins.map((admin) => ({
-      user_id: admin.id,
-      type: 'group_request' as const,
-      title: 'New Group Request',
-      body: `${creatorName} has requested to create "${groupTitle}"`,
-      data: {
-        churchId,
-        groupTitle,
-        creatorName,
-        groupId: groupId || churchId,
-        action_url: '/admin/manage-groups',
-      },
-      read: false,
-      created_at: new Date().toISOString(),
-    }));
-
-    // Store notifications in database
-    const { error: insertError } = await supabase
-      .from('notifications')
-      .insert(notifications);
-
-    if (insertError) {
-      console.error('Error storing notifications:', insertError);
-    }
-
-    console.log('Group request notifications sent to', admins.length, 'admins');
-  } catch (error) {
-    console.error('Error sending group request notification:', error);
-  }
-};
-
-/**
- * Send join request notification to group leaders
- */
-export const sendJoinRequestNotification = async (
-  groupId: string,
-  groupTitle: string,
-  requesterName: string,
-  requesterId?: string
-): Promise<void> => {
-  try {
-    // Get all group leaders
-    const { data: leaders, error } = await supabase
-      .from('group_memberships')
-      .select(
-        `
-        user_id,
-        user:users(id, first_name, last_name)
-      `
-      )
-      .eq('group_id', groupId)
-      .eq('role', 'leader')
-      .eq('status', 'active');
-
-    if (error) {
-      console.error('Error fetching group leaders:', error);
-      return;
-    }
-
-    if (!leaders || leaders.length === 0) {
-      console.warn('No group leaders found for notification');
-      return;
-    }
-
-    // Create notification record in database for each leader
-    const notifications = leaders.map((leader) => ({
-      user_id: leader.user_id,
-      type: 'join_request_received' as const,
-      title: 'New Join Request',
-      body: `${requesterName} wants to join "${groupTitle}"`,
-      data: {
-        groupId,
-        groupTitle,
-        requesterName,
-        requesterId,
-      },
-      action_url: `/group/${groupId}`,
-      read: false,
-      created_at: new Date().toISOString(),
-    }));
-
-    // Store notifications in database
-    const { error: insertError } = await supabase
-      .from('notifications')
-      .insert(notifications);
-
-    if (insertError) {
-      console.error('Error storing notifications:', insertError);
-    }
-
-    console.log(
-      'Join request notifications sent to',
-      leaders.length,
-      'leaders'
-    );
-  } catch (error) {
-    console.error('Error sending join request notification:', error);
-  }
-};
-
-/**
  * Trigger friend request notification
  */
 export const triggerFriendRequestNotification = async (
@@ -1019,7 +891,7 @@ export const triggerReferralAcceptedNotification = async (
       return; // User has disabled referral notifications
     }
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.referrerId,
       type: 'referral_accepted',
       title: 'Referral Accepted',
@@ -1048,7 +920,7 @@ export const triggerReferralJoinedGroupNotification = async (
       return; // User has disabled referral notifications
     }
 
-    const notification = await createNotification({
+    await createNotification({
       user_id: data.referrerId,
       type: 'referral_joined_group',
       title: 'Referral Joined Group',
