@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { supabase } from '@/services/supabase';
-import { Button } from '@/components/ui/Button';
+import { AuthHero } from '@/components/auth/AuthHero';
+import { AuthButton } from '@/components/auth/AuthButton';
+import { Text } from '@/components/ui/Text';
+
+const generateTemporaryPassword = () => {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < 16; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};
 
 export default function EmailStep({
   data,
@@ -39,42 +51,64 @@ export default function EmailStep({
       return;
     }
 
-    setError(null);
-    // Link email to auth.user; auth enforces global uniqueness
+    const trimmed = email.trim();
+
     if (
-      !user?.email ||
-      user.email.toLowerCase() !== email.trim().toLowerCase()
+      user?.email &&
+      user.email.toLowerCase() === trimmed.toLowerCase()
     ) {
-      const { error: linkErr } = await supabase.auth.updateUser({
-        email: email.trim(),
-      });
-      if (linkErr) {
-        // Surface a friendlier message for uniqueness
-        const msg = linkErr.message.toLowerCase();
-        if (
-          msg.includes('already') ||
-          msg.includes('exists') ||
-          msg.includes('registered')
-        ) {
-          setError('This email is already in use');
-        } else {
-          setError(linkErr.message);
-        }
-        return;
+      onNext({});
+      return;
+    }
+
+    setError(null);
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: trimmed,
+      password: generateTemporaryPassword(),
+      options: {
+        emailRedirectTo: 'vineme://auth/verify-email',
+      },
+    });
+
+    if (signUpError) {
+      const msg = signUpError.message.toLowerCase();
+      if (
+        msg.includes('already') ||
+        msg.includes('exists') ||
+        msg.includes('registered')
+      ) {
+        setError('This email is already in use');
+      } else if (msg.includes('email plus password')) {
+        setError('Email signups are currently disabled.');
+      } else {
+        setError(signUpError.message);
       }
+      return;
+    }
+
+    if (!data.user) {
+      setError('Error sending verification email. Please try again.');
+      return;
     }
 
     onNext({});
   };
 
+  const disableContinue = !email.trim() || isLoading;
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>What's your email?</Text>
-        <Text style={styles.subtitle}>
-          We use your email for account recovery and updates
-        </Text>
-        <View style={styles.inputContainer}>
+        <AuthHero
+          title="What’s your email?"
+          subtitle="We use your email for account recovery and updates."
+          containerStyle={styles.heroSpacing}
+        />
+        <View style={styles.inputGroup}>
+          <Text variant="labelSmall" color="secondary" style={styles.label}>
+            Email address
+          </Text>
           <TextInput
             style={[styles.input, error ? styles.inputError : null]}
             value={email}
@@ -83,70 +117,82 @@ export default function EmailStep({
               if (error) setError(null);
             }}
             placeholder="you@example.com"
-            placeholderTextColor="#666"
+            placeholderTextColor="#B4B4B4"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
             editable={!isLoading}
+            returnKeyType="done"
+            textContentType="emailAddress"
           />
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error && (
+            <Text variant="bodySmall" color="error" style={styles.errorText}>
+              {error}
+            </Text>
+          )}
         </View>
       </View>
 
       <View style={styles.footer}>
-        <Button
-          title="Back"
-          variant="ghost"
-          onPress={onBack}
-          disabled={!canGoBack || isLoading}
-          fullWidth
-        />
-        <Button
-          title="Continue"
+        <View style={styles.footerSpacer} />
+        <AuthButton
+          title="Next"
           onPress={handleNext}
           loading={isLoading}
-          disabled={!email.trim() || isLoading}
-          variant="primary"
-          fullWidth
+          disabled={disableContinue}
         />
+        <TouchableOpacity onPress={onBack} accessibilityRole="button">
+          <Text variant="body" color="secondary" align="center">
+            Back
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'space-between', padding: 24 },
-  content: { flex: 1, justifyContent: 'center' },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 12,
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 48,
-    lineHeight: 22,
+  content: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  inputContainer: { marginBottom: 24 },
+  heroSpacing: {
+    marginBottom: 32,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    color: '#2C2235',
+  },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
     borderRadius: 12,
-    padding: 16,
-    fontSize: 18,
-    backgroundColor: '#f9f9f9',
-    textAlign: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    backgroundColor: '#FFFFFF',
+    color: '#2C2235',
   },
-  inputError: { borderColor: '#ff4444' },
+  inputError: {
+    borderColor: '#ff4444',
+  },
   errorText: {
-    color: '#ff4444',
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
+    marginTop: 4,
   },
-  footer: { gap: 12 },
+  footer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  footerSpacer: {
+    height: 32,
+  },
 });
