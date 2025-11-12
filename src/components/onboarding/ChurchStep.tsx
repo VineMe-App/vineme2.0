@@ -17,10 +17,12 @@ import {
   MissingServiceFormData,
 } from './MissingServiceModal';
 import { useAuthStore } from '@/stores/auth';
-import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { getFullName, getDisplayName } from '@/utils/name';
 import { supabase } from '@/services/supabase';
+import { AuthHero } from '@/components/auth/AuthHero';
+import { AuthButton } from '@/components/auth/AuthButton';
+import { Text as AppText } from '@/components/ui/Text';
 
 export default function ChurchStep({
   data,
@@ -446,17 +448,12 @@ export default function ChurchStep({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.content}>
-        <Text style={styles.title}>Select your church</Text>
-        <Text style={styles.subtitle}>
-          This helps us show you relevant groups and events
-        </Text>
+        <AuthHero
+          title="Which church do you attend?"
+          subtitle="Choose your church and service so we can tailor VineMe to you."
+          containerStyle={styles.heroSpacing}
+        />
 
         <FlatList
           data={churches}
@@ -465,7 +462,6 @@ export default function ChurchStep({
           style={styles.churchList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.churchListContent}
-          scrollEnabled={false}
           ListFooterComponent={() => (
             <View style={styles.listFooter}>
               <TouchableOpacity
@@ -479,7 +475,7 @@ export default function ChurchStep({
                     Can&apos;t find your church?
                   </Text>
                   <Text style={styles.missingChurchSubtitle}>
-                    Share the details and we&apos;ll add it to VineMe.
+                    Share the details and we&apos;ll add it soon.
                   </Text>
                 </View>
                 <View style={styles.missingChurchIcon}>
@@ -507,21 +503,18 @@ export default function ChurchStep({
       </View>
 
       <View style={styles.footer}>
-        <Button
-          title="Back"
-          variant="ghost"
-          onPress={onBack}
-          disabled={!canGoBack || isLoading}
-          fullWidth
-        />
-        <Button
-          title="Continue"
+        <View style={styles.footerSpacer} />
+        <AuthButton
+          title="Next"
           onPress={handleNext}
           loading={isLoading}
           disabled={!selectedChurchId || !selectedServiceId || isLoading}
-          variant="primary"
-          fullWidth
         />
+        <TouchableOpacity onPress={onBack} accessibilityRole="button">
+          <AppText variant="body" color="secondary" align="center">
+            Back
+          </AppText>
+        </TouchableOpacity>
         {noServicesAvailable && (
           <Text style={styles.serviceRequiredNotice}>
             A service is required to finish onboarding. Once a service is
@@ -566,6 +559,9 @@ export default function ChurchStep({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   loadingContainer: {
     flex: 1,
@@ -609,41 +605,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  header: {
-    padding: 24,
-    paddingBottom: 0,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
   content: {
     flex: 1,
-    padding: 24,
-    paddingTop: 12,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 22,
+  heroSpacing: {
+    marginTop: 16,
+    marginBottom: 24,
   },
   churchList: {
     flex: 1,
   },
   churchListContent: {
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   churchCard: {
     borderWidth: 1,
@@ -811,9 +784,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   footer: {
-    padding: 24,
-    paddingTop: 16,
-    gap: 12,
+    alignItems: 'center',
+    width: '100%',
+  },
+  footerSpacer: {
+    height: 32,
   },
   pendingNotice: {
     marginTop: 12,
