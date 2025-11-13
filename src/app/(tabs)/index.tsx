@@ -10,7 +10,7 @@ import {
 import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '../../stores/auth';
 import { router } from 'expo-router';
-import { useUpcomingEvents } from '../../hooks/useEvents';
+// import { useUpcomingEvents } from '../../hooks/useEvents'; // Events disabled - keeping for future use
 import { useUserGroupMemberships } from '../../hooks/useUsers';
 import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import {
@@ -21,7 +21,6 @@ import {
 import { GroupCard } from '../../components/groups/GroupCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { Card } from '../../components/ui/Card';
 import { FriendRequestNotifications } from '../../components/friends/FriendRequestNotifications';
 import { ConnectSomeoneSection } from '../../components/referrals/ConnectSomeoneSection';
 import { Ionicons } from '@expo/vector-icons';
@@ -345,34 +344,6 @@ export default function HomeScreen() {
           onPress={() => router.push('/referral-landing')}
         />
 
-        {/* Small disclaimer about upcoming events (near bottom) */}
-        <TouchableOpacity
-          onPress={() => router.push('/(tabs)/events')}
-          activeOpacity={0.7}
-        >
-          <Card variant="filled" style={styles.eventsBanner}>
-            <View style={styles.eventsBannerRow}>
-              <Ionicons
-                name="information-circle-outline"
-                size={18}
-                color="#6b7280"
-              />
-              <Text
-                variant="body"
-                color="secondary"
-                style={styles.eventsBannerText}
-              >
-                Events are coming soon. Tap to learn more.
-              </Text>
-              <Ionicons
-                name="chevron-forward-outline"
-                size={18}
-                color="#6b7280"
-              />
-            </View>
-          </Card>
-        </TouchableOpacity>
-
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -477,22 +448,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#1a1a1a',
-  },
-  eventsBanner: {
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    overflow: 'hidden',
-    padding: 16,
-  },
-  eventsBannerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  eventsBannerText: {
-    color: '#374151',
-    flex: 1,
   },
   seeAllText: {
     // Typography handled by Text component variant
