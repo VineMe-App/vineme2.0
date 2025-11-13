@@ -64,12 +64,15 @@ export function OptimizedImage({
 
     let uri = source.uri;
 
-    // Add optimization parameters for supported services
-    if (
-      uri.includes('supabase') ||
-      uri.includes('cloudinary') ||
-      uri.includes('imagekit')
-    ) {
+    // Supabase Storage doesn't support image transformation via query parameters
+    // Skip optimization for Supabase URLs, but keep it for services that support it
+    if (uri.includes('supabase')) {
+      // Return Supabase URLs as-is without adding transformation params
+      return { uri };
+    }
+
+    // Add optimization parameters for supported services (Cloudinary, ImageKit, etc.)
+    if (uri.includes('cloudinary') || uri.includes('imagekit')) {
       const url = new URL(uri);
 
       // Calculate optimal dimensions

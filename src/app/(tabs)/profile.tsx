@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
@@ -23,6 +22,7 @@ import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
@@ -447,9 +447,11 @@ export default function ProfileScreen() {
                 onPress={() => setImageModalVisible(false)}
                 activeOpacity={1}
               >
-                <Image
+                <OptimizedImage
                   source={{ uri: userProfile.avatar_url }}
                   style={styles.modalImage}
+                  quality="high"
+                  lazy={false}
                   resizeMode="contain"
                 />
               </TouchableOpacity>

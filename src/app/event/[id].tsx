@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   Linking,
   Alert,
@@ -22,6 +21,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/Button';
 import { formatDateTime, isToday } from '../../utils/helpers';
 import { shareEvent } from '../../utils/deepLinking';
+import { OptimizedImage } from '../../components/ui/OptimizedImage';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -214,7 +214,13 @@ export default function EventDetailScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {event.image_url && (
-        <Image source={{ uri: event.image_url }} style={styles.heroImage} />
+        <OptimizedImage
+          source={{ uri: event.image_url }}
+          style={styles.heroImage}
+          quality="medium"
+          lazy={false}
+          resizeMode="cover"
+        />
       )}
 
       <View style={styles.content}>
