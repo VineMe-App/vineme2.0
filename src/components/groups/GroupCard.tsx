@@ -260,6 +260,20 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 </Text>
               </View>
             )}
+
+            {/* Church and Service */}
+            {churchAndServiceLabel && (
+              <View style={styles.detailRow}>
+                <Ionicons name="business-outline" size={16} color="#2C2235" />
+                <Text
+                  variant="bodySmall"
+                  weight="medium"
+                  style={styles.detailText}
+                >
+                  {churchAndServiceLabel}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
