@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { FriendsList } from './FriendsList';
 import { FriendSearch } from './FriendSearch';
 import { useTheme } from '../../theme/provider/useTheme';
@@ -55,6 +56,18 @@ export function FriendManagementModal({
       console.error('Error refreshing friends data:', error);
     }
   };
+
+  const handleViewProfile = useCallback(
+    (profileId: string) => {
+      if (!profileId) return;
+      onClose();
+      const delay = Platform.OS === 'ios' ? 350 : 50;
+      setTimeout(() => {
+        router.push(`/user/${profileId}`);
+      }, delay);
+    },
+    [onClose]
+  );
 
   useEffect(() => {
     Animated.timing(slideAnimation, {
@@ -207,7 +220,7 @@ export function FriendManagementModal({
 
         <View style={styles.content}>
           {activeTab === 'friends' ? (
-            <FriendsList userId={userId} />
+            <FriendsList userId={userId} onViewProfile={handleViewProfile} />
           ) : (
             <FriendSearch />
           )}

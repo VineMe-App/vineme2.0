@@ -16,12 +16,14 @@ interface FriendCardProps {
   friendship: FriendshipWithUser;
   onRemoveFriend?: (friendId: string) => void;
   showActions?: boolean;
+  onViewProfile?: (userId: string) => void;
 }
 
 export function FriendCard({
   friendship,
   onRemoveFriend,
   showActions = true,
+  onViewProfile,
 }: FriendCardProps) {
   const friend = friendship.friend;
 
@@ -37,7 +39,11 @@ export function FriendCard({
 
   const handleCardPress = () => {
     if (friend?.id) {
-      router.push(`/user/${friend.id}`);
+      if (onViewProfile) {
+        onViewProfile(friend.id);
+      } else {
+        router.push(`/user/${friend.id}`);
+      }
     }
   };
 

@@ -18,6 +18,7 @@ interface FriendRequestCardProps {
   onReject?: (friendshipId: string) => void;
   onCancel?: (friendship: FriendshipWithUser) => void;
   isLoading?: boolean;
+  onViewProfile?: (userId: string) => void;
 }
 
 export function FriendRequestCard({
@@ -27,6 +28,7 @@ export function FriendRequestCard({
   onReject,
   onCancel,
   isLoading = false,
+  onViewProfile,
 }: FriendRequestCardProps) {
   // For received requests, show the sender (user)
   // For sent requests, show the recipient (friend)
@@ -61,7 +63,11 @@ export function FriendRequestCard({
 
   const handleCardPress = () => {
     if (displayUser?.id) {
-      router.push(`/user/${displayUser.id}`);
+      if (onViewProfile) {
+        onViewProfile(displayUser.id);
+      } else {
+        router.push(`/user/${displayUser.id}`);
+      }
     }
   };
 
