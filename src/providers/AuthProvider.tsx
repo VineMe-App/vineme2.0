@@ -29,7 +29,10 @@ interface AuthContextType {
     code: string,
     type: 'sms' | 'email'
   ) => Promise<{ success: boolean; error?: string; user?: User }>;
-  linkEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
+  linkEmail: (
+    email: string,
+    options?: { emailRedirectTo?: string }
+  ) => Promise<{ success: boolean; error?: string }>;
   linkPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   loadUserProfile: () => Promise<void>;

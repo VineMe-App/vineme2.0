@@ -49,6 +49,9 @@ const buildJoinRequestMessage = (
   return `Your request to join ${groupTitle} has been sent to ${formattedLeaders}. They will be in touch.`;
 };
 
+// Consistent minimum height for all group cards on "my groups" page
+const MY_GROUPS_CARD_MIN_HEIGHT = 250;
+
 export default function HomeScreen() {
   const { user, userProfile, loadUserProfile } = useAuthStore();
   const { theme } = useTheme();
@@ -273,7 +276,7 @@ export default function HomeScreen() {
                     membershipStatus={membership.role}
                     currentUserId={userProfile?.id}
                     onPress={() => router.push(`/group/${membership.group.id}`)}
-                    style={{ width: 260, minHeight: 250, marginHorizontal: 0 }}
+                    style={{ width: 260, minHeight: MY_GROUPS_CARD_MIN_HEIGHT, marginHorizontal: 0 }}
                     variant="my-groups"
                   />
                 </View>
@@ -300,7 +303,7 @@ export default function HomeScreen() {
                         onPress={undefined}
                         style={{
                           width: 260,
-                          minHeight: 374,
+                          minHeight: MY_GROUPS_CARD_MIN_HEIGHT,
                           marginHorizontal: 0,
                         }}
                         pendingLabel="Join request pending"

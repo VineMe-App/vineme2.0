@@ -42,7 +42,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
       {...rest}
       variant="ghost"
       fullWidth={fullWidth}
-      disabled={disabled}
+      disabled={isDisabled}
       loading={loading}
       style={containerStyles as ViewStyle}
       textStyle={labelStyles as TextStyle}

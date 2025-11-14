@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { User } from '@supabase/supabase-js';
-import type { DatabaseUser } from '../types/database';
+import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { authService } from '../services/auth';
 import { getFullName } from '../utils/name';
 import { setDeletionFlowActive } from '../utils/errorSuppression';
@@ -8,7 +8,7 @@ import { setDeletionFlowActive } from '../utils/errorSuppression';
 interface AuthState {
   // State
   user: User | null;
-  userProfile: DatabaseUser | null;
+  userProfile: UserWithDetails | null;
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
@@ -28,7 +28,10 @@ interface AuthState {
     code: string,
     type: 'sms' | 'email'
   ) => Promise<{ success: boolean; error?: string; user?: User }>;
-  linkEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
+  linkEmail: (
+    email: string,
+    options?: { emailRedirectTo?: string }
+  ) => Promise<{ success: boolean; error?: string }>;
   linkPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   loadUserProfile: () => Promise<void>;
@@ -151,10 +154,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  linkEmail: async (email: string) => {
+  linkEmail: async (
+    email: string,
+    options?: { emailRedirectTo?: string }
+  ) => {
     set({ isLoading: true, error: null });
     try {
-      const result = await authService.linkEmail(email);
+      const result = await authService.linkEmail(email, options);
       set({ isLoading: false });
       if (!result.success && result.error) {
         set({ error: result.error });

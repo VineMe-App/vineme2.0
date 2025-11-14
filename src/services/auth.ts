@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { secureStorage, SECURE_STORAGE_KEYS } from '../utils/secureStorage';
 import { permissionService } from './permissions';
 import type { User } from '@supabase/supabase-js';
-import type { DatabaseUser } from '../types/database';
+import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { handleSupabaseError, retryWithBackoff } from '../utils/errorHandling';
 
 export interface AuthResponse {
@@ -78,8 +78,9 @@ export class AuthService {
 
   /**
    * Get the current user's profile from the users table
+   * Includes related church and service objects
    */
-  async getCurrentUserProfile(): Promise<DatabaseUser | null> {
+  async getCurrentUserProfile(): Promise<UserWithDetails | null> {
     try {
       const user = await this.getCurrentUser();
       if (!user) return null;
@@ -98,7 +99,7 @@ export class AuthService {
 
       if (error) return null;
 
-      return data || null;
+      return (data as unknown as UserWithDetails) || null;
     } catch (error) {
       console.error('Error getting user profile:', error);
       return null;
@@ -739,18 +740,45 @@ export class AuthService {
   }
 
   /**
-   * Link email to existing phone-authenticated user (no verification required)
+   * Link email to existing phone-authenticated user
+   * Updates the current authenticated user's email address.
+   * Supabase automatically sends a verification email to the new address.
+   * 
+   * Note: The redirect URL for email verification is configured at the project level
+   * in Supabase dashboard. If a custom redirect URL is needed, it should be configured
+   * in the Supabase project settings (Authentication > URL Configuration).
    */
   async linkEmail(
-    email: string
+    email: string,
+    options?: { emailRedirectTo?: string }
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      // Update the user's email address
+      // Supabase automatically sends a verification email when email is updated
+      // The redirect URL is configured at the project level in Supabase dashboard
       const { error } = await supabase.auth.updateUser({ email });
 
       if (error) {
+        // Handle specific error cases
+        const errorMsg = error.message.toLowerCase();
+        if (
+          errorMsg.includes('already') ||
+          errorMsg.includes('exists') ||
+          errorMsg.includes('registered') ||
+          errorMsg.includes('already registered') ||
+          errorMsg.includes('already in use')
+        ) {
+          return {
+            success: false,
+            error: 'This email is already in use by another account',
+          };
+        }
         return { success: false, error: error.message };
       }
 
+      // Email successfully updated and verification email sent automatically
+      // Note: options.emailRedirectTo is kept for API compatibility but redirect URL
+      // should be configured at the project level in Supabase dashboard
       return { success: true };
     } catch (error) {
       return {
