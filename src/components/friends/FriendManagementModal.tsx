@@ -5,11 +5,11 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  SafeAreaView,
   Animated,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FriendsList } from './FriendsList';
 import { FriendSearch } from './FriendSearch';
 import { useTheme } from '../../theme/provider/useTheme';
@@ -79,7 +79,9 @@ export function FriendManagementModal({
       <SafeAreaView
         style={[
           styles.container,
-          { backgroundColor: theme.colors.background.primary },
+          {
+            backgroundColor: theme.colors.background.primary,
+          },
         ]}
       >
         <View
