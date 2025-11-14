@@ -19,12 +19,11 @@ import {
   useUploadAvatar,
   useDeleteAvatar,
 } from '@/hooks/useUsers';
-import { useFriends, useReceivedFriendRequests } from '@/hooks/useFriendships';
+import { useFriends } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { FriendRequestNotifications } from '@/components/friends/FriendRequestNotifications';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
 import { useTheme } from '@/theme/provider/useTheme';
 import { getDisplayName, getFullName } from '@/utils/name';
@@ -52,10 +51,9 @@ export default function ProfileScreen() {
 
   // Use the new friendship hooks for better data management
   const friendsQuery = useFriends(user?.id);
-  const receivedRequestsQuery = useReceivedFriendRequests(user?.id);
 
   const isLoading =
-    profileLoading || friendsQuery.isLoading || receivedRequestsQuery.isLoading;
+    profileLoading || friendsQuery.isLoading;
 
   const profileFullName = getFullName(userProfile);
   const profileShortName = getDisplayName(userProfile, { fallback: 'full' });
@@ -64,7 +62,6 @@ export default function ProfileScreen() {
     await Promise.all([
       refetchProfile(),
       friendsQuery.refetch(),
-      receivedRequestsQuery.refetch(),
     ]);
   };
 
@@ -328,12 +325,6 @@ export default function ProfileScreen() {
                 </Text>
               ) : null}
             </View>
-
-            {/* Friend Request Notifications */}
-            <FriendRequestNotifications
-              requests={(receivedRequestsQuery.data as any[]) || []}
-              onPress={() => setShowFriendsModal(true)}
-            />
 
             <View style={styles.infoSection}>
               <Text variant="h4" style={styles.sectionTitle}>
