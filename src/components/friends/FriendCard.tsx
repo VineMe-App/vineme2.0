@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  type GestureResponderEvent,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Avatar } from '../ui/Avatar';
 import { getDisplayName, getFullName } from '@/utils/name';
@@ -29,40 +35,52 @@ export function FriendCard({
   });
   const fullName = getFullName(friend);
 
+  const handleCardPress = () => {
+    if (friend?.id) {
+      router.push(`/user/${friend.id}`);
+    }
+  };
+
   const handleRemoveFriend = () => {
     if (friend?.id) {
       onRemoveFriend?.(friend.id);
     }
   };
 
+  const handleActionPress = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    handleRemoveFriend();
+  };
+
   // Block user action removed
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.userInfo}
-        onPress={() => friend?.id && router.push(`/user/${friend.id}`)}
-        accessibilityRole="button"
-        accessibilityLabel={`View ${fullName || 'user'}'s profile`}
-      >
+    <TouchableOpacity
+      style={styles.container}
+      onPress={handleCardPress}
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${fullName || 'user'}'s profile`}
+    >
+      <View style={styles.userInfo}>
         <Avatar imageUrl={friend.avatar_url} name={fullName} size={50} />
         <View style={styles.textContainer}>
           <Text style={styles.name}>{shortName || fullName || 'Friend'}</Text>
           <Text style={styles.email}>{friend.email}</Text>
         </View>
-      </TouchableOpacity>
+      </View>
 
       {showActions && (
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.actionButton, styles.removeButton]}
-            onPress={handleRemoveFriend}
+            onPress={handleActionPress}
           >
             <Text style={styles.removeButtonText}>Remove</Text>
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 

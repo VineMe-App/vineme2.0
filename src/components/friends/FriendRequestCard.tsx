@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  type GestureResponderEvent,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Avatar } from '../ui/Avatar';
 import { getDisplayName, getFullName } from '@/utils/name';
@@ -48,19 +54,29 @@ export function FriendRequestCard({
     onCancel?.(friendship);
   };
 
+  const wrapAction = (fn?: () => void) => (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    fn?.();
+  };
+
+  const handleCardPress = () => {
+    if (displayUser?.id) {
+      router.push(`/user/${displayUser.id}`);
+    }
+  };
+
   const showCancel =
     type === 'sent' && friendship.status === 'pending' && !!onCancel;
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.userInfo}
-        onPress={() =>
-          displayUser?.id && router.push(`/user/${displayUser.id}`)
-        }
-        accessibilityRole="button"
-        accessibilityLabel={`View ${fullName || 'user'}'s profile`}
-      >
+    <TouchableOpacity
+      style={styles.container}
+      onPress={handleCardPress}
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${fullName || 'user'}'s profile`}
+    >
+      <View style={styles.userInfo}>
         <Avatar imageUrl={displayUser.avatar_url} name={fullName} size={50} />
         <View style={styles.textContainer}>
           <Text style={styles.name}>{shortName || fullName || 'User'}</Text>
@@ -69,21 +85,21 @@ export function FriendRequestCard({
             {type === 'received' ? 'Wants to be friends' : 'Request sent'}
           </Text>
         </View>
-      </TouchableOpacity>
+      </View>
 
       <View style={styles.actions}>
         {type === 'received' ? (
           <>
             <TouchableOpacity
               style={[styles.actionButton, styles.acceptButton]}
-              onPress={handleAccept}
+              onPress={wrapAction(handleAccept)}
               disabled={isLoading}
             >
               <Text style={styles.acceptButtonText}>Accept</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionButton, styles.rejectButton]}
-              onPress={handleReject}
+              onPress={wrapAction(handleReject)}
               disabled={isLoading}
             >
               <Text style={styles.rejectButtonText}>Decline</Text>
@@ -93,7 +109,7 @@ export function FriendRequestCard({
           showCancel && (
             <TouchableOpacity
               style={[styles.actionButton, styles.cancelButton]}
-              onPress={handleCancel}
+              onPress={wrapAction(handleCancel)}
               disabled={isLoading}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -101,7 +117,7 @@ export function FriendRequestCard({
           )
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
