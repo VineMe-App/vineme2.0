@@ -52,10 +52,13 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
 
 const styles = StyleSheet.create({
   baseButton: {
-    height: 44,
-    borderRadius: 22,
+    height: 42,
+    borderRadius: 21,
     paddingVertical: 0,
+    paddingHorizontal: 0,
     marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   primaryButton: {
     backgroundColor: '#2C2235',
@@ -72,6 +75,9 @@ const styles = StyleSheet.create({
   },
   baseLabel: {
     fontSize: 16,
+    textAlign: 'center',
+    includeFontPadding: false,
+    flexShrink: 0,
   },
   primaryLabel: {
     color: '#FFFFFF',

@@ -42,7 +42,13 @@ export default function PhoneSignUpScreen() {
     }
 
     try {
-      const phone = `${countryCode}${sanitizedLocalNumber}`;
+      // If UK number (+44) and 11 digits starting with 0, remove the leading 0
+      let processedNumber = sanitizedLocalNumber;
+      if (countryCode === '+44' && processedNumber.length === 11 && processedNumber.startsWith('0')) {
+        processedNumber = processedNumber.slice(1); // Remove leading 0
+      }
+      
+      const phone = `${countryCode}${processedNumber}`;
       setFullPhone(phone);
 
       const result = await signUpWithPhone(phone);
@@ -81,6 +87,11 @@ export default function PhoneSignUpScreen() {
     if (!result.success) {
       Alert.alert('Error', result.error || 'Failed to resend code');
     }
+  };
+
+  const handleBackToPhone = () => {
+    setStep('enter-phone');
+    setCode('');
   };
 
   const handleSignInWithEmail = () => {
@@ -177,21 +188,29 @@ export default function PhoneSignUpScreen() {
         </View>
       </View>
       <View style={styles.footer}>
-        <View style={styles.actions}>
-          <AuthButton
-            title="Verify"
-            onPress={handleVerify}
-            loading={isLoading}
-            disabled={code.length !== 6}
-          />
-        </View>
+        <View style={styles.footerSpacer} />
+        <AuthButton
+          title="Verify"
+          onPress={handleVerify}
+          loading={isLoading}
+          disabled={code.length !== 6}
+        />
+        <TouchableOpacity
+          onPress={handleBackToPhone}
+          accessibilityRole="button"
+          style={styles.backButton}
+        >
+          <Text variant="body" color="secondary" align="center">
+            Back
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={handleResendCode}
           disabled={isLoading}
           accessibilityRole="button"
         >
           <Text variant="body" weight="semiBold" style={styles.resendText}>
-            Didn’t receive a code? <Text style={styles.resendLink}>Resend</Text>
+            Didn't receive a code? <Text style={styles.resendLink}>Resend</Text>
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSignInWithEmail} accessibilityRole="link">
@@ -274,9 +293,8 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 32,
   },
-  actions: {
-    width: '100%',
-    marginBottom: 32,
+  footerSpacer: {
+    height: 32,
   },
   phoneField: {
     flexDirection: 'row',
@@ -329,7 +347,7 @@ const styles = StyleSheet.create({
   },
   resendText: {
     color: '#2C2235',
-    marginTop: 24,
+    marginTop: 32,
     textAlign: 'center',
   },
   resendLink: {
@@ -337,11 +355,15 @@ const styles = StyleSheet.create({
   },
   signInEmail: {
     color: '#1082FF',
-    marginTop: 12,
+    marginTop: 16,
     textAlign: 'center',
     textDecorationLine: 'underline',
   },
+  backButton: {
+    marginTop: 16,
+  },
   footer: {
+    alignItems: 'center',
     width: '100%',
     paddingBottom: 12,
     marginTop: 32,

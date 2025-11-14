@@ -188,15 +188,19 @@ export default function OnboardingFlow() {
 
       <View style={styles.progressContainer} testID="progress-container">
         <View style={styles.stepDots}>
-          {ONBOARDING_STEPS.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.stepDot,
-                index === currentStepIndex && styles.stepDotActive,
-              ]}
-            />
-          ))}
+          {ONBOARDING_STEPS.map((_, index) => {
+            const isCompleted = index < currentStepIndex;
+            const isActive = index === currentStepIndex;
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.stepDot,
+                  (isCompleted || isActive) && styles.stepDotActive,
+                ]}
+              />
+            );
+          })}
         </View>
       </View>
 
