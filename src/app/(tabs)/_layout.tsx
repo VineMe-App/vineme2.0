@@ -9,6 +9,7 @@ import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithB
 import { useNotificationBadge } from '@/hooks/useNotifications';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Custom header component for home tab with notification icon
 const HomeHeader = () => {
@@ -55,17 +56,28 @@ const ProfileTabIcon = ({ color, size }: { color: string; size: number }) => {
 
 export default function TabLayout() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  // Nudge bottom padding slightly to avoid marginal cutoff on Android
+  const androidBottomPadding = Math.max(insets.bottom + 4, 12);
+  const tabBarHeight =
+    Platform.OS === 'ios' ? 85 : 56 + androidBottomPadding;
+  const headerHeight = Platform.OS === 'ios' ? 60 + insets.top : 56 + insets.top;
 
   return (
     <Tabs
       screenOptions={{
+        safeAreaInsets: {
+          top: insets.top,
+          bottom: insets.bottom,
+        },
         tabBarActiveTintColor: theme.colors.primary[500],
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
           backgroundColor: 'transparent',
           borderTopWidth: 0,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 5,
-          height: Platform.OS === 'ios' ? 85 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 20 : androidBottomPadding,
+          paddingTop: Platform.OS === 'ios' ? 10 : 8,
+          height: tabBarHeight,
           justifyContent: 'space-around',
           position: 'absolute',
           elevation: Platform.OS === 'android' ? 8 : 0,
@@ -101,6 +113,8 @@ export default function TabLayout() {
           backgroundColor: 'transparent',
           borderBottomWidth: 0,
           elevation: Platform.OS === 'android' ? 8 : 0,
+           height: headerHeight,
+           paddingTop: insets.top,
           shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
           shadowOffset: {
             width: 0,
