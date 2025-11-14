@@ -35,6 +35,7 @@ import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '@/theme/provider/useTheme';
+import { Image } from 'react-native';
 
 export default function GroupsScreen() {
   const router = useRouter();
@@ -374,142 +375,85 @@ export default function GroupsScreen() {
           { backgroundColor: theme.colors.surface.primary },
         ]}
       >
-        <Text variant="h4" style={styles.title}>
-          Groups
-        </Text>
+        <View style={styles.headerLeft}>
+          <Image
+            source={require('../../../assets/figma-128-1563/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text variant="h4" weight="black" style={styles.title}>
+            Groups
+          </Text>
+        </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
-            onPress={() => setShowInfoModal(true)}
-            accessibilityLabel="Information about groups"
+            style={styles.figmaIconButton}
+            onPress={() => setShowSearch((s) => !s)}
+            accessibilityLabel="Search groups"
           >
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={theme.colors.primary[500]}
-            />
+            <View style={[styles.iconButtonInner, styles.searchButtonInner]}>
+              <Ionicons
+                name="search-outline"
+                size={16}
+                color="#FFFFFF"
+              />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              {
-                backgroundColor:
-                  currentView === 'map'
-                    ? theme.colors.primary[500]
-                    : theme.colors.secondary[100],
-              },
-            ]}
+            style={styles.figmaIconButton}
             onPress={() =>
               handleViewChange(currentView === 'list' ? 'map' : 'list')
             }
             accessibilityLabel={`Switch to ${currentView === 'list' ? 'map' : 'list'} view`}
           >
-            <Ionicons
-              name={currentView === 'list' ? 'map-outline' : 'list-outline'}
-              size={16}
-              color={
-                currentView === 'map'
-                  ? theme.colors.secondary[100]
-                  : theme.colors.primary[500]
-              }
-            />
-            <Text
-              variant="caption"
-              style={{
-                color:
-                  currentView === 'map'
-                    ? theme.colors.secondary[100]
-                    : theme.colors.primary[500],
-                marginLeft: 4,
-                fontSize: 12,
-                fontWeight: '500',
-              }}
-            >
-              {currentView === 'list' ? 'Map' : 'List'}
-            </Text>
+            <View style={styles.iconButtonInner}>
+              <Ionicons
+                name={currentView === 'list' ? 'map-outline' : 'list-outline'}
+                size={16}
+                color="#2C2235"
+              />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
-            onPress={() => setShowSearch((s) => !s)}
-          >
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color={theme.colors.primary[500]}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
+            style={styles.figmaIconButton}
             onPress={() => setShowFilterPanel(true)}
+            accessibilityLabel="Filter groups"
           >
-            <Ionicons
-              name="funnel-outline"
-              size={20}
-              color={theme.colors.primary[500]}
-            />
-            {getActiveFiltersCount(filters) > 0 && (
-              <View style={styles.badge}>
-                <Text
-                  variant="caption"
-                  color="inverse"
-                  style={styles.badgeText}
-                >
-                  {getActiveFiltersCount(filters)}
-                </Text>
-              </View>
-            )}
+            <View style={styles.iconButtonInner}>
+              <Ionicons
+                name="funnel-outline"
+                size={16}
+                color="#2C2235"
+              />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.iconButton,
-              {
-                backgroundColor: currentView === 'map'
-                  ? theme.colors.secondary[200] // Grayed out when disabled
-                  : sortBy !== 'alphabetical'
-                  ? theme.colors.primary[500] // Pink when sorted
-                  : theme.colors.secondary[100], // Green when not sorted
-                opacity: currentView === 'map' ? 0.5 : 1, // Dimmed when disabled
-              },
-            ]}
+            style={styles.figmaIconButton}
             onPress={() => currentView !== 'map' && setShowSortOptions((s) => !s)}
-            accessibilityLabel={currentView === 'map' ? 'Sort not available in map view' : 'Sort options'}
+            accessibilityLabel="Sort options"
             disabled={currentView === 'map'}
           >
-            <Ionicons
-              name="swap-vertical-outline"
-              size={20}
-              color={
-                currentView === 'map'
-                  ? theme.colors.text.secondary // Grayed out when disabled
-                  : sortBy !== 'alphabetical'
-                  ? theme.colors.secondary[100] // Green when sorted
-                  : theme.colors.primary[500] // Pink when not sorted
-              }
-            />
+            <View style={[styles.iconButtonInner, currentView === 'map' && styles.iconButtonDisabled]}>
+              <Ionicons
+                name="swap-vertical-outline"
+                size={20}
+                color={currentView === 'map' ? '#8B8A8C' : '#2C2235'}
+              />
+            </View>
           </TouchableOpacity>
           {userProfile?.church_id && (
             <TouchableOpacity
-              style={[
-                styles.iconButton,
-                { backgroundColor: theme.colors.secondary[100] },
-              ]}
+              style={styles.figmaIconButton}
               onPress={handleCreateGroup}
               accessibilityLabel="Create group"
             >
-              <Ionicons
-                name="add-outline"
-                size={22}
-                color={theme.colors.primary[500]}
-              />
+              <View style={styles.iconButtonInner}>
+                <Ionicons
+                  name="add-outline"
+                  size={24}
+                  color="#2C2235"
+                />
+              </View>
             </TouchableOpacity>
           )}
         </View>
@@ -740,16 +684,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   compactHeader: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 19,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 60,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logo: {
+    width: 27,
+    height: 27,
   },
   title: {
-    color: '#1f2937',
+    color: '#2C2235',
+    fontSize: 22,
+    letterSpacing: -1.1,
   },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  figmaIconButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconButtonInner: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F9FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchButtonInner: {
+    backgroundColor: '#FF0083',
+  },
+  iconButtonDisabled: {
+    opacity: 0.5,
+  },
   iconButton: {
     width: 34,
     height: 34,
@@ -787,6 +768,7 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingBottom: 16,
+    paddingHorizontal: 0,
   },
   loadingContainer: {
     flex: 1,

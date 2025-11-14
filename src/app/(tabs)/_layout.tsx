@@ -151,12 +151,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarLabel: 'Home',
-          headerTitle: () => <HomeHeader />,
-          headerTitleAlign: 'left',
-          headerTitleContainerStyle: {
-            left: 0,
-            right: 0,
-          },
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),

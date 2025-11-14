@@ -4,10 +4,11 @@ import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { getFullName } from '../utils/name';
 
 // Conditionally import FileSystem - not available in Expo Go
+// Using legacy API to avoid deprecation warnings
 // Using try-catch to gracefully handle when the module isn't available
 let FileSystem: any = null;
 try {
-  FileSystem = require('expo-file-system');
+  FileSystem = require('expo-file-system/legacy');
 } catch (error) {
   // FileSystem not available (likely Expo Go) - will be handled at runtime
   console.log(
@@ -92,7 +93,10 @@ export class UserService {
         };
       }
 
-      // Call the RPC function to delete all user data
+      // Get the access token for the edge function call
+      const accessToken = session.session.access_token;
+
+      // Step 1: Call the RPC function to delete all user data from public schema
       const { data: rpcData, error: rpcError } = await supabase.rpc('delete_my_account');
       
       if (rpcError) {
@@ -109,11 +113,42 @@ export class UserService {
       }
       
       // Check if the RPC call was successful
-      if (rpcData && rpcData.success) {
-        return { data: true, error: null };
-      } else {
+      if (!rpcData || !rpcData.success) {
         return { data: null, error: new Error('Account deletion failed') };
       }
+
+      // Step 2: Delete the user from auth.users using the Edge Function
+      // This ensures proper cleanup of sessions, refresh tokens, and email/phone
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      if (!supabaseUrl) {
+        console.error('[deleteAccount] Missing EXPO_PUBLIC_SUPABASE_URL');
+        return { data: null, error: new Error('Missing Supabase URL configuration') };
+      }
+
+      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/delete-auth-user`;
+      
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const result = await response.json();
+
+      if (!result.ok) {
+        console.error('[deleteAccount] Edge function error:', result.error);
+        // Even if auth deletion fails, the public data is already deleted
+        // Return success but log the error
+        return { 
+          data: true, 
+          error: null 
+        };
+      }
+
+      return { data: true, error: null };
     } catch (error) {
       return {
         data: null,

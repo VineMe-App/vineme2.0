@@ -117,6 +117,59 @@ export const formatEventDate = (dateString: string): string => {
 };
 
 /**
+ * Format service time as "Sunday Evening 6:30PM"
+ */
+export const formatServiceTime = (service: {
+  day_of_week?: number;
+  start_time?: string;
+  name?: string;
+}): string => {
+  // If service name exists and is already formatted, use it
+  if (service.name) {
+    return service.name;
+  }
+
+  // Otherwise, format from day_of_week and start_time
+  const days = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+
+  const dayName =
+    service.day_of_week !== undefined ? days[service.day_of_week] : '';
+
+  if (!service.start_time) {
+    return dayName || service.name || '';
+  }
+
+  // Parse time to determine period and format
+  const [hours, minutes] = service.start_time.split(':').map(Number);
+  const hour24 = hours || 0;
+
+  // Determine time period
+  let period = '';
+  if (hour24 >= 5 && hour24 < 12) {
+    period = 'Morning';
+  } else if (hour24 >= 12 && hour24 < 17) {
+    period = 'Afternoon';
+  } else {
+    period = 'Evening';
+  }
+
+  // Format time as 12-hour with AM/PM
+  const hour12 = hour24 % 12 || 12;
+  const ampm = hour24 >= 12 ? 'PM' : 'AM';
+  const timeStr = `${hour12}:${minutes?.toString().padStart(2, '0') || '00'}${ampm}`;
+
+  return `${dayName} ${period} ${timeStr}`.trim();
+};
+
+/**
  * Get initials from a name
  */
 export const getInitials = (name: string): string => {

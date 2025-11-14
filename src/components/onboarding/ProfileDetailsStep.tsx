@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/Avatar';
-import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { AuthHero } from '@/components/auth/AuthHero';
+import { AuthButton } from '@/components/auth/AuthButton';
+import { Ionicons } from '@expo/vector-icons';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { userService } from '@/services/users';
@@ -121,11 +124,10 @@ export default function ProfileDetailsStep({
     try {
       setUploading(true);
       setError(null);
-      const response = await fetch(uri);
-      const blob = await response.blob();
 
+      // userService.uploadAvatar expects a file URI string, not a blob
       const { data: uploadedUrl, error: uploadError } =
-        await userService.uploadAvatar(user.id, blob);
+        await userService.uploadAvatar(user.id, uri);
 
       if (uploadError || !uploadedUrl) {
         throw uploadError || new Error('Upload failed');
@@ -134,23 +136,12 @@ export default function ProfileDetailsStep({
       setAvatarUrl(uploadedUrl);
     } catch (err) {
       console.error('Failed to upload avatar during onboarding:', err);
-      setError('Failed to upload photo. Please try again.');
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to upload photo. Please try again.';
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }
-  };
-
-  const handleRemovePhoto = () => {
-    Alert.alert('Remove photo', 'Do you want to remove this photo?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => {
-          setAvatarUrl(undefined);
-        },
-      },
-    ]);
   };
 
   const handleContinue = () => {
@@ -160,60 +151,51 @@ export default function ProfileDetailsStep({
     });
   };
 
-  const handleSkip = () => {
-    onNext({});
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Add a friendly face</Text>
-        <Text style={styles.subtitle}>
-          Upload a profile photo and share a short bio so leaders know a little
-          more about you. You can always skip this step and add it later.
-        </Text>
+        <AuthHero
+          title="Add a friendly face"
+          subtitle="Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later."
+          containerStyle={styles.heroSpacing}
+        />
 
         <View style={styles.avatarSection}>
-          <Avatar
-            size={120}
-            imageUrl={avatarUrl}
-            name={getFullName({
-              first_name: data.first_name,
-              last_name: data.last_name,
-            })}
+          <TouchableOpacity
             onPress={handleChoosePhoto}
-            showEditIcon
-          />
-          <View style={styles.photoButtons}>
-            <TouchableOpacity
-              style={styles.primaryAction}
-              onPress={handleChoosePhoto}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.primaryActionText}>Upload photo</Text>
-              )}
-            </TouchableOpacity>
-            {avatarUrl ? (
-              <TouchableOpacity
-                style={styles.secondaryAction}
-                onPress={handleRemovePhoto}
-                disabled={uploading}
-              >
-                <Text style={styles.secondaryActionText}>Remove photo</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
+            disabled={uploading}
+            activeOpacity={0.85}
+          >
+            {uploading ? (
+              <View style={styles.avatarLoading}>
+                <ActivityIndicator size="large" color="#2C2235" />
+              </View>
+            ) : avatarUrl ? (
+              <View style={styles.avatarContainer}>
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatarImage}
+                />
+                <View style={styles.editIcon}>
+                  <Ionicons name="pencil-outline" size={14} color="#fff" />
+                </View>
+              </View>
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="add" size={48} color="#999999" />
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.bioSection}>
-          <Text style={styles.label}>Bio (optional)</Text>
+          <Text variant="body" weight="semiBold" style={styles.label}>
+            Bio (optional)
+          </Text>
           <TextInput
             style={styles.bioInput}
-            placeholder="Tell us a little about yourself..."
-            placeholderTextColor="#666"
+            placeholder="Tell us a little bit about yourself..."
+            placeholderTextColor="#CBCBCB"
             value={bio}
             onChangeText={(text) => {
               if (text.length <= BIO_MAX_LENGTH) {
@@ -221,41 +203,33 @@ export default function ProfileDetailsStep({
               }
             }}
             multiline
-            numberOfLines={4}
+            numberOfLines={6}
             textAlignVertical="top"
             maxLength={BIO_MAX_LENGTH}
+            editable={!isLoading && !uploading}
           />
-          <Text style={styles.charCount}>
-            {bio.length}/{BIO_MAX_LENGTH}
-          </Text>
         </View>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error && (
+          <Text variant="bodySmall" color="error" style={styles.errorText}>
+            {error}
+          </Text>
+        )}
       </View>
 
       <View style={styles.footer}>
-        <Button
-          title="Back"
-          variant="ghost"
-          onPress={onBack}
-          disabled={!canGoBack || uploading || isLoading}
-          fullWidth
-        />
-        <Button
-          title="Skip"
-          variant="secondary"
-          onPress={handleSkip}
-          disabled={uploading || isLoading}
-          fullWidth
-        />
-        <Button
-          title="Continue"
+        <View style={styles.footerSpacer} />
+        <AuthButton
+          title="Done"
           onPress={handleContinue}
           loading={uploading || isLoading}
           disabled={uploading || isLoading}
-          variant="primary"
-          fullWidth
         />
+        <TouchableOpacity onPress={onBack} accessibilityRole="button">
+          <Text variant="body" color="secondary" align="center">
+            Back
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -265,86 +239,95 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
-    padding: 24,
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   content: {
     flex: 1,
+    justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+  heroSpacing: {
     marginBottom: 32,
-    lineHeight: 22,
   },
   avatarSection: {
     alignItems: 'center',
     marginBottom: 32,
   },
-  photoButtons: {
-    marginTop: 16,
+  avatarContainer: {
+    width: 121,
+    height: 121,
+    borderRadius: 60.5,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 121,
+    height: 121,
+    borderRadius: 60.5,
+  },
+  avatarPlaceholder: {
+    width: 121,
+    height: 121,
+    borderRadius: 60.5,
+    backgroundColor: '#EAEAEA',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
   },
-  primaryAction: {
-    backgroundColor: '#007AFF',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    minWidth: 180,
+  editIcon: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
-  primaryActionText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryAction: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  secondaryActionText: {
-    color: '#007AFF',
-    fontSize: 15,
-    fontWeight: '600',
+  avatarLoading: {
+    width: 121,
+    height: 121,
+    borderRadius: 60.5,
+    backgroundColor: '#EAEAEA',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bioSection: {
-    marginBottom: 16,
+    gap: 8,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    color: '#2C2235',
   },
   bioInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
     borderRadius: 12,
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
-    minHeight: 120,
-  },
-  charCount: {
-    marginTop: 8,
-    fontSize: 13,
-    color: '#888',
-    textAlign: 'right',
+    backgroundColor: '#FFFFFF',
+    color: '#2C2235',
+    minHeight: 165,
+    textAlignVertical: 'top',
   },
   errorText: {
-    marginTop: 12,
+    marginTop: 16,
     textAlign: 'center',
-    color: '#d73a49',
   },
   footer: {
-    gap: 12,
+    alignItems: 'center',
+    width: '100%',
+  },
+  footerSpacer: {
+    height: 32,
   },
 });

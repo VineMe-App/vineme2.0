@@ -207,7 +207,16 @@ export const Button: React.FC<ButtonProps> = ({
         {icon && (
           <View style={[styles.iconContainer, styles.iconLeft]}>{icon}</View>
         )}
-        <Text weight="medium" style={[textStyles, textStyle]} numberOfLines={1}>
+        <Text 
+          weight="medium" 
+          align="center" 
+          style={[
+            textStyles, 
+            !hasIcon && styles.textNoIcon,
+            textStyle
+          ]} 
+          numberOfLines={1}
+        >
           {title}
         </Text>
         {iconRight && (
@@ -442,6 +451,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
   },
   contentWithIcon: {
     paddingHorizontal: 4,
@@ -464,5 +474,9 @@ const styles = StyleSheet.create({
   loadingText: {
     marginLeft: 8,
     opacity: 0.7,
+  },
+  textNoIcon: {
+    width: '100%',
+    textAlign: 'center',
   },
 });

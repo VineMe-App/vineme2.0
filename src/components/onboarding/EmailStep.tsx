@@ -27,6 +27,7 @@ export default function EmailStep({
   const { user } = useAuthStore();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(true);
 
   useEffect(() => {
     // Pre-fill email if exists on auth user
@@ -131,6 +132,22 @@ export default function EmailStep({
             </Text>
           )}
         </View>
+
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => setNewsletterOptIn(!newsletterOptIn)}
+          disabled={isLoading}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.checkbox, newsletterOptIn && styles.checkboxChecked]}>
+            {newsletterOptIn && (
+              <Text style={styles.checkmark}>✓</Text>
+            )}
+          </View>
+          <Text style={styles.checkboxLabel}>
+            Send me news and updates.
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.footer}>
@@ -187,6 +204,40 @@ const styles = StyleSheet.create({
   },
   errorText: {
     marginTop: 4,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  checkbox: {
+    width: 19,
+    height: 19,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#2C2235',
+    borderColor: '#2C2235',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 12,
+    includeFontPadding: false,
+  },
+  checkboxLabel: {
+    fontSize: 12,
+    color: '#2C2235',
+    letterSpacing: -0.6,
+    flex: 1,
   },
   footer: {
     alignItems: 'center',
