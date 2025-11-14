@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar, Text as RNText } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryProvider } from '@/providers/QueryProvider';
@@ -167,21 +168,23 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ErrorBoundary>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor="white"
-          translucent={false}
-        />
-        <ThemeProvider initialTheme="light">
-          <QueryProvider>
-            <AuthProvider>
-              <RootLayoutNav />
-            </AuthProvider>
-          </QueryProvider>
-        </ThemeProvider>
-      </ErrorBoundary>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ErrorBoundary>
+          <StatusBar
+            barStyle="dark-content"
+            backgroundColor="white"
+            translucent={false}
+          />
+          <ThemeProvider initialTheme="light">
+            <QueryProvider>
+              <AuthProvider>
+                <RootLayoutNav />
+              </AuthProvider>
+            </QueryProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
