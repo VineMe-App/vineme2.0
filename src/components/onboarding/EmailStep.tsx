@@ -2,20 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
-import { supabase } from '@/services/supabase';
 import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
-
-const generateTemporaryPassword = () => {
-  const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < 16; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-};
 
 export default function EmailStep({
   data,
@@ -24,7 +13,7 @@ export default function EmailStep({
   canGoBack,
   isLoading,
 }: OnboardingStepProps) {
-  const { user } = useAuthStore();
+  const { user, linkEmail } = useAuthStore();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [newsletterOptIn, setNewsletterOptIn] = useState(true);
@@ -43,8 +32,6 @@ export default function EmailStep({
     return null;
   };
 
-  // Removed public.users email check (column deleted). We rely on auth's uniqueness.
-
   const handleNext = async () => {
     const v = validateEmail(email);
     if (v) {
@@ -52,11 +39,12 @@ export default function EmailStep({
       return;
     }
 
-    const trimmed = email.trim();
+    const trimmed = email.trim().toLowerCase();
 
+    // If email hasn't changed, just proceed
     if (
       user?.email &&
-      user.email.toLowerCase() === trimmed.toLowerCase()
+      user.email.toLowerCase() === trimmed
     ) {
       onNext({});
       return;
@@ -64,35 +52,28 @@ export default function EmailStep({
 
     setError(null);
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: trimmed,
-      password: generateTemporaryPassword(),
-      options: {
-        emailRedirectTo: 'vineme://auth/verify-email',
-      },
+    // Link email to the existing authenticated user account
+    // This updates the current user's email instead of creating a new user
+    const result = await linkEmail(trimmed, {
+      emailRedirectTo: 'vineme://auth/verify-email',
     });
 
-    if (signUpError) {
-      const msg = signUpError.message.toLowerCase();
+    if (!result.success) {
+      // Handle error messages
+      const errorMsg = result.error || 'Failed to link email';
       if (
-        msg.includes('already') ||
-        msg.includes('exists') ||
-        msg.includes('registered')
+        errorMsg.toLowerCase().includes('already') ||
+        errorMsg.toLowerCase().includes('in use')
       ) {
-        setError('This email is already in use');
-      } else if (msg.includes('email plus password')) {
-        setError('Email signups are currently disabled.');
+        setError('This email is already in use by another account');
       } else {
-        setError(signUpError.message);
+        setError(errorMsg);
       }
       return;
     }
 
-    if (!data.user) {
-      setError('Error sending verification email. Please try again.');
-      return;
-    }
-
+    // Email successfully linked - Supabase automatically sends verification email
+    // The user will need to verify the email, but we can proceed with onboarding
     onNext({});
   };
 
@@ -247,3 +228,4 @@ const styles = StyleSheet.create({
     height: 32,
   },
 });
+

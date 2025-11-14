@@ -113,8 +113,8 @@ export default function TabLayout() {
           backgroundColor: 'transparent',
           borderBottomWidth: 0,
           elevation: Platform.OS === 'android' ? 8 : 0,
-           height: headerHeight,
-           paddingTop: insets.top,
+          height: headerHeight,
+          paddingTop: insets.top,
           shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
           shadowOffset: {
             width: 0,

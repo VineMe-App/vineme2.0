@@ -197,6 +197,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         </View>
 
         {/* Info Section */}
+        {/* Apply infoMyGroups to ALL cards on my-groups page, regardless of leader status */}
         <View style={[
           styles.info,
           variant === 'my-groups' ? styles.infoMyGroups : styles.infoAllGroups
@@ -212,7 +213,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </Text>
 
           {/* Details */}
-          <View style={styles.details}>
+          <View style={[
+            styles.details,
+            variant === 'my-groups' ? styles.detailsMyGroups : styles.detailsAllGroups
+          ]}>
             {/* Time */}
             {group.meeting_day && group.meeting_time && (
               <View style={styles.detailRow}>
@@ -427,11 +431,11 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   infoMyGroups: {
-    paddingRight: 0,
-    paddingBottom: 40,
+    paddingRight: 10, // Match padding to prevent text from being covered by profile pictures - applies to ALL cards on my-groups page
+    paddingBottom: 40, // Keep bottom padding for my groups page
   },
   infoAllGroups: {
-    paddingRight: 100, // Add padding to prevent text from being covered by profile pictures on My Groups page
+    paddingRight: 100, // Add padding to prevent text from being covered by profile pictures
     paddingBottom: 12, // Different bottom padding for All Groups page
   },
   groupName: {
@@ -531,6 +535,11 @@ const styles = StyleSheet.create({
   },
   details: {
     gap: 4,
+  },
+  detailsMyGroups: {
+    marginRight: 0, // No margin needed for my-groups since paddingRight handles spacing
+  },
+  detailsAllGroups: {
     marginRight: 10, // Add margin to prevent text from being covered by profile pictures
   },
   detailRow: {

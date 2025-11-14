@@ -10,7 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { FriendsList } from './FriendsList';
 import { FriendSearch } from './FriendSearch';
 import { useTheme } from '../../theme/provider/useTheme';
@@ -34,6 +37,7 @@ export function FriendManagementModal({
   userId,
 }: FriendManagementModalProps) {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>('friends');
   const slideAnimation = useRef(
     new Animated.Value(activeTab === 'friends' ? 0 : 1)
@@ -94,6 +98,7 @@ export function FriendManagementModal({
           styles.container,
           {
             backgroundColor: theme.colors.background.primary,
+            paddingTop: insets.top,
           },
         ]}
       >
