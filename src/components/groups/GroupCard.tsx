@@ -29,6 +29,7 @@ interface GroupCardProps {
   pendingLabel?: string;
   pendingTooltip?: string;
   currentUserId?: string; // ID of the current user to determine if they're the creator
+  variant?: 'my-groups' | 'all-groups'; // Variant to determine padding based on page
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -44,6 +45,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   pendingLabel,
   pendingTooltip,
   currentUserId,
+  variant = 'all-groups', // Default to 'all-groups' for backward compatibility
 }) => {
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
@@ -63,7 +65,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       minute: '2-digit',
       hour12: true,
     });
-    return `${day}s at ${formattedTime}`;
+    // Format like "Mondays 7pm" for Figma design
+    const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+    const timeStr = formattedTime.toLowerCase().replace(/\s/g, '');
+    return `${dayName}s ${timeStr}`;
   };
 
   const formatLocation = (location: any) => {
@@ -81,6 +86,12 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   const isAwaitingVerification = group.status === 'pending';
   const hasCustomPending = Boolean(pendingLabel);
   const isCreator = currentUserId && group.created_by === currentUserId;
+  
+  // Check if current user is a leader
+  const isCurrentUserLeader = React.useMemo(() => {
+    if (!currentUserId || !leaders) return false;
+    return leaders.some((leader) => leader.id === currentUserId);
+  }, [currentUserId, leaders]);
   
   const badgeLabel = hasCustomPending
     ? pendingLabel || 'Join request pending'
@@ -125,7 +136,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <TouchableOpacity
       style={[
         styles.card,
-        { backgroundColor: theme.colors.surface.secondary }, // Faded pink background
         style,
       ]}
       onPress={shouldBlockNavigation ? undefined : onPress}
@@ -150,7 +160,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         />
       )}
       <View style={styles.content}>
-        {/* Group Image with Friend Avatars Overlay */}
+        {/* Group Image */}
         <View style={styles.imageContainer}>
           {group.image_url ? (
             <OptimizedImage
@@ -159,198 +169,180 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               quality="medium"
               lazy={true}
               maxWidth={400}
-              maxHeight={120}
+              maxHeight={167}
               resizeMode="cover"
             />
           ) : (
             <GroupPlaceholderImage style={styles.image} />
           )}
 
-          {/* Bottom Left - Members Indicator */}
-          {group.member_count !== undefined && (
-            <View style={styles.bottomLeftIndicator}>
-              <View style={styles.indicator}>
-                <Text style={styles.indicatorText}>{group.member_count}</Text>
-                <Ionicons name="person-outline" size={14} color="#fff" />
-              </View>
+          {/* Leader Badge - Top Right */}
+          {(membershipStatus === 'leader' || isCurrentUserLeader) && (
+            <View style={styles.leaderBadge}>
+              <Text style={styles.leaderBadgeText}>Leader</Text>
             </View>
           )}
 
-          {/* Top Left - Badges */}
-          <View style={styles.topLeftBadges}>
-            {showPendingBadge && (
-              <TouchableOpacity
-                style={styles.pendingBadge}
-                onPress={() => setShowPendingTip((v) => !v)}
-                activeOpacity={0.85}
-                accessibilityRole={tooltipMessage ? 'button' : 'text'}
-                accessibilityLabel={tooltipMessage ? badgeLabel : undefined}
-                accessibilityHint={
-                  tooltipMessage ? 'Tap to view details' : undefined
-                }
-              >
-                <Ionicons name="time-outline" size={16} color="#b45309" />
-                <Text style={styles.pendingText}>{badgeLabel}</Text>
-                {tooltipMessage && (
-                  <Ionicons
-                    name="information-circle"
-                    size={16}
-                    color="#b45309"
-                    style={{ marginLeft: 6 }}
-                  />
-                )}
-              </TouchableOpacity>
-            )}
-            {group.at_capacity && (
-              <View style={styles.fullBadge}>
-                <Ionicons name="people" size={14} color="#c2410c" />
-                <Text style={styles.fullText}>Full</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Bottom Right - Friend Avatars */}
-          {friendsInGroup && friendsInGroup.length > 0 && (
-            <View style={styles.friendsOverlay}>
-              <View style={styles.friendAvatars}>
-                {friendsInGroup.map((friend, index) => (
-                  <View
-                    key={friend.id}
-                    style={[
-                      styles.friendAvatar,
-                      { marginLeft: index > 0 ? -8 : 0 },
-                    ]}
-                  >
-                    <Avatar
-                      imageUrl={friend.avatar_url}
-                      name={friend.name || undefined}
-                      size={24}
-                    />
-                  </View>
-                ))}
-              </View>
-              <Text variant="caption" style={styles.friendsCount}>
-                {friendsCount} friend{friendsCount !== 1 ? 's' : ''}
-              </Text>
-            </View>
+          {/* Pending Badge */}
+          {showPendingBadge && (
+            <TouchableOpacity
+              style={styles.pendingBadge}
+              onPress={() => setShowPendingTip((v) => !v)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="time-outline" size={16} color="#b45309" />
+              <Text style={styles.pendingText}>{badgeLabel}</Text>
+            </TouchableOpacity>
           )}
         </View>
 
-        <View style={styles.info}>
-          {/* Title and Status */}
-          <View style={styles.header}>
-            <Text
-              variant="h6"
-              style={styles.title}
-              numberOfLines={2}
-              ellipsizeMode="tail"
-            >
-              {group.title}
-            </Text>
-            {membershipStatus && (
-              <View
-                style={[styles.statusBadge, styles[`${membershipStatus}Badge`]]}
-              >
-                <Text
-                  variant="caption"
-                  weight="semiBold"
-                  style={[styles.statusText, styles[`${membershipStatus}Text`]]}
-                >
-                  {membershipStatus === 'member'
-                    ? 'Member'
-                    : membershipStatus === 'leader'
-                      ? 'Leader'
-                      : 'Admin'}
-                </Text>
-              </View>
-            )}
-          </View>
+        {/* Info Section */}
+        {/* Apply infoMyGroups to ALL cards on my-groups page, regardless of leader status */}
+        <View style={[
+          styles.info,
+          variant === 'my-groups' ? styles.infoMyGroups : styles.infoAllGroups
+        ]}>
+          {/* Group Name */}
+          <Text
+            variant="h6"
+            weight="bold"
+            style={styles.groupName}
+            numberOfLines={1}
+          >
+            {group.title}
+          </Text>
 
-          <View style={styles.details}>
-            {typeof distanceKm === 'number' && (
-              <View style={styles.detailRow}>
-                <Ionicons name="navigate-outline" size={16} color="#6b7280" />
-                <Text
-                  variant="bodySmall"
-                  style={styles.detailText}
-                  numberOfLines={1}
-                >
-                  {distanceKm.toFixed(1)} km away
-                </Text>
-              </View>
-            )}
+          {/* Details */}
+          <View style={[
+            styles.details,
+            variant === 'my-groups' ? styles.detailsMyGroups : styles.detailsAllGroups
+          ]}>
+            {/* Time */}
             {group.meeting_day && group.meeting_time && (
               <View style={styles.detailRow}>
-                <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+                <Ionicons name="time-outline" size={16} color="#2C2235" />
                 <Text
                   variant="bodySmall"
+                  weight="medium"
                   style={styles.detailText}
-                  numberOfLines={1}
                 >
                   {formatMeetingTime(group.meeting_day, group.meeting_time)}
                 </Text>
               </View>
             )}
+
+            {/* Location */}
             <View style={styles.detailRow}>
-              <Ionicons name="location-outline" size={16} color="#6b7280" />
+              <Ionicons name="location-outline" size={16} color="#2C2235" />
               <Text
                 variant="bodySmall"
+                weight="medium"
                 style={styles.detailText}
-                numberOfLines={1}
               >
                 {formatLocation(group.location)}
               </Text>
             </View>
+
+            {/* Leader */}
             {leaders && leaders.length > 0 && (
               <View style={styles.detailRow}>
-                <Ionicons name="star-outline" size={16} color="#6b7280" />
-                <View style={styles.leaderTextAndAvatars}>
-                  <Text
-                    variant="bodySmall"
-                    style={styles.leaderText}
-                    numberOfLines={1}
-                  >
-                    Led by{' '}
-                    {leaders
-                      .slice(0, 3)
-                      .map((leader) => leader.name)
-                      .join(', ')}
-                    {leaders.length > 3 && ` and ${leaders.length - 3} others`}
-                  </Text>
-                  <View style={styles.leaderAvatars}>
-                    {leaders.slice(0, 3).map((leader, index) => (
-                      <View
-                        key={leader.id}
-                        style={[
-                          styles.leaderAvatar,
-                          { marginLeft: index > 0 ? -4 : 0 },
-                        ]}
-                      >
-                        <Avatar
-                          imageUrl={leader.avatar_url}
-                          name={leader.name || undefined}
-                          size={20}
-                        />
-                      </View>
-                    ))}
-                  </View>
-                </View>
+                <Avatar
+                  imageUrl={leaders[0].avatar_url}
+                  name={leaders[0].name || undefined}
+                  size={16}
+                />
+                <Text
+                  variant="bodySmall"
+                  weight="medium"
+                  style={styles.detailText}
+                >
+                  Led by {leaders[0].name}
+                </Text>
+              </View>
+            )}
+
+            {/* Church and Service */}
+            {churchAndServiceLabel && (
+              <View style={styles.detailRow}>
+                <Ionicons name="business-outline" size={16} color="#2C2235" />
+                <Text
+                  variant="bodySmall"
+                  weight="medium"
+                  style={styles.detailText}
+                >
+                  {churchAndServiceLabel}
+                </Text>
               </View>
             )}
           </View>
-
-          {churchAndServiceLabel && (
-            <Text
-              variant="caption"
-              color="tertiary"
-              style={styles.service}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {churchAndServiceLabel}
-            </Text>
-          )}
         </View>
+
+        {/* Member Count Badge - Over Image */}
+        {group.member_count !== undefined && (
+          <View style={styles.memberCountBadge}>
+            <View style={styles.memberCountInner}>
+              <Text style={styles.memberCountText}>{group.member_count}</Text>
+              <Ionicons name="person-outline" size={16} color="#2C2235" />
+            </View>
+          </View>
+        )}
+
+        {/* Profile Pictures - Center of Description Section */}
+        {(friendsInGroup && friendsInGroup.length > 0) || (leaders && leaders.length > 0) ? (
+          <View style={styles.profilePicturesContainer}>
+            {friendsInGroup && friendsInGroup.length > 0 ? (
+              friendsInGroup.slice(0, 3).map((friend, index) => {
+                const avatarSize = index === 0 ? 60 : index === 1 ? 57 : 54;
+                return (
+                  <View
+                    key={friend.id}
+                    style={[
+                      styles.profilePicture,
+                      {
+                        width: avatarSize + 4,
+                        height: avatarSize + 4,
+                        borderRadius: (avatarSize + 4) / 2,
+                        marginLeft: index > 0 ? -8 : 0,
+                        zIndex: 3 - index,
+                      },
+                    ]}
+                  >
+                    <Avatar
+                      imageUrl={friend.avatar_url}
+                      name={friend.name || undefined}
+                      size={avatarSize}
+                    />
+                  </View>
+                );
+              })
+            ) : leaders && leaders.length > 0 ? (
+              leaders.slice(0, 3).map((leader, index) => {
+                const avatarSize = index === 0 ? 60 : index === 1 ? 57 : 54;
+                return (
+                  <View
+                    key={leader.id}
+                    style={[
+                      styles.profilePicture,
+                      {
+                        width: avatarSize + 4,
+                        height: avatarSize + 4,
+                        borderRadius: (avatarSize + 4) / 2,
+                        marginLeft: index > 0 ? -8 : 0,
+                        zIndex: 3 - index,
+                      },
+                    ]}
+                  >
+                    <Avatar
+                      imageUrl={leader.avatar_url}
+                      name={leader.name || undefined}
+                      size={avatarSize}
+                    />
+                  </View>
+                );
+              })
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       {showPendingTip && tooltipMessage && (
@@ -374,24 +366,30 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
-    marginHorizontal: 16,
-    marginVertical: 8,
+    marginHorizontal: 17,
+    marginVertical: 0,
+    marginBottom: 12,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#EDEDED',
+    backgroundColor: '#F9FAFC',
+    minHeight: 300,
     // Background color now set dynamically with theme
   },
   content: {
-    padding: 16,
     position: 'relative',
     zIndex: 1,
   },
   imageContainer: {
     position: 'relative',
-    marginBottom: 12,
+    height: 167,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
   },
   image: {
     width: '100%',
-    height: 120,
-    borderRadius: 8,
+    height: 167,
     backgroundColor: '#f0f0f0',
   },
   friendsOverlay: {
@@ -443,7 +441,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   info: {
-    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  infoMyGroups: {
+    paddingRight: 10, // Match padding to prevent text from being covered by profile pictures - applies to ALL cards on my-groups page
+    paddingBottom: 40, // Keep bottom padding for my groups page
+  },
+  infoAllGroups: {
+    paddingRight: 100, // Add padding to prevent text from being covered by profile pictures
+    paddingBottom: 12, // Different bottom padding for All Groups page
+  },
+  groupName: {
+    color: '#2C2235',
+    fontSize: 22,
+    letterSpacing: -0.66,
+    marginBottom: 8,
+    fontWeight: '700',
   },
   header: {
     flexDirection: 'row',
@@ -467,7 +481,59 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
   },
   leaderBadge: {
-    backgroundColor: '#fff3e0',
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#FF0083',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    zIndex: 2,
+  },
+  leaderBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    letterSpacing: -0.27,
+    fontWeight: '700',
+  },
+  memberCountBadge: {
+    position: 'absolute',
+    left: 15,
+    top: 125,
+    zIndex: 3,
+  },
+  memberCountInner: {
+    backgroundColor: 'rgba(217, 217, 217, 0.9)',
+    borderRadius: 7,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minWidth: 46,
+  },
+  memberCountText: {
+    color: '#2C2235',
+    fontSize: 16,
+    letterSpacing: -0.48,
+    fontWeight: '500',
+  },
+  profilePicturesContainer: {
+    position: 'absolute',
+    right: 20,
+    top: 200,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    zIndex: 1,
+  },
+  profilePicture: {
+    borderWidth: 2,
+    borderColor: '#FF0083',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   adminBadge: {
     backgroundColor: '#fce4ec',
@@ -482,17 +548,28 @@ const styles = StyleSheet.create({
     color: '#c2185b',
   },
   details: {
-    marginBottom: 8,
+    gap: 4,
+  },
+  detailsMyGroups: {
+    marginRight: 0, // No margin needed for my-groups since paddingRight handles spacing
+  },
+  detailsAllGroups: {
+    marginRight: 10, // Add margin to prevent text from being covered by profile pictures
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    gap: 8,
+    marginBottom: 2,
+    flexWrap: 'wrap',
   },
   detailText: {
-    color: '#333',
+    color: '#2C2235',
+    fontSize: 11,
+    letterSpacing: -0.55,
     flex: 1,
+    fontWeight: '500',
+    flexShrink: 1,
   },
   leaderTextAndAvatars: {
     flexDirection: 'row',
@@ -523,6 +600,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   pendingBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -530,6 +610,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    zIndex: 2,
   },
   pendingText: {
     color: '#92400e',

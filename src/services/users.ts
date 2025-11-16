@@ -4,10 +4,11 @@ import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { getFullName } from '../utils/name';
 
 // Conditionally import FileSystem - not available in Expo Go
+// Using legacy API to avoid deprecation warnings
 // Using try-catch to gracefully handle when the module isn't available
 let FileSystem: any = null;
 try {
-  FileSystem = require('expo-file-system');
+  FileSystem = require('expo-file-system/legacy');
 } catch (error) {
   // FileSystem not available (likely Expo Go) - will be handled at runtime
   console.log(
@@ -92,7 +93,10 @@ export class UserService {
         };
       }
 
-      // Call the RPC function to delete all user data
+      // Get the access token for the edge function call
+      const accessToken = session.session.access_token;
+
+      // Step 1: Call the RPC function to delete all user data from public schema
       const { data: rpcData, error: rpcError } = await supabase.rpc('delete_my_account');
       
       if (rpcError) {
@@ -109,11 +113,47 @@ export class UserService {
       }
       
       // Check if the RPC call was successful
-      if (rpcData && rpcData.success) {
-        return { data: true, error: null };
-      } else {
+      if (!rpcData || !rpcData.success) {
         return { data: null, error: new Error('Account deletion failed') };
       }
+
+      // Step 2: Delete the user from auth.users using the Edge Function
+      // This ensures proper cleanup of sessions, refresh tokens, and email/phone
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      if (!supabaseUrl) {
+        console.error('[deleteAccount] Missing EXPO_PUBLIC_SUPABASE_URL');
+        return { data: null, error: new Error('Missing Supabase URL configuration') };
+      }
+
+      // Prefer supabase.functions.invoke so required headers are added automatically,
+      // and explicitly include headers to satisfy edge function auth in all environments.
+      const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+      const { data: fnData, error: fnError } = await supabase.functions.invoke<{
+        ok: boolean;
+        error?: string;
+      }>('delete-auth-user', {
+        body: { userId },
+        headers: {
+          // Explicitly include Authorization to be safe across environments
+          Authorization: `Bearer ${accessToken}`,
+          // Supabase edge functions also expect an apikey header when invoked from clients
+          ...(supabaseAnonKey ? { apikey: supabaseAnonKey } : {}),
+        },
+      });
+
+      if (fnError) {
+        console.error('[deleteAccount] Edge function error:', fnError);
+        return { data: null, error: new Error(fnError.message) };
+      }
+
+      if (!fnData?.ok) {
+        const message =
+          fnData?.error || 'Auth account deletion failed to complete';
+        console.error('[deleteAccount] Edge function returned error:', message);
+        return { data: null, error: new Error(message) };
+      }
+
+      return { data: true, error: null };
     } catch (error) {
       return {
         data: null,

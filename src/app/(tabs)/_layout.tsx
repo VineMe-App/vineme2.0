@@ -66,10 +66,6 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        safeAreaInsets: {
-          top: insets.top,
-          bottom: insets.bottom,
-        },
         tabBarActiveTintColor: theme.colors.primary[500],
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
@@ -113,8 +109,8 @@ export default function TabLayout() {
           backgroundColor: 'transparent',
           borderBottomWidth: 0,
           elevation: Platform.OS === 'android' ? 8 : 0,
-           height: headerHeight,
-           paddingTop: insets.top,
+          height: headerHeight,
+          paddingTop: insets.top,
           shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
           shadowOffset: {
             width: 0,
@@ -151,12 +147,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarLabel: 'Home',
-          headerTitle: () => <HomeHeader />,
-          headerTitleAlign: 'left',
-          headerTitleContainerStyle: {
-            left: 0,
-            right: 0,
-          },
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),

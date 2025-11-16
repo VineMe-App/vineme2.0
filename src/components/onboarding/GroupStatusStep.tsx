@@ -1,14 +1,9 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
-import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { AuthHero } from '@/components/auth/AuthHero';
+import { AuthButton } from '@/components/auth/AuthButton';
 
 export default function GroupStatusStep({
   data,
@@ -22,6 +17,12 @@ export default function GroupStatusStep({
     'existing' | 'looking' | null
   >(data.group_status || null);
 
+  useEffect(() => {
+    if (data.group_status) {
+      setSelectedStatus(data.group_status);
+    }
+  }, [data.group_status]);
+
   const handleNext = () => {
     if (selectedStatus) {
       onNext({ group_status: selectedStatus });
@@ -31,199 +32,170 @@ export default function GroupStatusStep({
   const statusOptions = [
     {
       id: 'existing' as const,
-      title: "I'm already in a group",
-      subtitle: 'I want to connect my existing group to VineMe',
-      icon: 'people' as const,
+      title: 'I am already in a group',
+      subtitle: 'I want to connect with my existing group on VineMe',
     },
     {
       id: 'looking' as const,
-      title: "I'm looking for a group",
-      subtitle: 'Help me find a group that fits me best',
-      icon: 'search' as const,
+      title: 'I am looking for a group',
+      subtitle: 'Help me find a suitable group to join and get plugged in.',
     },
   ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Group Status</Text>
-          <Text style={styles.subtitle}>
-            Are you already part of a small group, or are you looking to join
-            one?
-          </Text>
-        </View>
+        <AuthHero
+          title="Group status"
+          subtitle="Are you already part of a small group or are you looking to join one?"
+          containerStyle={styles.heroSpacing}
+        />
 
         <View style={styles.optionsContainer}>
-          {statusOptions.map((option) => (
-            <TouchableOpacity
-              key={option.id}
-              style={[
-                styles.optionCard,
-                selectedStatus === option.id && styles.optionCardSelected,
-              ]}
-              onPress={() => setSelectedStatus(option.id)}
-              testID={`group-status-${option.id}`}
-            >
-              <View style={styles.optionContent}>
-                <View style={styles.optionHeader}>
-                  <View
-                    style={[
-                      styles.iconContainer,
-                      selectedStatus === option.id &&
-                        styles.iconContainerSelected,
-                    ]}
-                  >
-                    <Ionicons
-                      name={option.icon}
-                      size={24}
-                      color={selectedStatus === option.id ? '#fff' : '#007AFF'}
-                    />
+          {statusOptions.map((option) => {
+            const isSelected = selectedStatus === option.id;
+            return (
+              <TouchableOpacity
+                key={option.id}
+                style={[
+                  styles.optionCard,
+                  isSelected && styles.optionCardSelected,
+                ]}
+                onPress={() => setSelectedStatus(option.id)}
+                disabled={isLoading}
+                activeOpacity={0.85}
+                testID={`group-status-${option.id}`}
+              >
+                <View style={styles.optionContent}>
+                  <View style={styles.radioContainer}>
+                    <View
+                      style={[
+                        styles.radio,
+                        isSelected && styles.radioSelected,
+                      ]}
+                    >
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
                   </View>
                   <View style={styles.optionText}>
-                    <Text style={styles.optionTitle}>{option.title}</Text>
-                    <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
+                    <Text
+                      variant="bodySmall"
+                      weight="semiBold"
+                      style={styles.optionTitle}
+                    >
+                      {option.title}
+                    </Text>
+                    <Text variant="bodySmall" color="secondary" style={styles.optionSubtitle}>
+                      {option.subtitle}
+                    </Text>
                   </View>
                 </View>
-                <View style={styles.radioContainer}>
-                  <View
-                    style={[
-                      styles.radio,
-                      selectedStatus === option.id && styles.radioSelected,
-                    ]}
-                  >
-                    {selectedStatus === option.id && (
-                      <View style={styles.radioInner} />
-                    )}
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {error && (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text variant="bodySmall" color="error">
+              {error}
+            </Text>
           </View>
         )}
       </View>
 
       <View style={styles.footer}>
-        <Button
-          title="Back"
-          onPress={onBack}
-          variant="ghost"
-          disabled={!canGoBack || isLoading}
-          fullWidth
-        />
-        <Button
-          title="Continue"
+        <View style={styles.footerSpacer} />
+        <AuthButton
+          title="Next"
           onPress={handleNext}
-          disabled={!selectedStatus || isLoading}
           loading={isLoading}
-          variant="primary"
-          fullWidth
+          disabled={!selectedStatus || isLoading}
         />
+        <TouchableOpacity onPress={onBack} accessibilityRole="button">
+          <Text variant="body" color="secondary" align="center">
+            Back
+          </Text>
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    justifyContent: 'space-between',
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 32,
+    justifyContent: 'center',
   },
-  header: {
+  heroSpacing: {
     marginBottom: 32,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
-  },
   optionsContainer: {
-    gap: 16,
+    gap: 12,
+    marginBottom: 32,
   },
   optionCard: {
     borderWidth: 2,
-    borderColor: '#f0f0f0',
+    borderColor: '#EAEAEA',
     borderRadius: 12,
-    padding: 20,
-    backgroundColor: '#fff',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    backgroundColor: '#FFFFFF',
+    minHeight: 92,
+    justifyContent: 'center',
   },
   optionCardSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#f8faff',
+    borderColor: '#F54099',
   },
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  optionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#f0f8ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  iconContainerSelected: {
-    backgroundColor: '#007AFF',
-  },
-  optionText: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  optionSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
   },
   radioContainer: {
-    marginLeft: 16,
+    marginRight: 16,
   },
   radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioSelected: {
-    borderColor: '#007AFF',
+    borderColor: '#F54099',
+    backgroundColor: '#FFFFFF',
   },
   radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#007AFF',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#F54099',
+  },
+  optionText: {
+    flex: 1,
+    gap: 8,
+  },
+  optionTitle: {
+    color: '#271D30',
+    fontSize: 14,
+    lineHeight: 14,
+    letterSpacing: -0.7,
+  },
+  optionSubtitle: {
+    color: '#2C2235',
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: -0.33,
   },
   errorContainer: {
     marginTop: 16,
@@ -233,16 +205,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fed7d7',
   },
-  errorText: {
-    color: '#e53e3e',
-    fontSize: 14,
-    textAlign: 'center',
-  },
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    paddingTop: 16,
-    gap: 12,
+    alignItems: 'center',
+    width: '100%',
   },
-  nextButton: {},
+  footerSpacer: {
+    height: 32,
+  },
 });

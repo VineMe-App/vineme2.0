@@ -1,10 +1,11 @@
 import { supabase } from './supabase';
 
 // Conditionally import FileSystem - not available in Expo Go
+// Using legacy API to avoid deprecation warnings
 // Using try-catch to gracefully handle when the module isn't available
 let FileSystem: any = null;
 try {
-  FileSystem = require('expo-file-system');
+  FileSystem = require('expo-file-system/legacy');
 } catch (error) {
   // FileSystem not available (likely Expo Go) - will be handled at runtime
   console.log(

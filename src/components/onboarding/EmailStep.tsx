@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
-import { supabase } from '@/services/supabase';
-import { Button } from '@/components/ui/Button';
+import { AuthHero } from '@/components/auth/AuthHero';
+import { AuthButton } from '@/components/auth/AuthButton';
+import { Text } from '@/components/ui/Text';
 
 export default function EmailStep({
   data,
@@ -12,9 +13,10 @@ export default function EmailStep({
   canGoBack,
   isLoading,
 }: OnboardingStepProps) {
-  const { user } = useAuthStore();
+  const { user, linkEmail } = useAuthStore();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(true);
 
   useEffect(() => {
     // Pre-fill email if exists on auth user
@@ -30,8 +32,6 @@ export default function EmailStep({
     return null;
   };
 
-  // Removed public.users email check (column deleted). We rely on auth's uniqueness.
-
   const handleNext = async () => {
     const v = validateEmail(email);
     if (v) {
@@ -39,42 +39,58 @@ export default function EmailStep({
       return;
     }
 
-    setError(null);
-    // Link email to auth.user; auth enforces global uniqueness
+    const trimmed = email.trim().toLowerCase();
+
+    // If email hasn't changed, just proceed
     if (
-      !user?.email ||
-      user.email.toLowerCase() !== email.trim().toLowerCase()
+      user?.email &&
+      user.email.toLowerCase() === trimmed
     ) {
-      const { error: linkErr } = await supabase.auth.updateUser({
-        email: email.trim(),
-      });
-      if (linkErr) {
-        // Surface a friendlier message for uniqueness
-        const msg = linkErr.message.toLowerCase();
-        if (
-          msg.includes('already') ||
-          msg.includes('exists') ||
-          msg.includes('registered')
-        ) {
-          setError('This email is already in use');
-        } else {
-          setError(linkErr.message);
-        }
-        return;
-      }
+      onNext({});
+      return;
     }
 
+    setError(null);
+
+    // Link email to the existing authenticated user account
+    // This updates the current user's email instead of creating a new user
+    const result = await linkEmail(trimmed, {
+      emailRedirectTo: 'vineme://auth/verify-email',
+    });
+
+    if (!result.success) {
+      // Handle error messages
+      const errorMsg = result.error || 'Failed to link email';
+      if (
+        errorMsg.toLowerCase().includes('already') ||
+        errorMsg.toLowerCase().includes('in use')
+      ) {
+        setError('This email is already in use by another account');
+      } else {
+        setError(errorMsg);
+      }
+      return;
+    }
+
+    // Email successfully linked - Supabase automatically sends verification email
+    // The user will need to verify the email, but we can proceed with onboarding
     onNext({});
   };
+
+  const disableContinue = !email.trim() || isLoading;
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>What's your email?</Text>
-        <Text style={styles.subtitle}>
-          We use your email for account recovery and updates
-        </Text>
-        <View style={styles.inputContainer}>
+        <AuthHero
+          title="What’s your email?"
+          subtitle="We use your email for account recovery and updates."
+          containerStyle={styles.heroSpacing}
+        />
+        <View style={styles.inputGroup}>
+          <Text variant="labelSmall" color="secondary" style={styles.label}>
+            Email address
+          </Text>
           <TextInput
             style={[styles.input, error ? styles.inputError : null]}
             value={email}
@@ -83,70 +99,133 @@ export default function EmailStep({
               if (error) setError(null);
             }}
             placeholder="you@example.com"
-            placeholderTextColor="#666"
+            placeholderTextColor="#B4B4B4"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
             editable={!isLoading}
+            returnKeyType="done"
+            textContentType="emailAddress"
           />
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error && (
+            <Text variant="bodySmall" color="error" style={styles.errorText}>
+              {error}
+            </Text>
+          )}
         </View>
+
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => setNewsletterOptIn(!newsletterOptIn)}
+          disabled={isLoading}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.checkbox, newsletterOptIn && styles.checkboxChecked]}>
+            {newsletterOptIn && (
+              <Text style={styles.checkmark}>✓</Text>
+            )}
+          </View>
+          <Text style={styles.checkboxLabel}>
+            Send me news and updates.
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.footer}>
-        <Button
-          title="Back"
-          variant="ghost"
-          onPress={onBack}
-          disabled={!canGoBack || isLoading}
-          fullWidth
-        />
-        <Button
-          title="Continue"
+        <View style={styles.footerSpacer} />
+        <AuthButton
+          title="Next"
           onPress={handleNext}
           loading={isLoading}
-          disabled={!email.trim() || isLoading}
-          variant="primary"
-          fullWidth
+          disabled={disableContinue}
         />
+        <TouchableOpacity onPress={onBack} accessibilityRole="button">
+          <Text variant="body" color="secondary" align="center">
+            Back
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'space-between', padding: 24 },
-  content: { flex: 1, justifyContent: 'center' },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 12,
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 48,
-    lineHeight: 22,
+  content: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  inputContainer: { marginBottom: 24 },
+  heroSpacing: {
+    marginBottom: 32,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    color: '#2C2235',
+  },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
     borderRadius: 12,
-    padding: 16,
-    fontSize: 18,
-    backgroundColor: '#f9f9f9',
-    textAlign: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    backgroundColor: '#FFFFFF',
+    color: '#2C2235',
   },
-  inputError: { borderColor: '#ff4444' },
+  inputError: {
+    borderColor: '#ff4444',
+  },
   errorText: {
-    color: '#ff4444',
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
+    marginTop: 4,
   },
-  footer: { gap: 12 },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  checkbox: {
+    width: 19,
+    height: 19,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#2C2235',
+    borderColor: '#2C2235',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 12,
+    includeFontPadding: false,
+  },
+  checkboxLabel: {
+    fontSize: 12,
+    color: '#2C2235',
+    letterSpacing: -0.6,
+    flex: 1,
+  },
+  footer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  footerSpacer: {
+    height: 32,
+  },
 });
+

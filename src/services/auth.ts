@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { secureStorage, SECURE_STORAGE_KEYS } from '../utils/secureStorage';
 import { permissionService } from './permissions';
 import type { User } from '@supabase/supabase-js';
-import type { DatabaseUser } from '../types/database';
+import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { handleSupabaseError, retryWithBackoff } from '../utils/errorHandling';
 
 export interface AuthResponse {
@@ -78,8 +78,9 @@ export class AuthService {
 
   /**
    * Get the current user's profile from the users table
+   * Includes related church and service objects
    */
-  async getCurrentUserProfile(): Promise<DatabaseUser | null> {
+  async getCurrentUserProfile(): Promise<UserWithDetails | null> {
     try {
       const user = await this.getCurrentUser();
       if (!user) return null;
@@ -98,7 +99,7 @@ export class AuthService {
 
       if (error) return null;
 
-      return data || null;
+      return (data as unknown as UserWithDetails) || null;
     } catch (error) {
       console.error('Error getting user profile:', error);
       return null;
@@ -739,18 +740,57 @@ export class AuthService {
   }
 
   /**
-   * Link email to existing phone-authenticated user (no verification required)
+   * Link email to existing phone-authenticated user
+   * Updates the current authenticated user's email address.
+   * Supabase automatically sends a verification email to the new address.
+   * 
+   * Note: The redirect URL for email verification is configured at the project level
+   * in Supabase dashboard. If a custom redirect URL is needed, it should be configured
+   * in the Supabase project settings (Authentication > URL Configuration).
    */
   async linkEmail(
-    email: string
+    email: string,
+    options?: { emailRedirectTo?: string }
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase.auth.updateUser({ email });
+      // Update the user's email address
+      // Supabase automatically sends a verification email when email is updated
+      // Forward the caller-provided redirect when available, otherwise fall back
+      // to the app's deep link so SendGrid-powered templates open VineMe
+      const redirectUrl =
+        options?.emailRedirectTo || this.buildEmailVerificationRedirectUrl();
+      const updateOptions = redirectUrl
+        ? { emailRedirectTo: redirectUrl }
+        : undefined;
+      const { error } = await supabase.auth.updateUser({ email }, updateOptions);
 
       if (error) {
-        return { success: false, error: error.message };
+        // Normalize and classify common failure modes for better UX
+        const raw = error.message || '';
+        const msg = raw.toLowerCase();
+        if (
+          msg.includes('already') ||
+          msg.includes('exists') ||
+          msg.includes('registered') ||
+          msg.includes('already registered') ||
+          msg.includes('already in use')
+        ) {
+          return {
+            success: false,
+            error: 'This email is already in use by another account.',
+          };
+        }
+        if (msg.includes('maximum credits exceeded') || msg.includes('insufficient') || msg.includes('rate limit')) {
+          return {
+            success: false,
+            error:
+              'We could not send a verification email because the email provider credit/limit was exceeded. Please try again later or contact support.',
+          };
+        }
+        return { success: false, error: raw || 'Failed to link email.' };
       }
 
+      // Email successfully updated and verification email sent automatically
       return { success: true };
     } catch (error) {
       return {

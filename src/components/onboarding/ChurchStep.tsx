@@ -17,10 +17,12 @@ import {
   MissingServiceFormData,
 } from './MissingServiceModal';
 import { useAuthStore } from '@/stores/auth';
-import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { getFullName, getDisplayName } from '@/utils/name';
 import { supabase } from '@/services/supabase';
+import { AuthHero } from '@/components/auth/AuthHero';
+import { AuthButton } from '@/components/auth/AuthButton';
+import { Text as AppText } from '@/components/ui/Text';
 
 export default function ChurchStep({
   data,
@@ -138,7 +140,8 @@ export default function ChurchStep({
         .order('first_name');
 
       if (!error && data) {
-        setServiceAdmins(data);
+        // Supabase typed result only selects a subset of fields; assert to User[] for our usage
+        setServiceAdmins(data as unknown as User[]);
       }
     } catch {
       // Non-blocking
@@ -266,7 +269,7 @@ export default function ChurchStep({
               isSelected && styles.expandIndicatorActive,
             ]}
           >
-            {isSelected ? '▲' : '▼'}
+            ›
           </Text>
         </TouchableOpacity>
 
@@ -280,48 +283,37 @@ export default function ChurchStep({
                 </Text>
               </View>
             ) : services.length > 0 ? (
-              services.map((svc) => {
-                const isServiceSelected = selectedServiceId === svc.id;
+              <>
+                <AppText variant="labelSmall" color="secondary" style={styles.serviceLabel}>
+                  Which service you attend regularly? Select all that applies:
+                </AppText>
+                {services.map((svc) => {
+                  const isServiceSelected = selectedServiceId === svc.id;
+                  // Format service name with time (e.g., "Sunday Morning 10:30")
+                  const serviceDisplayName = svc.name || `${svc.day_of_week || ''} ${svc.start_time || ''}`.trim();
 
-                return (
-                  <TouchableOpacity
-                    key={svc.id}
-                    style={[
-                      styles.serviceItem,
-                      isServiceSelected && styles.serviceItemSelected,
-                    ]}
-                    onPress={() => setSelectedServiceId(svc.id)}
-                    disabled={isLoading}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.serviceInfo}>
-                      <Text
-                        style={[
-                          styles.serviceName,
-                          isServiceSelected && styles.serviceNameSelected,
-                        ]}
-                      >
-                        {svc.name}
-                      </Text>
-                      {svc.day_of_week !== undefined && (
-                        <Text style={styles.serviceMeta}>
-                          Meets on {svc.day_of_week}
+                  return (
+                    <TouchableOpacity
+                      key={svc.id}
+                      style={styles.serviceCheckboxRow}
+                      onPress={() => setSelectedServiceId(svc.id)}
+                      disabled={isLoading}
+                      activeOpacity={0.85}
+                    >
+                      <View style={styles.serviceCheckboxContainer}>
+                        <Text style={styles.serviceCheckboxLabel}>
+                          {serviceDisplayName}
                         </Text>
-                      )}
-                      {svc.start_time && (
-                        <Text style={styles.serviceMeta}>
-                          Starts at {svc.start_time}
-                        </Text>
-                      )}
-                    </View>
-                    {isServiceSelected && (
-                      <View style={styles.checkmarkSmall}>
-                        <Text style={styles.checkmarkText}>✓</Text>
+                        <View style={[styles.serviceCheckbox, isServiceSelected && styles.serviceCheckboxChecked]}>
+                          {isServiceSelected && (
+                            <Text style={styles.serviceCheckmark}>✓</Text>
+                          )}
+                        </View>
                       </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })
+                    </TouchableOpacity>
+                  );
+                })}
+              </>
             ) : (
               <View style={styles.serviceEmptyContainer}>
                 <Text style={styles.serviceEmptyText}>
@@ -332,8 +324,65 @@ export default function ChurchStep({
                   Please choose a different church for now or request this
                   service so we can add it.
                 </Text>
+                <TouchableOpacity
+                  style={styles.serviceEmptyRequestButton}
+                  onPress={() => handleOpenMissingServiceModal('service')}
+                  disabled={missingServiceSubmitting}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.serviceEmptyRequestTitle}>
+                    Request this service
+                  </Text>
+                  <Text style={styles.serviceEmptyRequestSubtitle}>
+                    Tell us the service details and we&apos;ll reach out when it&apos;s
+                    available.
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
+
+            <View style={styles.missingServiceContainer}>
+              <TouchableOpacity
+                style={styles.missingServiceButton}
+                onPress={() => handleOpenMissingServiceModal('service')}
+                disabled={missingServiceSubmitting}
+                activeOpacity={0.85}
+              >
+                <View style={styles.missingServiceTextGroup}>
+                  <AppText
+                    variant="body"
+                    weight="semiBold"
+                    style={styles.missingServiceTitle}
+                  >
+                    Can't find your service?
+                  </AppText>
+                  <AppText
+                    variant="bodySmall"
+                    color="secondary"
+                    style={styles.missingServiceSubtitle}
+                  >
+                    Tell us about the service you attend so we can add it for
+                    this church.
+                  </AppText>
+                </View>
+                <View style={styles.missingServiceIcon}>
+                  <Text style={styles.missingServiceIconText}>+</Text>
+                </View>
+              </TouchableOpacity>
+              {missingServiceSubmitted &&
+                missingServiceLastMode === 'service' && (
+                  <Text style={styles.missingServiceNotice}>
+                    Thanks! We'll reach out soon about adding that service.
+                  </Text>
+                )}
+              {missingServiceRequestError &&
+                missingServiceLastMode === 'service' &&
+                !showMissingServiceModal && (
+                  <Text style={styles.serviceInlineError}>
+                    {missingServiceRequestError}
+                  </Text>
+                )}
+            </View>
 
             {selectedServiceId && (
               <View style={styles.adminDisclosureContainer}>
@@ -378,42 +427,6 @@ export default function ChurchStep({
                 )}
               </View>
             )}
-
-            <TouchableOpacity
-              style={styles.otherServiceCard}
-              onPress={() => handleOpenMissingServiceModal('service')}
-              disabled={missingServiceSubmitting}
-              activeOpacity={0.85}
-            >
-              <View style={styles.otherServiceTextGroup}>
-                <Text style={styles.otherServiceTitle}>
-                  Can&apos;t find your service?
-                </Text>
-                <Text style={styles.otherServiceSubtitle}>
-                  Send us the details and we&apos;ll add it.
-                </Text>
-              </View>
-              <View style={styles.otherServiceIcon}>
-                <Text style={styles.otherServiceIconText}>+</Text>
-              </View>
-            </TouchableOpacity>
-
-            {missingServiceSubmitted &&
-              missingServiceLastMode === 'service' && (
-                <View style={styles.infoBanner}>
-                  <Text style={styles.infoBannerText}>
-                    Thanks! We received your request and will reach out once the
-                    service is available.
-                  </Text>
-                </View>
-              )}
-            {missingServiceRequestError &&
-              missingServiceLastMode === 'service' &&
-              !showMissingServiceModal && (
-                <Text style={styles.serviceInlineError}>
-                  {missingServiceRequestError}
-                </Text>
-              )}
           </View>
         )}
       </View>
@@ -446,17 +459,12 @@ export default function ChurchStep({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.content}>
-        <Text style={styles.title}>Select your church</Text>
-        <Text style={styles.subtitle}>
-          This helps us show you relevant groups and events
-        </Text>
+        <AuthHero
+          title="Select your church"
+          subtitle="This helps us show you relevant groups and events"
+          containerStyle={styles.heroSpacing}
+        />
 
         <FlatList
           data={churches}
@@ -465,7 +473,6 @@ export default function ChurchStep({
           style={styles.churchList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.churchListContent}
-          scrollEnabled={false}
           ListFooterComponent={() => (
             <View style={styles.listFooter}>
               <TouchableOpacity
@@ -475,12 +482,12 @@ export default function ChurchStep({
                 activeOpacity={0.85}
               >
                 <View style={styles.missingChurchTextGroup}>
-                  <Text style={styles.missingChurchTitle}>
+                  <AppText variant="body" weight="semiBold" style={styles.missingChurchTitle}>
                     Can&apos;t find your church?
-                  </Text>
-                  <Text style={styles.missingChurchSubtitle}>
-                    Share the details and we&apos;ll add it to VineMe.
-                  </Text>
+                  </AppText>
+                  <AppText variant="bodySmall" color="secondary" style={styles.missingChurchSubtitle}>
+                    Share the details of your church with us and we&apos;ll add it to VineMe.
+                  </AppText>
                 </View>
                 <View style={styles.missingChurchIcon}>
                   <Text style={styles.missingChurchIconText}>+</Text>
@@ -507,21 +514,18 @@ export default function ChurchStep({
       </View>
 
       <View style={styles.footer}>
-        <Button
-          title="Back"
-          variant="ghost"
-          onPress={onBack}
-          disabled={!canGoBack || isLoading}
-          fullWidth
-        />
-        <Button
-          title="Continue"
+        <View style={styles.footerSpacer} />
+        <AuthButton
+          title="Next"
           onPress={handleNext}
           loading={isLoading}
           disabled={!selectedChurchId || !selectedServiceId || isLoading}
-          variant="primary"
-          fullWidth
         />
+        <TouchableOpacity onPress={onBack} accessibilityRole="button">
+          <AppText variant="body" color="secondary" align="center">
+            Back
+          </AppText>
+        </TouchableOpacity>
         {noServicesAvailable && (
           <Text style={styles.serviceRequiredNotice}>
             A service is required to finish onboarding. Once a service is
@@ -566,6 +570,9 @@ export default function ChurchStep({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   loadingContainer: {
     flex: 1,
@@ -609,64 +616,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  header: {
-    padding: 24,
-    paddingBottom: 0,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
   content: {
     flex: 1,
-    padding: 24,
-    paddingTop: 12,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 22,
+  heroSpacing: {
+    marginTop: 16,
+    marginBottom: 24,
   },
   churchList: {
     flex: 1,
   },
   churchListContent: {
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   churchCard: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
     borderRadius: 12,
     marginBottom: 12,
     backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
   },
   churchCardSelected: {
-    borderColor: '#007AFF',
-    shadowOpacity: 0.08,
-    backgroundColor: '#f8fbff',
+    borderColor: '#F54099',
   },
   churchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
   churchInfo: {
     flex: 1,
@@ -674,32 +651,76 @@ const styles = StyleSheet.create({
   churchName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#2C2235',
     marginBottom: 4,
   },
   churchNameSelected: {
-    color: '#007AFF',
+    color: '#2C2235',
   },
   churchAddress: {
     fontSize: 14,
     color: '#666',
   },
   churchAddressSelected: {
-    color: '#0066cc',
+    color: '#666',
   },
   expandIndicator: {
     fontSize: 18,
     color: '#999',
     marginLeft: 12,
+    transform: [{ rotate: '180deg' }],
   },
   expandIndicatorActive: {
-    color: '#007AFF',
+    color: '#2C2235',
+    transform: [{ rotate: '0deg' }],
   },
   serviceSection: {
     borderTopWidth: 1,
     borderTopColor: '#edf2ff',
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 16,
+  },
+  serviceLabel: {
+    color: '#2C2235',
+    marginBottom: 16,
+  },
+  serviceCheckboxRow: {
+    marginBottom: 12,
+  },
+  serviceCheckboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  serviceCheckbox: {
+    width: 19,
+    height: 19,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  serviceCheckboxChecked: {
+    backgroundColor: '#2C2235',
+    borderColor: '#2C2235',
+  },
+  serviceCheckmark: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 12,
+    includeFontPadding: false,
+  },
+  serviceCheckboxLabel: {
+    fontSize: 12,
+    color: '#2C2235',
+    fontWeight: '600',
+    flex: 1,
+    letterSpacing: -0.6,
   },
   serviceLoading: {
     flexDirection: 'row',
@@ -710,37 +731,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 14,
     color: '#666',
-  },
-  serviceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#e3e8f0',
-    borderRadius: 10,
-    marginTop: 12,
-    backgroundColor: '#f9fbff',
-  },
-  serviceItemSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#edf5ff',
-  },
-  serviceInfo: {
-    flex: 1,
-  },
-  serviceName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  serviceNameSelected: {
-    color: '#007AFF',
-  },
-  serviceMeta: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 4,
   },
   serviceEmptyContainer: {
     paddingTop: 12,
@@ -756,38 +746,54 @@ const styles = StyleSheet.create({
     color: '#4d6aa7',
     lineHeight: 19,
   },
-  otherServiceCard: {
+  serviceEmptyRequestButton: {
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#c6d7ff',
-    borderStyle: 'dashed',
+    borderColor: '#4d6aa7',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(77, 106, 167, 0.08)',
+    gap: 4,
+  },
+  serviceEmptyRequestTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2C2235',
+  },
+  serviceEmptyRequestSubtitle: {
+    fontSize: 13,
+    color: '#2C2235',
+    lineHeight: 18,
+  },
+  otherServiceCard: {
+    marginTop: 16,
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f7fbff',
+    backgroundColor: '#FFFFFF',
     gap: 12,
   },
   otherServiceTextGroup: {
     flex: 1,
   },
   otherServiceTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0c3c8c',
-    marginBottom: 4,
+    color: '#2C2235',
+    marginBottom: 8,
   },
   otherServiceSubtitle: {
-    fontSize: 13,
-    color: '#4d6aa7',
-    lineHeight: 18,
+    color: '#2C2235',
+    lineHeight: 20,
   },
   otherServiceIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#0c3c8c',
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
+    backgroundColor: '#2C2235',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -797,23 +803,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 20,
   },
-  checkmarkSmall: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
   footer: {
-    padding: 24,
-    paddingTop: 16,
-    gap: 12,
+    alignItems: 'center',
+    width: '100%',
+  },
+  footerSpacer: {
+    height: 32,
   },
   pendingNotice: {
     marginTop: 12,
@@ -854,37 +849,81 @@ const styles = StyleSheet.create({
     marginTop: 12,
     gap: 8,
   },
-  missingChurchButton: {
-    borderWidth: 1,
-    borderColor: '#c6d7ff',
+  
+  missingServiceContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  missingServiceButton: {
+    borderWidth: 1.5,
+    borderColor: '#4d6aa7',
     borderStyle: 'dashed',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#f7fbff',
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(77, 106, 167, 0.05)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  missingServiceTextGroup: {
+    flex: 1,
+  },
+  missingServiceTitle: {
+    color: '#2C2235',
+    marginBottom: 8,
+  },
+  missingServiceSubtitle: {
+    color: '#2C2235',
+    lineHeight: 20,
+  },
+  missingServiceIcon: {
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
+    backgroundColor: '#4d6aa7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  missingServiceIconText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  missingServiceNotice: {
+    fontSize: 14,
+    color: '#19478a',
+    lineHeight: 20,
+  },
+  missingChurchButton: {
+    borderWidth: 1.5,
+    borderColor: '#F54099',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(245, 64, 153, 0.01)',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
   missingChurchTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0c3c8c',
-    marginBottom: 4,
+    color: '#2C2235',
+    marginBottom: 8,
   },
   missingChurchSubtitle: {
-    fontSize: 14,
-    color: '#4d6aa7',
+    color: '#2C2235',
     lineHeight: 20,
   },
   missingChurchTextGroup: {
     flex: 1,
   },
   missingChurchIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#0c3c8c',
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
+    backgroundColor: '#F54099',
     alignItems: 'center',
     justifyContent: 'center',
   },
