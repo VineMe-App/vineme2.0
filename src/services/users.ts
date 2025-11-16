@@ -128,20 +128,27 @@ export class UserService {
       // Prefer supabase.functions.invoke so required headers are added automatically:
       // - apikey: anon key
       // - Authorization: Bearer <access_token> (when session exists)
-      const { data: fnData, error: fnError } = await supabase.functions.invoke(
-        'delete-auth-user',
-        {
-          body: { userId },
-          headers: {
-            // Explicitly include Authorization to be safe across environments
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const { data: fnData, error: fnError } = await supabase.functions.invoke<{
+        ok: boolean;
+        error?: string;
+      }>('delete-auth-user', {
+        body: { userId },
+        headers: {
+          // Explicitly include Authorization to be safe across environments
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       if (fnError) {
         console.error('[deleteAccount] Edge function error:', fnError);
         return { data: null, error: new Error(fnError.message) };
+      }
+
+      if (!fnData?.ok) {
+        const message =
+          fnData?.error || 'Auth account deletion failed to complete';
+        console.error('[deleteAccount] Edge function returned error:', message);
+        return { data: null, error: new Error(message) };
       }
 
       return { data: true, error: null };
