@@ -125,27 +125,23 @@ export class UserService {
         return { data: null, error: new Error('Missing Supabase URL configuration') };
       }
 
-      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/delete-auth-user`;
-      
-      const response = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ userId }),
-      });
+      // Prefer supabase.functions.invoke so required headers are added automatically:
+      // - apikey: anon key
+      // - Authorization: Bearer <access_token> (when session exists)
+      const { data: fnData, error: fnError } = await supabase.functions.invoke(
+        'delete-auth-user',
+        {
+          body: { userId },
+          headers: {
+            // Explicitly include Authorization to be safe across environments
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
-      const result = await response.json();
-
-      if (!result.ok) {
-        console.error('[deleteAccount] Edge function error:', result.error);
-        // Even if auth deletion fails, the public data is already deleted
-        // Return success but log the error
-        return { 
-          data: true, 
-          error: null 
-        };
+      if (fnError) {
+        console.error('[deleteAccount] Edge function error:', fnError);
+        return { data: null, error: new Error(fnError.message) };
       }
 
       return { data: true, error: null };
