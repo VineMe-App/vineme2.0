@@ -16,6 +16,7 @@ import {
   SearchBar,
   type ViewMode,
 } from '../../components/groups';
+import { LocationPicker } from '../../components/groups/LocationPicker';
 import {
   useGroupsByChurch,
   useGroupMembership,
@@ -53,6 +54,11 @@ export default function GroupsScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [distanceOrigin, setDistanceOrigin] = useState<{
+    address: string;
+    coordinates: { latitude: number; longitude: number };
+  } | null>(null);
+  const [showDistanceOriginPicker, setShowDistanceOriginPicker] = useState(false);
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   // Create flow now navigates to dedicated page
@@ -192,14 +198,16 @@ export default function GroupsScreen() {
   // Sorted groups with computed distance and friend counts
   const groupsWithDistance = useMemo(() => {
     if (!filteredGroups) return [] as typeof filteredGroups & any[];
+    const originCoords =
+      distanceOrigin?.coordinates || userCoords || null;
     return filteredGroups
       .map((g) => {
         let distanceKm: number | undefined;
-        if (sortBy === 'distance' && userCoords) {
+        if (sortBy === 'distance' && originCoords) {
           const parsed = locationService.parseGroupLocation(g.location);
           if (parsed.coordinates) {
             distanceKm = locationService.calculateDistance(
-              userCoords,
+              originCoords,
               parsed.coordinates
             );
           }
@@ -217,7 +225,7 @@ export default function GroupsScreen() {
         } as any;
       })
       .sort((a: any, b: any) => {
-        if (sortBy === 'distance' && userCoords) {
+        if (sortBy === 'distance' && (distanceOrigin?.coordinates || userCoords)) {
           const da = a.__distanceKm;
           const db = b.__distanceKm;
           if (da == null && db == null) return 0;
@@ -231,7 +239,7 @@ export default function GroupsScreen() {
         }
         return 0;
       });
-  }, [filteredGroups, sortBy, userCoords, friendIds]);
+  }, [filteredGroups, sortBy, userCoords, distanceOrigin?.coordinates, friendIds]);
 
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {
@@ -406,24 +414,37 @@ export default function GroupsScreen() {
             }
             accessibilityLabel={`Switch to ${currentView === 'list' ? 'map' : 'list'} view`}
           >
-            <View style={styles.iconButtonInner}>
+            <View
+              style={[
+                styles.iconButtonInner,
+                currentView === 'map' && styles.iconButtonInnerActive,
+              ]}
+            >
               <Ionicons
                 name={currentView === 'list' ? 'map-outline' : 'list-outline'}
                 size={16}
-                color="#2C2235"
+                color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
               />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.figmaIconButton}
+            style={[
+              styles.iconButton,
+              { backgroundColor: theme.colors.secondary[100] },
+            ]}
             onPress={() => setShowFilterPanel(true)}
             accessibilityLabel="Filter groups"
           >
-            <View style={styles.iconButtonInner}>
+            <View
+              style={[
+                styles.iconButtonInner,
+                getActiveFiltersCount(filters) > 0 && styles.iconButtonInnerActive,
+              ]}
+            >
               <Ionicons
                 name="funnel-outline"
                 size={16}
-                color="#2C2235"
+                color={getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'}
               />
             </View>
           </TouchableOpacity>
@@ -433,14 +454,42 @@ export default function GroupsScreen() {
             accessibilityLabel="Sort options"
             disabled={currentView === 'map'}
           >
-            <View style={[styles.iconButtonInner, currentView === 'map' && styles.iconButtonDisabled]}>
+            <View
+              style={[
+                styles.iconButtonInner,
+                currentView === 'map' && styles.iconButtonDisabled,
+                currentView !== 'map' && sortBy !== 'alphabetical' && styles.iconButtonInnerActive,
+              ]}
+            >
               <Ionicons
                 name="swap-vertical-outline"
                 size={20}
-                color={currentView === 'map' ? '#8B8A8C' : '#2C2235'}
+                color={
+                  currentView === 'map'
+                    ? '#8B8A8C'
+                    : sortBy !== 'alphabetical'
+                    ? '#FFFFFF'
+                    : '#2C2235'
+                }
               />
             </View>
           </TouchableOpacity>
+          {currentView === 'list' && sortBy === 'distance' && (
+            <TouchableOpacity
+              style={styles.figmaIconButton}
+              onPress={() => setShowDistanceOriginPicker(true)}
+              accessibilityLabel="Choose location to measure distance from"
+            >
+              <View
+                style={[
+                  styles.iconButtonInner,
+                  styles.iconButtonInnerActive, // Pink when distance is selected
+                ]}
+              >
+                <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+          )}
           {userProfile?.church_id && (
             <TouchableOpacity
               style={styles.figmaIconButton}
@@ -476,11 +525,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="text-outline"
               size={20}
-              color={
-                sortBy === 'alphabetical'
-                  ? theme.colors.secondary[100]
-                  : theme.colors.text.primary
-              }
+              color={sortBy === 'alphabetical' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -505,16 +550,14 @@ export default function GroupsScreen() {
               }
               setSortBy('distance');
               setShowSortOptions(false);
+              // Always prompt to choose location when sorting by distance
+              setShowDistanceOriginPicker(true);
             }}
           >
             <Ionicons
               name="navigate-outline"
               size={20}
-              color={
-                sortBy === 'distance'
-                  ? theme.colors.secondary[100]
-                  : theme.colors.text.primary
-              }
+              color={sortBy === 'distance' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -540,7 +583,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="people-outline"
               size={20}
-              color={sortBy === 'friends' ? theme.colors.secondary[100] : theme.colors.text.primary}
+              color={sortBy === 'friends' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -607,6 +650,42 @@ export default function GroupsScreen() {
         isVisible={showFilterPanel}
         onClose={() => setShowFilterPanel(false)}
       />
+
+      {/* Distance origin picker */}
+      <Modal
+        isVisible={showDistanceOriginPicker}
+        onClose={() => setShowDistanceOriginPicker(false)}
+        title="Choose a location"
+        headerStyle={{ borderBottomWidth: 0, paddingBottom: 0, paddingRight: 22 }}
+        titleTextStyle={{ letterSpacing: -0.5 }}
+        bodyStyle={{ paddingTop: 0 }}
+      >
+        <LocationPicker
+          value={
+            distanceOrigin
+              ? {
+                  address: distanceOrigin.address,
+                  coordinates: distanceOrigin.coordinates,
+                }
+              : undefined
+          }
+          deferChanges
+          onChange={(val) => {
+            if (val?.coordinates) {
+              setDistanceOrigin({
+                address: val.address || 'Selected location',
+                coordinates: val.coordinates,
+              });
+            } else {
+              setDistanceOrigin(null);
+            }
+          }}
+          onSubmit={() => {
+            setSortBy('distance');
+            setShowDistanceOriginPicker(false);
+          }}
+        />
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -704,6 +783,7 @@ const styles = StyleSheet.create({
     color: '#2C2235',
     fontSize: 22,
     letterSpacing: -1.1,
+    fontWeight: '900',
   },
   headerActions: {
     flexDirection: 'row',
@@ -726,6 +806,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   searchButtonInner: {
+    backgroundColor: '#FF0083',
+  },
+  iconButtonInnerActive: {
     backgroundColor: '#FF0083',
   },
   iconButtonDisabled: {
@@ -800,7 +883,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sortOptionSelected: {
-    backgroundColor: '#8b5cf6',
+    backgroundColor: '#FF0083',
   },
   sortOptionText: {
     marginLeft: 12,

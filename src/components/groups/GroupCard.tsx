@@ -230,6 +230,19 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 </Text>
               </View>
             )}
+            {/* Distance (shown when sorting by distance) */}
+            {typeof distanceKm === 'number' && (
+              <View style={styles.detailRow}>
+                <Ionicons name="navigate-outline" size={16} color="#2C2235" />
+                <Text
+                  variant="bodySmall"
+                  weight="medium"
+                  style={styles.detailText}
+                >
+                  {distanceKm.toFixed(1)} km away
+                </Text>
+              </View>
+            )}
 
             {/* Location */}
             <View style={styles.detailRow}>

@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     color: '#2C2235',
     marginBottom: 12,
     letterSpacing: -1.5,
+    fontWeight: '900',
   },
   subtitle: {
     color: '#2C2235',
