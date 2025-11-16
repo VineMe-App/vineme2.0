@@ -66,10 +66,6 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        safeAreaInsets: {
-          top: insets.top,
-          bottom: insets.bottom,
-        },
         tabBarActiveTintColor: theme.colors.primary[500],
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: {
