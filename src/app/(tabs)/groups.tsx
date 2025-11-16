@@ -225,7 +225,7 @@ export default function GroupsScreen() {
         } as any;
       })
       .sort((a: any, b: any) => {
-        if (sortBy === 'distance' && userCoords) {
+        if (sortBy === 'distance' && (distanceOrigin?.coordinates || userCoords)) {
           const da = a.__distanceKm;
           const db = b.__distanceKm;
           if (da == null && db == null) return 0;
@@ -239,7 +239,7 @@ export default function GroupsScreen() {
         }
         return 0;
       });
-  }, [filteredGroups, sortBy, userCoords, friendIds]);
+  }, [filteredGroups, sortBy, userCoords, distanceOrigin?.coordinates, friendIds]);
 
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {
@@ -414,11 +414,16 @@ export default function GroupsScreen() {
             }
             accessibilityLabel={`Switch to ${currentView === 'list' ? 'map' : 'list'} view`}
           >
-            <View style={styles.iconButtonInner}>
+            <View
+              style={[
+                styles.iconButtonInner,
+                currentView === 'map' && styles.iconButtonInnerActive,
+              ]}
+            >
               <Ionicons
                 name={currentView === 'list' ? 'map-outline' : 'list-outline'}
                 size={16}
-                color="#2C2235"
+                color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
               />
             </View>
           </TouchableOpacity>
@@ -427,56 +432,19 @@ export default function GroupsScreen() {
               styles.iconButton,
               { backgroundColor: theme.colors.secondary[100] },
             ]}
-            onPress={() => setShowSearch((s) => !s)}
-          >
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color={theme.colors.primary[500]}
-            />
-          </TouchableOpacity>
-          {currentView === 'list' && sortBy === 'distance' && (
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                { backgroundColor: theme.colors.secondary[100] },
-              ]}
-              onPress={() => setShowDistanceOriginPicker(true)}
-              accessibilityLabel="Choose location to measure distance from"
-            >
-              <Ionicons
-                name="navigate-outline"
-                size={16}
-                color={theme.colors.primary[500]}
-              />
-              <Text
-                variant="caption"
-                style={{
-                  color: theme.colors.primary[500],
-                  marginLeft: 4,
-                  fontSize: 12,
-                  fontWeight: '500',
-                  maxWidth: 150,
-                }}
-                numberOfLines={1}
-              >
-                From: {distanceOrigin?.address || 'Current location'}
-              </Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
             onPress={() => setShowFilterPanel(true)}
             accessibilityLabel="Filter groups"
           >
-            <View style={styles.iconButtonInner}>
+            <View
+              style={[
+                styles.iconButtonInner,
+                getActiveFiltersCount(filters) > 0 && styles.iconButtonInnerActive,
+              ]}
+            >
               <Ionicons
                 name="funnel-outline"
                 size={16}
-                color="#2C2235"
+                color={getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'}
               />
             </View>
           </TouchableOpacity>
@@ -486,14 +454,42 @@ export default function GroupsScreen() {
             accessibilityLabel="Sort options"
             disabled={currentView === 'map'}
           >
-            <View style={[styles.iconButtonInner, currentView === 'map' && styles.iconButtonDisabled]}>
+            <View
+              style={[
+                styles.iconButtonInner,
+                currentView === 'map' && styles.iconButtonDisabled,
+                currentView !== 'map' && sortBy !== 'alphabetical' && styles.iconButtonInnerActive,
+              ]}
+            >
               <Ionicons
                 name="swap-vertical-outline"
                 size={20}
-                color={currentView === 'map' ? '#8B8A8C' : '#2C2235'}
+                color={
+                  currentView === 'map'
+                    ? '#8B8A8C'
+                    : sortBy !== 'alphabetical'
+                    ? '#FFFFFF'
+                    : '#2C2235'
+                }
               />
             </View>
           </TouchableOpacity>
+          {currentView === 'list' && sortBy === 'distance' && (
+            <TouchableOpacity
+              style={styles.figmaIconButton}
+              onPress={() => setShowDistanceOriginPicker(true)}
+              accessibilityLabel="Choose location to measure distance from"
+            >
+              <View
+                style={[
+                  styles.iconButtonInner,
+                  styles.iconButtonInnerActive, // Pink when distance is selected
+                ]}
+              >
+                <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+          )}
           {userProfile?.church_id && (
             <TouchableOpacity
               style={styles.figmaIconButton}
@@ -529,11 +525,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="text-outline"
               size={20}
-              color={
-                sortBy === 'alphabetical'
-                  ? theme.colors.secondary[100]
-                  : theme.colors.text.primary
-              }
+              color={sortBy === 'alphabetical' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -558,16 +550,14 @@ export default function GroupsScreen() {
               }
               setSortBy('distance');
               setShowSortOptions(false);
+              // Always prompt to choose location when sorting by distance
+              setShowDistanceOriginPicker(true);
             }}
           >
             <Ionicons
               name="navigate-outline"
               size={20}
-              color={
-                sortBy === 'distance'
-                  ? theme.colors.secondary[100]
-                  : theme.colors.text.primary
-              }
+              color={sortBy === 'distance' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -593,7 +583,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="people-outline"
               size={20}
-              color={sortBy === 'friends' ? theme.colors.secondary[100] : theme.colors.text.primary}
+              color={sortBy === 'friends' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -665,7 +655,10 @@ export default function GroupsScreen() {
       <Modal
         isVisible={showDistanceOriginPicker}
         onClose={() => setShowDistanceOriginPicker(false)}
-        title="Choose distance starting point"
+        title="Choose a location"
+        headerStyle={{ borderBottomWidth: 0, paddingBottom: 0, paddingRight: 22 }}
+        titleTextStyle={{ letterSpacing: -0.5 }}
+        bodyStyle={{ paddingTop: 0 }}
       >
         <LocationPicker
           value={
@@ -676,6 +669,7 @@ export default function GroupsScreen() {
                 }
               : undefined
           }
+          deferChanges
           onChange={(val) => {
             if (val?.coordinates) {
               setDistanceOrigin({
@@ -685,6 +679,10 @@ export default function GroupsScreen() {
             } else {
               setDistanceOrigin(null);
             }
+          }}
+          onSubmit={() => {
+            setSortBy('distance');
+            setShowDistanceOriginPicker(false);
           }}
         />
       </Modal>
@@ -785,6 +783,7 @@ const styles = StyleSheet.create({
     color: '#2C2235',
     fontSize: 22,
     letterSpacing: -1.1,
+    fontWeight: '900',
   },
   headerActions: {
     flexDirection: 'row',
@@ -807,6 +806,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   searchButtonInner: {
+    backgroundColor: '#FF0083',
+  },
+  iconButtonInnerActive: {
     backgroundColor: '#FF0083',
   },
   iconButtonDisabled: {
@@ -881,7 +883,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sortOptionSelected: {
-    backgroundColor: '#8b5cf6',
+    backgroundColor: '#FF0083',
   },
   sortOptionText: {
     marginLeft: 12,

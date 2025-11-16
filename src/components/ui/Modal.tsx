@@ -18,11 +18,13 @@ import { useThemeSafe } from '../../theme/provider/useTheme';
 import { lightTheme } from '../../theme/themes';
 import { withOpacity } from '../../utils/colors';
 
-export interface ModalProps extends Omit<RNModalProps, 'children'> {
+export interface ModalProps
+  extends Omit<RNModalProps, 'children' | 'animationType'> {
   children: React.ReactNode;
   isVisible: boolean;
   onClose: () => void;
   title?: string;
+  titleTextStyle?: import('react-native').TextStyle;
   size?: 'small' | 'medium' | 'large' | 'fullscreen';
   variant?: 'default' | 'centered' | 'bottom-sheet' | 'fullscreen';
   showCloseButton?: boolean;
@@ -52,6 +54,7 @@ export const Modal: React.FC<ModalProps> = ({
   isVisible,
   onClose,
   title,
+  titleTextStyle,
   size = 'medium',
   variant = 'default',
   showCloseButton = true,
@@ -210,12 +213,11 @@ export const Modal: React.FC<ModalProps> = ({
         accessible={true}
         accessibilityLabel={title || 'Modal'}
         accessibilityViewIsModal={true}
-        onKeyPress={handleEscapeKey}
       >
         {(title || showCloseButton) && (
           <View style={[styles.header, headerStyle]}>
             {title && (
-              <Text style={styles.title} accessibilityRole="header">
+              <Text style={[styles.title, titleTextStyle]} accessibilityRole="header">
                 {title}
               </Text>
             )}
@@ -256,7 +258,7 @@ export const Modal: React.FC<ModalProps> = ({
       statusBarTranslucent
       {...modalProps}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.absoluteFill}>
         <View style={[styles.overlay, getContentPosition(), overlayStyle]}>
           <TouchableOpacity
             style={styles.overlayTouchable}
@@ -285,7 +287,7 @@ export const Modal: React.FC<ModalProps> = ({
             </KeyboardAvoidingView>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     </RNModal>
   );
 };
@@ -303,6 +305,13 @@ const createStyles = (
   StyleSheet.create({
     safeArea: {
       flex: 1,
+    },
+    absoluteFill: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
     },
     overlay: {
       flex: 1,

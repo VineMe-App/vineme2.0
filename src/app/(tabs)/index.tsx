@@ -726,6 +726,7 @@ const styles = StyleSheet.create({
     color: '#2C2235',
     fontSize: 27.5,
     letterSpacing: -1.375,
+    fontWeight: '900',
   },
   eventsBanner: {
     borderRadius: 12,
