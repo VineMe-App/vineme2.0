@@ -759,21 +759,29 @@ export class AuthService {
       const { error } = await supabase.auth.updateUser({ email });
 
       if (error) {
-        // Handle specific error cases
-        const errorMsg = error.message.toLowerCase();
+        // Normalize and classify common failure modes for better UX
+        const raw = error.message || '';
+        const msg = raw.toLowerCase();
         if (
-          errorMsg.includes('already') ||
-          errorMsg.includes('exists') ||
-          errorMsg.includes('registered') ||
-          errorMsg.includes('already registered') ||
-          errorMsg.includes('already in use')
+          msg.includes('already') ||
+          msg.includes('exists') ||
+          msg.includes('registered') ||
+          msg.includes('already registered') ||
+          msg.includes('already in use')
         ) {
           return {
             success: false,
-            error: 'This email is already in use by another account',
+            error: 'This email is already in use by another account.',
           };
         }
-        return { success: false, error: error.message };
+        if (msg.includes('maximum credits exceeded') || msg.includes('insufficient') || msg.includes('rate limit')) {
+          return {
+            success: false,
+            error:
+              'We could not send a verification email because the email provider credit/limit was exceeded. Please try again later or contact support.',
+          };
+        }
+        return { success: false, error: raw || 'Failed to link email.' };
       }
 
       // Email successfully updated and verification email sent automatically
