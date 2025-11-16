@@ -16,6 +16,7 @@ import {
   SearchBar,
   type ViewMode,
 } from '../../components/groups';
+import { LocationPicker } from '../../components/groups/LocationPicker';
 import {
   useGroupsByChurch,
   useGroupMembership,
@@ -52,6 +53,11 @@ export default function GroupsScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [distanceOrigin, setDistanceOrigin] = useState<{
+    address: string;
+    coordinates: { latitude: number; longitude: number };
+  } | null>(null);
+  const [showDistanceOriginPicker, setShowDistanceOriginPicker] = useState(false);
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   // Create flow now navigates to dedicated page
@@ -191,14 +197,16 @@ export default function GroupsScreen() {
   // Sorted groups with computed distance and friend counts
   const groupsWithDistance = useMemo(() => {
     if (!filteredGroups) return [] as typeof filteredGroups & any[];
+    const originCoords =
+      distanceOrigin?.coordinates || userCoords || null;
     return filteredGroups
       .map((g) => {
         let distanceKm: number | undefined;
-        if (sortBy === 'distance' && userCoords) {
+        if (sortBy === 'distance' && originCoords) {
           const parsed = locationService.parseGroupLocation(g.location);
           if (parsed.coordinates) {
             distanceKm = locationService.calculateDistance(
-              userCoords,
+              originCoords,
               parsed.coordinates
             );
           }
@@ -444,6 +452,35 @@ export default function GroupsScreen() {
               color={theme.colors.primary[500]}
             />
           </TouchableOpacity>
+          {currentView === 'list' && sortBy === 'distance' && (
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                { backgroundColor: theme.colors.secondary[100] },
+              ]}
+              onPress={() => setShowDistanceOriginPicker(true)}
+              accessibilityLabel="Choose location to measure distance from"
+            >
+              <Ionicons
+                name="navigate-outline"
+                size={16}
+                color={theme.colors.primary[500]}
+              />
+              <Text
+                variant="caption"
+                style={{
+                  color: theme.colors.primary[500],
+                  marginLeft: 4,
+                  fontSize: 12,
+                  fontWeight: '500',
+                  maxWidth: 150,
+                }}
+                numberOfLines={1}
+              >
+                From: {distanceOrigin?.address || 'Current location'}
+              </Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={[
               styles.iconButton,
@@ -663,6 +700,34 @@ export default function GroupsScreen() {
         isVisible={showFilterPanel}
         onClose={() => setShowFilterPanel(false)}
       />
+
+      {/* Distance origin picker */}
+      <Modal
+        isVisible={showDistanceOriginPicker}
+        onClose={() => setShowDistanceOriginPicker(false)}
+        title="Choose distance starting point"
+      >
+        <LocationPicker
+          value={
+            distanceOrigin
+              ? {
+                  address: distanceOrigin.address,
+                  coordinates: distanceOrigin.coordinates,
+                }
+              : undefined
+          }
+          onChange={(val) => {
+            if (val?.coordinates) {
+              setDistanceOrigin({
+                address: val.address || 'Selected location',
+                coordinates: val.coordinates,
+              });
+            } else {
+              setDistanceOrigin(null);
+            }
+          }}
+        />
+      </Modal>
     </SafeAreaView>
   );
 }
