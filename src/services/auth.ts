@@ -750,7 +750,7 @@ export class AuthService {
    */
   async linkEmail(
     email: string,
-    options?: { emailRedirectTo?: string }
+    options?: { emailRedirectTo?: string; marketingOptIn?: boolean }
   ): Promise<{ success: boolean; error?: string }> {
     try {
       // Update the user's email address
@@ -788,6 +788,52 @@ export class AuthService {
           };
         }
         return { success: false, error: raw || 'Failed to link email.' };
+      }
+
+      // Save marketing preference if provided
+      if (options?.marketingOptIn !== undefined) {
+        const user = await this.getCurrentUser();
+        if (user) {
+          // Fetch existing roles so that we don't accidentally strip elevated permissions
+          let existingRoles: string[] | null = null;
+          const { data: existingProfiles, error: existingProfileError } = await supabase
+            .from('users')
+            .select('roles')
+            .eq('id', user.id)
+            .limit(1);
+
+          if (existingProfileError) {
+            console.warn('Failed to fetch existing roles before marketing opt-in upsert:', existingProfileError);
+          } else if (existingProfiles && existingProfiles.length > 0) {
+            existingRoles = existingProfiles[0]?.roles || null;
+          }
+
+          const payload: Record<string, any> = {
+            id: user.id,
+            marketing_opt_in: options.marketingOptIn,
+            updated_at: new Date().toISOString(),
+          };
+
+          if (existingRoles && existingRoles.length > 0) {
+            payload.roles = existingRoles;
+          } else {
+            payload.roles = ['user']; // Required field for brand new profiles
+          }
+
+          // Use upsert to create or update the profile (profile may not exist yet during onboarding)
+          const { error: profileError } = await supabase
+            .from('users')
+            .upsert(payload, {
+              onConflict: 'id',
+              ignoreDuplicates: false,
+            });
+
+          if (profileError) {
+            console.error('Failed to update marketing preference:', profileError);
+            // Don't fail the entire operation if marketing preference update fails
+            // Email linking succeeded, which is the primary operation
+          }
+        }
       }
 
       // Email successfully updated and verification email sent automatically
