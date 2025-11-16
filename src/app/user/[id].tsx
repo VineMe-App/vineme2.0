@@ -171,7 +171,7 @@ export default function OtherUserProfileScreen() {
       acceptRejected.isPending;
     const pendingFriendshipId = friendshipStatusQuery.data?.friendshipId;
     if (loading) {
-      return <Button title="Loading..." variant="secondary" disabled />;
+      return <Button title="Loading..." variant="secondary" disabled onPress={() => {}} />;
     }
 
     switch (status) {
@@ -199,7 +199,7 @@ export default function OtherUserProfileScreen() {
             />
           );
         }
-        return <Button title="Request Pending" variant="secondary" disabled />;
+        return <Button title="Request Pending" variant="secondary" disabled onPress={() => {}} />;
       case 'rejected':
         if (isIncoming) {
           return (
@@ -215,7 +215,7 @@ export default function OtherUserProfileScreen() {
             />
           );
         }
-        return <Button title="Request Pending" variant="secondary" disabled />;
+        return <Button title="Request Pending" variant="secondary" disabled onPress={() => {}} />;
       default:
         return (
           <Button
