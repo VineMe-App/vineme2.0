@@ -33,7 +33,7 @@ export default function OtherUserProfileScreen() {
     () => (Array.isArray(params.id) ? params.id[0] : params.id),
     [params.id]
   );
-  const { user } = useAuth();
+  const { user, userProfile: currentUserProfile } = useAuth();
 
   const {
     data: profile,
@@ -50,6 +50,38 @@ export default function OtherUserProfileScreen() {
   const acceptRejected = useAcceptRejectedFriendRequest();
 
   const isSelf = user?.id && targetUserId === user.id;
+
+  // Filter memberships based on visibility rules
+  const visibleMemberships = useMemo(() => {
+    if (!memberships || memberships.length === 0) return [];
+
+    // If viewing own profile, show all groups
+    if (isSelf) return memberships;
+
+    // Check if viewer is admin or clergy (church_admin or superadmin)
+    const isViewerAdmin =
+      currentUserProfile?.roles?.includes('church_admin') ||
+      currentUserProfile?.roles?.includes('superadmin');
+
+    // Check if viewer is friends with profile owner
+    const isFriend =
+      friendshipStatusQuery.data?.status === 'accepted';
+
+    // If viewer is admin/clergy or friend, show all groups
+    if (isViewerAdmin || isFriend) {
+      return memberships;
+    }
+
+    // Otherwise, only show groups where the profile owner is a leader
+    return memberships.filter(
+      (m: any) => m.role === 'leader' || m.role === 'admin'
+    );
+  }, [
+    memberships,
+    isSelf,
+    currentUserProfile?.roles,
+    friendshipStatusQuery.data?.status,
+  ]);
   const profileFullName = getFullName(profile);
   const profileShortName = getDisplayName(profile, { fallback: 'full' });
 
@@ -139,7 +171,7 @@ export default function OtherUserProfileScreen() {
       acceptRejected.isPending;
     const pendingFriendshipId = friendshipStatusQuery.data?.friendshipId;
     if (loading) {
-      return <Button title="Loading..." variant="secondary" disabled />;
+      return <Button title="Loading..." variant="secondary" disabled onPress={() => {}} />;
     }
 
     switch (status) {
@@ -167,7 +199,7 @@ export default function OtherUserProfileScreen() {
             />
           );
         }
-        return <Button title="Request Pending" variant="secondary" disabled />;
+        return <Button title="Request Pending" variant="secondary" disabled onPress={() => {}} />;
       case 'rejected':
         if (isIncoming) {
           return (
@@ -183,7 +215,7 @@ export default function OtherUserProfileScreen() {
             />
           );
         }
-        return <Button title="Request Pending" variant="secondary" disabled />;
+        return <Button title="Request Pending" variant="secondary" disabled onPress={() => {}} />;
       default:
         return (
           <Button
@@ -260,10 +292,10 @@ export default function OtherUserProfileScreen() {
               />
             </View>
 
-            {memberships && memberships.length > 0 && (
+            {visibleMemberships && visibleMemberships.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Groups</Text>
-                {memberships.map((m: any) => (
+                {visibleMemberships.map((m: any) => (
                   <TouchableOpacity
                     key={m.id}
                     style={styles.groupItem}
