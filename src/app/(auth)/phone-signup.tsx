@@ -30,13 +30,19 @@ export default function PhoneSignUpScreen() {
   const [fullPhone, setFullPhone] = useState('');
 
   const sanitizedLocalNumber = localNumber.replace(/\D/g, '');
-  const isPhoneValid =
-    sanitizedLocalNumber.length === 10 || sanitizedLocalNumber.length === 11;
+  // Validate UK numbers as 10–11 digits (allow leading 0 in local part), otherwise use a general E.164-style length check (6–15 digits)
+  const isUk = countryCode === '+44';
+  const isPhoneValid = isUk
+    ? sanitizedLocalNumber.length === 10 || sanitizedLocalNumber.length === 11
+    : sanitizedLocalNumber.length >= 6 && sanitizedLocalNumber.length <= 15;
 
   const handleSendCode = async () => {
     if (!isPhoneValid || isLoading) {
       if (!isPhoneValid) {
-        Alert.alert('Invalid Number', 'Enter a valid UK phone number (10-11 digits).');
+        const msg = isUk
+          ? 'Enter a valid UK phone number (10–11 digits).'
+          : 'Enter a valid phone number (6–15 digits).';
+        Alert.alert('Invalid Number', msg);
       }
       return;
     }
@@ -44,7 +50,7 @@ export default function PhoneSignUpScreen() {
     try {
       // If UK number (+44) and 11 digits starting with 0, remove the leading 0
       let processedNumber = sanitizedLocalNumber;
-      if (countryCode === '+44' && processedNumber.length === 11 && processedNumber.startsWith('0')) {
+      if (isUk && processedNumber.length === 11 && processedNumber.startsWith('0')) {
         processedNumber = processedNumber.slice(1); // Remove leading 0
       }
       

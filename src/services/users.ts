@@ -125,9 +125,9 @@ export class UserService {
         return { data: null, error: new Error('Missing Supabase URL configuration') };
       }
 
-      // Prefer supabase.functions.invoke so required headers are added automatically:
-      // - apikey: anon key
-      // - Authorization: Bearer <access_token> (when session exists)
+      // Prefer supabase.functions.invoke so required headers are added automatically,
+      // and explicitly include headers to satisfy edge function auth in all environments.
+      const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
       const { data: fnData, error: fnError } = await supabase.functions.invoke<{
         ok: boolean;
         error?: string;
@@ -136,6 +136,8 @@ export class UserService {
         headers: {
           // Explicitly include Authorization to be safe across environments
           Authorization: `Bearer ${accessToken}`,
+          // Supabase edge functions also expect an apikey header when invoked from clients
+          ...(supabaseAnonKey ? { apikey: supabaseAnonKey } : {}),
         },
       });
 
