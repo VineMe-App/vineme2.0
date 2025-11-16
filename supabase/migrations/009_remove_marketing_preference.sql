@@ -12,10 +12,13 @@ BEGIN
       AND table_name = 'users'
       AND column_name = 'marketing_preference'
   ) THEN
-    UPDATE public.users
-    SET marketing_opt_in = true
-    WHERE marketing_preference = true 
-      AND (marketing_opt_in IS NULL OR marketing_opt_in = false);
+    -- Use dynamic SQL so the statement only gets parsed when the column exists
+    EXECUTE $$
+      UPDATE public.users
+      SET marketing_opt_in = true
+      WHERE marketing_preference = true
+        AND (marketing_opt_in IS NULL OR marketing_opt_in = false)
+    $$;
   END IF;
 END $$;
 
