@@ -95,13 +95,40 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   } | null>(null);
   const [inputKey, setInputKey] = useState(0);
   const mapRef = useRef<any>(null);
+  const pendingChangeRef = useRef<{
+    address?: string;
+    coordinates?: Coordinates | null;
+  } | null>(null);
+
+  const propagateChange = useCallback(
+    (
+      nextValue: { address?: string; coordinates?: Coordinates | null },
+      options?: { forceImmediate?: boolean }
+    ) => {
+      if (deferChanges && !options?.forceImmediate) {
+        pendingChangeRef.current = nextValue;
+        return;
+      }
+
+      pendingChangeRef.current = null;
+      onChange(nextValue);
+    },
+    [deferChanges, onChange]
+  );
+
+  useEffect(() => {
+    if (!deferChanges && pendingChangeRef.current) {
+      onChange(pendingChangeRef.current);
+      pendingChangeRef.current = null;
+    }
+  }, [deferChanges, onChange]);
 
   // Ensure marker is always visible immediately
   useEffect(() => {
     console.log('Setting initial marker coordinates:', selectedCoords);
     // Always call onChange with initial coordinates to ensure parent component knows about the location
-    if (!value?.coordinates && !deferChanges) {
-      onChange({
+    if (!value?.coordinates) {
+      propagateChange({
         address: search || 'Loading location...',
         coordinates: selectedCoords,
       });
@@ -173,30 +200,33 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               console.log('Reverse geocoded address:', address);
               if (address?.formattedAddress) {
                 setSearch(address.formattedAddress);
-            if (!deferChanges) {
-              onChange({
-                address: address.formattedAddress,
-                coordinates: currentLocation,
-              });
-            }
+                propagateChange(
+                  {
+                    address: address.formattedAddress,
+                    coordinates: currentLocation,
+                  },
+                  { forceImmediate: true }
+                );
               } else {
                 setSearch('Current Location');
-            if (!deferChanges) {
-              onChange({
-                address: 'Current Location',
-                coordinates: currentLocation,
-              });
-            }
+                propagateChange(
+                  {
+                    address: 'Current Location',
+                    coordinates: currentLocation,
+                  },
+                  { forceImmediate: true }
+                );
               }
             } catch (geocodeError) {
               console.warn('Reverse geocoding failed:', geocodeError);
               setSearch('Current Location');
-          if (!deferChanges) {
-            onChange({
-              address: 'Current Location',
-              coordinates: currentLocation,
-            });
-          }
+              propagateChange(
+                {
+                  address: 'Current Location',
+                  coordinates: currentLocation,
+                },
+                { forceImmediate: true }
+              );
             }
           } else {
             // If no current location, use default coordinates
@@ -212,12 +242,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             };
             setRegion(newRegion);
             setSearch('Default Location');
-            if (!deferChanges) {
-              onChange({
+            propagateChange(
+              {
                 address: 'Default Location',
                 coordinates: DEFAULT_COORDINATES,
-              });
-            }
+              },
+              { forceImmediate: true }
+            );
           }
         } catch (error) {
           console.warn('Could not get current location:', error);
@@ -232,12 +263,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           };
           setRegion(newRegion);
           setSearch('Default Location');
-          if (!deferChanges) {
-            onChange({
+          propagateChange(
+            {
               address: 'Default Location',
               coordinates: DEFAULT_COORDINATES,
-            });
-          }
+            },
+            { forceImmediate: true }
+          );
         } finally {
           setIsLoadingLocation(false);
         }
@@ -248,7 +280,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     };
 
     initializeLocation();
-  }, [value?.coordinates, onChange]);
+  }, [propagateChange, value?.coordinates]);
 
   const geocode = useCallback(async (query: string) => {
     if (!query.trim() || query.trim().length < 3) {
@@ -269,9 +301,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         };
         setRegion(newRegion);
         mapRef.current?.animateToRegion(newRegion, 600);
-        if (!deferChanges) {
-          onChange({ address: query.trim(), coordinates: coords });
-        }
+        propagateChange({ address: query.trim(), coordinates: coords });
       } else {
         Alert.alert('Location Not Found', 'Unable to find the location you searched for. Please try a different search.');
       }
@@ -280,7 +310,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     } finally {
       setIsGeocoding(false);
     }
-  }, [onChange, region, userZoomLevel]);
+  }, [propagateChange, region, userZoomLevel]);
 
   const forceInputRecreation = () => {
     setInputKey((prev) => prev + 1);
@@ -333,28 +363,24 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         try {
           const addr = await locationService.reverseGeocode(coords);
           setSearch(addr?.formattedAddress || 'Selected Location');
-          if (!deferChanges) {
-            onChange({
-              address: addr?.formattedAddress || 'Selected Location',
-              coordinates: coords,
-            });
-          }
+          propagateChange({
+            address: addr?.formattedAddress || 'Selected Location',
+            coordinates: coords,
+          });
         } catch (error) {
           console.warn('Reverse geocoding failed:', error);
           setSearch('Selected Location');
-          if (!deferChanges) {
-            onChange({
-              address: 'Selected Location',
-              coordinates: coords,
-            });
-          }
+          propagateChange({
+            address: 'Selected Location',
+            coordinates: coords,
+          });
         }
       } else {
         // Just update the region state to preserve zoom level
         setRegion(newRegion);
       }
     },
-    [onChange, region.latitude, region.longitude, userZoomLevel]
+    [propagateChange, region.latitude, region.longitude, userZoomLevel]
   );
 
   const handleRecenter = useCallback(async () => {
@@ -373,25 +399,21 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       try {
         const addr = await locationService.reverseGeocode(current);
         setSearch(addr?.formattedAddress || 'Current Location');
-        if (!deferChanges) {
-          onChange({
-            address: addr?.formattedAddress || 'Current Location',
-            coordinates: current,
-          });
-        }
+        propagateChange({
+          address: addr?.formattedAddress || 'Current Location',
+          coordinates: current,
+        });
       } catch {
         setSearch('Current Location');
-        if (!deferChanges) {
-          onChange({
-            address: 'Current Location',
-            coordinates: current,
-          });
-        }
+        propagateChange({
+          address: 'Current Location',
+          coordinates: current,
+        });
       }
     } catch (e) {
       console.warn('Recenter failed:', e);
     }
-  }, [deferChanges, onChange, region.latitudeDelta, region.longitudeDelta, userZoomLevel]);
+  }, [propagateChange, region.latitudeDelta, region.longitudeDelta, userZoomLevel]);
 
   // Check if MapView is available after all hooks
   if (!MapView) {
@@ -658,10 +680,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         <Button
           title="View groups"
           onPress={() => {
-            onChange({
-              address: search || 'Selected Location',
-              coordinates: selectedCoords,
-            });
+            propagateChange(
+              {
+                address: search || 'Selected Location',
+                coordinates: selectedCoords,
+              },
+              { forceImmediate: true }
+            );
             onSubmit?.();
           }}
         />
