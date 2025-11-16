@@ -326,6 +326,49 @@ export default function ChurchStep({
               </View>
             )}
 
+            <View style={styles.missingServiceContainer}>
+              <TouchableOpacity
+                style={styles.missingServiceButton}
+                onPress={() => handleOpenMissingServiceModal('service')}
+                disabled={missingServiceSubmitting}
+                activeOpacity={0.85}
+              >
+                <View style={styles.missingServiceTextGroup}>
+                  <AppText
+                    variant="body"
+                    weight="semiBold"
+                    style={styles.missingServiceTitle}
+                  >
+                    Can't find your service?
+                  </AppText>
+                  <AppText
+                    variant="bodySmall"
+                    color="secondary"
+                    style={styles.missingServiceSubtitle}
+                  >
+                    Tell us about the service you attend so we can add it for
+                    this church.
+                  </AppText>
+                </View>
+                <View style={styles.missingServiceIcon}>
+                  <Text style={styles.missingServiceIconText}>+</Text>
+                </View>
+              </TouchableOpacity>
+              {missingServiceSubmitted &&
+                missingServiceLastMode === 'service' && (
+                  <Text style={styles.missingServiceNotice}>
+                    Thanks! We'll reach out soon about adding that service.
+                  </Text>
+                )}
+              {missingServiceRequestError &&
+                missingServiceLastMode === 'service' &&
+                !showMissingServiceModal && (
+                  <Text style={styles.serviceInlineError}>
+                    {missingServiceRequestError}
+                  </Text>
+                )}
+            </View>
+
             {selectedServiceId && (
               <View style={styles.adminDisclosureContainer}>
                 <Text style={styles.adminDisclosureTitle}>
@@ -770,6 +813,52 @@ const styles = StyleSheet.create({
   listFooter: {
     marginTop: 12,
     gap: 8,
+  },
+  missingServiceContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  missingServiceButton: {
+    borderWidth: 1.5,
+    borderColor: '#4d6aa7',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(77, 106, 167, 0.05)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  missingServiceTextGroup: {
+    flex: 1,
+  },
+  missingServiceTitle: {
+    color: '#2C2235',
+    marginBottom: 8,
+  },
+  missingServiceSubtitle: {
+    color: '#2C2235',
+    lineHeight: 20,
+  },
+  missingServiceIcon: {
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
+    backgroundColor: '#4d6aa7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  missingServiceIconText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  missingServiceNotice: {
+    fontSize: 14,
+    color: '#19478a',
+    lineHeight: 20,
   },
   missingChurchButton: {
     borderWidth: 1.5,
