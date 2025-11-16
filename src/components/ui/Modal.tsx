@@ -124,6 +124,27 @@ export const Modal: React.FC<ModalProps> = ({
     return () => backHandler.remove();
   }, [isVisible, closeOnBackPress, onClose]);
 
+  // Handle Escape key on web/desktop to dismiss modal
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (!isVisible) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (closeOnBackPress) {
+          onClose();
+        }
+      }
+    };
+
+    // Attach to document for reliable capture in RN Web
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isVisible, closeOnBackPress, onClose]);
+
   // Handle lifecycle callbacks
   useEffect(() => {
     if (isVisible) {
