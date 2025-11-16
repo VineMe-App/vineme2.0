@@ -794,15 +794,36 @@ export class AuthService {
       if (options?.marketingOptIn !== undefined) {
         const user = await this.getCurrentUser();
         if (user) {
+          // Fetch existing roles so that we don't accidentally strip elevated permissions
+          let existingRoles: string[] | null = null;
+          const { data: existingProfiles, error: existingProfileError } = await supabase
+            .from('users')
+            .select('roles')
+            .eq('id', user.id)
+            .limit(1);
+
+          if (existingProfileError) {
+            console.warn('Failed to fetch existing roles before marketing opt-in upsert:', existingProfileError);
+          } else if (existingProfiles && existingProfiles.length > 0) {
+            existingRoles = existingProfiles[0]?.roles || null;
+          }
+
+          const payload: Record<string, any> = {
+            id: user.id,
+            marketing_opt_in: options.marketingOptIn,
+            updated_at: new Date().toISOString(),
+          };
+
+          if (existingRoles && existingRoles.length > 0) {
+            payload.roles = existingRoles;
+          } else {
+            payload.roles = ['user']; // Required field for brand new profiles
+          }
+
           // Use upsert to create or update the profile (profile may not exist yet during onboarding)
           const { error: profileError } = await supabase
             .from('users')
-            .upsert({
-              id: user.id,
-              marketing_opt_in: options.marketingOptIn,
-              roles: ['user'], // Required field for new profiles
-              updated_at: new Date().toISOString(),
-            }, {
+            .upsert(payload, {
               onConflict: 'id',
               ignoreDuplicates: false,
             });
