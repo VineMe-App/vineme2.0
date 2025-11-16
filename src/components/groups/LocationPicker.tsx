@@ -212,10 +212,12 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             };
             setRegion(newRegion);
             setSearch('Default Location');
-            onChange({
-              address: 'Default Location',
-              coordinates: DEFAULT_COORDINATES,
-            });
+            if (!deferChanges) {
+              onChange({
+                address: 'Default Location',
+                coordinates: DEFAULT_COORDINATES,
+              });
+            }
           }
         } catch (error) {
           console.warn('Could not get current location:', error);
@@ -230,10 +232,12 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           };
           setRegion(newRegion);
           setSearch('Default Location');
-          onChange({
-            address: 'Default Location',
-            coordinates: DEFAULT_COORDINATES,
-          });
+          if (!deferChanges) {
+            onChange({
+              address: 'Default Location',
+              coordinates: DEFAULT_COORDINATES,
+            });
+          }
         } finally {
           setIsLoadingLocation(false);
         }
