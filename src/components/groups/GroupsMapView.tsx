@@ -1043,7 +1043,11 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             <View
               style={[
                 styles.noGroupFitsButtonFloating,
-                { top: -50 + insets.top },
+                {
+                  top: locationPermissionDenied
+                    ? 88 + insets.top
+                    : -50 + insets.top,
+                },
               ]}
             >
               <View style={styles.noGroupFitsButtonContainer}>
@@ -1287,7 +1291,7 @@ const styles = StyleSheet.create({
   },
   noGroupFitsButtonFloating: {
     position: 'absolute',
-    right: 16,
+    left: 16,
     zIndex: 10,
   },
   noGroupFitsButton: {

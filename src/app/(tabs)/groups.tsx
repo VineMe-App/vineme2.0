@@ -966,7 +966,7 @@ const styles = StyleSheet.create({
   },
   noGroupFitsButtonFloating: {
     position: 'absolute',
-    right: 16,
+    left: 16,
     zIndex: 10,
   },
   noGroupFitsButton: {
