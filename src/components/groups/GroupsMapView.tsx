@@ -1020,7 +1020,15 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       {onNoGroupFits && (
         <>
           {Platform.OS === 'android' ? (
-            <View style={[styles.noGroupFitsButtonBar, { paddingTop: Math.max(insets.top, 8) }]}>
+            <View
+              style={[
+                styles.noGroupFitsButtonBar,
+                {
+                  paddingTop: Math.max(insets.top, 8),
+                  top: locationPermissionDenied ? 88 : 0,
+                },
+              ]}
+            >
               <View style={styles.noGroupFitsButtonContainer}>
                 <Button
                   title="No group fits?"
