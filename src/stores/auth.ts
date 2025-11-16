@@ -30,7 +30,7 @@ interface AuthState {
   ) => Promise<{ success: boolean; error?: string; user?: User }>;
   linkEmail: (
     email: string,
-    options?: { emailRedirectTo?: string }
+    options?: { emailRedirectTo?: string; marketingOptIn?: boolean }
   ) => Promise<{ success: boolean; error?: string }>;
   linkPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -156,7 +156,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   linkEmail: async (
     email: string,
-    options?: { emailRedirectTo?: string }
+    options?: { emailRedirectTo?: string; marketingOptIn?: boolean }
   ) => {
     set({ isLoading: true, error: null });
     try {
@@ -164,6 +164,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
       if (!result.success && result.error) {
         set({ error: result.error });
+      } else if (result.success) {
+        // Reload user profile to get updated marketing preference
+        await get().loadUserProfile();
       }
       return result;
     } catch (error) {

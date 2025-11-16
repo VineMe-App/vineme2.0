@@ -56,6 +56,7 @@ export default function EmailStep({
     // This updates the current user's email instead of creating a new user
     const result = await linkEmail(trimmed, {
       emailRedirectTo: 'vineme://auth/verify-email',
+      marketingOptIn: newsletterOptIn,
     });
 
     if (!result.success) {
