@@ -1018,15 +1018,38 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
       {/* No Group Fits Button */}
       {onNoGroupFits && (
-        <View style={[styles.noGroupFitsButtonContainer, { top: -50 + insets.top }]}>
-          <Button
-            title="No group fits?"
-            onPress={onNoGroupFits}
-            variant="secondary"
-            size="small"
-            style={styles.noGroupFitsButton}
-          />
-        </View>
+        <>
+          {Platform.OS === 'android' ? (
+            <View style={[styles.noGroupFitsButtonBar, { paddingTop: Math.max(insets.top, 8) }]}>
+              <View style={styles.noGroupFitsButtonContainer}>
+                <Button
+                  title="No group fits?"
+                  onPress={onNoGroupFits}
+                  variant="secondary"
+                  size="small"
+                  style={styles.noGroupFitsButton}
+                />
+              </View>
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.noGroupFitsButtonFloating,
+                { top: -50 + insets.top },
+              ]}
+            >
+              <View style={styles.noGroupFitsButtonContainer}>
+                <Button
+                  title="No group fits?"
+                  onPress={onNoGroupFits}
+                  variant="secondary"
+                  size="small"
+                  style={styles.noGroupFitsButton}
+                />
+              </View>
+            </View>
+          )}
+        </>
       )}
 
       {/* Development performance info removed */}
@@ -1234,9 +1257,17 @@ const styles = StyleSheet.create({
     width: width - 32,
     marginHorizontal: 16,
   },
-  noGroupFitsButtonContainer: {
+  noGroupFitsButtonBar: {
     position: 'absolute',
-    right: 16,
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    alignItems: 'flex-end',
+    zIndex: 10,
+  },
+  noGroupFitsButtonContainer: {
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1245,6 +1276,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  noGroupFitsButtonFloating: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 10,
   },
   noGroupFitsButton: {
     paddingHorizontal: 10,
