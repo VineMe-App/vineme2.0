@@ -22,6 +22,7 @@ export interface UpdateUserProfileData {
   avatar_url?: string | null;
   church_id?: string;
   service_id?: string;
+  cannot_find_group?: boolean;
 }
 
 export interface UserServiceResponse<T = any> {

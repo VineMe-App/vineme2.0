@@ -5,8 +5,9 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { useRouter } from 'expo-router';
 import {
@@ -25,7 +26,8 @@ import {
 } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
-import { ErrorMessage, EmptyState, LoadingSpinner, Modal } from '../../components/ui';
+import { ErrorMessage, EmptyState, LoadingSpinner, Modal, Button } from '../../components/ui';
+import { useUpdateUserProfile } from '../../hooks/useUsers';
 import {
   applyGroupFilters,
   getActiveFiltersDescription,
@@ -43,10 +45,12 @@ export default function GroupsScreen() {
   const { userProfile } = useAuthStore();
   const { filters } = useGroupFiltersStore();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const friendsQuery = useFriends(userProfile?.id);
   const [showSearch, setShowSearch] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showNoGroupFitsModal, setShowNoGroupFitsModal] = useState(false);
   const [sortBy, setSortBy] = useState<
     'alphabetical' | 'distance' | 'friends'
   >('alphabetical');
@@ -64,6 +68,7 @@ export default function GroupsScreen() {
   // Create flow now navigates to dedicated page
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [currentView, setCurrentView] = useState<ViewMode>('list');
+  const updateUserProfile = useUpdateUserProfile();
 
   // Hide sort options when switching to map view
   const handleViewChange = (view: ViewMode) => {
@@ -306,21 +311,57 @@ export default function GroupsScreen() {
     );
   };
 
+  const handleNoGroupFits = () => {
+    setShowNoGroupFitsModal(true);
+  };
+
+  const handleConfirmCannotFindGroup = async () => {
+    if (!userProfile?.id) return;
+    
+    try {
+      await updateUserProfile.mutateAsync({
+        userId: userProfile.id,
+        updates: { cannot_find_group: true },
+      });
+      setShowNoGroupFitsModal(false);
+      Alert.alert(
+        'Thank you!',
+        "We've flagged your account and our connections team will reach out to help you find a suitable group."
+      );
+    } catch (error) {
+      handleError(error as Error);
+    }
+  };
+
   const renderListView = () => (
-    <FlatList
-      data={groupsWithDistance as any}
-      renderItem={renderGroupItem}
-      keyExtractor={(item) => item.id}
-      ListEmptyComponent={renderEmptyState}
-      refreshControl={
-        <RefreshControl
-          refreshing={isLoadingFn('refresh')}
-          onRefresh={handleRefresh}
+    <View style={styles.listViewContainer}>
+      <View style={[styles.noGroupFitsButtonContainer, { top: -50 + insets.top }]}>
+        <Button
+          title="No group fits?"
+          onPress={handleNoGroupFits}
+          variant="secondary"
+          size="small"
+          style={styles.noGroupFitsButton}
         />
-      }
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.listContent}
-    />
+      </View>
+      <FlatList
+        data={groupsWithDistance as any}
+        renderItem={renderGroupItem}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={renderEmptyState}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoadingFn('refresh')}
+            onRefresh={handleRefresh}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingTop: 8 }, // Header minHeight (60) + button top offset
+        ]}
+      />
+    </View>
   );
 
   const renderMapView = () => (
@@ -328,6 +369,7 @@ export default function GroupsScreen() {
       groups={filteredGroups}
       onGroupPress={handleGroupPress}
       isLoading={isLoading}
+      onNoGroupFits={handleNoGroupFits}
     />
   );
 
@@ -686,6 +728,34 @@ export default function GroupsScreen() {
           }}
         />
       </Modal>
+
+      {/* No Group Fits Modal */}
+      <Modal
+        isVisible={showNoGroupFitsModal}
+        onClose={() => setShowNoGroupFitsModal(false)}
+        title=""
+        showCloseButton={false}
+      >
+        <View style={styles.noGroupFitsModalContent}>
+          <TouchableOpacity
+            style={styles.noGroupFitsModalCloseButton}
+            onPress={() => setShowNoGroupFitsModal(false)}
+            accessibilityLabel="Close modal"
+          >
+            <Ionicons name="close" size={24} color="#6b7280" />
+          </TouchableOpacity>
+          <Text variant="body" style={styles.noGroupFitsModalText}>
+            Oh no! We're sorry that you couldn't find any groups that looked suitable.{'\n\n'}
+            Click below to let your connections team know!
+          </Text>
+          <Button
+            title="I can't find a group"
+            onPress={handleConfirmCannotFindGroup}
+            loading={updateUserProfile.isPending}
+            style={styles.noGroupFitsButtonModal}
+          />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -852,6 +922,51 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 16,
     paddingHorizontal: 0,
+  },
+  listViewContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  noGroupFitsButtonContainer: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  noGroupFitsButton: {
+    paddingHorizontal: 14,
+    maxWidth: 120, // Compact width to match the drawn outline
+  },
+  noGroupFitsModalContent: {
+    padding: 20,
+    paddingTop: 48, // 12 (top spacing) + 24 (icon height) + 12 (padding below icon)
+    alignItems: 'center',
+    position: 'relative',
+  },
+  noGroupFitsModalCloseButton: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  noGroupFitsModalText: {
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  noGroupFitsButtonModal: {
+    minWidth: 200,
   },
   loadingContainer: {
     flex: 1,

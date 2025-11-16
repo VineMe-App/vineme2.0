@@ -15,6 +15,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import {
   AdminAccessibilityLabels,
@@ -67,6 +68,7 @@ interface GroupsMapViewProps {
   groups: GroupWithDetails[];
   onGroupPress: (group: GroupWithDetails) => void;
   isLoading?: boolean;
+  onNoGroupFits?: () => void;
 }
 
 interface GroupMarker {
@@ -79,6 +81,7 @@ interface ClusteredMapViewProps extends GroupsMapViewProps {
   enableClustering?: boolean;
   clusterRadius?: number;
   minClusterSize?: number;
+  onNoGroupFits?: () => void;
 }
 
 const { width, height } = Dimensions.get('window');
@@ -197,8 +200,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   enableClustering = true, // Re-enabled with optimizations
   clusterRadius = 40,
   minClusterSize = 2,
+  onNoGroupFits,
 }) => {
   // Always declare hooks first (Rules of Hooks)
+  const insets = useSafeAreaInsets();
   const [markers, setMarkers] = useState<GroupMarker[]>([]);
   const [region, setRegion] = useState<typeof DEFAULT_REGION>(DEFAULT_REGION);
   const [currentRegion, setCurrentRegion] =
@@ -1011,6 +1016,19 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </View>
       )}
 
+      {/* No Group Fits Button */}
+      {onNoGroupFits && (
+        <View style={[styles.noGroupFitsButtonContainer, { top: -50 + insets.top }]}>
+          <Button
+            title="No group fits?"
+            onPress={onNoGroupFits}
+            variant="secondary"
+            size="small"
+            style={styles.noGroupFitsButton}
+          />
+        </View>
+      )}
+
       {/* Development performance info removed */}
     </View>
   );
@@ -1215,6 +1233,22 @@ const styles = StyleSheet.create({
   mapGroupCard: {
     width: width - 32,
     marginHorizontal: 16,
+  },
+  noGroupFitsButtonContainer: {
+    position: 'absolute',
+    right: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  noGroupFitsButton: {
+    paddingHorizontal: 10,
+    maxWidth: 120, // Compact width to match the drawn outline
   },
   dotsOverlay: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
