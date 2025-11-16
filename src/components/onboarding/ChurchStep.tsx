@@ -323,8 +323,65 @@ export default function ChurchStep({
                   Please choose a different church for now or request this
                   service so we can add it.
                 </Text>
+                <TouchableOpacity
+                  style={styles.serviceEmptyRequestButton}
+                  onPress={() => handleOpenMissingServiceModal('service')}
+                  disabled={missingServiceSubmitting}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.serviceEmptyRequestTitle}>
+                    Request this service
+                  </Text>
+                  <Text style={styles.serviceEmptyRequestSubtitle}>
+                    Tell us the service details and we&apos;ll reach out when it&apos;s
+                    available.
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
+
+            <View style={styles.missingServiceContainer}>
+              <TouchableOpacity
+                style={styles.missingServiceButton}
+                onPress={() => handleOpenMissingServiceModal('service')}
+                disabled={missingServiceSubmitting}
+                activeOpacity={0.85}
+              >
+                <View style={styles.missingServiceTextGroup}>
+                  <AppText
+                    variant="body"
+                    weight="semiBold"
+                    style={styles.missingServiceTitle}
+                  >
+                    Can't find your service?
+                  </AppText>
+                  <AppText
+                    variant="bodySmall"
+                    color="secondary"
+                    style={styles.missingServiceSubtitle}
+                  >
+                    Tell us about the service you attend so we can add it for
+                    this church.
+                  </AppText>
+                </View>
+                <View style={styles.missingServiceIcon}>
+                  <Text style={styles.missingServiceIconText}>+</Text>
+                </View>
+              </TouchableOpacity>
+              {missingServiceSubmitted &&
+                missingServiceLastMode === 'service' && (
+                  <Text style={styles.missingServiceNotice}>
+                    Thanks! We'll reach out soon about adding that service.
+                  </Text>
+                )}
+              {missingServiceRequestError &&
+                missingServiceLastMode === 'service' &&
+                !showMissingServiceModal && (
+                  <Text style={styles.serviceInlineError}>
+                    {missingServiceRequestError}
+                  </Text>
+                )}
+            </View>
 
             {selectedServiceId && (
               <View style={styles.adminDisclosureContainer}>
@@ -688,6 +745,26 @@ const styles = StyleSheet.create({
     color: '#4d6aa7',
     lineHeight: 19,
   },
+  serviceEmptyRequestButton: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#4d6aa7',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(77, 106, 167, 0.08)',
+    gap: 4,
+  },
+  serviceEmptyRequestTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2C2235',
+  },
+  serviceEmptyRequestSubtitle: {
+    fontSize: 13,
+    color: '#2C2235',
+    lineHeight: 18,
+  },
   otherServiceCard: {
     marginTop: 16,
     borderWidth: 2,
@@ -770,6 +847,57 @@ const styles = StyleSheet.create({
   listFooter: {
     marginTop: 12,
     gap: 8,
+  },
+  missingChurchButton: {
+    borderWidth: 1.5,
+    borderColor: '#F54099',
+  },
+  
+  missingServiceContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  missingServiceButton: {
+    borderWidth: 1.5,
+    borderColor: '#4d6aa7',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(77, 106, 167, 0.05)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  missingServiceTextGroup: {
+    flex: 1,
+  },
+  missingServiceTitle: {
+    color: '#2C2235',
+    marginBottom: 8,
+  },
+  missingServiceSubtitle: {
+    color: '#2C2235',
+    lineHeight: 20,
+  },
+  missingServiceIcon: {
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
+    backgroundColor: '#4d6aa7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  missingServiceIconText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  missingServiceNotice: {
+    fontSize: 14,
+    color: '#19478a',
+    lineHeight: 20,
   },
   missingChurchButton: {
     borderWidth: 1.5,
