@@ -6,6 +6,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
@@ -335,17 +336,36 @@ export default function GroupsScreen() {
 
   const renderListView = () => (
     <View style={styles.listViewContainer}>
-      <View style={[styles.noGroupFitsButtonBar, { paddingTop: Math.max(insets.top, 8) }]}>
-        <View style={styles.noGroupFitsButtonContainer}>
-          <Button
-            title="No group fits?"
-            onPress={handleNoGroupFits}
-            variant="secondary"
-            size="small"
-            style={styles.noGroupFitsButton}
-          />
+      {Platform.OS === 'android' ? (
+        <View style={[styles.noGroupFitsButtonBar, { paddingTop: Math.max(insets.top, 8) }]}>
+          <View style={styles.noGroupFitsButtonContainer}>
+            <Button
+              title="No group fits?"
+              onPress={handleNoGroupFits}
+              variant="secondary"
+              size="small"
+              style={styles.noGroupFitsButton}
+            />
+          </View>
         </View>
-      </View>
+      ) : (
+        <View
+          style={[
+            styles.noGroupFitsButtonFloating,
+            { top: -50 + insets.top },
+          ]}
+        >
+          <View style={styles.noGroupFitsButtonContainer}>
+            <Button
+              title="No group fits?"
+              onPress={handleNoGroupFits}
+              variant="secondary"
+              size="small"
+              style={styles.noGroupFitsButton}
+            />
+          </View>
+        </View>
+      )}
       <FlatList
         data={groupsWithDistance as any}
         renderItem={renderGroupItem}
@@ -358,7 +378,10 @@ export default function GroupsScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          Platform.OS === 'android' ? null : { paddingTop: 8 },
+        ]}
       />
     </View>
   );
@@ -940,6 +963,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  noGroupFitsButtonFloating: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 10,
   },
   noGroupFitsButton: {
     paddingHorizontal: 14,
