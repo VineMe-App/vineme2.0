@@ -7,12 +7,12 @@ import {
   StyleSheet,
   ViewStyle,
   ModalProps as RNModalProps,
-  SafeAreaView,
   ScrollView,
   Dimensions,
   BackHandler,
 } from 'react-native';
 import { KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeSafe } from '../../theme/provider/useTheme';
 import { lightTheme } from '../../theme/themes';
@@ -281,32 +281,34 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <View style={styles.absoluteFill}>
         <View style={[styles.overlay, getContentPosition(), overlayStyle]}>
-          <TouchableOpacity
-            style={styles.overlayTouchable}
-            activeOpacity={1}
-            onPress={handleOverlayPress}
-            accessibilityRole={undefined}
-            accessible={false}
-          >
-            <KeyboardAvoidingView
-              enabled={avoidKeyboard}
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={keyboardVerticalOffset}
-              style={[styles.keyboardAvoidingView, getContentPosition()]}
+          <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+            <TouchableOpacity
+              style={styles.overlayTouchable}
+              activeOpacity={1}
+              onPress={handleOverlayPress}
+              accessibilityRole={undefined}
+              accessible={false}
             >
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={() => {}} // Prevent overlay press when touching content
-                style={
-                  variant === 'bottom-sheet'
-                    ? styles.bottomSheetContainer
-                    : styles.contentContainer
-                }
+              <KeyboardAvoidingView
+                enabled={avoidKeyboard}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={keyboardVerticalOffset}
+                style={[styles.keyboardAvoidingView, getContentPosition()]}
               >
-                {renderContent()}
-              </TouchableOpacity>
-            </KeyboardAvoidingView>
-          </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={() => {}} // Prevent overlay press when touching content
+                  style={
+                    variant === 'bottom-sheet'
+                      ? styles.bottomSheetContainer
+                      : styles.contentContainer
+                  }
+                >
+                  {renderContent()}
+                </TouchableOpacity>
+              </KeyboardAvoidingView>
+            </TouchableOpacity>
+          </SafeAreaView>
         </View>
       </View>
     </RNModal>
