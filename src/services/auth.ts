@@ -755,8 +755,14 @@ export class AuthService {
     try {
       // Update the user's email address
       // Supabase automatically sends a verification email when email is updated
-      // The redirect URL is configured at the project level in Supabase dashboard
-      const { error } = await supabase.auth.updateUser({ email });
+      // Forward the caller-provided redirect when available, otherwise fall back
+      // to the app's deep link so SendGrid-powered templates open VineMe
+      const redirectUrl =
+        options?.emailRedirectTo || this.buildEmailVerificationRedirectUrl();
+      const updateOptions = redirectUrl
+        ? { emailRedirectTo: redirectUrl }
+        : undefined;
+      const { error } = await supabase.auth.updateUser({ email }, updateOptions);
 
       if (error) {
         // Normalize and classify common failure modes for better UX
@@ -785,8 +791,6 @@ export class AuthService {
       }
 
       // Email successfully updated and verification email sent automatically
-      // Note: options.emailRedirectTo is kept for API compatibility but redirect URL
-      // should be configured at the project level in Supabase dashboard
       return { success: true };
     } catch (error) {
       return {
