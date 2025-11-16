@@ -376,4 +376,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     marginTop: 32,
   },
+  actions: {
+    width: '100%',
+  },
 });

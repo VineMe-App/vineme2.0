@@ -140,7 +140,8 @@ export default function ChurchStep({
         .order('first_name');
 
       if (!error && data) {
-        setServiceAdmins(data);
+        // Supabase typed result only selects a subset of fields; assert to User[] for our usage
+        setServiceAdmins(data as unknown as User[]);
       }
     } catch {
       // Non-blocking
@@ -847,10 +848,6 @@ const styles = StyleSheet.create({
   listFooter: {
     marginTop: 12,
     gap: 8,
-  },
-  missingChurchButton: {
-    borderWidth: 1.5,
-    borderColor: '#F54099',
   },
   
   missingServiceContainer: {
