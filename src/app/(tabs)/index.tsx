@@ -13,16 +13,12 @@ import { router } from 'expo-router';
 import { useUpcomingEvents } from '../../hooks/useEvents';
 import { useUserGroupMemberships } from '../../hooks/useUsers';
 import { useUserJoinRequests } from '../../hooks/useJoinRequests';
-import {
-  useFriends,
-  useReceivedFriendRequests,
-} from '../../hooks/useFriendships';
+import { useFriends } from '../../hooks/useFriendships';
 // import { EventCard } from '../../components/events/EventCard'; // Events disabled
 import { GroupCard } from '../../components/groups/GroupCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Card } from '../../components/ui/Card';
-import { FriendRequestNotifications } from '../../components/friends/FriendRequestNotifications';
 import { ConnectSomeoneSection } from '../../components/referrals/ConnectSomeoneSection';
 import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
@@ -83,23 +79,12 @@ export default function HomeScreen() {
     activeMemberships.length > 0 || pendingJoinRequestsList.length > 0;
 
   const {
-    data: friends,
     isLoading: friendsLoading,
     refetch: refetchFriends,
   } = useFriends(userId);
 
-  const {
-    data: pendingFriendRequests,
-    isLoading: requestsLoading,
-    refetch: refetchRequests,
-  } = useReceivedFriendRequests(userId);
-
-  // Calculate dashboard stats
-  const acceptedFriends = friends || [];
-  const pendingRequests = pendingFriendRequests || [];
-
   const isLoading =
-    groupsLoading || friendsLoading || requestsLoading || joinRequestsLoading;
+    groupsLoading || friendsLoading || joinRequestsLoading;
 
   // Handle refresh
   const handleRefresh = React.useCallback(async () => {
@@ -108,14 +93,12 @@ export default function HomeScreen() {
       loadUserProfile(),
       refetchGroups(),
       refetchFriends(),
-      refetchRequests(),
       refetchJoinRequests(),
     ]);
   }, [
     loadUserProfile,
     refetchGroups,
     refetchFriends,
-    refetchRequests,
     refetchJoinRequests,
   ]);
 
@@ -145,15 +128,6 @@ export default function HomeScreen() {
             { backgroundColor: theme.colors.surface.primary },
           ]}
         >
-          <View style={styles.headerRight}>
-            {pendingRequests.length > 0 && (
-              <FriendRequestNotifications
-                requests={pendingRequests}
-                onPress={() => router.push('/(tabs)/profile')}
-              />
-            )}
-          </View>
-
           {/* Church + Service + (optional) Manage Church CTA in one cohesive card */}
           <ChurchAdminOnly
             fallback={
@@ -459,7 +433,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 16,
   },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   manageButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#111827',

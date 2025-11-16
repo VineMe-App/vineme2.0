@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Dimensions,
   Image,
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { useUserProfile, useUserGroupMemberships } from '@/hooks/useUsers';
@@ -19,14 +19,15 @@ import {
   useFriendshipStatus,
   useSendFriendRequest,
   useRemoveFriend,
-  useReceivedFriendRequests,
   useAcceptFriendRequest,
   useAcceptRejectedFriendRequest,
 } from '@/hooks/useFriendships';
 import { getDisplayName, getFullName } from '@/utils/name';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function OtherUserProfileScreen() {
   const [imageModalVisible, setImageModalVisible] = useState(false);
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{ id?: string }>();
   const targetUserId = useMemo(
     () => (Array.isArray(params.id) ? params.id[0] : params.id),
@@ -43,7 +44,6 @@ export default function OtherUserProfileScreen() {
   const { data: memberships } = useUserGroupMemberships(targetUserId);
 
   const friendshipStatusQuery = useFriendshipStatus(targetUserId || '');
-  const receivedRequestsQuery = useReceivedFriendRequests();
   const sendFriendRequest = useSendFriendRequest();
   const acceptFriendRequest = useAcceptFriendRequest();
   const removeFriend = useRemoveFriend();
@@ -96,21 +96,48 @@ export default function OtherUserProfileScreen() {
     setImageModalVisible(true);
   };
 
+  const handleBackPress = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      router.push('/(tabs)');
+    }
+  }, [navigation, router]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerTitle: '',
+      headerBackVisible: false,
+      headerStyle: {
+        backgroundColor: '#fff',
+      },
+      headerLeft: () => (
+        <TouchableOpacity
+          style={styles.headerBackButton}
+          onPress={handleBackPress}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={24} color="#111827" />
+          <Text style={styles.headerBackText}>Back</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, handleBackPress]);
+
   const ActionButton = () => {
     if (isSelf) return null;
 
     const statusDetails = friendshipStatusQuery.data;
     const status = statusDetails?.status;
     const isIncoming = statusDetails?.direction === 'incoming';
-    const received = receivedRequestsQuery.data || [];
     const loading =
       friendshipStatusQuery.isLoading ||
-      receivedRequestsQuery.isLoading ||
       sendFriendRequest.isPending ||
       acceptFriendRequest.isPending ||
       removeFriend.isPending ||
       acceptRejected.isPending;
-
+    const pendingFriendshipId = friendshipStatusQuery.data?.friendshipId;
     if (loading) {
       return <Button title="Loading..." variant="secondary" disabled />;
     }
@@ -126,17 +153,13 @@ export default function OtherUserProfileScreen() {
             style={styles.actionButton}
           />
         );
-      case 'pending': {
-        // If there's a pending request where the target user is the sender to me, show Accept
-        const incoming = received.find(
-          (req: any) => req.user?.id === targetUserId
-        );
-        if (incoming) {
+      case 'pending':
+        if (isIncoming && pendingFriendshipId) {
           return (
             <Button
               title="Accept Friend Request"
               onPress={() =>
-                acceptFriendRequest.mutate(incoming.id, {
+                acceptFriendRequest.mutate(pendingFriendshipId, {
                   onSuccess: () => friendshipStatusQuery.refetch(),
                   onError: (e) => Alert.alert('Error', e.message),
                 })
@@ -145,7 +168,6 @@ export default function OtherUserProfileScreen() {
           );
         }
         return <Button title="Request Pending" variant="secondary" disabled />;
-      }
       case 'rejected':
         if (isIncoming) {
           return (
@@ -335,6 +357,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  headerBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  headerBackText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
   },
   content: {
     flex: 1,
