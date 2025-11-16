@@ -907,7 +907,14 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         loadingEnabled={true}
         onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
-        onPress={() => setSelectedItems(null)}
+        onPress={() => {
+          // On iOS, MapView onPress can fire alongside Marker onPress,
+          // which immediately clears the selected card panel.
+          // Preserve background-tap-to-dismiss on Android only.
+          if (Platform.OS === 'android') {
+            setSelectedItems(null);
+          }
+        }}
         moveOnMarkerPress={false}
         showsPointsOfInterest={false}
         showsBuildings={false}
