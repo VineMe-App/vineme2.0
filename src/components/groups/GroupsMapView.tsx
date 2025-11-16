@@ -1264,7 +1264,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 16,
     paddingBottom: 8,
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     zIndex: 10,
   },
   noGroupFitsButtonContainer: {

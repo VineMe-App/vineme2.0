@@ -952,7 +952,7 @@ const styles = StyleSheet.create({
   noGroupFitsButtonBar: {
     paddingHorizontal: 16,
     paddingBottom: 8,
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
   },
   noGroupFitsButtonContainer: {
     shadowColor: '#000',
