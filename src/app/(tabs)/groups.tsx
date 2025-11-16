@@ -335,14 +335,16 @@ export default function GroupsScreen() {
 
   const renderListView = () => (
     <View style={styles.listViewContainer}>
-      <View style={[styles.noGroupFitsButtonContainer, { top: -50 + insets.top }]}>
-        <Button
-          title="No group fits?"
-          onPress={handleNoGroupFits}
-          variant="secondary"
-          size="small"
-          style={styles.noGroupFitsButton}
-        />
+      <View style={[styles.noGroupFitsButtonBar, { paddingTop: Math.max(insets.top, 8) }]}>
+        <View style={styles.noGroupFitsButtonContainer}>
+          <Button
+            title="No group fits?"
+            onPress={handleNoGroupFits}
+            variant="secondary"
+            size="small"
+            style={styles.noGroupFitsButton}
+          />
+        </View>
       </View>
       <FlatList
         data={groupsWithDistance as any}
@@ -356,10 +358,7 @@ export default function GroupsScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingTop: 8 }, // Header minHeight (60) + button top offset
-        ]}
+        contentContainerStyle={styles.listContent}
       />
     </View>
   );
@@ -927,10 +926,12 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
+  noGroupFitsButtonBar: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    alignItems: 'flex-end',
+  },
   noGroupFitsButtonContainer: {
-    position: 'absolute',
-    right: 16,
-    zIndex: 10,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
