@@ -323,6 +323,20 @@ export default function ChurchStep({
                   Please choose a different church for now or request this
                   service so we can add it.
                 </Text>
+                <TouchableOpacity
+                  style={styles.serviceEmptyRequestButton}
+                  onPress={() => handleOpenMissingServiceModal('service')}
+                  disabled={missingServiceSubmitting}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.serviceEmptyRequestTitle}>
+                    Request this service
+                  </Text>
+                  <Text style={styles.serviceEmptyRequestSubtitle}>
+                    Tell us the service details and we&apos;ll reach out when it&apos;s
+                    available.
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -730,6 +744,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4d6aa7',
     lineHeight: 19,
+  },
+  serviceEmptyRequestButton: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#4d6aa7',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(77, 106, 167, 0.08)',
+    gap: 4,
+  },
+  serviceEmptyRequestTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2C2235',
+  },
+  serviceEmptyRequestSubtitle: {
+    fontSize: 13,
+    color: '#2C2235',
+    lineHeight: 18,
   },
   otherServiceCard: {
     marginTop: 16,
