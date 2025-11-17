@@ -24,9 +24,10 @@ type FilterType = 'friends' | 'received' | 'sent';
 
 interface FriendsListProps {
   userId?: string;
+  onViewProfile?: (userId: string) => void;
 }
 
-export function FriendsList({ userId }: FriendsListProps) {
+export function FriendsList({ userId, onViewProfile }: FriendsListProps) {
   const { theme } = useTheme();
   const [activeFilter, setActiveFilter] = useState<FilterType>('friends');
 
@@ -206,6 +207,7 @@ export function FriendsList({ userId }: FriendsListProps) {
         <FriendCard
           friendship={item}
           onRemoveFriend={handleRemoveFriend}
+          onViewProfile={onViewProfile}
         />
       );
     } else {
@@ -216,6 +218,7 @@ export function FriendsList({ userId }: FriendsListProps) {
           onAccept={handleAcceptRequest}
           onReject={handleRejectRequest}
           onCancel={handleCancelRequest}
+          onViewProfile={onViewProfile}
           isLoading={
             acceptRequestMutation.isPending ||
             rejectRequestMutation.isPending ||

@@ -7,7 +7,14 @@ import {
   Linking,
   Platform,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+// expo-clipboard is optional in dev client; gate usage to avoid native module errors
+let Clipboard: typeof import('expo-clipboard') | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  Clipboard = require('expo-clipboard');
+} catch {
+  Clipboard = null;
+}
 import { Text } from '../ui/Text';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -234,6 +241,13 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
           {
             text: 'Copy to Clipboard',
             onPress: async () => {
+              if (!Clipboard) {
+                Alert.alert(
+                  'Not Available',
+                  'Clipboard functionality is not available on this device.'
+                );
+                return;
+              }
               try {
                 await Clipboard.setStringAsync(value);
                 Alert.alert(
@@ -417,6 +431,13 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
               <TouchableOpacity
                 onPress={async () => {
                   if (!contactInfo.email) return;
+                  if (!Clipboard) {
+                    Alert.alert(
+                      'Not Available',
+                      'Clipboard functionality is not available on this device.'
+                    );
+                    return;
+                  }
                   try {
                     await Clipboard.setStringAsync(contactInfo.email);
                     Alert.alert('Copied', 'Email copied to clipboard');
@@ -451,6 +472,13 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
               <TouchableOpacity
                 onPress={async () => {
                   if (!contactInfo.phone) return;
+                  if (!Clipboard) {
+                    Alert.alert(
+                      'Not Available',
+                      'Clipboard functionality is not available on this device.'
+                    );
+                    return;
+                  }
                   try {
                     const formattedPhone = formatPhoneNumber(contactInfo.phone);
                     await Clipboard.setStringAsync(formattedPhone);

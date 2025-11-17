@@ -1,15 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
-  SafeAreaView,
   Animated,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { FriendsList } from './FriendsList';
 import { FriendSearch } from './FriendSearch';
 import { useTheme } from '../../theme/provider/useTheme';
@@ -33,6 +37,7 @@ export function FriendManagementModal({
   userId,
 }: FriendManagementModalProps) {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>('friends');
   const slideAnimation = useRef(
     new Animated.Value(activeTab === 'friends' ? 0 : 1)
@@ -55,6 +60,18 @@ export function FriendManagementModal({
       console.error('Error refreshing friends data:', error);
     }
   };
+
+  const handleViewProfile = useCallback(
+    (profileId: string) => {
+      if (!profileId) return;
+      onClose();
+      const delay = Platform.OS === 'ios' ? 350 : 50;
+      setTimeout(() => {
+        router.push(`/user/${profileId}`);
+      }, delay);
+    },
+    [onClose]
+  );
 
   useEffect(() => {
     Animated.timing(slideAnimation, {
@@ -79,7 +96,10 @@ export function FriendManagementModal({
       <SafeAreaView
         style={[
           styles.container,
-          { backgroundColor: theme.colors.background.primary },
+          {
+            backgroundColor: theme.colors.background.primary,
+            paddingTop: insets.top,
+          },
         ]}
       >
         <View
@@ -207,7 +227,7 @@ export function FriendManagementModal({
 
         <View style={styles.content}>
           {activeTab === 'friends' ? (
-            <FriendsList userId={userId} />
+            <FriendsList userId={userId} onViewProfile={handleViewProfile} />
           ) : (
             <FriendSearch />
           )}

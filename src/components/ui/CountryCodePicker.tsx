@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Text from './Text';
 
-type Country = {
+export type Country = {
   name: string;
   code: string; // +1
   flag: string; // emoji
@@ -217,15 +217,21 @@ const COUNTRIES: Country[] = [
   { name: 'Zimbabwe', code: '+263', flag: '🇿🇼' },
 ];
 
+export interface CountryCodePickerProps {
+  value: string;
+  onChange: (code: string) => void;
+  label?: string;
+  hideLabel?: boolean;
+  renderTrigger?: (options: { selected: Country; open: () => void }) => React.ReactNode;
+}
+
 export function CountryCodePicker({
   value,
   onChange,
   label = 'Country',
-}: {
-  value: string;
-  onChange: (code: string) => void;
-  label?: string;
-}) {
+  hideLabel = false,
+  renderTrigger,
+}: CountryCodePickerProps) {
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -249,12 +255,18 @@ export function CountryCodePicker({
     );
   }, [query]);
 
-  return (
-    <>
-      <Text style={styles.label}>{label}</Text>
+  const openPicker = useCallback(() => setVisible(true), []);
+  const closePicker = useCallback(() => setVisible(false), []);
+
+  const trigger = useMemo(() => {
+    if (renderTrigger) {
+      return renderTrigger({ selected, open: openPicker });
+    }
+
+    return (
       <TouchableOpacity
         style={styles.selector}
-        onPress={() => setVisible(true)}
+        onPress={openPicker}
         accessibilityRole="button"
       >
         <Text style={styles.flag}>{selected.flag}</Text>
@@ -262,6 +274,13 @@ export function CountryCodePicker({
           {selected.code}
         </Text>
       </TouchableOpacity>
+    );
+  }, [openPicker, renderTrigger, selected]);
+
+  return (
+    <>
+      {!hideLabel && label ? <Text style={styles.label}>{label}</Text> : null}
+      {trigger}
 
       <Modal visible={visible} transparent animationType="fade">
         <View style={styles.overlay}>
@@ -285,7 +304,7 @@ export function CountryCodePicker({
                   style={styles.item}
                   onPress={() => {
                     onChange(item.code);
-                    setVisible(false);
+                    closePicker();
                   }}
                 >
                   <Text style={styles.flag}>{item.flag}</Text>
@@ -298,7 +317,7 @@ export function CountryCodePicker({
             />
             <TouchableOpacity
               style={styles.closeBtn}
-              onPress={() => setVisible(false)}
+              onPress={closePicker}
             >
               <Text weight="semiBold" style={styles.closeText}>
                 Close

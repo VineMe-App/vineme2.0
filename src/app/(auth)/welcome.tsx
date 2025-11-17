@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
-import { Button } from '@/components/ui/Button';
+import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { AuthHero } from '@/components/auth/AuthHero';
+import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 
@@ -9,51 +10,32 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={styles.content}>
-        <View style={styles.header}>
-          <Text variant="h1" weight="bold" style={styles.title}>
-            Welcome to VineMe
-          </Text>
-          <Text variant="bodyLarge" color="secondary" style={styles.subtitle}>
-            Connect with your church community and grow together in faith
-          </Text>
+        <View style={styles.body}>
+          <AuthHero
+            title="Welcome to VineMe"
+            subtitle="Connect with your church community and grow together in faith."
+          />
         </View>
 
         <View style={styles.actions}>
-          <Button
-            title="Sign up with Phone"
+          <AuthButton
+            title="Sign up"
             onPress={() => router.push('/(auth)/phone-signup')}
             style={styles.primaryButton}
           />
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text variant="body" color="secondary" style={styles.dividerText}>
-              or
-            </Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <Button
-            title="Sign in with Phone"
+          <AuthButton
+            title="Sign in"
+            variant="secondary"
             onPress={() => router.push('/(auth)/phone-login')}
-            variant="secondary"
-            style={styles.secondaryButton}
-          />
-
-          <Button
-            title="Sign in with Email"
-            onPress={() => router.push('/(auth)/email-login')}
-            variant="secondary"
             style={styles.secondaryButton}
           />
         </View>
 
-        <View style={styles.footer}>
-          <Text variant="caption" color="secondary" style={styles.footerText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </Text>
-        </View>
+        <Text variant="caption" color="secondary" align="center" style={styles.footerText}>
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -66,60 +48,28 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 32,
+    paddingVertical: 24,
     justifyContent: 'space-between',
   },
-  header: {
+  body: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 48,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 26,
-    paddingHorizontal: 16,
+    justifyContent: 'center',
   },
   actions: {
     width: '100%',
+    marginBottom: 32,
   },
   primaryButton: {
     marginBottom: 16,
   },
   secondaryButton: {
-    marginBottom: 12,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e5e5',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  footer: {
-    paddingTop: 24,
+    marginBottom: 0,
   },
   footerText: {
-    fontSize: 14,
     color: '#999',
-    textAlign: 'center',
-    lineHeight: 20,
+    marginBottom: 12,
+    lineHeight: 18,
   },
 });

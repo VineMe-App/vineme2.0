@@ -13,6 +13,8 @@ export interface User {
   avatar_url?: string;
   service_id?: string;
   bio?: string;
+  marketing_opt_in?: boolean;
+  cannot_find_group?: boolean;
   roles: string[];
   newcomer?: boolean;
   onboarding_complete?: boolean;

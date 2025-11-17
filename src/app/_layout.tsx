@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar, Text as RNText } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryProvider } from '@/providers/QueryProvider';
@@ -78,6 +79,9 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[1] === 'onboarding';
+    const inOnboardingLoader = segments[1] === 'onboarding-loader';
+    const inPhoneAuthFlow =
+      segments[1] === 'phone-signup' || segments[1] === 'phone-login';
     // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id], /admin/*)
     const inAllowedStacks =
       segments[0] === 'group' ||
@@ -117,10 +121,13 @@ function RootLayoutNav() {
 
     if (user) {
       // User is authenticated
-      if (!isOnboardingDone && !inOnboarding) {
-        if (__DEV__) console.log('[NavDebug] redirect -> /(auth)/onboarding');
-        // User needs onboarding
-        router.replace('/(auth)/onboarding');
+      if (!isOnboardingDone && !(inOnboarding || inOnboardingLoader)) {
+        const target = inPhoneAuthFlow
+          ? '/(auth)/onboarding-loader'
+          : '/(auth)/onboarding';
+        if (__DEV__)
+          console.log('[NavDebug] redirect ->', target);
+        router.replace(target);
       } else if (isOnboardingDone && !(inTabsGroup || inAllowedStacks)) {
         if (__DEV__) console.log('[NavDebug] redirect -> /(tabs)');
         // User completed onboarding, go to main app
@@ -159,6 +166,10 @@ function RootLayoutNav() {
           name="group-management"
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="(auth)/onboarding-loader"
+          options={{ headerShown: false }}
+        />
       </Stack>
       {__DEV__ && <DevToolsOverlay />}
     </>
@@ -167,21 +178,23 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ErrorBoundary>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor="white"
-          translucent={false}
-        />
-        <ThemeProvider initialTheme="light">
-          <QueryProvider>
-            <AuthProvider>
-              <RootLayoutNav />
-            </AuthProvider>
-          </QueryProvider>
-        </ThemeProvider>
-      </ErrorBoundary>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ErrorBoundary>
+          <StatusBar
+            barStyle="dark-content"
+            backgroundColor="white"
+            translucent={false}
+          />
+          <ThemeProvider initialTheme="light">
+            <QueryProvider>
+              <AuthProvider>
+                <RootLayoutNav />
+              </AuthProvider>
+            </QueryProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

@@ -6,16 +6,18 @@ import React, {
 } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Platform,
   Alert,
 } from 'react-native';
+import { Text } from '../ui/Text';
 import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
-import { Input } from '../ui';
+import { Input, Button } from '../ui';
+import { AuthButton } from '@/components/auth/AuthButton';
 import { locationService, type Coordinates } from '../../services/location';
 import { MapViewFallback } from './MapViewFallback';
+import { Ionicons } from '@expo/vector-icons';
 
 // Dynamically import MapView - not available in Expo Go or on web
 // Using Platform check and try-catch to gracefully handle when the module isn't available
@@ -57,11 +59,15 @@ interface LocationPickerProps {
     address?: string;
     coordinates?: Coordinates | null;
   }) => void;
+  onSubmit?: () => void;
+  deferChanges?: boolean; // when true, don't propagate interim changes upward
 }
 
 export const LocationPicker: React.FC<LocationPickerProps> = ({
   value,
   onChange,
+  onSubmit,
+  deferChanges = false,
 }) => {
   // Check if MapView is available BEFORE any hooks
   const inExpoGo = !MapView;
@@ -89,13 +95,40 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   } | null>(null);
   const [inputKey, setInputKey] = useState(0);
   const mapRef = useRef<any>(null);
+  const pendingChangeRef = useRef<{
+    address?: string;
+    coordinates?: Coordinates | null;
+  } | null>(null);
+
+  const propagateChange = useCallback(
+    (
+      nextValue: { address?: string; coordinates?: Coordinates | null },
+      options?: { forceImmediate?: boolean }
+    ) => {
+      if (deferChanges && !options?.forceImmediate) {
+        pendingChangeRef.current = nextValue;
+        return;
+      }
+
+      pendingChangeRef.current = null;
+      onChange(nextValue);
+    },
+    [deferChanges, onChange]
+  );
+
+  useEffect(() => {
+    if (!deferChanges && pendingChangeRef.current) {
+      onChange(pendingChangeRef.current);
+      pendingChangeRef.current = null;
+    }
+  }, [deferChanges, onChange]);
 
   // Ensure marker is always visible immediately
   useEffect(() => {
     console.log('Setting initial marker coordinates:', selectedCoords);
     // Always call onChange with initial coordinates to ensure parent component knows about the location
     if (!value?.coordinates) {
-      onChange({
+      propagateChange({
         address: search || 'Loading location...',
         coordinates: selectedCoords,
       });
@@ -167,24 +200,33 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               console.log('Reverse geocoded address:', address);
               if (address?.formattedAddress) {
                 setSearch(address.formattedAddress);
-                onChange({
-                  address: address.formattedAddress,
-                  coordinates: currentLocation,
-                });
+                propagateChange(
+                  {
+                    address: address.formattedAddress,
+                    coordinates: currentLocation,
+                  },
+                  { forceImmediate: true }
+                );
               } else {
                 setSearch('Current Location');
-                onChange({
-                  address: 'Current Location',
-                  coordinates: currentLocation,
-                });
+                propagateChange(
+                  {
+                    address: 'Current Location',
+                    coordinates: currentLocation,
+                  },
+                  { forceImmediate: true }
+                );
               }
             } catch (geocodeError) {
               console.warn('Reverse geocoding failed:', geocodeError);
               setSearch('Current Location');
-              onChange({
-                address: 'Current Location',
-                coordinates: currentLocation,
-              });
+              propagateChange(
+                {
+                  address: 'Current Location',
+                  coordinates: currentLocation,
+                },
+                { forceImmediate: true }
+              );
             }
           } else {
             // If no current location, use default coordinates
@@ -200,10 +242,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             };
             setRegion(newRegion);
             setSearch('Default Location');
-            onChange({
-              address: 'Default Location',
-              coordinates: DEFAULT_COORDINATES,
-            });
+            propagateChange(
+              {
+                address: 'Default Location',
+                coordinates: DEFAULT_COORDINATES,
+              },
+              { forceImmediate: true }
+            );
           }
         } catch (error) {
           console.warn('Could not get current location:', error);
@@ -218,10 +263,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           };
           setRegion(newRegion);
           setSearch('Default Location');
-          onChange({
-            address: 'Default Location',
-            coordinates: DEFAULT_COORDINATES,
-          });
+          propagateChange(
+            {
+              address: 'Default Location',
+              coordinates: DEFAULT_COORDINATES,
+            },
+            { forceImmediate: true }
+          );
         } finally {
           setIsLoadingLocation(false);
         }
@@ -232,7 +280,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     };
 
     initializeLocation();
-  }, [value?.coordinates, onChange]);
+  }, [propagateChange, value?.coordinates]);
 
   const geocode = useCallback(async (query: string) => {
     if (!query.trim() || query.trim().length < 3) {
@@ -253,7 +301,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         };
         setRegion(newRegion);
         mapRef.current?.animateToRegion(newRegion, 600);
-        onChange({ address: query.trim(), coordinates: coords });
+        propagateChange({ address: query.trim(), coordinates: coords });
       } else {
         Alert.alert('Location Not Found', 'Unable to find the location you searched for. Please try a different search.');
       }
@@ -262,7 +310,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     } finally {
       setIsGeocoding(false);
     }
-  }, [onChange, region, userZoomLevel]);
+  }, [propagateChange, region, userZoomLevel]);
 
   const forceInputRecreation = () => {
     setInputKey((prev) => prev + 1);
@@ -315,14 +363,14 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         try {
           const addr = await locationService.reverseGeocode(coords);
           setSearch(addr?.formattedAddress || 'Selected Location');
-          onChange({
+          propagateChange({
             address: addr?.formattedAddress || 'Selected Location',
             coordinates: coords,
           });
         } catch (error) {
           console.warn('Reverse geocoding failed:', error);
           setSearch('Selected Location');
-          onChange({
+          propagateChange({
             address: 'Selected Location',
             coordinates: coords,
           });
@@ -332,8 +380,40 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         setRegion(newRegion);
       }
     },
-    [onChange, region.latitude, region.longitude, userZoomLevel]
+    [propagateChange, region.latitude, region.longitude, userZoomLevel]
   );
+
+  const handleRecenter = useCallback(async () => {
+    try {
+      const current = await locationService.getCurrentLocation();
+      if (!current) return;
+      setSelectedCoords(current);
+      const newRegion = {
+        latitude: current.latitude,
+        longitude: current.longitude,
+        latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
+        longitudeDelta: userZoomLevel?.longitudeDelta || region.longitudeDelta,
+      };
+      setRegion(newRegion);
+      mapRef.current?.animateToRegion(newRegion, 600);
+      try {
+        const addr = await locationService.reverseGeocode(current);
+        setSearch(addr?.formattedAddress || 'Current Location');
+        propagateChange({
+          address: addr?.formattedAddress || 'Current Location',
+          coordinates: current,
+        });
+      } catch {
+        setSearch('Current Location');
+        propagateChange({
+          address: 'Current Location',
+          coordinates: current,
+        });
+      }
+    } catch (e) {
+      console.warn('Recenter failed:', e);
+    }
+  }, [propagateChange, region.latitudeDelta, region.longitudeDelta, userZoomLevel]);
 
   // Check if MapView is available after all hooks
   if (!MapView) {
@@ -374,13 +454,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           onSubmitEditing={handleSearchPress}
         />
         {isGeocoding && (
-          <Text style={styles.searchHelper}>Finding location…</Text>
+          <Text variant="bodySmall" style={styles.searchHelper}>Finding location…</Text>
         )}
         {isLoadingLocation && (
-          <Text style={styles.searchHelper}>Getting your location…</Text>
+          <Text variant="bodySmall" style={styles.searchHelper}>Getting your location…</Text>
         )}
         {search.length > 0 && search.length < 3 && (
-          <Text style={styles.searchHelper}>
+          <Text variant="bodySmall" style={styles.searchHelper}>
             Type at least 3 characters, then press Enter to search
           </Text>
         )}
@@ -389,7 +469,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             style={styles.clearButton}
             onPress={() => {
               setSearch('');
-              forceInputRecreation();
             }}
             accessibilityLabel="Clear search"
           >
@@ -399,15 +478,16 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       </View>
 
       <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          mapId={GOOGLE_MAPS_MAP_ID}
-          initialRegion={region}
-          onRegionChangeComplete={handleRegionChangeComplete}
-          showsUserLocation
-          showsMyLocationButton={Platform.OS === 'android'}
+        <View style={styles.mapInner}>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            mapId={GOOGLE_MAPS_MAP_ID}
+            initialRegion={region}
+            onRegionChangeComplete={handleRegionChangeComplete}
+            showsUserLocation
+            showsMyLocationButton={Platform.OS === 'android'}
           customMapStyle={[
             {
               elementType: 'geometry',
@@ -429,7 +509,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               elementType: 'labels.text.fill',
               stylers: [
                 {
-                  color: '#5f5f5f',
+                  color: '#616161',
                 },
               ],
             },
@@ -473,7 +553,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               elementType: 'geometry',
               stylers: [
                 {
-                  color: '#e5e5e5',
+                  color: '#bcddbd',
                 },
               ],
             },
@@ -491,7 +571,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               elementType: 'geometry',
               stylers: [
                 {
-                  color: '#ffffff',
+                  color: '#d9e3d9', // Very faint green tint for roads
                 },
               ],
             },
@@ -554,7 +634,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               elementType: 'geometry',
               stylers: [
                 {
-                  color: '#c9c9c9',
+                  color: '#d0e8d0', // Slightly more green for water
                 },
               ],
             },
@@ -568,15 +648,48 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               ],
             },
           ]}
-        >
-          {console.log('Rendering marker with coordinates:', selectedCoords)}
-          <Marker
-            coordinate={selectedCoords}
-            title="Meeting Location"
-            description="Move the map to adjust location"
-            pinColor="red"
+          >
+            {console.log('Rendering marker with coordinates:', selectedCoords)}
+            <Marker
+              coordinate={selectedCoords}
+              title="Meeting Location"
+              description="Move the map to adjust location"
+              pinColor="red"
+            />
+          </MapView>
+          <TouchableOpacity
+            style={styles.recenterButton}
+            onPress={handleRecenter}
+            accessibilityLabel="Recenter map on current location"
+            accessibilityRole="button"
+            activeOpacity={0.85}
+          >
+            <Ionicons name="locate-outline" size={18} color="#2C2235" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.actionContainer}>
+        <View style={styles.actionSpacer}>
+          <AuthButton
+            title="Search map"
+            onPress={handleSearchPress}
+            fullWidth={true}
           />
-        </MapView>
+        </View>
+        <Button
+          title="View groups"
+          onPress={() => {
+            propagateChange(
+              {
+                address: search || 'Selected Location',
+                coordinates: selectedCoords,
+              },
+              { forceImmediate: true }
+            );
+            onSubmit?.();
+          }}
+        />
       </View>
     </View>
   );
@@ -588,18 +701,51 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginBottom: 12,
+    marginHorizontal: 20,
   },
   mapContainer: {
-    height: 300,
+    height: 200,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#F9FAFC',
+    borderWidth: 1,
+    borderColor: '#EDEDED',
     position: 'relative',
     marginHorizontal: 20,
+    padding: 8, // ensures the map doesn't touch borders
+  },
+  mapInner: {
+    flex: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   map: {
     width: '100%',
     height: '100%',
+  },
+  recenterButton: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  actionContainer: {
+    marginTop: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  actionSpacer: {
+    marginBottom: 0,
   },
   searchInputContainer: {
     marginBottom: 0,
@@ -607,6 +753,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     // Use default input styling to match other inputs
+    paddingRight: 30, // ensure text doesn't render beneath the clear button
   },
   searchHelper: {
     marginTop: 6,

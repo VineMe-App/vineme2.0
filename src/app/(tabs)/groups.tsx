@@ -5,8 +5,10 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
+  Alert,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { useRouter } from 'expo-router';
 import {
@@ -16,6 +18,7 @@ import {
   SearchBar,
   type ViewMode,
 } from '../../components/groups';
+import { LocationPicker } from '../../components/groups/LocationPicker';
 import {
   useGroupsByChurch,
   useGroupMembership,
@@ -24,7 +27,8 @@ import {
 } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
-import { ErrorMessage, EmptyState, LoadingSpinner, Modal } from '../../components/ui';
+import { ErrorMessage, EmptyState, LoadingSpinner, Modal, Button } from '../../components/ui';
+import { useUpdateUserProfile } from '../../hooks/useUsers';
 import {
   applyGroupFilters,
   getActiveFiltersDescription,
@@ -35,16 +39,19 @@ import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '@/theme/provider/useTheme';
+import { Image } from 'react-native';
 
 export default function GroupsScreen() {
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const { filters } = useGroupFiltersStore();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const friendsQuery = useFriends(userProfile?.id);
   const [showSearch, setShowSearch] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showNoGroupFitsModal, setShowNoGroupFitsModal] = useState(false);
   const [sortBy, setSortBy] = useState<
     'alphabetical' | 'distance' | 'friends'
   >('alphabetical');
@@ -52,11 +59,17 @@ export default function GroupsScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [distanceOrigin, setDistanceOrigin] = useState<{
+    address: string;
+    coordinates: { latitude: number; longitude: number };
+  } | null>(null);
+  const [showDistanceOriginPicker, setShowDistanceOriginPicker] = useState(false);
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   // Create flow now navigates to dedicated page
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [currentView, setCurrentView] = useState<ViewMode>('list');
+  const updateUserProfile = useUpdateUserProfile();
 
   // Hide sort options when switching to map view
   const handleViewChange = (view: ViewMode) => {
@@ -191,14 +204,16 @@ export default function GroupsScreen() {
   // Sorted groups with computed distance and friend counts
   const groupsWithDistance = useMemo(() => {
     if (!filteredGroups) return [] as typeof filteredGroups & any[];
+    const originCoords =
+      distanceOrigin?.coordinates || userCoords || null;
     return filteredGroups
       .map((g) => {
         let distanceKm: number | undefined;
-        if (sortBy === 'distance' && userCoords) {
+        if (sortBy === 'distance' && originCoords) {
           const parsed = locationService.parseGroupLocation(g.location);
           if (parsed.coordinates) {
             distanceKm = locationService.calculateDistance(
-              userCoords,
+              originCoords,
               parsed.coordinates
             );
           }
@@ -216,7 +231,7 @@ export default function GroupsScreen() {
         } as any;
       })
       .sort((a: any, b: any) => {
-        if (sortBy === 'distance' && userCoords) {
+        if (sortBy === 'distance' && (distanceOrigin?.coordinates || userCoords)) {
           const da = a.__distanceKm;
           const db = b.__distanceKm;
           if (da == null && db == null) return 0;
@@ -230,7 +245,7 @@ export default function GroupsScreen() {
         }
         return 0;
       });
-  }, [filteredGroups, sortBy, userCoords, friendIds]);
+  }, [filteredGroups, sortBy, userCoords, distanceOrigin?.coordinates, friendIds]);
 
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {
@@ -297,21 +312,78 @@ export default function GroupsScreen() {
     );
   };
 
+  const handleNoGroupFits = () => {
+    setShowNoGroupFitsModal(true);
+  };
+
+  const handleConfirmCannotFindGroup = async () => {
+    if (!userProfile?.id) return;
+    
+    try {
+      await updateUserProfile.mutateAsync({
+        userId: userProfile.id,
+        updates: { cannot_find_group: true },
+      });
+      setShowNoGroupFitsModal(false);
+      Alert.alert(
+        'Thank you!',
+        "We've flagged your account and our connections team will reach out to help you find a suitable group."
+      );
+    } catch (error) {
+      handleError(error as Error);
+    }
+  };
+
   const renderListView = () => (
-    <FlatList
-      data={groupsWithDistance as any}
-      renderItem={renderGroupItem}
-      keyExtractor={(item) => item.id}
-      ListEmptyComponent={renderEmptyState}
-      refreshControl={
-        <RefreshControl
-          refreshing={isLoadingFn('refresh')}
-          onRefresh={handleRefresh}
-        />
-      }
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.listContent}
-    />
+    <View style={styles.listViewContainer}>
+      {Platform.OS === 'android' ? (
+        <View style={[styles.noGroupFitsButtonBar, { paddingTop: Math.max(insets.top, 8) }]}>
+          <View style={styles.noGroupFitsButtonContainer}>
+            <Button
+              title="No group fits?"
+              onPress={handleNoGroupFits}
+              variant="secondary"
+              size="small"
+              style={styles.noGroupFitsButton}
+            />
+          </View>
+        </View>
+      ) : (
+        <View
+          style={[
+            styles.noGroupFitsButtonFloating,
+            { top: -50 + insets.top },
+          ]}
+        >
+          <View style={styles.noGroupFitsButtonContainer}>
+            <Button
+              title="No group fits?"
+              onPress={handleNoGroupFits}
+              variant="secondary"
+              size="small"
+              style={styles.noGroupFitsButton}
+            />
+          </View>
+        </View>
+      )}
+      <FlatList
+        data={groupsWithDistance as any}
+        renderItem={renderGroupItem}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={renderEmptyState}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoadingFn('refresh')}
+            onRefresh={handleRefresh}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.listContent,
+          Platform.OS === 'android' ? null : { paddingTop: 8 },
+        ]}
+      />
+    </View>
   );
 
   const renderMapView = () => (
@@ -319,6 +391,7 @@ export default function GroupsScreen() {
       groups={filteredGroups}
       onGroupPress={handleGroupPress}
       isLoading={isLoading}
+      onNoGroupFits={handleNoGroupFits}
     />
   );
 
@@ -374,75 +447,49 @@ export default function GroupsScreen() {
           { backgroundColor: theme.colors.surface.primary },
         ]}
       >
-        <Text variant="h4" style={styles.title}>
-          Groups
-        </Text>
+        <View style={styles.headerLeft}>
+          <Image
+            source={require('../../../assets/figma-128-1563/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text variant="h4" weight="black" style={styles.title}>
+            Groups
+          </Text>
+        </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
-            onPress={() => setShowInfoModal(true)}
-            accessibilityLabel="Information about groups"
+            style={styles.figmaIconButton}
+            onPress={() => setShowSearch((s) => !s)}
+            accessibilityLabel="Search groups"
           >
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={theme.colors.primary[500]}
-            />
+            <View style={[styles.iconButtonInner, styles.searchButtonInner]}>
+              <Ionicons
+                name="search-outline"
+                size={16}
+                color="#FFFFFF"
+              />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              {
-                backgroundColor:
-                  currentView === 'map'
-                    ? theme.colors.primary[500]
-                    : theme.colors.secondary[100],
-              },
-            ]}
+            style={styles.figmaIconButton}
             onPress={() =>
               handleViewChange(currentView === 'list' ? 'map' : 'list')
             }
             accessibilityLabel={`Switch to ${currentView === 'list' ? 'map' : 'list'} view`}
           >
-            <Ionicons
-              name={currentView === 'list' ? 'map-outline' : 'list-outline'}
-              size={16}
-              color={
-                currentView === 'map'
-                  ? theme.colors.secondary[100]
-                  : theme.colors.primary[500]
-              }
-            />
-            <Text
-              variant="caption"
-              style={{
-                color:
-                  currentView === 'map'
-                    ? theme.colors.secondary[100]
-                    : theme.colors.primary[500],
-                marginLeft: 4,
-                fontSize: 12,
-                fontWeight: '500',
-              }}
+            <View
+              style={[
+                styles.iconButtonInner,
+                currentView === 'map' && styles.iconButtonInnerActive,
+              ]}
             >
-              {currentView === 'list' ? 'Map' : 'List'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
-            onPress={() => setShowSearch((s) => !s)}
-          >
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color={theme.colors.primary[500]}
-            />
+              <Ionicons
+                name={currentView === 'list' ? 'map-outline' : 'list-outline'}
+                size={16}
+                color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
+              />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -450,66 +497,76 @@ export default function GroupsScreen() {
               { backgroundColor: theme.colors.secondary[100] },
             ]}
             onPress={() => setShowFilterPanel(true)}
+            accessibilityLabel="Filter groups"
           >
-            <Ionicons
-              name="funnel-outline"
-              size={20}
-              color={theme.colors.primary[500]}
-            />
-            {getActiveFiltersCount(filters) > 0 && (
-              <View style={styles.badge}>
-                <Text
-                  variant="caption"
-                  color="inverse"
-                  style={styles.badgeText}
-                >
-                  {getActiveFiltersCount(filters)}
-                </Text>
-              </View>
-            )}
+            <View
+              style={[
+                styles.iconButtonInner,
+                getActiveFiltersCount(filters) > 0 && styles.iconButtonInnerActive,
+              ]}
+            >
+              <Ionicons
+                name="funnel-outline"
+                size={16}
+                color={getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'}
+              />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.iconButton,
-              {
-                backgroundColor: currentView === 'map'
-                  ? theme.colors.secondary[200] // Grayed out when disabled
-                  : sortBy !== 'alphabetical'
-                  ? theme.colors.primary[500] // Pink when sorted
-                  : theme.colors.secondary[100], // Green when not sorted
-                opacity: currentView === 'map' ? 0.5 : 1, // Dimmed when disabled
-              },
-            ]}
+            style={styles.figmaIconButton}
             onPress={() => currentView !== 'map' && setShowSortOptions((s) => !s)}
-            accessibilityLabel={currentView === 'map' ? 'Sort not available in map view' : 'Sort options'}
+            accessibilityLabel="Sort options"
             disabled={currentView === 'map'}
           >
-            <Ionicons
-              name="swap-vertical-outline"
-              size={20}
-              color={
-                currentView === 'map'
-                  ? theme.colors.text.secondary // Grayed out when disabled
-                  : sortBy !== 'alphabetical'
-                  ? theme.colors.secondary[100] // Green when sorted
-                  : theme.colors.primary[500] // Pink when not sorted
-              }
-            />
+            <View
+              style={[
+                styles.iconButtonInner,
+                currentView === 'map' && styles.iconButtonDisabled,
+                currentView !== 'map' && sortBy !== 'alphabetical' && styles.iconButtonInnerActive,
+              ]}
+            >
+              <Ionicons
+                name="swap-vertical-outline"
+                size={20}
+                color={
+                  currentView === 'map'
+                    ? '#8B8A8C'
+                    : sortBy !== 'alphabetical'
+                    ? '#FFFFFF'
+                    : '#2C2235'
+                }
+              />
+            </View>
           </TouchableOpacity>
+          {currentView === 'list' && sortBy === 'distance' && (
+            <TouchableOpacity
+              style={styles.figmaIconButton}
+              onPress={() => setShowDistanceOriginPicker(true)}
+              accessibilityLabel="Choose location to measure distance from"
+            >
+              <View
+                style={[
+                  styles.iconButtonInner,
+                  styles.iconButtonInnerActive, // Pink when distance is selected
+                ]}
+              >
+                <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+          )}
           {userProfile?.church_id && (
             <TouchableOpacity
-              style={[
-                styles.iconButton,
-                { backgroundColor: theme.colors.secondary[100] },
-              ]}
+              style={styles.figmaIconButton}
               onPress={handleCreateGroup}
               accessibilityLabel="Create group"
             >
-              <Ionicons
-                name="add-outline"
-                size={22}
-                color={theme.colors.primary[500]}
-              />
+              <View style={styles.iconButtonInner}>
+                <Ionicons
+                  name="add-outline"
+                  size={24}
+                  color="#2C2235"
+                />
+              </View>
             </TouchableOpacity>
           )}
         </View>
@@ -532,11 +589,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="text-outline"
               size={20}
-              color={
-                sortBy === 'alphabetical'
-                  ? theme.colors.secondary[100]
-                  : theme.colors.text.primary
-              }
+              color={sortBy === 'alphabetical' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -561,16 +614,14 @@ export default function GroupsScreen() {
               }
               setSortBy('distance');
               setShowSortOptions(false);
+              // Always prompt to choose location when sorting by distance
+              setShowDistanceOriginPicker(true);
             }}
           >
             <Ionicons
               name="navigate-outline"
               size={20}
-              color={
-                sortBy === 'distance'
-                  ? theme.colors.secondary[100]
-                  : theme.colors.text.primary
-              }
+              color={sortBy === 'distance' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -596,7 +647,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="people-outline"
               size={20}
-              color={sortBy === 'friends' ? theme.colors.secondary[100] : theme.colors.text.primary}
+              color={sortBy === 'friends' ? '#FFFFFF' : theme.colors.text.primary}
             />
             <Text
               variant="body"
@@ -663,6 +714,70 @@ export default function GroupsScreen() {
         isVisible={showFilterPanel}
         onClose={() => setShowFilterPanel(false)}
       />
+
+      {/* Distance origin picker */}
+      <Modal
+        isVisible={showDistanceOriginPicker}
+        onClose={() => setShowDistanceOriginPicker(false)}
+        title="Choose a location"
+        headerStyle={{ borderBottomWidth: 0, paddingBottom: 0, paddingRight: 22 }}
+        titleTextStyle={{ letterSpacing: -0.5 }}
+        bodyStyle={{ paddingTop: 0 }}
+      >
+        <LocationPicker
+          value={
+            distanceOrigin
+              ? {
+                  address: distanceOrigin.address,
+                  coordinates: distanceOrigin.coordinates,
+                }
+              : undefined
+          }
+          deferChanges
+          onChange={(val) => {
+            if (val?.coordinates) {
+              setDistanceOrigin({
+                address: val.address || 'Selected location',
+                coordinates: val.coordinates,
+              });
+            } else {
+              setDistanceOrigin(null);
+            }
+          }}
+          onSubmit={() => {
+            setSortBy('distance');
+            setShowDistanceOriginPicker(false);
+          }}
+        />
+      </Modal>
+
+      {/* No Group Fits Modal */}
+      <Modal
+        isVisible={showNoGroupFitsModal}
+        onClose={() => setShowNoGroupFitsModal(false)}
+        title=""
+        showCloseButton={false}
+      >
+        <View style={styles.noGroupFitsModalContent}>
+          <TouchableOpacity
+            style={styles.noGroupFitsModalCloseButton}
+            onPress={() => setShowNoGroupFitsModal(false)}
+            accessibilityLabel="Close modal"
+          >
+            <Ionicons name="close" size={24} color="#6b7280" />
+          </TouchableOpacity>
+          <Text variant="body" style={styles.noGroupFitsModalText}>
+            Oh no! We're sorry that you couldn't find any groups that looked suitable.{'\n\n'}
+            Click below to let your connections team know!
+          </Text>
+          <Button
+            title="I can't find a group"
+            onPress={handleConfirmCannotFindGroup}
+            loading={updateUserProfile.isPending}
+            style={styles.noGroupFitsButtonModal}
+          />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -740,16 +855,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   compactHeader: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 19,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 60,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logo: {
+    width: 27,
+    height: 27,
   },
   title: {
-    color: '#1f2937',
+    color: '#2C2235',
+    fontSize: 22,
+    letterSpacing: -1.1,
+    fontWeight: '900',
   },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  figmaIconButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconButtonInner: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F9FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchButtonInner: {
+    backgroundColor: '#FF0083',
+  },
+  iconButtonInnerActive: {
+    backgroundColor: '#FF0083',
+  },
+  iconButtonDisabled: {
+    opacity: 0.5,
+  },
   iconButton: {
     width: 34,
     height: 34,
@@ -787,6 +943,59 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingBottom: 16,
+    paddingHorizontal: 0,
+  },
+  listViewContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  noGroupFitsButtonBar: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    alignItems: 'flex-start',
+  },
+  noGroupFitsButtonContainer: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  noGroupFitsButtonFloating: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 10,
+  },
+  noGroupFitsButton: {
+    paddingHorizontal: 14,
+    maxWidth: 120, // Compact width to match the drawn outline
+  },
+  noGroupFitsModalContent: {
+    padding: 20,
+    paddingTop: 48, // 12 (top spacing) + 24 (icon height) + 12 (padding below icon)
+    alignItems: 'center',
+    position: 'relative',
+  },
+  noGroupFitsModalCloseButton: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  noGroupFitsModalText: {
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  noGroupFitsButtonModal: {
+    minWidth: 200,
   },
   loadingContainer: {
     flex: 1,
@@ -818,7 +1027,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sortOptionSelected: {
-    backgroundColor: '#8b5cf6',
+    backgroundColor: '#FF0083',
   },
   sortOptionText: {
     marginLeft: 12,

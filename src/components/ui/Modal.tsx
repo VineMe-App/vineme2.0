@@ -7,22 +7,24 @@ import {
   StyleSheet,
   ViewStyle,
   ModalProps as RNModalProps,
-  SafeAreaView,
   ScrollView,
   Dimensions,
   BackHandler,
 } from 'react-native';
 import { KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeSafe } from '../../theme/provider/useTheme';
 import { lightTheme } from '../../theme/themes';
 import { withOpacity } from '../../utils/colors';
 
-export interface ModalProps extends Omit<RNModalProps, 'children'> {
+export interface ModalProps
+  extends Omit<RNModalProps, 'children' | 'animationType'> {
   children: React.ReactNode;
   isVisible: boolean;
   onClose: () => void;
   title?: string;
+  titleTextStyle?: import('react-native').TextStyle;
   size?: 'small' | 'medium' | 'large' | 'fullscreen';
   variant?: 'default' | 'centered' | 'bottom-sheet' | 'fullscreen';
   showCloseButton?: boolean;
@@ -52,6 +54,7 @@ export const Modal: React.FC<ModalProps> = ({
   isVisible,
   onClose,
   title,
+  titleTextStyle,
   size = 'medium',
   variant = 'default',
   showCloseButton = true,
@@ -119,6 +122,27 @@ export const Modal: React.FC<ModalProps> = ({
     );
 
     return () => backHandler.remove();
+  }, [isVisible, closeOnBackPress, onClose]);
+
+  // Handle Escape key on web/desktop to dismiss modal
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (!isVisible) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (closeOnBackPress) {
+          onClose();
+        }
+      }
+    };
+
+    // Attach to document for reliable capture in RN Web
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, [isVisible, closeOnBackPress, onClose]);
 
   // Handle lifecycle callbacks
@@ -210,12 +234,11 @@ export const Modal: React.FC<ModalProps> = ({
         accessible={true}
         accessibilityLabel={title || 'Modal'}
         accessibilityViewIsModal={true}
-        onKeyPress={handleEscapeKey}
       >
         {(title || showCloseButton) && (
           <View style={[styles.header, headerStyle]}>
             {title && (
-              <Text style={styles.title} accessibilityRole="header">
+              <Text style={[styles.title, titleTextStyle]} accessibilityRole="header">
                 {title}
               </Text>
             )}
@@ -256,36 +279,38 @@ export const Modal: React.FC<ModalProps> = ({
       statusBarTranslucent
       {...modalProps}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.absoluteFill}>
         <View style={[styles.overlay, getContentPosition(), overlayStyle]}>
-          <TouchableOpacity
-            style={styles.overlayTouchable}
-            activeOpacity={1}
-            onPress={handleOverlayPress}
-            accessibilityRole={undefined}
-            accessible={false}
-          >
-            <KeyboardAvoidingView
-              enabled={avoidKeyboard}
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={keyboardVerticalOffset}
-              style={[styles.keyboardAvoidingView, getContentPosition()]}
+          <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+            <TouchableOpacity
+              style={styles.overlayTouchable}
+              activeOpacity={1}
+              onPress={handleOverlayPress}
+              accessibilityRole={undefined}
+              accessible={false}
             >
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={() => {}} // Prevent overlay press when touching content
-                style={
-                  variant === 'bottom-sheet'
-                    ? styles.bottomSheetContainer
-                    : styles.contentContainer
-                }
+              <KeyboardAvoidingView
+                enabled={avoidKeyboard}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={keyboardVerticalOffset}
+                style={[styles.keyboardAvoidingView, getContentPosition()]}
               >
-                {renderContent()}
-              </TouchableOpacity>
-            </KeyboardAvoidingView>
-          </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={() => {}} // Prevent overlay press when touching content
+                  style={
+                    variant === 'bottom-sheet'
+                      ? styles.bottomSheetContainer
+                      : styles.contentContainer
+                  }
+                >
+                  {renderContent()}
+                </TouchableOpacity>
+              </KeyboardAvoidingView>
+            </TouchableOpacity>
+          </SafeAreaView>
         </View>
-      </SafeAreaView>
+      </View>
     </RNModal>
   );
 };
@@ -303,6 +328,13 @@ const createStyles = (
   StyleSheet.create({
     safeArea: {
       flex: 1,
+    },
+    absoluteFill: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
     },
     overlay: {
       flex: 1,

@@ -917,6 +917,75 @@ export const useNotificationSettings = (userId?: string) => {
 /**
  * Specialized hook for handling notification navigation
  */
+const resolveFriendRequestActionUrl = (
+  actionUrl: string,
+  fallbackUserId?: string
+) => {
+  if (!actionUrl) return undefined;
+
+  // Older notifications used /profile/:id which no longer exists.
+  const legacyProfileMatch = actionUrl.match(/^\/profile\/(.+)$/);
+  if (legacyProfileMatch) {
+    return `/user/${legacyProfileMatch[1]}`;
+  }
+
+  // Some notifications pointed to the profile tab (/ (tabs)/profile) to open the modal.
+  if (actionUrl === '/(tabs)/profile' && fallbackUserId) {
+    return `/user/${fallbackUserId}`;
+  }
+
+  return actionUrl;
+};
+
+const getDefaultNotificationTarget = (notification: Notification): string => {
+  switch (notification.type) {
+    case 'friend_request_received':
+      return `/user/${notification.data.fromUserId}`;
+    case 'friend_request_accepted':
+      return `/user/${notification.data.acceptedByUserId}`;
+    case 'group_request_submitted':
+    case 'group_request_approved':
+    case 'group_request_denied':
+      return `/group/${notification.data.groupId}`;
+    case 'join_request_received':
+      return `/group/${notification.data.groupId}/requests`;
+    case 'join_request_approved':
+    case 'join_request_denied':
+    case 'group_member_added':
+      return `/group/${notification.data.groupId}`;
+    case 'referral_accepted':
+      return `/profile/${notification.data.referredUserId}`;
+    case 'referral_joined_group':
+      return `/group/${notification.data.groupId}`;
+    case 'event_reminder':
+      return `/event/${notification.data.eventId}`;
+    default:
+      return '/(tabs)';
+  }
+};
+
+const resolveNotificationTarget = (notification: Notification): string => {
+  if (notification.action_url) {
+    if (
+      notification.type === 'friend_request_received' ||
+      notification.type === 'friend_request_accepted'
+    ) {
+      const resolved = resolveFriendRequestActionUrl(
+        notification.action_url,
+        notification.type === 'friend_request_received'
+          ? notification.data.fromUserId
+          : notification.data.acceptedByUserId
+      );
+      if (resolved) {
+        return resolved;
+      }
+    }
+    return notification.action_url;
+  }
+
+  return getDefaultNotificationTarget(notification);
+};
+
 export const useNotificationNavigation = () => {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -929,46 +998,8 @@ export const useNotificationNavigation = () => {
         markNotificationAsRead(notification.id);
       }
 
-      // Navigate based on notification type and action URL
-      if (notification.action_url) {
-        router.push(notification.action_url);
-        return;
-      }
-
-      // Fallback navigation based on notification type
-      switch (notification.type) {
-        case 'friend_request_received':
-          router.push(`/profile/${notification.data.fromUserId}`);
-          break;
-        case 'friend_request_accepted':
-          router.push(`/profile/${notification.data.acceptedByUserId}`);
-          break;
-        case 'group_request_submitted':
-        case 'group_request_approved':
-        case 'group_request_denied':
-          router.push(`/group/${notification.data.groupId}`);
-          break;
-        case 'join_request_received':
-          router.push(`/group/${notification.data.groupId}/requests`);
-          break;
-        case 'join_request_approved':
-        case 'join_request_denied':
-        case 'group_member_added':
-          router.push(`/group/${notification.data.groupId}`);
-          break;
-        case 'referral_accepted':
-          router.push(`/profile/${notification.data.referredUserId}`);
-          break;
-        case 'referral_joined_group':
-          router.push(`/group/${notification.data.groupId}`);
-          break;
-        case 'event_reminder':
-          router.push(`/event/${notification.data.eventId}`);
-          break;
-        default:
-          // Default to home screen
-          router.push('/(tabs)');
-      }
+      const target = resolveNotificationTarget(notification);
+      router.push(target);
     },
     [router]
   );
@@ -998,40 +1029,7 @@ export const useNotificationNavigation = () => {
   );
 
   // Get navigation target without navigating
-  const getNavigationTarget = useCallback(
-    (notification: Notification): string => {
-      if (notification.action_url) {
-        return notification.action_url;
-      }
-
-      // Fallback navigation based on notification type
-      switch (notification.type) {
-        case 'friend_request_received':
-          return `/profile/${notification.data.fromUserId}`;
-        case 'friend_request_accepted':
-          return `/profile/${notification.data.acceptedByUserId}`;
-        case 'group_request_submitted':
-        case 'group_request_approved':
-        case 'group_request_denied':
-          return `/group/${notification.data.groupId}`;
-        case 'join_request_received':
-          return `/group/${notification.data.groupId}/requests`;
-        case 'join_request_approved':
-        case 'join_request_denied':
-        case 'group_member_added':
-          return `/group/${notification.data.groupId}`;
-        case 'referral_accepted':
-          return `/profile/${notification.data.referredUserId}`;
-        case 'referral_joined_group':
-          return `/group/${notification.data.groupId}`;
-        case 'event_reminder':
-          return `/event/${notification.data.eventId}`;
-        default:
-          return '/(tabs)';
-      }
-    },
-    []
-  );
+  const getNavigationTarget = useCallback(resolveNotificationTarget, []);
 
   return {
     handleNotificationPress,
