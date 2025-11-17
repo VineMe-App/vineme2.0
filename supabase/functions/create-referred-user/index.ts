@@ -277,12 +277,18 @@ serve(async (req) => {
 
     // Check if referral already exists before attempting to create
     // Check if ANY referrer has already referred this user to this group
-    const { data: existingReferral } = await supabase
+    let referralQuery = supabase
       .from('referrals')
       .select('id, referred_by_user_id')
-      .eq('referred_user_id', userId)
-      .eq('group_id', payload.groupId || null)
-      .maybeSingle();
+      .eq('referred_user_id', userId);
+
+    if (payload.groupId) {
+      referralQuery = referralQuery.eq('group_id', payload.groupId);
+    } else {
+      referralQuery = referralQuery.is('group_id', null);
+    }
+
+    const { data: existingReferral } = await referralQuery.maybeSingle();
 
     if (existingReferral) {
       // Check if it's the same referrer (exact duplicate)
