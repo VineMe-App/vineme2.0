@@ -248,7 +248,7 @@ export default function CommunicationAndSecurityScreen() {
                 />
               </View>
 
-              <Text style={styles.sectionLabel}>Referrals & Events</Text>
+              <Text style={styles.sectionLabel}>Referrals</Text>
               <View style={styles.settingItem}>
                 <Checkbox
                   checked={localNotif.referral_updates}
@@ -256,13 +256,14 @@ export default function CommunicationAndSecurityScreen() {
                   label="Referral updates"
                 />
               </View>
-              <View style={styles.settingItem}>
+              {/* Event reminders hidden for now - keeping code for future use */}
+              {/* <View style={styles.settingItem}>
                 <Checkbox
                   checked={localNotif.event_reminders}
                   onPress={() => toggleNotif('event_reminders')}
                   label="Event reminders"
                 />
-              </View>
+              </View> */}
 
               <View style={styles.actionsRow}>
                 <Button

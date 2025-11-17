@@ -627,8 +627,10 @@ export class AuthService {
     email: string
   ): Promise<{ success: boolean; error?: string; userNotFound?: boolean }> {
     try {
+      console.log('[AuthService] Attempting to send magic link to:', email);
+      
       // Allow email login via magic link (no email signups)
-      const { error } = await supabase.auth.signInWithOtp({
+      const { data, error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: false,
@@ -637,7 +639,23 @@ export class AuthService {
       });
 
       if (error) {
+        console.error('[AuthService] Supabase error sending magic link:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          email,
+        });
+        
         const msg = error.message.toLowerCase();
+        
+        // Check for email service configuration issues (500 errors)
+        if (error.status === 500 && msg.includes('error sending magic link email')) {
+          return {
+            success: false,
+            error: 'Email service is not configured. Please check Supabase SMTP settings in the dashboard.',
+          };
+        }
+        
         // Check if user not found
         if (
           msg.includes('user not found') ||
@@ -664,8 +682,21 @@ export class AuthService {
         return { success: false, error: error.message };
       }
 
+      console.log('[AuthService] Magic link sent successfully:', {
+        email,
+        data: data ? 'present' : 'null',
+      });
+
       return { success: true };
     } catch (error) {
+      console.error('[AuthService] Exception caught in signInWithEmail:', {
+        error,
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        email,
+      });
+      
       return {
         success: false,
         error:

@@ -47,7 +47,6 @@ export const Avatar: React.FC<AvatarProps> = ({
         <Image
           source={{
             uri: imageUrl,
-            cache: 'reload' as any, // Force reload to bypass cache
           }}
           style={[styles.image, avatarStyle]}
           key={imageUrl} // Force re-render when URL changes

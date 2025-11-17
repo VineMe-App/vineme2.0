@@ -440,12 +440,21 @@ export function createReferralErrorMessage(error: any): {
   }
 
   if (
+    (error as any)?.errorCode === 'DUPLICATE_REFERRAL' ||
+    error.message?.includes('DUPLICATE_REFERRAL') ||
+    error.message?.includes('already been referred') ||
     error.message?.includes('already exists') ||
     error.message?.includes('duplicate')
   ) {
+    // Use the message from the error if it contains "already been referred"
+    // This will preserve both "by you" and "by someone else" messages
+    const message = error.message?.includes('already been referred')
+      ? error.message
+      : 'This person has already been referred to this group by you.';
+    
     return {
       title: 'Already Referred',
-      message: 'This person has already been referred to this group',
+      message,
       actionable: true,
       retryable: false,
       suggestions: [

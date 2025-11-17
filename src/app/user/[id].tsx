@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
-  Image,
 } from 'react-native';
 import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { useUserProfile, useUserGroupMemberships } from '@/hooks/useUsers';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -345,9 +345,11 @@ export default function OtherUserProfileScreen() {
                 onPress={() => setImageModalVisible(false)}
                 activeOpacity={1}
               >
-                <Image
+                <OptimizedImage
                   source={{ uri: profile.avatar_url }}
                   style={styles.modalImage}
+                  quality="high"
+                  lazy={false}
                   resizeMode="contain"
                 />
               </TouchableOpacity>

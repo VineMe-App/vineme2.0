@@ -267,7 +267,16 @@ export class ReferralService {
         warnings,
         reusedExistingUser: accountResult.reusedExistingUser,
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle duplicate referral error
+      if (error?.errorCode === 'DUPLICATE_REFERRAL') {
+        return {
+          success: false,
+          error: error.message || 'This person has already been referred by you.',
+          errorDetails: error.errorDetails,
+        };
+      }
+      
       const appError = handleSupabaseError(error as Error);
       return {
         success: false,
@@ -330,7 +339,16 @@ export class ReferralService {
         warnings,
         reusedExistingUser: accountResult.reusedExistingUser,
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle duplicate referral error
+      if (error?.errorCode === 'DUPLICATE_REFERRAL') {
+        return {
+          success: false,
+          error: error.message || 'This person has already been referred to this group by you.',
+          errorDetails: error.errorDetails,
+        };
+      }
+      
       const appError = handleSupabaseError(error as Error);
       return {
         success: false,
@@ -506,6 +524,8 @@ export class ReferralService {
         reusedExistingUser?: boolean;
         membershipCreated?: boolean;
         error?: string;
+        errorCode?: string;
+        message?: string;
       };
 
       if (!result?.ok) {
@@ -517,6 +537,26 @@ export class ReferralService {
           'Full edge function response:',
           JSON.stringify(result, null, 2)
         );
+        
+        // Check for duplicate referral error
+        if (result?.errorCode === 'DUPLICATE_REFERRAL' || result?.error === 'DUPLICATE_REFERRAL') {
+          const error = new Error(
+            result?.message || 'This person has already been referred to this group by you.'
+          );
+          (error as any).errorCode = 'DUPLICATE_REFERRAL';
+          (error as any).errorDetails = {
+            type: 'duplicate',
+            message: result?.message || 'This person has already been referred to this group by you.',
+            retryable: false,
+            suggestions: [
+              'Check if they already have an account',
+              'Try referring them to a different group',
+              'Contact them directly to help with their account',
+            ],
+          };
+          throw error;
+        }
+        
         return null;
       }
 

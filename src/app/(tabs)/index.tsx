@@ -10,21 +10,17 @@ import {
 import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '../../stores/auth';
 import { router } from 'expo-router';
-import { useUpcomingEvents } from '../../hooks/useEvents';
+// import { useUpcomingEvents } from '../../hooks/useEvents'; // Events disabled - keeping for future use
 import { useUserGroupMemberships } from '../../hooks/useUsers';
 import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import { useFriends } from '../../hooks/useFriendships';
 // import { EventCard } from '../../components/events/EventCard'; // Events disabled
 import { GroupCard } from '../../components/groups/GroupCard';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { EmptyState } from '../../components/ui/EmptyState';
-import { Card } from '../../components/ui/Card';
-import { ConnectSomeoneSection } from '../../components/referrals/ConnectSomeoneSection';
 import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { useTheme } from '@/theme/provider/useTheme';
 import { formatServiceTime } from '@/utils/helpers';
-import { Logo } from '@/components/brand/Logo';
 import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithBadge';
 import { useNotificationBadge } from '@/hooks/useNotifications';
 import { Image } from 'react-native';
@@ -57,7 +53,7 @@ export default function HomeScreen() {
   const { theme } = useTheme();
 
   // Get user's church ID for filtering data
-  const churchId = userProfile?.church_id;
+  // const churchId = userProfile?.church_id; // Events disabled - keeping for future use
   const userId = user?.id;
 
   // Fetch dashboard data
@@ -86,13 +82,10 @@ export default function HomeScreen() {
   const showGroupCards =
     activeMemberships.length > 0 || pendingJoinRequestsList.length > 0;
 
-  const {
-    isLoading: friendsLoading,
-    refetch: refetchFriends,
-  } = useFriends(userId);
+  const { isLoading: friendsLoading, refetch: refetchFriends } =
+    useFriends(userId);
 
-  const isLoading =
-    groupsLoading || friendsLoading || joinRequestsLoading;
+  const isLoading = groupsLoading || friendsLoading || joinRequestsLoading;
 
   // Get notification badge count
   const { count: unreadCount } = useNotificationBadge(userId);
@@ -110,12 +103,7 @@ export default function HomeScreen() {
       refetchFriends(),
       refetchJoinRequests(),
     ]);
-  }, [
-    loadUserProfile,
-    refetchGroups,
-    refetchFriends,
-    refetchJoinRequests,
-  ]);
+  }, [loadUserProfile, refetchGroups, refetchFriends, refetchJoinRequests]);
 
   if (isLoading && !userGroupMemberships) {
     return (
@@ -276,7 +264,11 @@ export default function HomeScreen() {
                     membershipStatus={membership.role}
                     currentUserId={userProfile?.id}
                     onPress={() => router.push(`/group/${membership.group.id}`)}
-                    style={{ width: 260, minHeight: MY_GROUPS_CARD_MIN_HEIGHT, marginHorizontal: 0 }}
+                    style={{
+                      width: 260,
+                      minHeight: MY_GROUPS_CARD_MIN_HEIGHT,
+                      marginHorizontal: 0,
+                    }}
                     variant="my-groups"
                   />
                 </View>
@@ -318,7 +310,12 @@ export default function HomeScreen() {
 
           {/* Action Cards - Show below groups or in empty state */}
           {showGroupCards ? (
-            <View style={[styles.actionCardsContainer, styles.actionCardsContainerWithGroups]}>
+            <View
+              style={[
+                styles.actionCardsContainer,
+                styles.actionCardsContainerWithGroups,
+              ]}
+            >
               {/* Connect a friend */}
               <TouchableOpacity
                 style={styles.actionCard}
@@ -368,40 +365,6 @@ export default function HomeScreen() {
                     style={styles.actionCardDescription}
                   >
                     Insert copy for description
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward-outline"
-                  size={20}
-                  color="#2C2235"
-                />
-              </TouchableOpacity>
-
-              {/* Events - Coming soon */}
-              <TouchableOpacity
-                style={styles.actionCard}
-                onPress={() => router.push('/(tabs)/events')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.comingSoonBadgeContainer}>
-                  <View style={styles.comingSoonBadge}>
-                    <Text style={styles.comingSoonText}>coming soon</Text>
-                  </View>
-                </View>
-                <View style={styles.actionCardContent}>
-                  <Text
-                    variant="body"
-                    weight="bold"
-                    style={styles.actionCardTitle}
-                  >
-                    Events
-                  </Text>
-                  <Text
-                    variant="body"
-                    weight="normal"
-                    style={styles.actionCardDescription}
-                  >
-                    Coming soon. Tap to learn more.
                   </Text>
                 </View>
                 <Ionicons
@@ -502,40 +465,6 @@ export default function HomeScreen() {
                       style={styles.actionCardDescription}
                     >
                       Insert copy for description
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward-outline"
-                    size={20}
-                    color="#2C2235"
-                  />
-                </TouchableOpacity>
-
-                {/* Events - Coming soon */}
-                <TouchableOpacity
-                  style={styles.actionCard}
-                  onPress={() => router.push('/(tabs)/events')}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.comingSoonBadgeContainer}>
-                    <View style={styles.comingSoonBadge}>
-                      <Text style={styles.comingSoonText}>coming soon</Text>
-                    </View>
-                  </View>
-                  <View style={styles.actionCardContent}>
-                    <Text
-                      variant="body"
-                      weight="bold"
-                      style={styles.actionCardTitle}
-                    >
-                      Events
-                    </Text>
-                    <Text
-                      variant="body"
-                      weight="normal"
-                      style={styles.actionCardDescription}
-                    >
-                      Coming soon. Tap to learn more.
                     </Text>
                   </View>
                   <Ionicons
@@ -728,22 +657,6 @@ const styles = StyleSheet.create({
     letterSpacing: -1.375,
     fontWeight: '900',
   },
-  eventsBanner: {
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    overflow: 'hidden',
-    padding: 16,
-  },
-  eventsBannerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  eventsBannerText: {
-    color: '#374151',
-    flex: 1,
-  },
   seeAllText: {
     // Typography handled by Text component variant
   },
@@ -847,14 +760,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
-  comingSoonBadgeContainer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    zIndex: 1,
-    overflow: 'hidden',
-    borderTopRightRadius: 12,
-  },
   actionCardTitle: {
     color: '#2C2235',
     fontSize: 16,
@@ -878,20 +783,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: -0.48,
     lineHeight: 20,
-  },
-  comingSoonBadge: {
-    backgroundColor: '#3E0373',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-  },
-  comingSoonText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    letterSpacing: -0.27,
-    fontWeight: '500',
   },
 });

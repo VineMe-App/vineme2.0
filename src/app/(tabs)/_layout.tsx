@@ -169,11 +169,10 @@ export default function TabLayout() {
         options={{
           title: 'Events',
           tabBarLabel: 'Events',
-          headerTitle: 'Events - Coming Soon!',
+          headerTitle: 'Events',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           ),
-          tabBarBadge: 'Beta',
           // Hide from the tab bar to avoid spacing gaps
           href: null,
         }}

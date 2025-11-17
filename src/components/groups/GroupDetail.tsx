@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   Linking,
   Alert,
@@ -11,6 +10,7 @@ import {
 import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
+import { OptimizedImage } from '../ui/OptimizedImage';
 import { useRouter } from 'expo-router';
 import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
@@ -293,7 +293,13 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.headerContainer}>
         {group.image_url ? (
-          <Image source={{ uri: group.image_url }} style={styles.headerImage} />
+          <OptimizedImage
+            source={{ uri: group.image_url }}
+            style={styles.headerImage}
+            quality="medium"
+            lazy={false}
+            resizeMode="cover"
+          />
         ) : (
           <GroupPlaceholderImage style={styles.headerImage} />
         )}
