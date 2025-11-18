@@ -9,7 +9,26 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+// expo-clipboard is optional in dev client; gate usage to avoid native module errors
+// Lazy load to prevent module initialization errors at load time
+let Clipboard: typeof import('expo-clipboard') | null | undefined = undefined;
+const getClipboard = (): typeof import('expo-clipboard') | null => {
+  if (Clipboard !== undefined) return Clipboard;
+  
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const clipboardModule = require('expo-clipboard');
+    Clipboard = clipboardModule;
+    return Clipboard;
+  } catch (error) {
+    // Native module not available - this is expected in some environments
+    Clipboard = null;
+    if (__DEV__) {
+      console.log('[join-requests] expo-clipboard not available, clipboard functionality disabled');
+    }
+    return null;
+  }
+};
 import { Text } from '@/components/ui/Text';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -68,11 +87,24 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
           {
             text: 'Copy to Clipboard',
             onPress: async () => {
-              await Clipboard.setStringAsync(value);
-              Alert.alert(
-                'Copied',
-                `${type === 'email' ? 'Email' : 'Phone number'} copied to clipboard`
-              );
+              const clipboard = getClipboard();
+              if (!clipboard) {
+                Alert.alert(
+                  'Not Available',
+                  'Clipboard functionality is not available on this device.'
+                );
+                return;
+              }
+              try {
+                await clipboard.setStringAsync(value);
+                Alert.alert(
+                  'Copied',
+                  `${type === 'email' ? 'Email' : 'Phone number'} copied to clipboard`
+                );
+              } catch (error) {
+                console.error('Clipboard error:', error);
+                Alert.alert('Error', 'Failed to copy to clipboard');
+              }
             },
           },
         ]
@@ -208,8 +240,21 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={async () => {
-                        await Clipboard.setStringAsync(contactInfo.email);
-                        Alert.alert('Copied');
+                        const clipboard = getClipboard();
+                        if (!clipboard) {
+                          Alert.alert(
+                            'Not Available',
+                            'Clipboard functionality is not available on this device.'
+                          );
+                          return;
+                        }
+                        try {
+                          await clipboard.setStringAsync(contactInfo.email);
+                          Alert.alert('Copied');
+                        } catch (error) {
+                          console.error('Copy error:', error);
+                          Alert.alert('Error', 'Failed to copy email');
+                        }
                       }}
                       style={styles.copyButton}
                     >
@@ -235,10 +280,23 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={async () => {
-                        await Clipboard.setStringAsync(
-                          formatPhoneNumber(contactInfo.phone)
-                        );
-                        Alert.alert('Copied');
+                        const clipboard = getClipboard();
+                        if (!clipboard) {
+                          Alert.alert(
+                            'Not Available',
+                            'Clipboard functionality is not available on this device.'
+                          );
+                          return;
+                        }
+                        try {
+                          await clipboard.setStringAsync(
+                            formatPhoneNumber(contactInfo.phone)
+                          );
+                          Alert.alert('Copied');
+                        } catch (error) {
+                          console.error('Copy error:', error);
+                          Alert.alert('Error', 'Failed to copy phone number');
+                        }
                       }}
                       style={styles.copyButton}
                     >

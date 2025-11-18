@@ -8,13 +8,25 @@ import {
   Platform,
 } from 'react-native';
 // expo-clipboard is optional in dev client; gate usage to avoid native module errors
-let Clipboard: typeof import('expo-clipboard') | null = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  Clipboard = require('expo-clipboard');
-} catch {
-  Clipboard = null;
-}
+// Lazy load to prevent module initialization errors at load time
+let Clipboard: typeof import('expo-clipboard') | null | undefined = undefined;
+const getClipboard = (): typeof import('expo-clipboard') | null => {
+  if (Clipboard !== undefined) return Clipboard;
+  
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const clipboardModule = require('expo-clipboard');
+    Clipboard = clipboardModule;
+    return Clipboard;
+  } catch (error) {
+    // Native module not available - this is expected in some environments
+    Clipboard = null;
+    if (__DEV__) {
+      console.log('[JoinRequestCard] expo-clipboard not available, clipboard functionality disabled');
+    }
+    return null;
+  }
+};
 import { Text } from '../ui/Text';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -241,7 +253,8 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
           {
             text: 'Copy to Clipboard',
             onPress: async () => {
-              if (!Clipboard) {
+              const clipboard = getClipboard();
+              if (!clipboard) {
                 Alert.alert(
                   'Not Available',
                   'Clipboard functionality is not available on this device.'
@@ -249,7 +262,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                 return;
               }
               try {
-                await Clipboard.setStringAsync(value);
+                await clipboard.setStringAsync(value);
                 Alert.alert(
                   'Copied',
                   `${type === 'email' ? 'Email' : 'Phone number'} copied to clipboard`
@@ -431,7 +444,8 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
               <TouchableOpacity
                 onPress={async () => {
                   if (!contactInfo.email) return;
-                  if (!Clipboard) {
+                  const clipboard = getClipboard();
+                  if (!clipboard) {
                     Alert.alert(
                       'Not Available',
                       'Clipboard functionality is not available on this device.'
@@ -439,7 +453,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                     return;
                   }
                   try {
-                    await Clipboard.setStringAsync(contactInfo.email);
+                    await clipboard.setStringAsync(contactInfo.email);
                     Alert.alert('Copied', 'Email copied to clipboard');
                   } catch (error) {
                     console.error('Copy error:', error);
@@ -472,7 +486,8 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
               <TouchableOpacity
                 onPress={async () => {
                   if (!contactInfo.phone) return;
-                  if (!Clipboard) {
+                  const clipboard = getClipboard();
+                  if (!clipboard) {
                     Alert.alert(
                       'Not Available',
                       'Clipboard functionality is not available on this device.'
@@ -481,7 +496,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
                   }
                   try {
                     const formattedPhone = formatPhoneNumber(contactInfo.phone);
-                    await Clipboard.setStringAsync(formattedPhone);
+                    await clipboard.setStringAsync(formattedPhone);
                     Alert.alert('Copied', 'Phone number copied to clipboard');
                   } catch (error) {
                     console.error('Copy error:', error);
