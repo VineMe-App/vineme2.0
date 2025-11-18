@@ -194,6 +194,27 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               <Text style={styles.pendingText}>{badgeLabel}</Text>
             </TouchableOpacity>
           )}
+
+          {/* Friends Count Badge - Bottom Right */}
+          {friendsCount !== undefined && friendsCount > 0 && (
+            <TouchableOpacity
+              style={styles.friendsOverlay}
+              onPress={onPressFriends}
+              activeOpacity={0.8}
+              disabled={!onPressFriends}
+            >
+              {friendsInGroup && friendsInGroup.length > 0 && (
+                <Avatar
+                  imageUrl={friendsInGroup[0].avatar_url}
+                  name={friendsInGroup[0].name || undefined}
+                  size={20}
+                />
+              )}
+              <Text style={styles.friendsCount}>
+                {friendsCount} {friendsCount === 1 ? 'friend' : 'friends'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Info Section */}
@@ -409,13 +430,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: '#2C2235', // Same color as sign up button on welcome page
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   friendAvatars: {
     flexDirection: 'row',
