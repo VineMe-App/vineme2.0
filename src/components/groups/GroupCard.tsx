@@ -251,6 +251,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 variant="bodySmall"
                 weight="medium"
                 style={styles.detailText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {formatLocation(group.location)}
               </Text>
@@ -282,6 +284,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   {churchAndServiceLabel}
                 </Text>
