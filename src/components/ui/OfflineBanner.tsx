@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   blurContainer: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    flex: 1,
+    width: '100%',
   },
   content: {
     flexDirection: 'row',
