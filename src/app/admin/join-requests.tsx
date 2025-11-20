@@ -120,11 +120,11 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
       case 1:
         return 'Reached out to';
       case 2:
-        return 'Met with';
+        return 'Spoken to';
       case 3:
-        return 'Connected';
+        return 'Attended CG';
       default:
-        return 'Not started';
+        return 'No contact';
     }
   };
 
