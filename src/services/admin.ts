@@ -926,7 +926,7 @@ export class GroupAdminService {
         .select(
           `
           *,
-          user:users(id, first_name, last_name, avatar_url),
+          user:users(id, first_name, last_name, avatar_url, newcomer),
           group:groups(
             id,
             title,

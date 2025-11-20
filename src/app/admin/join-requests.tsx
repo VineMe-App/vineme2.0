@@ -154,7 +154,14 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
       <View style={styles.userSection}>
         <Avatar imageUrl={request.user?.avatar_url} name={fullName} size={48} />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{userName}</Text>
+          <View style={styles.userHeaderRow}>
+            <Text style={styles.userName}>{userName}</Text>
+            {request.user?.newcomer && (
+              <Badge variant="warning" size="small" style={styles.newcomerBadge}>
+                Newcomer
+              </Badge>
+            )}
+          </View>
           <Text style={styles.requestDate}>
             Requested {new Date(request.created_at || '').toLocaleDateString()}
           </Text>
@@ -585,11 +592,19 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
   },
+  userHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   userName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
     marginBottom: 2,
+  },
+  newcomerBadge: {
+    marginLeft: 'auto',
   },
   requestDate: {
     fontSize: 13,
