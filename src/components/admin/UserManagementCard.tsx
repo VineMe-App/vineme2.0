@@ -11,8 +11,6 @@ import { userAdminService, type UserWithGroupStatus } from '@/services/admin';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getDisplayName, getFullName } from '@/utils/name';
 
 interface UserManagementCardProps {
@@ -21,27 +19,6 @@ interface UserManagementCardProps {
 }
 
 export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
-  const [showHistory, setShowHistory] = useState(false);
-
-  const {
-    data: groupHistory,
-    isLoading: historyLoading,
-    error: historyError,
-  } = useQuery({
-    queryKey: ['admin', 'user-group-history', user.id],
-    queryFn: async () => {
-      const result = await userAdminService.getUserGroupHistory(user.id);
-      if (result.error) {
-        throw result.error;
-      }
-      return result.data || [];
-    },
-    enabled: showHistory,
-  });
-
-  const handleViewHistory = () => {
-    setShowHistory(true);
-  };
 
   const handleContactUser = () => {
     if (user.email) {
@@ -128,20 +105,6 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
         </View>
 
         <View style={styles.details}>
-          {user.church && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Church:</Text>
-              <Text style={styles.detailValue}>{user.church.name}</Text>
-            </View>
-          )}
-
-          {user.service && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Service:</Text>
-              <Text style={styles.detailValue}>{user.service.name}</Text>
-            </View>
-          )}
-
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Member Since:</Text>
             <Text style={styles.detailValue}>
@@ -165,15 +128,6 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           accessibilityLabel="User management actions"
         >
           <Button
-            title="View History"
-            onPress={handleViewHistory}
-            variant="secondary"
-            size="small"
-            style={styles.actionButton}
-            accessibilityLabel={`View group history for ${displayName}`}
-            accessibilityHint="Double tap to see this user's group membership history"
-          />
-          <Button
             title="Contact"
             onPress={handleContactUser}
             variant="primary"
@@ -184,75 +138,6 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           />
         </View>
       </TouchableOpacity>
-
-      {/* Group History Modal */}
-      <Modal
-        visible={showHistory}
-        onClose={() => setShowHistory(false)}
-        title={`${displayName}'s Group History`}
-      >
-        <View style={styles.historyContent}>
-          {historyLoading ? (
-            <View style={styles.historyLoading}>
-              <LoadingSpinner size="small" />
-              <Text style={styles.historyLoadingText}>Loading history...</Text>
-            </View>
-          ) : historyError ? (
-            <View style={styles.historyError}>
-              <Text style={styles.historyErrorText}>
-                Failed to load group history
-              </Text>
-            </View>
-          ) : groupHistory && groupHistory.length > 0 ? (
-            <View style={styles.historyList}>
-              {groupHistory.map((membership) => (
-                <View key={membership.id} style={styles.historyItem}>
-                  <View style={styles.historyHeader}>
-                    <Text style={styles.historyGroupName}>
-                      {membership.group?.title || 'Unknown Group'}
-                    </Text>
-                    <Badge
-                      variant={
-                        membership.status === 'active' ? 'success' : 'default'
-                      }
-                      size="small"
-                    >
-                      {membership.status}
-                    </Badge>
-                  </View>
-                  <View style={styles.historyDetails}>
-                    <Text style={styles.historyRole}>
-                      Role:{' '}
-                      {membership.role.charAt(0).toUpperCase() +
-                        membership.role.slice(1)}
-                    </Text>
-                    <Text style={styles.historyDate}>
-                      Joined:{' '}
-                      {new Date(membership.joined_at).toLocaleDateString()}
-                    </Text>
-                    {membership.group?.status && (
-                      <Text style={styles.historyGroupStatus}>
-                        Group Status:{' '}
-                        {membership.group.status.charAt(0).toUpperCase() +
-                          membership.group.status.slice(1)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.historyEmpty}>
-              <Text style={styles.historyEmptyText}>
-                No group history found
-              </Text>
-              <Text style={styles.historyEmptySubtext}>
-                This user hasn't joined any groups yet
-              </Text>
-            </View>
-          )}
-        </View>
-      </Modal>
     </>
   );
 }
