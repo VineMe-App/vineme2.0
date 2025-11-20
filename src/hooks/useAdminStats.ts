@@ -46,20 +46,47 @@ export const useNewcomersStats = () => {
 
       if (newcomersError) throw newcomersError;
 
-      const total = newcomers?.length || 0;
+      // Original total based on all newcomers in the service
+      // const total = newcomers?.length || 0;
+      // if (total === 0) {
+      //   return { total: 0, connected: 0, notConnected: 0 };
+      // }
+
+      const newcomerIds = newcomers.map((n: { id: string }) => n.id);
+
+      // Only consider newcomers who have at least one membership (i.e. have requested to join a group)
+      const { data: membershipRequests, error: membershipRequestsError } =
+        await supabase
+          .from('group_memberships')
+          .select('user_id, status')
+          .in('user_id', newcomerIds);
+
+      if (membershipRequestsError) throw membershipRequestsError;
+
+      const requestingUserIds = new Set(
+        membershipRequests
+          ?.filter((m: { status: string }) =>
+            ['pending', 'active'].includes(m.status)
+          )
+          .map((m: { user_id: string }) => m.user_id) || []
+      );
+
+      const requestingNewcomerIds = newcomerIds.filter((id) =>
+        requestingUserIds.has(id)
+      );
+
+      const total = requestingNewcomerIds.length;
 
       if (total === 0) {
         return { total: 0, connected: 0, notConnected: 0 };
       }
-
-      const newcomerIds = newcomers.map((n: { id: string }) => n.id);
 
       // Get all memberships for these newcomers where journey_status = 3
       const { data: connectedMemberships, error: membershipError } =
         await supabase
           .from('group_memberships')
           .select('user_id')
-          .in('user_id', newcomerIds)
+          .in('user_id', requestingNewcomerIds)
           .eq('journey_status', 3);
 
       if (membershipError) throw membershipError;
@@ -69,7 +96,9 @@ export const useNewcomersStats = () => {
         connectedMemberships?.map((m: { user_id: string }) => m.user_id) || []
       );
 
-      const connected = connectedUserIds.size;
+      const connected = requestingNewcomerIds.filter((id) =>
+        connectedUserIds.has(id)
+      ).length;
       const notConnected = total - connected;
 
       return {

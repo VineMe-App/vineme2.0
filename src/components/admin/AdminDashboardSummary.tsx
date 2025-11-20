@@ -244,9 +244,10 @@ export function AdminDashboardSummary({
       <View style={styles.statsSection}>
         {/* Newcomers */}
         <View style={styles.statCard}>
-          <Text style={styles.statTitle}>Newcomers</Text>
-          <SimplePieChart segments={newcomersChartData} />
-        </View>
+          {/* <Text style={styles.statTitle}>Newcomers</Text> */}
+          <Text style={styles.statTitle}>Newcomers requesting</Text>
+         <SimplePieChart segments={newcomersChartData} />
+       </View>
 
         {/* Groups */}
         <View style={styles.statCard}>
