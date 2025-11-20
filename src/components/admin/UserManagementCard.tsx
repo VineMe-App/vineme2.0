@@ -128,6 +128,16 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
             >
               {displayName}
             </Text>
+            {user.newcomer && (
+              <Badge
+                variant="warning"
+                size="small"
+                style={styles.newcomerBadge}
+                accessibilityLabel="Newcomer"
+              >
+                Newcomer
+              </Badge>
+            )}
             <Text
               style={styles.userEmail}
               accessibilityLabel={`Email: ${user.email}`}
@@ -319,6 +329,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  newcomerBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 4,
   },
   groupCount: {
     fontSize: 12,
