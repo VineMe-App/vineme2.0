@@ -86,9 +86,7 @@ export function AdminDashboardSummary({
 
   const notificationCounts = {
     group_requests: groupsStats?.pending || 0, // Show actual count of groups pending approval
-    join_requests: unreadNotifications.filter(
-      (n: any) => n.type === 'join_request_received'
-    ).length,
+    join_requests: requestsStats?.outstandingRequests || 0,
   };
 
   const isLoading =
