@@ -20,21 +20,6 @@ interface UserManagementCardProps {
 
 export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
 
-  const handleContactUser = () => {
-    if (user.email) {
-      Alert.alert('Contact User', `Contact ${displayName} at ${user.email}?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Email',
-          onPress: () => {
-            // In a real app, this would open the email client
-            Alert.alert('Email', `Would open email to ${user.email}`);
-          },
-        },
-      ]);
-    }
-  };
-
   const getConnectionStatusText = () => {
     return user.is_connected ? 'Connected' : 'Unconnected';
   };
@@ -128,13 +113,22 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           accessibilityLabel="User management actions"
         >
           <Button
-            title="Contact"
-            onPress={handleContactUser}
+            title="WhatsApp"
+            onPress={() => {}}
             variant="primary"
             size="small"
             style={styles.actionButton}
-            accessibilityLabel={`Contact ${displayName}`}
-            accessibilityHint="Double tap to contact this user"
+            accessibilityLabel={`Contact ${displayName} on WhatsApp (coming soon)`}
+            accessibilityHint="This button will open WhatsApp in a future update"
+          />
+          <Button
+            title="Email"
+            onPress={() => {}}
+            variant="secondary"
+            size="small"
+            style={styles.actionButton}
+            accessibilityLabel={`Email ${displayName} (coming soon)`}
+            accessibilityHint="This button will open your email app in a future update"
           />
         </View>
       </TouchableOpacity>

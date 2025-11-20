@@ -115,8 +115,7 @@ export default function ManageUsersScreen() {
   };
 
   const handleUserPress = (userId: string) => {
-    // Navigate to user detail view (to be implemented)
-    Alert.alert('User Details', 'User detail view coming soon!');
+    router.push(`/user/${userId}`);
   };
 
   if (error) {
