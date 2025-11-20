@@ -1016,6 +1016,36 @@ export class UserAdminService {
         };
       }
 
+      // Determine if current admin is scoped to a specific service
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) {
+        return { data: null, error: new Error(authError.message) };
+      }
+
+      let adminServiceId: string | null = null;
+
+      if (!authUser) {
+        return { data: null, error: new Error('User not authenticated') };
+      }
+
+      if (authUser.id) {
+        const { data: adminProfile, error: profileError } = await supabase
+          .from('users')
+          .select('service_id')
+          .eq('id', authUser.id)
+          .single();
+
+        if (profileError) {
+          return { data: null, error: new Error(profileError.message) };
+        }
+
+        adminServiceId = adminProfile?.service_id || null;
+      }
+
       let query = supabase
         .from('users')
         .select(
@@ -1029,13 +1059,18 @@ export class UserAdminService {
             role,
             status,
             joined_at,
-            group:groups(id, title, status)
+            group:groups(id, title, status, service_id)
           )
         `,
           { count: pagination ? 'exact' : undefined }
         )
         .eq('church_id', churchId)
         .order('name');
+
+      // Scope results to the admin's service when applicable
+      if (adminServiceId) {
+        query = query.eq('service_id', adminServiceId);
+      }
 
       // Apply pagination if provided
       if (pagination) {
@@ -1052,12 +1087,16 @@ export class UserAdminService {
       }
 
       // Transform to include group status
+      const serviceFilter = adminServiceId;
+
       let usersWithStatus: UserWithGroupStatus[] =
         data?.map((user) => {
           const activeGroups =
             user.group_memberships?.filter(
               (m: any) =>
-                m.status === 'active' && m.group?.status === 'approved'
+                m.status === 'active' &&
+                m.group?.status === 'approved' &&
+                (!serviceFilter || m.group?.service_id === serviceFilter)
             ) || [];
 
           return {
@@ -1166,7 +1205,7 @@ export class UserAdminService {
         .select(
           `
           *,
-          group:groups(id, title, status, church_id)
+          group:groups(id, title, status, church_id, service_id)
         `
         )
         .eq('user_id', userId)
