@@ -26,8 +26,8 @@ interface NotificationItemProps {
 const { width: screenWidth } = Dimensions.get('window');
 const SWIPE_THRESHOLD = screenWidth * 0.25;
 const ACTION_WIDTH = 80;
-// Distance the content moves when swiped (negative = left, positive = right)
-const SWIPE_DISTANCE = ACTION_WIDTH; // Change this value to adjust how far content moves
+// Maximum distance the content moves when swiped (for unread notifications with 2 buttons)
+const MAX_SWIPE_DISTANCE = ACTION_WIDTH * 2; // 160px for both Read + Delete buttons
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
@@ -62,6 +62,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     handleNotificationPress(notification);
   }, [notification, isUnread, onMarkAsRead, handleNotificationPress]);
 
+  // Calculate swipe distance based on whether notification is unread (has 2 buttons)
+  const swipeDistance = isUnread ? MAX_SWIPE_DISTANCE : ACTION_WIDTH;
+
   // Handle swipe gestures
   const handleGestureEvent = useCallback(
     (event: any) => {
@@ -69,7 +72,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
       // Only allow left swipe (negative translation)
       if (translationX <= 0) {
-        const clampedTranslation = Math.max(translationX, -SWIPE_DISTANCE);
+        const clampedTranslation = Math.max(translationX, -swipeDistance);
         translateX.setValue(clampedTranslation);
 
         // Show actions when swiped enough
@@ -80,7 +83,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         actionOpacity.setValue(opacity);
       }
     },
-    [translateX, actionOpacity]
+    [translateX, actionOpacity, swipeDistance]
   );
 
   const handleGestureStateChange = useCallback(
@@ -92,7 +95,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
         Animated.parallel([
           Animated.spring(translateX, {
-            toValue: shouldShowActions ? -SWIPE_DISTANCE : 0,
+            toValue: shouldShowActions ? -swipeDistance : 0,
             useNativeDriver: false,
             tension: 100,
             friction: 8,
@@ -105,7 +108,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         ]).start();
       }
     },
-    [translateX, actionOpacity]
+    [translateX, actionOpacity, swipeDistance]
   );
 
   // Handle mark as read action
