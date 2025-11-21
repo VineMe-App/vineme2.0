@@ -70,14 +70,14 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
         throw error;
       }
       setContactInfo(data ?? null);
-      setContactLoaded(true);
+      setContactLoaded(true); // Only set to true on successful fetch
     } catch (error) {
       console.error('Failed to load contact info:', error);
       Alert.alert(
         'Unable to load contact info',
         'Please try again later or contact support.'
       );
-      setContactLoaded(true);
+      // Don't set contactLoaded to true on error, allowing retry
     } finally {
       setContactLoading(false);
     }

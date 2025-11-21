@@ -54,6 +54,11 @@ export const useNewcomersStats = () => {
 
       const newcomerIds = newcomers.map((n: { id: string }) => n.id);
 
+      // Early return if no newcomers (avoid Supabase error with empty .in() filter)
+      if (newcomerIds.length === 0) {
+        return { total: 0, connected: 0, notConnected: 0 };
+      }
+
       // Only consider newcomers who have at least one membership (i.e. have requested to join a group)
       const { data: membershipRequests, error: membershipRequestsError } =
         await supabase
