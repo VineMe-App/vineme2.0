@@ -189,6 +189,7 @@ const GroupCardWithData: React.FC<{
       currentUserId={userProfile?.id}
       onPressFriends={() => onPress()}
       style={styles.mapGroupCard}
+      category={(group as any).__category}
     />
   );
 };
@@ -577,11 +578,26 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     }
   };
 
+  const getMarkerColor = useCallback((category?: 'service' | 'church' | 'outside') => {
+    if (!category) return '#FF0083'; // Default primary color
+    switch (category) {
+      case 'service':
+        return '#FF0083'; // Primary color
+      case 'church':
+        return '#00C853'; // Secondary color (green)
+      case 'outside':
+        return '#9CA3AF'; // Tertiary color (gray)
+      default:
+        return '#FF0083';
+    }
+  }, []);
+
   const renderGroupMarker = useCallback(
     (point: ClusterPoint, _index: number) => {
-      const { data: group, latitude, longitude } = point;
+      const { data: group, latitude, longitude, category } = point;
       const isActive = activeGroupId === group.id;
       const isGreyedOut = Boolean((group as any).__isGreyedOut);
+      const markerColor = getMarkerColor(category);
 
       return (
         <Marker
@@ -603,6 +619,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           <View
             style={[
               styles.markerBubble,
+              { backgroundColor: markerColor },
               isActive && styles.markerBubbleActive,
               isGreyedOut && styles.markerBubbleGrey,
             ]}
@@ -612,14 +629,17 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </Marker>
       );
     },
-    [activeGroupId, shouldTrackViewChanges]
+    [activeGroupId, shouldTrackViewChanges, getMarkerColor]
   );
 
   const renderClusterMarker = useCallback(
     (cluster: Cluster, _index: number) => {
-      const { size, bubbleColor } = getClusterVisuals(cluster.count);
+      const { size } = getClusterVisuals(cluster.count);
       const digitCount = `${cluster.count}`.length;
       const fontSize = digitCount === 1 ? 16 : digitCount === 2 ? 14 : 12;
+      
+      // Use category color for cluster
+      const clusterColor = getMarkerColor(cluster.category);
 
       return (
         <Marker
@@ -670,7 +690,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
                 width: size,
                 height: size,
                 borderRadius: size / 2,
-                backgroundColor: bubbleColor,
+                backgroundColor: clusterColor,
               },
             ]}
           >
@@ -681,7 +701,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </Marker>
       );
     },
-    [shouldTrackViewChanges]
+    [shouldTrackViewChanges, getMarkerColor]
   );
 
   const renderMarker = useCallback(

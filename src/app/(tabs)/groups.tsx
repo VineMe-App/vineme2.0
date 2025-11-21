@@ -126,11 +126,19 @@ export default function GroupsScreen() {
     if (!allGroups) return [];
 
     const userChurchId = userProfile?.church_id;
+    const userServiceId = userProfile?.service_id;
 
-    return allGroups.reduce<(GroupWithDetails & { __isGreyedOut?: boolean })[]>(
+    return allGroups.reduce<
+      (GroupWithDetails & {
+        __isGreyedOut?: boolean;
+        __category?: 'service' | 'church' | 'outside';
+      })[]
+    >(
       (acc, group) => {
         const isInUserChurch =
           !!userChurchId && group.church_id === userChurchId;
+        const isInUserService =
+          !!userServiceId && group.service_id === userServiceId;
         const friendInGroup = (group.memberships || []).some(
           (membership: any) =>
             membership.status === 'active' && friendIds.has(membership.user_id)
@@ -138,6 +146,16 @@ export default function GroupsScreen() {
 
         let include = false;
         let isGreyedOut = false;
+        let category: 'service' | 'church' | 'outside' = 'outside';
+
+        // Determine category for color coding
+        if (isInUserService) {
+          category = 'service';
+        } else if (isInUserChurch) {
+          category = 'church';
+        } else {
+          category = 'outside';
+        }
 
         // Church admins and group leaders can see ALL groups
         if (isChurchAdmin || isGroupLeader) {
@@ -159,7 +177,7 @@ export default function GroupsScreen() {
         }
 
         if (include) {
-          acc.push({ ...group, __isGreyedOut: isGreyedOut });
+          acc.push({ ...group, __isGreyedOut: isGreyedOut, __category: category });
         }
 
         return acc;
@@ -172,6 +190,7 @@ export default function GroupsScreen() {
     isChurchAdmin,
     isGroupLeader,
     userProfile?.church_id,
+    userProfile?.service_id,
   ]);
 
   // Apply filters to groups (including "only with friends")
@@ -771,7 +790,10 @@ export default function GroupsScreen() {
 
 // Component to handle membership status for each group
 const GroupItemWithMembership: React.FC<{
-  group: GroupWithDetails & { __distanceKm?: number };
+  group: GroupWithDetails & {
+    __distanceKm?: number;
+    __category?: 'service' | 'church' | 'outside';
+  };
   onPress: () => void;
   distanceKm?: number;
 }> = ({ group, onPress, distanceKm }) => {
@@ -833,6 +855,7 @@ const GroupItemWithMembership: React.FC<{
         // Navigate to group detail and open friends modal
         onPress();
       }}
+      category={(group as any).__category}
     />
   );
 };

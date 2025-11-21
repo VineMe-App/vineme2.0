@@ -30,6 +30,7 @@ interface GroupCardProps {
   pendingTooltip?: string;
   currentUserId?: string; // ID of the current user to determine if they're the creator
   variant?: 'my-groups' | 'all-groups'; // Variant to determine padding based on page
+  category?: 'service' | 'church' | 'outside'; // Color coding category
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -38,6 +39,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   membershipStatus,
   friendsCount,
   friendsInGroup,
+  category,
   leaders,
   onPressFriends,
   style,
@@ -107,6 +109,21 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   const shouldBlockNavigation = showPendingBadge;
   const pressAnim = React.useRef(new Animated.Value(0)).current;
 
+  // Get border color based on category
+  const getBorderColor = () => {
+    if (!category) return '#EDEDED'; // Default
+    switch (category) {
+      case 'service':
+        return theme.colors.primary[500]; // Primary color for user's service
+      case 'church':
+        return theme.colors.secondary[100]; // Secondary color for user's church
+      case 'outside':
+        return theme.colors.tertiary?.[100] || '#9CA3AF'; // Tertiary color for outside groups
+      default:
+        return '#EDEDED';
+    }
+  };
+
   const handlePressIn = React.useCallback(() => {
     if (!shouldBlockNavigation) return;
     Animated.timing(pressAnim, {
@@ -136,6 +153,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <TouchableOpacity
       style={[
         styles.card,
+        {
+          borderColor: getBorderColor(),
+          borderWidth: 2,
+        },
         style,
       ]}
       onPress={shouldBlockNavigation ? undefined : onPress}
