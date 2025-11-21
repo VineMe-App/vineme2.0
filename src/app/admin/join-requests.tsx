@@ -162,6 +162,16 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
               </Badge>
             )}
           </View>
+          {(request.user as any)?.church?.name && (
+            <Text style={styles.metaText}>
+              Church: {(request.user as any).church.name}
+            </Text>
+          )}
+          {(request.user as any)?.service?.name && (
+            <Text style={styles.metaText}>
+              Service: {(request.user as any).service.name}
+            </Text>
+          )}
           <Text style={styles.requestDate}>
             Requested {new Date(request.created_at || '').toLocaleDateString()}
           </Text>
@@ -608,6 +618,10 @@ const styles = StyleSheet.create({
   },
   requestDate: {
     fontSize: 13,
+    color: '#6b7280',
+  },
+  metaText: {
+    fontSize: 12,
     color: '#6b7280',
   },
   groupSection: {

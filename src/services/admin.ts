@@ -926,7 +926,15 @@ export class GroupAdminService {
         .select(
           `
           *,
-          user:users(id, first_name, last_name, avatar_url, newcomer),
+          user:users(
+            id,
+            first_name,
+            last_name,
+            avatar_url,
+            newcomer,
+            church:churches(id, name),
+            service:services(id, name)
+          ),
           group:groups(
             id,
             title,
