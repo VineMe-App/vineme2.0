@@ -677,17 +677,38 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       clusterer.load(groups);
     }
 
-    // Fit map to show all markers if we have any
-    if (groupMarkers.length > 0 && mapRef.current) {
-      setTimeout(() => {
-        mapRef.current?.fitToCoordinates(
-          groupMarkers.map((marker) => marker.coordinates),
-          {
-            edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-            animated: true,
-          }
+    // Fit map to show all markers and distance origin if available
+    // When distanceOrigin is active, include it in the fit calculation
+    // so the searched location stays visible even if it's far from groups
+    if (mapRef.current) {
+      const coordinatesToFit: { latitude: number; longitude: number }[] = [];
+
+      // Include group markers
+      if (groupMarkers.length > 0) {
+        coordinatesToFit.push(
+          ...groupMarkers.map((marker) => marker.coordinates)
         );
-      }, 1000);
+      }
+
+      // Include distance origin coordinates if active
+      // This ensures the searched location stays visible even if groups are far away
+      if (distanceOrigin?.coordinates) {
+        coordinatesToFit.push(distanceOrigin.coordinates);
+      }
+
+      // Only fit if we have coordinates to fit to
+      // When distanceOrigin is active, always include it so it stays visible
+      if (coordinatesToFit.length > 0) {
+        setTimeout(() => {
+          // Skip auto-fit if user is currently dragging (don't interrupt them)
+          if (!isUserDraggingRef.current && mapRef.current) {
+            mapRef.current.fitToCoordinates(coordinatesToFit, {
+              edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+              animated: true,
+            });
+          }
+        }, 1000);
+      }
     }
   };
 
