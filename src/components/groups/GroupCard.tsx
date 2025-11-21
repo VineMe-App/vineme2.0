@@ -195,24 +195,38 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             </TouchableOpacity>
           )}
 
-          {/* Friends Count Badge - Bottom Right */}
-          {friendsCount !== undefined && friendsCount > 0 && (
+          {/* Friends Overlay - Bottom Right */}
+          {friendsInGroup && friendsInGroup.length > 0 && (
             <TouchableOpacity
               style={styles.friendsOverlay}
               onPress={onPressFriends}
               activeOpacity={0.8}
-              disabled={!onPressFriends}
             >
-              {friendsInGroup && friendsInGroup.length > 0 && (
-                <Avatar
-                  imageUrl={friendsInGroup[0].avatar_url}
-                  name={friendsInGroup[0].name || undefined}
-                  size={20}
-                />
+              <View style={styles.friendAvatars}>
+                {friendsInGroup.slice(0, 3).map((friend, index) => (
+                  <View
+                    key={friend.id}
+                    style={[
+                      styles.friendAvatar,
+                      {
+                        marginLeft: index > 0 ? -6 : 0,
+                        zIndex: 3 - index,
+                      },
+                    ]}
+                  >
+                    <Avatar
+                      imageUrl={friend.avatar_url}
+                      name={friend.name || undefined}
+                      size={20}
+                    />
+                  </View>
+                ))}
+              </View>
+              {friendsCount !== undefined && friendsCount > 0 && (
+                <Text style={styles.friendsCount}>
+                  {friendsCount} {friendsCount === 1 ? 'friend' : 'friends'}
+                </Text>
               )}
-              <Text style={styles.friendsCount}>
-                {friendsCount} {friendsCount === 1 ? 'friend' : 'friends'}
-              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -272,6 +286,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 variant="bodySmall"
                 weight="medium"
                 style={styles.detailText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {formatLocation(group.location)}
               </Text>
@@ -303,6 +319,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   {churchAndServiceLabel}
                 </Text>
@@ -451,7 +469,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   friendAvatar: {
-    // No border - just clean avatar circles
+    borderWidth: 2,
+    borderColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   friendsCount: {
     color: '#FFFFFF',
