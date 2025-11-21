@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,8 @@ interface NotificationItemProps {
 const { width: screenWidth } = Dimensions.get('window');
 const SWIPE_THRESHOLD = screenWidth * 0.25;
 const ACTION_WIDTH = 80;
+// Distance the content moves when swiped (negative = left, positive = right)
+const SWIPE_DISTANCE = ACTION_WIDTH; // Change this value to adjust how far content moves
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
@@ -66,7 +69,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
       // Only allow left swipe (negative translation)
       if (translationX <= 0) {
-        const clampedTranslation = Math.max(translationX, -ACTION_WIDTH * 2);
+        const clampedTranslation = Math.max(translationX, -SWIPE_DISTANCE);
         translateX.setValue(clampedTranslation);
 
         // Show actions when swiped enough
@@ -89,7 +92,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
         Animated.parallel([
           Animated.spring(translateX, {
-            toValue: shouldShowActions ? -ACTION_WIDTH * 2 : 0,
+            toValue: shouldShowActions ? -SWIPE_DISTANCE : 0,
             useNativeDriver: false,
             tension: 100,
             friction: 8,
@@ -456,7 +459,7 @@ function getNotificationMetadata(notification: Notification, theme: any) {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
+    width: '100%'
   },
   containerLast: {
     // No additional styles needed for last item
@@ -467,17 +470,20 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: ACTION_WIDTH * 2,
-    zIndex: 1,
+    overflow: 'hidden',
   },
   swipeActions: {
-    flex: 1,
     flexDirection: 'row',
+    height: '100%',
+    width: ACTION_WIDTH * 2,
+    justifyContent: 'flex-end', // Align actions to the right edge
+    alignItems: 'stretch',
   },
   swipeAction: {
     width: ACTION_WIDTH,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
   },
   swipeActionText: {
     fontSize: 10,

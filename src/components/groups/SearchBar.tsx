@@ -30,7 +30,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       setLocalQuery(value || '');
     } else {
       // Otherwise use search query from store
-      setLocalQuery(filters.searchQuery);
+    setLocalQuery(filters.searchQuery);
     }
   }, [filters.searchQuery, value]);
 
@@ -56,7 +56,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       }
     } else {
       // Otherwise, use regular group search
-      setSearchQuery(localQuery);
+    setSearchQuery(localQuery);
     }
   };
 
@@ -67,7 +67,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       onLocationClear();
     } else {
       // Otherwise, clear regular search query
-      setSearchQuery('');
+    setSearchQuery('');
     }
     // Clear error when clearing
     if (onErrorChange) {

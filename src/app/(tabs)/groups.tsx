@@ -472,7 +472,7 @@ export default function GroupsScreen() {
                 name="search-outline"
                 size={16}
                 color="#FFFFFF"
-              />
+            />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -492,7 +492,7 @@ export default function GroupsScreen() {
               name={currentView === 'list' ? 'map-outline' : 'list-outline'}
               size={16}
                 color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
-              />
+            />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -853,7 +853,11 @@ const GroupItemWithMembership: React.FC<{
 
   const leaders = React.useMemo(() => {
     return (members || [])
-      .filter((m) => m.role === 'leader' && m.user)
+      .filter((m) => 
+        m.role === 'leader' && 
+        m.status === 'active' && 
+        m.user
+      )
       .map((m) => m.user)
       .filter((user): user is NonNullable<typeof user> => !!user)
       .slice(0, 3); // Limit to 3 leaders for display

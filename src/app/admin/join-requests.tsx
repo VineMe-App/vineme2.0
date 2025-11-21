@@ -97,10 +97,10 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
               }
               try {
                 await clipboard.setStringAsync(value);
-                Alert.alert(
-                  'Copied',
-                  `${type === 'email' ? 'Email' : 'Phone number'} copied to clipboard`
-                );
+              Alert.alert(
+                'Copied',
+                `${type === 'email' ? 'Email' : 'Phone number'} copied to clipboard`
+              );
               } catch (error) {
                 console.error('Clipboard error:', error);
                 Alert.alert('Error', 'Failed to copy to clipboard');
@@ -250,7 +250,7 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
                         }
                         try {
                           await clipboard.setStringAsync(contactInfo.email);
-                          Alert.alert('Copied');
+                        Alert.alert('Copied');
                         } catch (error) {
                           console.error('Copy error:', error);
                           Alert.alert('Error', 'Failed to copy email');
@@ -290,9 +290,9 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
                         }
                         try {
                           await clipboard.setStringAsync(
-                            formatPhoneNumber(contactInfo.phone)
-                          );
-                          Alert.alert('Copied');
+                          formatPhoneNumber(contactInfo.phone)
+                        );
+                        Alert.alert('Copied');
                         } catch (error) {
                           console.error('Copy error:', error);
                           Alert.alert('Error', 'Failed to copy phone number');
