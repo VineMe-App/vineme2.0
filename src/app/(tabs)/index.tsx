@@ -16,6 +16,8 @@ import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import { useFriends } from '../../hooks/useFriendships';
 // import { EventCard } from '../../components/events/EventCard'; // Events disabled
 import { GroupCard } from '../../components/groups/GroupCard';
+import { useGroupMembers } from '../../hooks/useGroups';
+import type { GroupWithDetails } from '../../types/database';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
@@ -47,6 +49,83 @@ const buildJoinRequestMessage = (
 
 // Consistent minimum height for all group cards on "my groups" page
 const MY_GROUPS_CARD_MIN_HEIGHT = 250;
+
+// Component to handle friends data for each group card
+const GroupCardWithFriends: React.FC<{
+  group: GroupWithDetails;
+  membershipStatus: 'member' | 'leader' | 'admin' | null;
+  currentUserId?: string;
+  onPress?: () => void;
+  style?: any;
+  variant?: 'my-groups' | 'all-groups';
+  pendingLabel?: string;
+  pendingTooltip?: string;
+}> = ({
+  group,
+  membershipStatus,
+  currentUserId,
+  onPress,
+  style,
+  variant,
+  pendingLabel,
+  pendingTooltip,
+}) => {
+  const { userProfile } = useAuthStore();
+  const { data: members } = useGroupMembers(group.id);
+  const friendsQuery = useFriends(userProfile?.id);
+
+  const friendUsers = React.useMemo(() => {
+    if (!userProfile?.id || !friendsQuery.data) return [];
+
+    const friendIds = new Set(
+      (friendsQuery.data || [])
+        .map((f) => f.friend?.id)
+        .filter((id): id is string => !!id)
+    );
+
+    return (members || [])
+      .filter((m) => m.user?.id && friendIds.has(m.user.id))
+      .map((m) => m.user)
+      .filter((user): user is NonNullable<typeof user> => !!user);
+  }, [friendsQuery.data, members, userProfile?.id]);
+
+  const friendsInGroup = React.useMemo(
+    () => friendUsers.slice(0, 3),
+    [friendUsers]
+  );
+
+  const friendsCount = friendUsers.length;
+
+  // For homepage cards (my-groups variant), don't fetch/pass leaders
+  // to prevent leader profile pictures from appearing
+  const leaders = React.useMemo(() => {
+    if (variant === 'my-groups') {
+      return undefined; // Don't show leader profile pictures on homepage
+    }
+    return (members || [])
+      .filter((m) => m.role === 'leader' && m.user)
+      .map((m) => m.user)
+      .filter((user): user is NonNullable<typeof user> => !!user)
+      .slice(0, 3);
+  }, [members, variant]);
+
+  return (
+    <GroupCard
+      group={group}
+      membershipStatus={membershipStatus}
+      currentUserId={currentUserId}
+      onPress={onPress}
+      style={style}
+      variant={variant}
+      pendingLabel={pendingLabel}
+      pendingTooltip={pendingTooltip}
+      friendsCount={friendsCount}
+      friendsInGroup={friendsInGroup}
+      leaders={leaders}
+      onPressFriends={onPress || (() => {})}
+    />
+  );
+};
 
 export default function HomeScreen() {
   const { user, userProfile, loadUserProfile } = useAuthStore();
@@ -259,7 +338,7 @@ export default function HomeScreen() {
             >
               {activeMemberships.map((membership) => (
                 <View key={membership.group_id} style={styles.horizontalCard}>
-                  <GroupCard
+                  <GroupCardWithFriends
                     group={membership.group}
                     membershipStatus={membership.role}
                     currentUserId={userProfile?.id}
@@ -288,7 +367,7 @@ export default function HomeScreen() {
                       key={`join-${request.id}`}
                       style={styles.horizontalCard}
                     >
-                      <GroupCard
+                      <GroupCardWithFriends
                         group={request.group as any}
                         membershipStatus={null}
                         currentUserId={userProfile?.id}
