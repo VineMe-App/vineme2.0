@@ -69,6 +69,14 @@ interface GroupsMapViewProps {
   onGroupPress: (group: GroupWithDetails) => void;
   isLoading?: boolean;
   onNoGroupFits?: () => void;
+  distanceOrigin?: {
+    coordinates: { latitude: number; longitude: number };
+    address?: string;
+  } | null;
+  onDistanceOriginChange?: (origin: {
+    coordinates: { latitude: number; longitude: number };
+    address?: string;
+  }) => void;
 }
 
 interface GroupMarker {
@@ -82,6 +90,14 @@ interface ClusteredMapViewProps extends GroupsMapViewProps {
   clusterRadius?: number;
   minClusterSize?: number;
   onNoGroupFits?: () => void;
+  distanceOrigin?: {
+    coordinates: { latitude: number; longitude: number };
+    address?: string;
+  } | null;
+  onDistanceOriginChange?: (origin: {
+    coordinates: { latitude: number; longitude: number };
+    address?: string;
+  }) => void;
 }
 
 const { width, height } = Dimensions.get('window');
@@ -201,6 +217,8 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   clusterRadius = 40,
   minClusterSize = 2,
   onNoGroupFits,
+  distanceOrigin,
+  onDistanceOriginChange,
 }) => {
   // Always declare hooks first (Rules of Hooks)
   const insets = useSafeAreaInsets();
@@ -218,6 +236,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     null
   );
   const [shouldTrackViewChanges, setShouldTrackViewChanges] = useState(true);
+  const isUserDraggingRef = useRef(false); // Track if user is dragging the map
+  const isProgrammaticMoveRef = useRef(false); // Track if move is programmatic
+  const lastProcessedDistanceOriginRef = useRef<string | null>(null); // Track last processed distanceOrigin to prevent loops
 
   // Selection state for card panel
   const [selectedItems, setSelectedItems] = useState<GroupWithDetails[] | null>(
@@ -353,6 +374,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   }, [clusters, activeGroupId, resetViewTracking]);
 
   // Initialize map region and process group locations
+  // Only run when groups change, not when distanceOrigin changes
   useEffect(() => {
     // Only initialize if MapView is available
     if (MapView) {
@@ -360,6 +382,84 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups]);
+
+  // Recenter map when distanceOrigin changes (e.g., when switching to map view after searching)
+  // Only recenter if the map is not already at that location (to prevent loops)
+  useEffect(() => {
+    if (MapView && mapRef.current && distanceOrigin?.coordinates) {
+      // Create a unique key for this distanceOrigin to track if we've already processed it
+      const originKey = `${distanceOrigin.coordinates.latitude},${distanceOrigin.coordinates.longitude}`;
+      
+      // Skip if we've already processed this exact location
+      if (lastProcessedDistanceOriginRef.current === originKey) {
+        if (__DEV__) {
+          console.log('[MapDebug] Already processed this distance origin, skipping');
+        }
+        return;
+      }
+      
+      // Check if map is already at this location (within a small threshold)
+      const threshold = 0.0001; // ~11 meters
+      const currentLat = currentRegion.latitude;
+      const currentLon = currentRegion.longitude;
+      const targetLat = distanceOrigin.coordinates.latitude;
+      const targetLon = distanceOrigin.coordinates.longitude;
+      
+      const latDiff = Math.abs(currentLat - targetLat);
+      const lonDiff = Math.abs(currentLon - targetLon);
+      
+      // Skip if already at this location
+      if (latDiff < threshold && lonDiff < threshold) {
+        // Mark as processed even if we skip
+        lastProcessedDistanceOriginRef.current = originKey;
+        if (__DEV__) {
+          console.log('[MapDebug] Already at distance origin, skipping recenter');
+        }
+        return;
+      }
+      
+      // Mark this origin as processed
+      lastProcessedDistanceOriginRef.current = originKey;
+      
+      const newRegion = {
+        latitude: distanceOrigin.coordinates.latitude,
+        longitude: distanceOrigin.coordinates.longitude,
+        latitudeDelta: LATITUDE_DELTA,
+        longitudeDelta: LONGITUDE_DELTA,
+      };
+      
+      // Mark as programmatic move to prevent triggering onDistanceOriginChange
+      isProgrammaticMoveRef.current = true;
+      // Don't reset isUserDraggingRef here - let handleRegionChange detect if user interrupts
+      
+      // Animate to the new region
+      mapRef.current.animateToRegion(newRegion, 1000);
+      setRegion(newRegion);
+      setCurrentRegion(newRegion);
+      
+      // Reset programmatic flag after animation completes
+      // But allow user to override by dragging
+      const timeoutId = setTimeout(() => {
+        // Only reset if user hasn't started dragging
+        if (!isUserDraggingRef.current) {
+          isProgrammaticMoveRef.current = false;
+        }
+      }, 1100); // Slightly longer than animation duration
+      
+      if (__DEV__) {
+        console.log(
+          '[MapDebug] Recentering map to distance origin:',
+          distanceOrigin?.coordinates
+        );
+      }
+      
+      // Cleanup timeout on unmount or if distanceOrigin changes again
+      return () => clearTimeout(timeoutId);
+    } else if (!distanceOrigin) {
+      // Clear the processed origin when distanceOrigin is cleared
+      lastProcessedDistanceOriginRef.current = null;
+    }
+  }, [distanceOrigin]); // Removed currentRegion from dependencies to prevent loops
 
   // Update clusters when region changes (optimized to prevent flashing)
   useEffect(() => {
@@ -431,43 +531,60 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         return result;
       };
 
-      // Check permission status first
-      const permissionStatus = await locationService.getLocationPermissionStatus();
-      
-      if (!permissionStatus.granted) {
-        setLocationPermissionDenied(true);
+      // Prioritize custom distance origin if provided (from location search)
+      if (distanceOrigin?.coordinates) {
+        setRegion({
+          latitude: distanceOrigin.coordinates.latitude,
+          longitude: distanceOrigin.coordinates.longitude,
+          latitudeDelta: LATITUDE_DELTA,
+          longitudeDelta: LONGITUDE_DELTA,
+        });
+        setLocationPermissionDenied(false);
         if (__DEV__) {
-          console.warn('[MapDebug] Location permission not granted');
+          console.log(
+            '[MapDebug] Using distance origin as initial region:',
+            distanceOrigin.coordinates
+          );
         }
       } else {
-        // Permission is granted, try to get location
-        const currentLocation = await withTimeout(
-          locationService.getCurrentLocation(),
-          4000,
-          'getCurrentLocation'
-        );
-
-        if (currentLocation) {
-          setRegion({
-            ...currentLocation,
-            latitudeDelta: LATITUDE_DELTA,
-            longitudeDelta: LONGITUDE_DELTA,
-          });
-          setLocationPermissionDenied(false);
+        // Check permission status first
+        const permissionStatus = await locationService.getLocationPermissionStatus();
+        
+        if (!permissionStatus.granted) {
+          setLocationPermissionDenied(true);
           if (__DEV__) {
-            console.log(
-              '[MapDebug] Using current location as initial region:',
-              currentLocation
-            );
+            console.warn('[MapDebug] Location permission not granted');
           }
         } else {
-          // Permission is granted but location is unavailable (GPS disabled, timeout, etc.)
-          // Don't show the permission banner in this case
-          setLocationPermissionDenied(false);
-          if (__DEV__) {
-            console.warn(
-              '[MapDebug] Permission granted but location unavailable (GPS may be disabled). Using default region'
-            );
+          // Permission is granted, try to get location
+          const currentLocation = await withTimeout(
+            locationService.getCurrentLocation(),
+            4000,
+            'getCurrentLocation'
+          );
+
+          if (currentLocation) {
+            setRegion({
+              ...currentLocation,
+              latitudeDelta: LATITUDE_DELTA,
+              longitudeDelta: LONGITUDE_DELTA,
+            });
+            setLocationPermissionDenied(false);
+            if (__DEV__) {
+              console.log(
+                '[MapDebug] Using current location as initial region:',
+                currentLocation
+              );
+            }
+          } else {
+            // Permission is granted but location is unavailable (GPS disabled, timeout, etc.)
+            // Don't show the permission banner in this case
+            setLocationPermissionDenied(false);
+            if (__DEV__) {
+              console.warn(
+                '[MapDebug] Permission granted but location unavailable (GPS may be disabled). Using default region'
+              );
+            }
           }
         }
       }
@@ -560,17 +677,38 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       clusterer.load(groups);
     }
 
-    // Fit map to show all markers if we have any
-    if (groupMarkers.length > 0 && mapRef.current) {
-      setTimeout(() => {
-        mapRef.current?.fitToCoordinates(
-          groupMarkers.map((marker) => marker.coordinates),
-          {
-            edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-            animated: true,
-          }
+    // Fit map to show all markers and distance origin if available
+    // When distanceOrigin is active, include it in the fit calculation
+    // so the searched location stays visible even if it's far from groups
+    if (mapRef.current) {
+      const coordinatesToFit: { latitude: number; longitude: number }[] = [];
+
+      // Include group markers
+      if (groupMarkers.length > 0) {
+        coordinatesToFit.push(
+          ...groupMarkers.map((marker) => marker.coordinates)
         );
-      }, 1000);
+      }
+
+      // Include distance origin coordinates if active
+      // This ensures the searched location stays visible even if groups are far away
+      if (distanceOrigin?.coordinates) {
+        coordinatesToFit.push(distanceOrigin.coordinates);
+      }
+
+      // Only fit if we have coordinates to fit to
+      // When distanceOrigin is active, always include it so it stays visible
+      if (coordinatesToFit.length > 0) {
+        setTimeout(() => {
+          // Skip auto-fit if user is currently dragging (don't interrupt them)
+          if (!isUserDraggingRef.current && mapRef.current) {
+            mapRef.current.fitToCoordinates(coordinatesToFit, {
+              edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+              animated: true,
+            });
+          }
+        }, 1000);
+      }
     }
   };
 
@@ -588,6 +726,51 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       );
     }
   };
+
+  const handleRecenter = useCallback(async () => {
+    try {
+      if (!MapView || !mapRef.current) return;
+
+      const currentLocation = await locationService.getCurrentLocation();
+      if (!currentLocation) {
+        // If location is unavailable, try requesting permission
+        const permission = await locationService.requestLocationPermission();
+        if (permission.granted) {
+          const location = await locationService.getCurrentLocation();
+          if (!location) return;
+          const newRegion = {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            latitudeDelta: LATITUDE_DELTA,
+            longitudeDelta: LONGITUDE_DELTA,
+          };
+          mapRef.current.animateToRegion(newRegion, 600);
+          setRegion(newRegion);
+          setCurrentRegion(newRegion);
+          setLocationPermissionDenied(false);
+        }
+        return;
+      }
+
+      const newRegion = {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        latitudeDelta: LATITUDE_DELTA,
+        longitudeDelta: LONGITUDE_DELTA,
+      };
+
+      mapRef.current.animateToRegion(newRegion, 600);
+      setRegion(newRegion);
+      setCurrentRegion(newRegion);
+      setLocationPermissionDenied(false);
+
+      if (__DEV__) {
+        console.log('[MapDebug] Recentered map to current location:', currentLocation);
+      }
+    } catch (error) {
+      console.warn('Recenter failed:', error);
+    }
+  }, []);
 
   const renderGroupMarker = useCallback(
     (point: ClusterPoint, _index: number) => {
@@ -710,19 +893,112 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   );
 
   const handleRegionChangeComplete = useCallback(
-    (newRegion: typeof DEFAULT_REGION) => {
+    async (newRegion: typeof DEFAULT_REGION) => {
       // Only update if there's a significant change to prevent excessive re-clustering
       if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
         setCurrentRegion(newRegion);
       }
+
+      // If this was a programmatic move AND user wasn't dragging, just reset flags and return
+      // If user was dragging, it means they interrupted the programmatic move, so process it
+      if (isProgrammaticMoveRef.current && !isUserDraggingRef.current) {
+        // Pure programmatic move - don't process as user drag
+        return;
+      }
+      
+      // If we get here and programmatic flag is set but user was dragging,
+      // clear the programmatic flag since user took control
+      if (isProgrammaticMoveRef.current) {
+        isProgrammaticMoveRef.current = false;
+      }
+
+      // If user dragged the map and we have a callback,
+      // reverse geocode the center and update the distance origin
+      if (
+        isUserDraggingRef.current &&
+        onDistanceOriginChange &&
+        distanceOrigin // Only update if we're already using a custom location
+      ) {
+        // Check if the new location is significantly different from current distanceOrigin
+        const threshold = 0.0001; // ~11 meters
+        const latDiff = Math.abs(newRegion.latitude - distanceOrigin.coordinates.latitude);
+        const lonDiff = Math.abs(newRegion.longitude - distanceOrigin.coordinates.longitude);
+        
+        // Only update if the location changed significantly
+        if (latDiff > threshold || lonDiff > threshold) {
+          try {
+            const centerCoordinates = {
+              latitude: newRegion.latitude,
+              longitude: newRegion.longitude,
+            };
+            
+            // Reverse geocode to get the address
+            const address = await locationService.reverseGeocode(centerCoordinates);
+            
+            // Update the distance origin with the new location
+            onDistanceOriginChange({
+              coordinates: centerCoordinates,
+              address: address?.formattedAddress || undefined,
+            });
+
+            if (__DEV__) {
+              console.log(
+                '[MapDebug] Updated distance origin from map drag:',
+                centerCoordinates,
+                address?.formattedAddress
+              );
+            }
+          } catch (error) {
+            console.warn('Failed to reverse geocode map center:', error);
+            // Still update coordinates even if reverse geocoding fails
+            onDistanceOriginChange({
+              coordinates: {
+                latitude: newRegion.latitude,
+                longitude: newRegion.longitude,
+              },
+            });
+          }
+        }
+      }
+      
+      // Reset dragging flag after processing (with a small delay to allow reverse geocoding to complete)
+      // Only reset if we actually detected and processed a drag
+      if (isUserDraggingRef.current && !isProgrammaticMoveRef.current) {
+        // Reset after a brief delay to ensure all processing completes
+        setTimeout(() => {
+          isUserDraggingRef.current = false;
+        }, 100);
+      }
     },
-    [currentRegion]
+    [currentRegion, onDistanceOriginChange, distanceOrigin]
   );
 
   const handleRegionChange = useCallback(
     (newRegion: typeof DEFAULT_REGION) => {
-      // Only update if there's a meaningful change to prevent excessive updates
-      if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+      const latDiff = Math.abs(newRegion.latitude - currentRegion.latitude);
+      const lonDiff = Math.abs(newRegion.longitude - currentRegion.longitude);
+
+      // Ignore programmatic moves (like fitToCoordinates/animateToRegion) so we don't
+      // misinterpret them as user drags and overwrite the selected search origin
+      if (isProgrammaticMoveRef.current && !isUserDraggingRef.current) {
+        if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+          setCurrentRegion(newRegion);
+        }
+        return;
+      }
+
+      // If there's any change in position (not just zoom), detect user drag
+      // This fires frequently during dragging, so be careful about performance
+      if (latDiff > 0.00001 || lonDiff > 0.00001) {
+        // User is actively dragging - clear programmatic flag immediately
+        // This ensures user drags are always detected, even during programmatic moves
+        isProgrammaticMoveRef.current = false;
+        isUserDraggingRef.current = true;
+        
+        // Always update region when user is dragging to track position accurately
+        setCurrentRegion(newRegion);
+      } else if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+        // Only update region for other changes if there's a meaningful difference
         setCurrentRegion(newRegion);
       }
     },
@@ -918,7 +1194,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         ]}
         initialRegion={region}
         showsUserLocation={!locationPermissionDenied}
-        showsMyLocationButton={!locationPermissionDenied}
+        showsMyLocationButton={Platform.OS === 'android' && !locationPermissionDenied}
         showsCompass={true}
         showsScale={true}
         loadingEnabled={true}
@@ -940,6 +1216,18 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         accessibilityHint="Interactive map with group locations. Use list view for better accessibility."
       >
         {clusters.map(renderMarker)}
+        {/* Marker for searched location (distance origin) */}
+        {distanceOrigin?.coordinates && Marker && (
+          <Marker
+            coordinate={{
+              latitude: distanceOrigin.coordinates.latitude,
+              longitude: distanceOrigin.coordinates.longitude,
+            }}
+            title={distanceOrigin.address || 'Search location'}
+            pinColor="#f10078"
+            tracksViewChanges={false}
+          />
+        )}
       </MapView>
 
       {selectedItems && selectedItems.length > 0 && (
@@ -1069,6 +1357,19 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             />
           </View>
         </View>
+      )}
+
+      {/* Custom Recenter Button - Always visible on iOS, Android uses native button */}
+      {Platform.OS === 'ios' && (
+        <TouchableOpacity
+          style={styles.recenterButton}
+          onPress={handleRecenter}
+          accessibilityLabel="Recenter map on current location"
+          accessibilityRole="button"
+          activeOpacity={0.85}
+        >
+          <Ionicons name="locate-outline" size={18} color="#2C2235" />
+        </TouchableOpacity>
       )}
 
       {/* Development performance info removed */}
@@ -1332,6 +1633,22 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: '#111827',
+  },
+  recenterButton: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   accessibilityAlternative: {
     // removed
