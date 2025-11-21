@@ -18,7 +18,6 @@ import {
   SearchBar,
   type ViewMode,
 } from '../../components/groups';
-import { LocationPicker } from '../../components/groups/LocationPicker';
 import {
   useGroupsByChurch,
   useGroupMembership,
@@ -44,7 +43,7 @@ import { Image } from 'react-native';
 export default function GroupsScreen() {
   const router = useRouter();
   const { userProfile } = useAuthStore();
-  const { filters } = useGroupFiltersStore();
+  const { filters, setSearchQuery } = useGroupFiltersStore();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const friendsQuery = useFriends(userProfile?.id);
@@ -52,6 +51,7 @@ export default function GroupsScreen() {
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showNoGroupFitsModal, setShowNoGroupFitsModal] = useState(false);
+  const [locationSearchError, setLocationSearchError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<
     'alphabetical' | 'distance' | 'friends'
   >('alphabetical');
@@ -63,7 +63,6 @@ export default function GroupsScreen() {
     address: string;
     coordinates: { latitude: number; longitude: number };
   } | null>(null);
-  const [showDistanceOriginPicker, setShowDistanceOriginPicker] = useState(false);
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   // Create flow now navigates to dedicated page
@@ -76,6 +75,10 @@ export default function GroupsScreen() {
     setCurrentView(view);
     if (view === 'map') {
       setShowSortOptions(false);
+      // Keep search bar visible if sorting by distance and location is set
+      if (sortBy === 'distance' && distanceOrigin) {
+        setShowSearch(true);
+      }
     }
   };
 
@@ -340,7 +343,7 @@ export default function GroupsScreen() {
         style={[
           styles.noGroupFitsButtonFloating,
           Platform.OS === 'ios'
-            ? { top: -50 + insets.top } // iOS: hover above first card
+            ? { top: -50 + insets.top } // iOS: hover above first card (negative offset to float above)
             : { top: 8 }, // Android: align with first card padding
         ]}
       >
@@ -355,25 +358,23 @@ export default function GroupsScreen() {
           />
         </View>
       </View>
-      <FlatList
-        data={groupsWithDistance as any}
-        renderItem={renderGroupItem}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={renderEmptyState}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoadingFn('refresh')}
-            onRefresh={handleRefresh}
-          />
-        }
-        showsVerticalScrollIndicator={false}
+    <FlatList
+      data={groupsWithDistance as any}
+      renderItem={renderGroupItem}
+      keyExtractor={(item) => item.id}
+      ListEmptyComponent={renderEmptyState}
+      refreshControl={
+        <RefreshControl
+          refreshing={isLoadingFn('refresh')}
+          onRefresh={handleRefresh}
+        />
+      }
+      showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
-          Platform.OS === 'ios'
-            ? { paddingTop: Math.max(0, 60 + (-50 + insets.top)) } // iOS: align with floating button
-            : { paddingTop: 8 }, // Android: align with button
+           { paddingTop: 8 }
         ]}
-      />
+    />
     </View>
   );
 
@@ -383,6 +384,18 @@ export default function GroupsScreen() {
       onGroupPress={handleGroupPress}
       isLoading={isLoading}
       onNoGroupFits={handleNoGroupFits}
+      distanceOrigin={distanceOrigin}
+      onDistanceOriginChange={(origin) => {
+        // Update distance origin when user moves the map
+        setDistanceOrigin({
+          address: origin.address || 'Selected Location',
+          coordinates: origin.coordinates,
+        });
+        // Ensure search bar stays visible and shows the updated location
+        if (sortBy === 'distance') {
+          setShowSearch(true);
+        }
+      }}
     />
   );
 
@@ -445,8 +458,8 @@ export default function GroupsScreen() {
             resizeMode="contain"
           />
           <Text variant="h4" weight="black" style={styles.title}>
-            Groups
-          </Text>
+          Groups
+        </Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -455,7 +468,7 @@ export default function GroupsScreen() {
             accessibilityLabel="Search groups"
           >
             <View style={[styles.iconButtonInner, styles.searchButtonInner]}>
-              <Ionicons
+            <Ionicons
                 name="search-outline"
                 size={16}
                 color="#FFFFFF"
@@ -474,10 +487,10 @@ export default function GroupsScreen() {
                 styles.iconButtonInner,
                 currentView === 'map' && styles.iconButtonInnerActive,
               ]}
-            >
-              <Ionicons
-                name={currentView === 'list' ? 'map-outline' : 'list-outline'}
-                size={16}
+          >
+            <Ionicons
+              name={currentView === 'list' ? 'map-outline' : 'list-outline'}
+              size={16}
                 color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
               />
             </View>
@@ -491,17 +504,17 @@ export default function GroupsScreen() {
             accessibilityLabel="Filter groups"
           >
             <View
-              style={[
+            style={[
                 styles.iconButtonInner,
                 getActiveFiltersCount(filters) > 0 && styles.iconButtonInnerActive,
-              ]}
-            >
-              <Ionicons
-                name="funnel-outline"
+            ]}
+          >
+            <Ionicons
+              name="funnel-outline"
                 size={16}
                 color={getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'}
               />
-            </View>
+              </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.figmaIconButton}
@@ -515,36 +528,50 @@ export default function GroupsScreen() {
                 currentView === 'map' && styles.iconButtonDisabled,
                 currentView !== 'map' && sortBy !== 'alphabetical' && styles.iconButtonInnerActive,
               ]}
-            >
-              <Ionicons
-                name="swap-vertical-outline"
-                size={20}
-                color={
-                  currentView === 'map'
+          >
+            <Ionicons
+              name="swap-vertical-outline"
+              size={20}
+              color={
+                currentView === 'map'
                     ? '#8B8A8C'
-                    : sortBy !== 'alphabetical'
+                  : sortBy !== 'alphabetical'
                     ? '#FFFFFF'
                     : '#2C2235'
+              }
+            />
+            </View>
+          </TouchableOpacity>
+            <TouchableOpacity
+            style={styles.figmaIconButton}
+            onPress={() => {
+              // Toggle search bar - if already open and sorting by distance, close it
+              if (showSearch && sortBy === 'distance') {
+                setShowSearch(false);
+              } else {
+                // Set sort to distance if not already set
+                if (sortBy !== 'distance') {
+                  setSortBy('distance');
                 }
+                // Open search bar
+                setShowSearch(true);
+              }
+            }}
+            accessibilityLabel="Choose location to measure distance from"
+          >
+            <View
+              style={[
+                styles.iconButtonInner,
+                sortBy === 'distance' && styles.iconButtonInnerActive, // Pink when distance is selected
+              ]}
+            >
+              <Ionicons
+                name="navigate-outline"
+                size={16}
+                color={sortBy === 'distance' ? '#FFFFFF' : '#2C2235'}
               />
             </View>
           </TouchableOpacity>
-          {currentView === 'list' && sortBy === 'distance' && (
-            <TouchableOpacity
-              style={styles.figmaIconButton}
-              onPress={() => setShowDistanceOriginPicker(true)}
-              accessibilityLabel="Choose location to measure distance from"
-            >
-              <View
-                style={[
-                  styles.iconButtonInner,
-                  styles.iconButtonInnerActive, // Pink when distance is selected
-                ]}
-              >
-                <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
-              </View>
-            </TouchableOpacity>
-          )}
           {userProfile?.church_id && (
             <TouchableOpacity
               style={styles.figmaIconButton}
@@ -552,18 +579,67 @@ export default function GroupsScreen() {
               accessibilityLabel="Create group"
             >
               <View style={styles.iconButtonInner}>
-                <Ionicons
-                  name="add-outline"
+              <Ionicons
+                name="add-outline"
                   size={24}
                   color="#2C2235"
-                />
+              />
               </View>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {showSearch && <SearchBar placeholder="Search groups..." />}
+      {showSearch && (
+        <SearchBar
+          placeholder={
+            sortBy === 'distance' ? 'Enter search location' : 'Search groups...'
+          }
+          value={sortBy === 'distance' ? distanceOrigin?.address : undefined}
+          onLocationSearch={
+            sortBy === 'distance'
+              ? async (query: string) => {
+                  try {
+                    // Clear any previous errors
+                    setLocationSearchError(null);
+                    // Geocode the search query to get coordinates
+                    const coordinates = await locationService.geocodeAddress(query);
+                    if (coordinates) {
+                      // Get reverse geocode to get a formatted address
+                      const address = await locationService.reverseGeocode(coordinates);
+                      setDistanceOrigin({
+                        address: address?.formattedAddress || query,
+                        coordinates,
+                      });
+                      // Clear regular search query when using location search
+                      setSearchQuery('');
+                      // Clear error on success
+                      setLocationSearchError(null);
+                      // Keep search bar open so user can see/change the location
+                    } else {
+                      // Set error state instead of using global error handler
+                      setLocationSearchError('Location not found');
+                    }
+                  } catch (error) {
+                    // Set error state instead of using global error handler
+                    setLocationSearchError('Location not found');
+                  }
+                }
+              : undefined
+          }
+          onLocationClear={
+            sortBy === 'distance'
+              ? () => {
+                  setDistanceOrigin(null);
+                  setSearchQuery('');
+                  setLocationSearchError(null);
+                }
+              : undefined
+          }
+          error={locationSearchError}
+          onErrorChange={setLocationSearchError}
+        />
+      )}
 
       {showSortOptions && (
         <View style={[styles.sortOptionsPanel, { backgroundColor: theme.colors.surface.primary }]}>
@@ -605,8 +681,8 @@ export default function GroupsScreen() {
               }
               setSortBy('distance');
               setShowSortOptions(false);
-              // Always prompt to choose location when sorting by distance
-              setShowDistanceOriginPicker(true);
+              // Open search bar for location input when sorting by distance
+              setShowSearch(true);
             }}
           >
             <Ionicons
@@ -705,42 +781,6 @@ export default function GroupsScreen() {
         isVisible={showFilterPanel}
         onClose={() => setShowFilterPanel(false)}
       />
-
-      {/* Distance origin picker */}
-      <Modal
-        isVisible={showDistanceOriginPicker}
-        onClose={() => setShowDistanceOriginPicker(false)}
-        title="Choose a location"
-        headerStyle={{ borderBottomWidth: 0, paddingBottom: 0, paddingRight: 22 }}
-        titleTextStyle={{ letterSpacing: -0.5 }}
-        bodyStyle={{ paddingTop: 0 }}
-      >
-        <LocationPicker
-          value={
-            distanceOrigin
-              ? {
-                  address: distanceOrigin.address,
-                  coordinates: distanceOrigin.coordinates,
-                }
-              : undefined
-          }
-          deferChanges
-          onChange={(val) => {
-            if (val?.coordinates) {
-              setDistanceOrigin({
-                address: val.address || 'Selected location',
-                coordinates: val.coordinates,
-              });
-            } else {
-              setDistanceOrigin(null);
-            }
-          }}
-          onSubmit={() => {
-            setSortBy('distance');
-            setShowDistanceOriginPicker(false);
-          }}
-        />
-      </Modal>
 
       {/* No Group Fits Modal */}
       <Modal

@@ -669,28 +669,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         </View>
       </View>
 
-      <View style={styles.actionContainer}>
-        <View style={styles.actionSpacer}>
-          <AuthButton
-            title="Search map"
-            onPress={handleSearchPress}
-            fullWidth={true}
-          />
-        </View>
-        <Button
-          title="View groups"
-          onPress={() => {
-            propagateChange(
-              {
-                address: search || 'Selected Location',
-                coordinates: selectedCoords,
-              },
-              { forceImmediate: true }
-            );
-            onSubmit?.();
-          }}
-        />
-      </View>
+      {/* Buttons removed - search is triggered by keyboard search button */}
     </View>
   );
 };
