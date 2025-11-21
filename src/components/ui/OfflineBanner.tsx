@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,45 +16,74 @@ export function OfflineBanner() {
   const { theme } = useTheme();
   const [showReconnected, setShowReconnected] = useState(false);
   const [slideAnim] = useState(new Animated.Value(-50));
+  const [isRendered, setIsRendered] = useState(() =>
+    !isConnected || !isInternetReachable
+  );
+  const hasBeenOfflineRef = useRef(false);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isOffline = !isConnected || !isInternetReachable;
+  const shouldShowBanner = useMemo(
+    () => isOffline || showReconnected,
+    [isOffline, showReconnected]
+  );
 
   useEffect(() => {
-    if (isOffline) {
-      // Slide down when offline
+    if (shouldShowBanner) {
+      setIsRendered(true);
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 300,
+        duration: 250,
         useNativeDriver: true,
       }).start();
-      setShowReconnected(false);
     } else {
-      if (showReconnected) {
-        // Show reconnected message briefly
-        setTimeout(() => {
-          Animated.timing(slideAnim, {
-            toValue: -50,
-            duration: 300,
-            useNativeDriver: true,
-          }).start();
-        }, 2000);
-      } else {
-        // Hide immediately if we were never offline
-        Animated.timing(slideAnim, {
-          toValue: -50,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
-      }
+      Animated.timing(slideAnim, {
+        toValue: -60,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setIsRendered(false);
+        }
+      });
     }
-  }, [isOffline, showReconnected, slideAnim]);
+  }, [shouldShowBanner, slideAnim]);
 
   useEffect(() => {
-    // Show reconnected message when coming back online
-    if (!isOffline && slideAnim._value === 0) {
-      setShowReconnected(true);
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
     }
-  }, [isOffline, slideAnim._value]);
+
+    if (isOffline) {
+      hasBeenOfflineRef.current = true;
+      setShowReconnected(false);
+      return;
+    }
+
+    if (hasBeenOfflineRef.current) {
+      setShowReconnected(true);
+      reconnectTimerRef.current = setTimeout(() => {
+        setShowReconnected(false);
+        hasBeenOfflineRef.current = false;
+      }, 2000);
+    }
+
+    return () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+  }, [isOffline]);
+
+  useEffect(() => {
+    return () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
+    };
+  }, []);
 
   const getMessage = () => {
     if (!isConnected) {
@@ -89,6 +118,10 @@ export function OfflineBanner() {
       console.warn('Failed to refresh network status:', error);
     }
   };
+
+  if (!isRendered) {
+    return null;
+  }
 
   return (
     <Animated.View
