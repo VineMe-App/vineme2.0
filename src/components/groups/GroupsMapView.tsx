@@ -431,32 +431,44 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         return result;
       };
 
-      // Try to get user's current location for initial region
-      const currentLocation = await withTimeout(
-        locationService.getCurrentLocation(),
-        4000,
-        'getCurrentLocation'
-      );
-
-      if (currentLocation) {
-        setRegion({
-          ...currentLocation,
-          latitudeDelta: LATITUDE_DELTA,
-          longitudeDelta: LONGITUDE_DELTA,
-        });
-        setLocationPermissionDenied(false);
-        if (__DEV__) {
-          console.log(
-            '[MapDebug] Using current location as initial region:',
-            currentLocation
-          );
-        }
-      } else {
+      // Check permission status first
+      const permissionStatus = await locationService.getLocationPermissionStatus();
+      
+      if (!permissionStatus.granted) {
         setLocationPermissionDenied(true);
         if (__DEV__) {
-          console.warn(
-            '[MapDebug] No current location available (denied or timed out). Using default region'
-          );
+          console.warn('[MapDebug] Location permission not granted');
+        }
+      } else {
+        // Permission is granted, try to get location
+        const currentLocation = await withTimeout(
+          locationService.getCurrentLocation(),
+          4000,
+          'getCurrentLocation'
+        );
+
+        if (currentLocation) {
+          setRegion({
+            ...currentLocation,
+            latitudeDelta: LATITUDE_DELTA,
+            longitudeDelta: LONGITUDE_DELTA,
+          });
+          setLocationPermissionDenied(false);
+          if (__DEV__) {
+            console.log(
+              '[MapDebug] Using current location as initial region:',
+              currentLocation
+            );
+          }
+        } else {
+          // Permission is granted but location is unavailable (GPS disabled, timeout, etc.)
+          // Don't show the permission banner in this case
+          setLocationPermissionDenied(false);
+          if (__DEV__) {
+            console.warn(
+              '[MapDebug] Permission granted but location unavailable (GPS may be disabled). Using default region'
+            );
+          }
         }
       }
 
@@ -992,16 +1004,30 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       {/* Accessibility alternative removed: list locations button no longer shown */}
 
       {locationPermissionDenied && (
-        <View style={styles.permissionBanner}>
-          <Text style={styles.permissionText}>
-            Enable location to see your position on the map
-          </Text>
-          <Button
-            title="Enable Location"
-            onPress={handleRequestLocationPermission}
-            variant="secondary"
-            size="small"
-          />
+        <View style={[
+          styles.permissionBanner,
+          Platform.OS === 'android' && styles.permissionBannerAndroid
+        ]}>
+          {Platform.OS === 'android' ? (
+            <Button
+              title="Enable Location"
+              onPress={handleRequestLocationPermission}
+              variant="secondary"
+              size="small"
+            />
+          ) : (
+            <>
+              <Text style={styles.permissionText}>
+                Enable location to see your position on the map
+              </Text>
+              <Button
+                title="Enable Location"
+                onPress={handleRequestLocationPermission}
+                variant="secondary"
+                size="small"
+              />
+            </>
+          )}
         </View>
       )}
 
@@ -1018,50 +1044,31 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
       {/* No Group Fits Button */}
       {onNoGroupFits && (
-        <>
-          {Platform.OS === 'android' ? (
-            <View
-              style={[
-                styles.noGroupFitsButtonBar,
-                {
-                  paddingTop: Math.max(insets.top, 8),
-                  top: locationPermissionDenied ? 88 : 0,
-                },
-              ]}
-            >
-              <View style={styles.noGroupFitsButtonContainer}>
-                <Button
-                  title="No group fits?"
-                  onPress={onNoGroupFits}
-                  variant="secondary"
-                  size="small"
-                  style={styles.noGroupFitsButton}
-                />
-              </View>
-            </View>
-          ) : (
-            <View
-              style={[
-                styles.noGroupFitsButtonFloating,
-                {
+        <View
+          style={[
+            styles.noGroupFitsButtonFloating,
+            Platform.OS === 'ios'
+              ? {
                   top: locationPermissionDenied
                     ? 88 + insets.top
                     : -50 + insets.top,
+                }
+              : {
+                  top: locationPermissionDenied ? 88 : 8, // Android: match list view styling
                 },
-              ]}
-            >
-              <View style={styles.noGroupFitsButtonContainer}>
-                <Button
-                  title="No group fits?"
-                  onPress={onNoGroupFits}
-                  variant="secondary"
-                  size="small"
-                  style={styles.noGroupFitsButton}
-                />
-              </View>
-            </View>
-          )}
-        </>
+          ]}
+        >
+          <View style={styles.noGroupFitsButtonContainer}>
+            <Button
+              title="No group fits?"
+              onPress={onNoGroupFits}
+              variant="secondary"
+              size="small"
+              style={styles.noGroupFitsButton}
+              textStyle={styles.noGroupFitsButtonText}
+            />
+          </View>
+        </View>
       )}
 
       {/* Development performance info removed */}
@@ -1150,6 +1157,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  permissionBannerAndroid: {
+    justifyContent: 'center',
+    padding: 8,
   },
   permissionText: {
     flex: 1,
@@ -1269,16 +1280,6 @@ const styles = StyleSheet.create({
     width: width - 32,
     marginHorizontal: 16,
   },
-  noGroupFitsButtonBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    alignItems: 'flex-start',
-    zIndex: 10,
-  },
   noGroupFitsButtonContainer: {
     shadowColor: '#000',
     shadowOffset: {
@@ -1297,6 +1298,11 @@ const styles = StyleSheet.create({
   noGroupFitsButton: {
     paddingHorizontal: 10,
     maxWidth: 120, // Compact width to match the drawn outline
+    backgroundColor: '#2C2235', // Match friends badge color
+    borderColor: '#2C2235',
+  },
+  noGroupFitsButtonText: {
+    color: '#FFFFFF', // Ensure white text on dark purple background
   },
   dotsOverlay: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',

@@ -23,6 +23,23 @@ class GlobalErrorHandler {
       return;
     }
 
+    // Skip logging expected native module errors that are handled gracefully
+    // These errors occur when optional native modules aren't available (e.g., in Expo Go)
+    // Also skip location permission/device settings errors as these are expected
+    if (
+      error instanceof Error &&
+      (error.message.includes('Cannot find native module') ||
+        error.message.includes('expo-clipboard') ||
+        error.message.includes('ExpoClipboard') ||
+        error.message.includes('expo-location') ||
+        error.message.includes('Location request failed') ||
+        error.message.includes('unsatisfied device settings') ||
+        error.message.includes('location permission') ||
+        error.message.includes('location services'))
+    ) {
+      return;
+    }
+
     const report: ErrorReport = {
       error: appError,
       timestamp: new Date(),

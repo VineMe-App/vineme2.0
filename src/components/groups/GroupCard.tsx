@@ -334,7 +334,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           <View style={styles.memberCountBadge}>
             <View style={styles.memberCountInner}>
               <Text style={styles.memberCountText}>{group.member_count}</Text>
-              <Ionicons name="person-outline" size={16} color="#2C2235" />
+              <Ionicons name="person-outline" size={16} color="rgba(255, 255, 255, 0.8)" />
             </View>
           </View>
         )}
@@ -448,13 +448,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: '#f10078', // Primary pink color
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   friendAvatars: {
     flexDirection: 'row',
@@ -467,7 +475,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   friendsCount: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '500',
   },
@@ -558,19 +566,26 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   memberCountInner: {
-    backgroundColor: 'rgba(217, 217, 217, 0.9)',
-    borderRadius: 7,
-    paddingHorizontal: 9,
+    backgroundColor: 'rgba(44, 34, 53, 0.75)', // Dark purple, slightly greyed out (matching no group fits button style)
+    borderRadius: 16, // Match button border radius
+    paddingHorizontal: 10, // Match button padding
     paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6, // Match button gap
     minWidth: 46,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   memberCountText: {
-    color: '#2C2235',
-    fontSize: 16,
-    letterSpacing: -0.48,
+    color: 'rgba(255, 255, 255, 0.9)', // White text, slightly greyed out
+    fontSize: 12, // Match button text size
     fontWeight: '500',
   },
   profilePicturesContainer: {
@@ -584,7 +599,7 @@ const styles = StyleSheet.create({
   },
   profilePicture: {
     borderWidth: 2,
-    borderColor: '#FF0083',
+    borderColor: '#FF0083', // Pink border
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
