@@ -91,7 +91,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       const { state, translationX } = event.nativeEvent;
 
       if (state === State.END) {
-        const shouldShowActions = Math.abs(translationX) > SWIPE_THRESHOLD;
+        const clampedTranslation = Math.max(translationX, -swipeDistance);
+        const effectiveThreshold = Math.min(SWIPE_THRESHOLD, swipeDistance * 0.75);
+        const shouldShowActions = Math.abs(clampedTranslation) >= effectiveThreshold;
 
         Animated.parallel([
           Animated.spring(translateX, {
