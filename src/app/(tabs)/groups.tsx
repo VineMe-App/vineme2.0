@@ -859,8 +859,8 @@ const GroupItemWithMembership: React.FC<{
         m.user
       )
       .map((m) => m.user)
-      .filter((user): user is NonNullable<typeof user> => !!user)
-      .slice(0, 3); // Limit to 3 leaders for display
+      .filter((user): user is NonNullable<typeof user> => !!user);
+      // Pass full leaders array - GroupCard handles display logic for 1, 2, 3, and 4+ leaders
   }, [members]);
 
   return (
