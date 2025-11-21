@@ -336,36 +336,25 @@ export default function GroupsScreen() {
 
   const renderListView = () => (
     <View style={styles.listViewContainer}>
-      {Platform.OS === 'android' ? (
-        <View style={[styles.noGroupFitsButtonBar, { paddingTop: Math.max(insets.top, 8) }]}>
-          <View style={styles.noGroupFitsButtonContainer}>
-            <Button
-              title="No group fits?"
-              onPress={handleNoGroupFits}
-              variant="secondary"
-              size="small"
-              style={styles.noGroupFitsButton}
-            />
-          </View>
+      <View
+        style={[
+          styles.noGroupFitsButtonFloating,
+          Platform.OS === 'ios'
+            ? { top: -50 + insets.top } // iOS: hover above first card
+            : { top: 8 }, // Android: align with first card padding
+        ]}
+      >
+        <View style={styles.noGroupFitsButtonContainer}>
+          <Button
+            title="No group fits?"
+            onPress={handleNoGroupFits}
+            variant="secondary"
+            size="small"
+            style={styles.noGroupFitsButton}
+            textStyle={styles.noGroupFitsButtonText}
+          />
         </View>
-      ) : (
-        <View
-          style={[
-            styles.noGroupFitsButtonFloating,
-            { top: -50 + insets.top },
-          ]}
-        >
-          <View style={styles.noGroupFitsButtonContainer}>
-            <Button
-              title="No group fits?"
-              onPress={handleNoGroupFits}
-              variant="secondary"
-              size="small"
-              style={styles.noGroupFitsButton}
-            />
-          </View>
-        </View>
-      )}
+      </View>
       <FlatList
         data={groupsWithDistance as any}
         renderItem={renderGroupItem}
@@ -380,7 +369,9 @@ export default function GroupsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
-          Platform.OS === 'android' ? null : { paddingTop: 8 },
+          Platform.OS === 'ios'
+            ? { paddingTop: Math.max(0, 60 + (-50 + insets.top)) } // iOS: align with floating button
+            : { paddingTop: 8 }, // Android: align with button
         ]}
       />
     </View>
@@ -949,11 +940,6 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  noGroupFitsButtonBar: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    alignItems: 'flex-start',
-  },
   noGroupFitsButtonContainer: {
     shadowColor: '#000',
     shadowOffset: {
@@ -972,6 +958,11 @@ const styles = StyleSheet.create({
   noGroupFitsButton: {
     paddingHorizontal: 14,
     maxWidth: 120, // Compact width to match the drawn outline
+    backgroundColor: '#2C2235', // Match friends badge color
+    borderColor: '#2C2235',
+  },
+  noGroupFitsButtonText: {
+    color: '#FFFFFF', // Ensure white text on dark purple background
   },
   noGroupFitsModalContent: {
     padding: 20,
