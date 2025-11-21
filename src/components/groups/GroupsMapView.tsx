@@ -977,7 +977,16 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     (newRegion: typeof DEFAULT_REGION) => {
       const latDiff = Math.abs(newRegion.latitude - currentRegion.latitude);
       const lonDiff = Math.abs(newRegion.longitude - currentRegion.longitude);
-      
+
+      // Ignore programmatic moves (like fitToCoordinates/animateToRegion) so we don't
+      // misinterpret them as user drags and overwrite the selected search origin
+      if (isProgrammaticMoveRef.current && !isUserDraggingRef.current) {
+        if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+          setCurrentRegion(newRegion);
+        }
+        return;
+      }
+
       // If there's any change in position (not just zoom), detect user drag
       // This fires frequently during dragging, so be careful about performance
       if (latDiff > 0.00001 || lonDiff > 0.00001) {
