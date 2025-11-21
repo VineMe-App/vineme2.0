@@ -14,7 +14,7 @@ import {
 let Clipboard: typeof import('expo-clipboard') | null | undefined = undefined;
 const getClipboard = (): typeof import('expo-clipboard') | null => {
   if (Clipboard !== undefined) return Clipboard;
-  
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const clipboardModule = require('expo-clipboard');
@@ -24,7 +24,9 @@ const getClipboard = (): typeof import('expo-clipboard') | null => {
     // Native module not available - this is expected in some environments
     Clipboard = null;
     if (__DEV__) {
-      console.log('[join-requests] expo-clipboard not available, clipboard functionality disabled');
+      console.log(
+        '[join-requests] expo-clipboard not available, clipboard functionality disabled'
+      );
     }
     return null;
   }

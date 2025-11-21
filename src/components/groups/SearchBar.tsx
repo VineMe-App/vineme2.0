@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
 
@@ -77,11 +83,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.inputContainer, error && styles.inputContainerError]}>
+      <View
+        style={[styles.inputContainer, error && styles.inputContainerError]}
+      >
         <Ionicons
           name="search-outline"
           size={16}
-          color={error ? "#ff4444" : "#666"}
+          color={error ? '#ff4444' : '#666'}
           style={styles.leadingIcon}
         />
         <TextInput
@@ -99,13 +107,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             onPress={handleClear}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close" size={16} color={error ? "#ff4444" : "#999"} />
+            <Ionicons
+              name="close"
+              size={16}
+              color={error ? '#ff4444' : '#999'}
+            />
           </TouchableOpacity>
         )}
       </View>
-      {error && (
-        <Text style={styles.errorText}>{error}</Text>
-      )}
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };

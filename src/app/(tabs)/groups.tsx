@@ -8,7 +8,10 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { useRouter } from 'expo-router';
 import {
@@ -26,7 +29,13 @@ import {
 } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
-import { ErrorMessage, EmptyState, LoadingSpinner, Modal, Button } from '../../components/ui';
+import {
+  ErrorMessage,
+  EmptyState,
+  LoadingSpinner,
+  Modal,
+  Button,
+} from '../../components/ui';
 import { useUpdateUserProfile } from '../../hooks/useUsers';
 import {
   applyGroupFilters,
@@ -51,10 +60,12 @@ export default function GroupsScreen() {
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showNoGroupFitsModal, setShowNoGroupFitsModal] = useState(false);
-  const [locationSearchError, setLocationSearchError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<
-    'alphabetical' | 'distance' | 'friends'
-  >('alphabetical');
+  const [locationSearchError, setLocationSearchError] = useState<string | null>(
+    null
+  );
+  const [sortBy, setSortBy] = useState<'alphabetical' | 'distance' | 'friends'>(
+    'alphabetical'
+  );
   const [userCoords, setUserCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -82,8 +93,7 @@ export default function GroupsScreen() {
     }
   };
 
-  const isChurchAdmin =
-    userProfile?.roles?.includes('church_admin') ?? false;
+  const isChurchAdmin = userProfile?.roles?.includes('church_admin') ?? false;
 
   const {
     data: churchGroups,
@@ -100,7 +110,9 @@ export default function GroupsScreen() {
   } = useAllApprovedGroups(isChurchAdmin);
 
   const allGroups = isChurchAdmin ? adminGroups : churchGroups;
-  const isLoading = isChurchAdmin ? isLoadingAdminGroups : isLoadingChurchGroups;
+  const isLoading = isChurchAdmin
+    ? isLoadingAdminGroups
+    : isLoadingChurchGroups;
   const error = isChurchAdmin ? adminGroupsError : churchGroupsError;
   const refetch = isChurchAdmin ? refetchAdminGroups : refetchChurchGroups;
 
@@ -154,9 +166,7 @@ export default function GroupsScreen() {
 
         if (isChurchAdmin) {
           include = true;
-          isGreyedOut = userChurchId
-            ? group.church_id !== userChurchId
-            : false;
+          isGreyedOut = userChurchId ? group.church_id !== userChurchId : false;
         } else if (isGroupLeader) {
           if (isInUserChurch) {
             include = true;
@@ -207,8 +217,7 @@ export default function GroupsScreen() {
   // Sorted groups with computed distance and friend counts
   const groupsWithDistance = useMemo(() => {
     if (!filteredGroups) return [] as typeof filteredGroups & any[];
-    const originCoords =
-      distanceOrigin?.coordinates || userCoords || null;
+    const originCoords = distanceOrigin?.coordinates || userCoords || null;
     return filteredGroups
       .map((g) => {
         let distanceKm: number | undefined;
@@ -234,7 +243,10 @@ export default function GroupsScreen() {
         } as any;
       })
       .sort((a: any, b: any) => {
-        if (sortBy === 'distance' && (distanceOrigin?.coordinates || userCoords)) {
+        if (
+          sortBy === 'distance' &&
+          (distanceOrigin?.coordinates || userCoords)
+        ) {
           const da = a.__distanceKm;
           const db = b.__distanceKm;
           if (da == null && db == null) return 0;
@@ -248,7 +260,13 @@ export default function GroupsScreen() {
         }
         return 0;
       });
-  }, [filteredGroups, sortBy, userCoords, distanceOrigin?.coordinates, friendIds]);
+  }, [
+    filteredGroups,
+    sortBy,
+    userCoords,
+    distanceOrigin?.coordinates,
+    friendIds,
+  ]);
 
   const handleRefresh = async () => {
     await withLoading('refresh', async () => {
@@ -321,7 +339,7 @@ export default function GroupsScreen() {
 
   const handleConfirmCannotFindGroup = async () => {
     if (!userProfile?.id) return;
-    
+
     try {
       await updateUserProfile.mutateAsync({
         userId: userProfile.id,
@@ -358,23 +376,20 @@ export default function GroupsScreen() {
           />
         </View>
       </View>
-    <FlatList
-      data={groupsWithDistance as any}
-      renderItem={renderGroupItem}
-      keyExtractor={(item) => item.id}
-      ListEmptyComponent={renderEmptyState}
-      refreshControl={
-        <RefreshControl
-          refreshing={isLoadingFn('refresh')}
-          onRefresh={handleRefresh}
-        />
-      }
-      showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.listContent,
-           { paddingTop: 8 }
-        ]}
-    />
+      <FlatList
+        data={groupsWithDistance as any}
+        renderItem={renderGroupItem}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={renderEmptyState}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoadingFn('refresh')}
+            onRefresh={handleRefresh}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.listContent, { paddingTop: 8 }]}
+      />
     </View>
   );
 
@@ -458,8 +473,8 @@ export default function GroupsScreen() {
             resizeMode="contain"
           />
           <Text variant="h4" weight="black" style={styles.title}>
-          Groups
-        </Text>
+            Groups
+          </Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -468,11 +483,7 @@ export default function GroupsScreen() {
             accessibilityLabel="Search groups"
           >
             <View style={[styles.iconButtonInner, styles.searchButtonInner]}>
-            <Ionicons
-                name="search-outline"
-                size={16}
-                color="#FFFFFF"
-              />
+              <Ionicons name="search-outline" size={16} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -487,10 +498,10 @@ export default function GroupsScreen() {
                 styles.iconButtonInner,
                 currentView === 'map' && styles.iconButtonInnerActive,
               ]}
-          >
-            <Ionicons
-              name={currentView === 'list' ? 'map-outline' : 'list-outline'}
-              size={16}
+            >
+              <Ionicons
+                name={currentView === 'list' ? 'map-outline' : 'list-outline'}
+                size={16}
                 color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
               />
             </View>
@@ -504,21 +515,26 @@ export default function GroupsScreen() {
             accessibilityLabel="Filter groups"
           >
             <View
-            style={[
+              style={[
                 styles.iconButtonInner,
-                getActiveFiltersCount(filters) > 0 && styles.iconButtonInnerActive,
-            ]}
-          >
-            <Ionicons
-              name="funnel-outline"
+                getActiveFiltersCount(filters) > 0 &&
+                  styles.iconButtonInnerActive,
+              ]}
+            >
+              <Ionicons
+                name="funnel-outline"
                 size={16}
-                color={getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'}
+                color={
+                  getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'
+                }
               />
-              </View>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.figmaIconButton}
-            onPress={() => currentView !== 'map' && setShowSortOptions((s) => !s)}
+            onPress={() =>
+              currentView !== 'map' && setShowSortOptions((s) => !s)
+            }
             accessibilityLabel="Sort options"
             disabled={currentView === 'map'}
           >
@@ -526,23 +542,25 @@ export default function GroupsScreen() {
               style={[
                 styles.iconButtonInner,
                 currentView === 'map' && styles.iconButtonDisabled,
-                currentView !== 'map' && sortBy !== 'alphabetical' && styles.iconButtonInnerActive,
+                currentView !== 'map' &&
+                  sortBy !== 'alphabetical' &&
+                  styles.iconButtonInnerActive,
               ]}
-          >
-            <Ionicons
-              name="swap-vertical-outline"
-              size={20}
-              color={
-                currentView === 'map'
+            >
+              <Ionicons
+                name="swap-vertical-outline"
+                size={20}
+                color={
+                  currentView === 'map'
                     ? '#8B8A8C'
-                  : sortBy !== 'alphabetical'
-                    ? '#FFFFFF'
-                    : '#2C2235'
-              }
-            />
+                    : sortBy !== 'alphabetical'
+                      ? '#FFFFFF'
+                      : '#2C2235'
+                }
+              />
             </View>
           </TouchableOpacity>
-            <TouchableOpacity
+          <TouchableOpacity
             style={styles.figmaIconButton}
             onPress={() => {
               // Toggle search bar - if already open and sorting by distance, close it
@@ -579,11 +597,7 @@ export default function GroupsScreen() {
               accessibilityLabel="Create group"
             >
               <View style={styles.iconButtonInner}>
-              <Ionicons
-                name="add-outline"
-                  size={24}
-                  color="#2C2235"
-              />
+                <Ionicons name="add-outline" size={24} color="#2C2235" />
               </View>
             </TouchableOpacity>
           )}
@@ -603,10 +617,12 @@ export default function GroupsScreen() {
                     // Clear any previous errors
                     setLocationSearchError(null);
                     // Geocode the search query to get coordinates
-                    const coordinates = await locationService.geocodeAddress(query);
+                    const coordinates =
+                      await locationService.geocodeAddress(query);
                     if (coordinates) {
                       // Get reverse geocode to get a formatted address
-                      const address = await locationService.reverseGeocode(coordinates);
+                      const address =
+                        await locationService.reverseGeocode(coordinates);
                       setDistanceOrigin({
                         address: address?.formattedAddress || query,
                         coordinates,
@@ -642,7 +658,12 @@ export default function GroupsScreen() {
       )}
 
       {showSortOptions && (
-        <View style={[styles.sortOptionsPanel, { backgroundColor: theme.colors.surface.primary }]}>
+        <View
+          style={[
+            styles.sortOptionsPanel,
+            { backgroundColor: theme.colors.surface.primary },
+          ]}
+        >
           <TouchableOpacity
             style={[
               styles.sortOption,
@@ -656,7 +677,11 @@ export default function GroupsScreen() {
             <Ionicons
               name="text-outline"
               size={20}
-              color={sortBy === 'alphabetical' ? '#FFFFFF' : theme.colors.text.primary}
+              color={
+                sortBy === 'alphabetical'
+                  ? '#FFFFFF'
+                  : theme.colors.text.primary
+              }
             />
             <Text
               variant="body"
@@ -688,7 +713,9 @@ export default function GroupsScreen() {
             <Ionicons
               name="navigate-outline"
               size={20}
-              color={sortBy === 'distance' ? '#FFFFFF' : theme.colors.text.primary}
+              color={
+                sortBy === 'distance' ? '#FFFFFF' : theme.colors.text.primary
+              }
             />
             <Text
               variant="body"
@@ -714,7 +741,9 @@ export default function GroupsScreen() {
             <Ionicons
               name="people-outline"
               size={20}
-              color={sortBy === 'friends' ? '#FFFFFF' : theme.colors.text.primary}
+              color={
+                sortBy === 'friends' ? '#FFFFFF' : theme.colors.text.primary
+              }
             />
             <Text
               variant="body"
@@ -741,8 +770,8 @@ export default function GroupsScreen() {
       >
         <View style={styles.infoModalContent}>
           <Text variant="body" style={styles.infoModalParagraph}>
-            Explore Bible study groups from here, switch between the list and map views, and tap any card
-            to see full details or request to join.
+            Explore Bible study groups from here, switch between the list and
+            map views, and tap any card to see full details or request to join.
           </Text>
 
           <View style={styles.infoModalSection}>
@@ -750,13 +779,16 @@ export default function GroupsScreen() {
               Visibility rules
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Members see groups in their own service. Groups with your friends outside the service appear in grey.
+              • Members see groups in their own service. Groups with your
+              friends outside the service appear in grey.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Group leaders see every group in their church plus grey markers for friend groups in other churches.
+              • Group leaders see every group in their church plus grey markers
+              for friend groups in other churches.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Church admins see every approved group. Groups outside your church are tinted grey for context.
+              • Church admins see every approved group. Groups outside your
+              church are tinted grey for context.
             </Text>
           </View>
 
@@ -765,13 +797,16 @@ export default function GroupsScreen() {
               Helpful tips
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Use filters and search to narrow by day, category, or friends in a group.
+              • Use filters and search to narrow by day, category, or friends in
+              a group.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Switch to the map to browse by location and tap pins for quick access to the group card.
+              • Switch to the map to browse by location and tap pins for quick
+              access to the group card.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Grey groups are outside your immediate scope but include friends—reach out if you&apos;re interested.
+              • Grey groups are outside your immediate scope but include
+              friends—reach out if you&apos;re interested.
             </Text>
           </View>
         </View>
@@ -798,7 +833,8 @@ export default function GroupsScreen() {
             <Ionicons name="close" size={24} color="#6b7280" />
           </TouchableOpacity>
           <Text variant="body" style={styles.noGroupFitsModalText}>
-            Oh no! We're sorry that you couldn't find any groups that looked suitable.{'\n\n'}
+            Oh no! We're sorry that you couldn't find any groups that looked
+            suitable.{'\n\n'}
             Click below to let your connections team know!
           </Text>
           <Button
@@ -853,10 +889,10 @@ const GroupItemWithMembership: React.FC<{
 
   const leaders = React.useMemo(() => {
     return (members || [])
-      .filter((m) => m.role === 'leader' && m.user)
+      .filter((m) => m.role === 'leader' && m.status === 'active' && m.user)
       .map((m) => m.user)
-      .filter((user): user is NonNullable<typeof user> => !!user)
-      .slice(0, 3); // Limit to 3 leaders for display
+      .filter((user): user is NonNullable<typeof user> => !!user);
+    // Pass full leaders array - GroupCard handles display logic for 1, 2, 3, and 4+ leaders
   }, [members]);
 
   return (
