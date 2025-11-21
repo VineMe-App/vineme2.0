@@ -3,6 +3,7 @@ import { groupService } from '../services/groups';
 import type { GroupWithDetails, GroupMembership } from '../types/database';
 import type { GroupReferralData } from '../services/groups';
 import { performanceMonitor } from '../utils/performance';
+import { permissionService } from '../services/permissions';
 
 // Query keys
 export const groupKeys = {
@@ -212,6 +213,23 @@ export const useGroupMembership = (
     },
     enabled: !!groupId && !!userId,
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+/**
+ * Hook to check if user is a group leader of any group
+ */
+export const useIsGroupLeader = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: [...groupKeys.all, 'isGroupLeader', userId || ''],
+    queryFn: async () => {
+      if (!userId) return false;
+      const result = await permissionService.isAnyGroupLeader();
+      return result.hasPermission;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000,
   });
 };
 

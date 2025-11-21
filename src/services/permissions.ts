@@ -400,6 +400,48 @@ export class PermissionService {
   }
 
   /**
+   * Check if user is a group leader of any group
+   */
+  async isAnyGroupLeader(): Promise<PermissionCheck> {
+    const user = await this.getCurrentUserWithCache();
+
+    if (!user) {
+      return { hasPermission: false, reason: 'User not authenticated' };
+    }
+
+    // Superadmin and church admins are treated as group leaders
+    if (
+      user.roles.includes('superadmin') ||
+      user.roles.includes('church_admin')
+    ) {
+      return { hasPermission: true };
+    }
+
+    // Check if user has 'group_leader' role (legacy)
+    if (user.roles.includes('group_leader')) {
+      return { hasPermission: true };
+    }
+
+    // Check if user is a leader of any group via group_memberships
+    const { data: memberships } = await supabase
+      .from('group_memberships')
+      .select('role, status')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .eq('role', 'leader')
+      .limit(1);
+
+    if (memberships && memberships.length > 0) {
+      return { hasPermission: true };
+    }
+
+    return {
+      hasPermission: false,
+      reason: 'User is not a group leader',
+    };
+  }
+
+  /**
    * Get user's effective permissions
    */
   async getUserPermissions(): Promise<Permission[]> {

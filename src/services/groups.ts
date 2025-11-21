@@ -124,19 +124,21 @@ export class GroupService {
   }
 
   /**
-   * Get all approved groups (church admin only)
+   * Get all approved groups (church admin or group leader)
    */
   async getAllApprovedGroups(): Promise<
     GroupServiceResponse<GroupWithDetails[]>
   > {
     try {
-      // Ensure caller has church admin privileges
+      // Ensure caller has church admin or group leader privileges
       const adminCheck = await permissionService.isChurchAdmin();
-      if (!adminCheck.hasPermission) {
+      const leaderCheck = await permissionService.isAnyGroupLeader();
+      
+      if (!adminCheck.hasPermission && !leaderCheck.hasPermission) {
         return {
           data: null,
           error: new Error(
-            adminCheck.reason || 'Church admin role required to view all groups'
+            'Church admin or group leader role required to view all groups'
           ),
         };
       }

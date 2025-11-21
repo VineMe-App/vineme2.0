@@ -24,6 +24,7 @@ import {
   useGroupMembership,
   useGroupMembers,
   useAllApprovedGroups,
+  useIsGroupLeader,
 } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
@@ -82,24 +83,34 @@ export default function GroupsScreen() {
   const isChurchAdmin =
     userProfile?.roles?.includes('church_admin') ?? false;
 
+  // Check if user is a group leader (of any group)
+  const { data: isGroupLeaderCheck, isLoading: isLoadingLeaderCheck } =
+    useIsGroupLeader(userProfile?.id);
+  const isGroupLeader = isGroupLeaderCheck ?? false;
+
+  // Both church admins and group leaders should see all groups
+  const shouldFetchAllGroups = isChurchAdmin || isGroupLeader;
+
   const {
     data: churchGroups,
     isLoading: isLoadingChurchGroups,
     error: churchGroupsError,
     refetch: refetchChurchGroups,
-  } = useGroupsByChurch(!isChurchAdmin ? userProfile?.church_id : undefined);
+  } = useGroupsByChurch(!shouldFetchAllGroups ? userProfile?.church_id : undefined);
 
   const {
     data: adminGroups,
     isLoading: isLoadingAdminGroups,
     error: adminGroupsError,
     refetch: refetchAdminGroups,
-  } = useAllApprovedGroups(isChurchAdmin);
+  } = useAllApprovedGroups(shouldFetchAllGroups);
 
-  const allGroups = isChurchAdmin ? adminGroups : churchGroups;
-  const isLoading = isChurchAdmin ? isLoadingAdminGroups : isLoadingChurchGroups;
-  const error = isChurchAdmin ? adminGroupsError : churchGroupsError;
-  const refetch = isChurchAdmin ? refetchAdminGroups : refetchChurchGroups;
+  const allGroups = shouldFetchAllGroups ? adminGroups : churchGroups;
+  const isLoading =
+    isLoadingLeaderCheck ||
+    (shouldFetchAllGroups ? isLoadingAdminGroups : isLoadingChurchGroups);
+  const error = shouldFetchAllGroups ? adminGroupsError : churchGroupsError;
+  const refetch = shouldFetchAllGroups ? refetchAdminGroups : refetchChurchGroups;
 
   const friendIds = useMemo(
     () =>
@@ -111,36 +122,15 @@ export default function GroupsScreen() {
     [friendsQuery.data]
   );
 
-  const isGroupLeader = useMemo(() => {
-    if (!userProfile?.id) return false;
-
-    const hasLeaderRole = userProfile.roles?.includes('group_leader') ?? false;
-
-    if (hasLeaderRole) return true;
-    if (!allGroups) return false;
-
-    return allGroups.some((group) =>
-      (group.memberships || []).some(
-        (membership: any) =>
-          membership.user_id === userProfile.id &&
-          membership.status === 'active' &&
-          (membership.role === 'leader' || membership.role === 'admin')
-      )
-    );
-  }, [allGroups, userProfile?.id, userProfile?.roles]);
-
   const groupsWithVisibility = useMemo(() => {
     if (!allGroups) return [];
 
     const userChurchId = userProfile?.church_id;
-    const userServiceId = userProfile?.service_id;
 
     return allGroups.reduce<(GroupWithDetails & { __isGreyedOut?: boolean })[]>(
       (acc, group) => {
         const isInUserChurch =
           !!userChurchId && group.church_id === userChurchId;
-        const isInUserService =
-          !!userServiceId && group.service_id === userServiceId;
         const friendInGroup = (group.memberships || []).some(
           (membership: any) =>
             membership.status === 'active' && friendIds.has(membership.user_id)
@@ -149,20 +139,18 @@ export default function GroupsScreen() {
         let include = false;
         let isGreyedOut = false;
 
-        if (isChurchAdmin) {
+        // Church admins and group leaders can see ALL groups
+        if (isChurchAdmin || isGroupLeader) {
           include = true;
+          // Grey out groups outside their church
           isGreyedOut = userChurchId
             ? group.church_id !== userChurchId
             : false;
-        } else if (isGroupLeader) {
-          if (isInUserChurch) {
-            include = true;
-          } else if (friendInGroup) {
-            include = true;
-            isGreyedOut = true;
-          }
         } else {
-          if (isInUserService) {
+          // Regular users can see:
+          // 1. All groups in their church (not just their service)
+          // 2. Groups where their friends are members (greyed out if not in their church)
+          if (isInUserChurch) {
             include = true;
           } else if (friendInGroup) {
             include = true;
@@ -184,7 +172,6 @@ export default function GroupsScreen() {
     isChurchAdmin,
     isGroupLeader,
     userProfile?.church_id,
-    userProfile?.service_id,
   ]);
 
   // Apply filters to groups (including "only with friends")
