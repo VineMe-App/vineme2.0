@@ -36,18 +36,25 @@ const withGoogleMapsApiKey = (config) => {
     const apiKey = config.android?.config?.googleMaps?.apiKey || 
                    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
     
-    // Always log during build to help debug
-    console.log('[withGoogleMapsApiKey] Checking API key...');
-    console.log('[withGoogleMapsApiKey] API key from config.android.config.googleMaps.apiKey:', config.android?.config?.googleMaps?.apiKey ? 'present' : 'missing');
-    console.log('[withGoogleMapsApiKey] API key from process.env:', process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ? 'present' : 'missing');
+    // Gate debug logging behind flag to avoid exposing secrets in CI/build logs
+    const isDebugMode = process.env.DEBUG_GOOGLE_MAPS_PLUGIN === 'true';
+    
+    if (isDebugMode) {
+      console.log('[withGoogleMapsApiKey] Checking API key...');
+      console.log('[withGoogleMapsApiKey] API key from config.android.config.googleMaps.apiKey:', config.android?.config?.googleMaps?.apiKey ? 'present' : 'missing');
+      console.log('[withGoogleMapsApiKey] API key from process.env:', process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ? 'present' : 'missing');
+    }
     
     if (!apiKey) {
       console.warn('[withGoogleMapsApiKey] WARNING: No Google Maps API key found! Maps will not work.');
       return config;
     }
     
-    console.log('[withGoogleMapsApiKey] Injecting Google Maps API key into AndroidManifest.xml');
-    console.log('[withGoogleMapsApiKey] API key starts with:', apiKey.substring(0, 20) + '...');
+    if (isDebugMode) {
+      console.log('[withGoogleMapsApiKey] Injecting Google Maps API key into AndroidManifest.xml');
+      // Only log key prefix in debug mode (not recommended for production)
+      console.log('[withGoogleMapsApiKey] API key starts with:', apiKey.substring(0, 20) + '...');
+    }
     
     const { manifest } = config.modResults;
     
@@ -76,11 +83,15 @@ const withGoogleMapsApiKey = (config) => {
     
     if (existingApiKeyIndex >= 0) {
       // Update existing meta-data
-      console.log('[withGoogleMapsApiKey] Updating existing API key meta-data');
+      if (isDebugMode) {
+        console.log('[withGoogleMapsApiKey] Updating existing API key meta-data');
+      }
       metaDataArray[existingApiKeyIndex] = apiKeyMetaData;
     } else {
       // Add new meta-data
-      console.log('[withGoogleMapsApiKey] Adding new API key meta-data');
+      if (isDebugMode) {
+        console.log('[withGoogleMapsApiKey] Adding new API key meta-data');
+      }
       metaDataArray.push(apiKeyMetaData);
     }
     
@@ -89,8 +100,11 @@ const withGoogleMapsApiKey = (config) => {
       (meta) => meta && meta.$ && meta.$['android:name'] === 'com.google.android.geo.API_KEY'
     );
     if (verifyIndex >= 0) {
-      console.log('[withGoogleMapsApiKey] ✓ API key meta-data successfully added/updated');
+      if (isDebugMode) {
+        console.log('[withGoogleMapsApiKey] ✓ API key meta-data successfully added/updated');
+      }
     } else {
+      // Always log errors, but without exposing the key
       console.error('[withGoogleMapsApiKey] ✗ Failed to add API key meta-data!');
     }
     
