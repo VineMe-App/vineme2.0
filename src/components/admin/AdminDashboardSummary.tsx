@@ -86,9 +86,7 @@ export function AdminDashboardSummary({
 
   const notificationCounts = {
     group_requests: groupsStats?.pending || 0, // Show actual count of groups pending approval
-    join_requests: unreadNotifications.filter(
-      (n: any) => n.type === 'join_request_received'
-    ).length,
+    join_requests: requestsStats?.outstandingRequests || 0,
   };
 
   const isLoading =
@@ -246,9 +244,10 @@ export function AdminDashboardSummary({
       <View style={styles.statsSection}>
         {/* Newcomers */}
         <View style={styles.statCard}>
-          <Text style={styles.statTitle}>Newcomers</Text>
-          <SimplePieChart segments={newcomersChartData} />
-        </View>
+          {/* <Text style={styles.statTitle}>Newcomers</Text> */}
+          <Text style={styles.statTitle}>Newcomers requesting</Text>
+         <SimplePieChart segments={newcomersChartData} />
+       </View>
 
         {/* Groups */}
         <View style={styles.statCard}>

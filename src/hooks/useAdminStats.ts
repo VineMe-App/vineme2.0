@@ -33,43 +33,98 @@ export const useNewcomersStats = () => {
   return useQuery({
     queryKey: ['admin', 'newcomers-stats', userProfile?.service_id],
     queryFn: async (): Promise<NewcomersStats> => {
-      if (!userProfile?.service_id) {
-        throw new Error('No service ID found');
+      if (!userProfile?.service_id || !userProfile.church_id) {
+        throw new Error('No service or church ID found');
       }
 
-      // Get all newcomers in the admin's service
+      // Get all newcomers in the admin's church (across services)
       const { data: newcomers, error: newcomersError } = await supabase
         .from('users')
         .select('id')
-        .eq('service_id', userProfile.service_id)
+        .eq('church_id', userProfile.church_id)
         .eq('newcomer', true);
 
       if (newcomersError) throw newcomersError;
 
-      const total = newcomers?.length || 0;
+      // Original total based on all newcomers in the service
+      // const total = newcomers?.length || 0;
+      // if (total === 0) {
+      //   return { total: 0, connected: 0, notConnected: 0 };
+      // }
+
+      const newcomerIds = newcomers.map((n: { id: string }) => n.id);
+
+      // Early return if no newcomers (avoid Supabase error with empty .in() filter)
+      if (newcomerIds.length === 0) {
+        return { total: 0, connected: 0, notConnected: 0 };
+      }
+
+      // Only consider newcomers who have at least one membership (i.e. have requested to join a group)
+      const { data: membershipRequests, error: membershipRequestsError } =
+        await supabase
+          .from('group_memberships')
+          .select(
+            `
+            user_id,
+            status,
+            journey_status,
+            group:groups(id, service_id, status)
+          `
+          )
+          .in('user_id', newcomerIds);
+
+      if (membershipRequestsError) throw membershipRequestsError;
+
+      const requestingUserIds = new Set(
+        membershipRequests
+          ?.filter(
+            (m: any) =>
+              m.group?.service_id === userProfile.service_id &&
+              m.group?.status === 'approved'
+          )
+          .map((m: any) => m.user_id) || []
+      );
+
+      const requestingNewcomerIds = newcomerIds.filter((id) =>
+        requestingUserIds.has(id)
+      );
+
+      const total = requestingNewcomerIds.length;
 
       if (total === 0) {
         return { total: 0, connected: 0, notConnected: 0 };
       }
 
-      const newcomerIds = newcomers.map((n: { id: string }) => n.id);
-
       // Get all memberships for these newcomers where journey_status = 3
       const { data: connectedMemberships, error: membershipError } =
         await supabase
           .from('group_memberships')
-          .select('user_id')
-          .in('user_id', newcomerIds)
-          .eq('journey_status', 3);
+          .select(
+            `
+            user_id,
+            journey_status,
+            group:groups(id, service_id, status)
+          `
+          )
+          .in('user_id', requestingNewcomerIds);
 
       if (membershipError) throw membershipError;
 
       // Get unique user IDs who have reached journey_status 3
       const connectedUserIds = new Set(
-        connectedMemberships?.map((m: { user_id: string }) => m.user_id) || []
+        connectedMemberships
+          ?.filter(
+            (m: any) =>
+              m.journey_status === 3 &&
+              m.group?.service_id === userProfile.service_id &&
+              m.group?.status === 'approved'
+          )
+          .map((m: any) => m.user_id) || []
       );
 
-      const connected = connectedUserIds.size;
+      const connected = requestingNewcomerIds.filter((id) =>
+        connectedUserIds.has(id)
+      ).length;
       const notConnected = total - connected;
 
       return {

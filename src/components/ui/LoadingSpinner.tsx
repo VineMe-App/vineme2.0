@@ -4,8 +4,10 @@ import { Text } from './Text';
 import { ThemeContext } from '../../theme/provider/ThemeContext';
 import { fadeIn, pulse } from '../../utils/animations';
 
+type SpinnerSize = 'small' | 'medium' | 'large';
+
 interface LoadingSpinnerProps {
-  size?: 'small' | 'large';
+  size?: SpinnerSize;
   color?: string;
   message?: string;
   overlay?: boolean;
@@ -46,6 +48,14 @@ export function LoadingSpinner({
     ? [styles.container, styles.overlay]
     : styles.container;
 
+  const indicatorNativeSize = size === 'small' ? 'small' : 'large';
+  const indicatorStyle =
+    size === 'small'
+      ? styles.indicatorSmall
+      : size === 'medium'
+        ? styles.indicatorMedium
+        : styles.indicatorLarge;
+
   return (
     <Animated.View
       style={[
@@ -58,9 +68,9 @@ export function LoadingSpinner({
       testID={testID}
     >
       <ActivityIndicator
-        size={size}
+        size={indicatorNativeSize}
         color={spinnerColor}
-        style={size === 'large' ? styles.indicatorLarge : styles.indicatorSmall}
+        style={indicatorStyle}
       />
       {message && (
         <Animated.View style={animated && { opacity: fadeAnim }}>
@@ -83,9 +93,13 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
   },
+  indicatorMedium: {
+    width: 32,
+    height: 32,
+  },
   indicatorLarge: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
   },
   overlay: {
     position: 'absolute',

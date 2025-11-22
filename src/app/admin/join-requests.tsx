@@ -120,11 +120,11 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
       case 1:
         return 'Reached out to';
       case 2:
-        return 'Met with';
+        return 'Spoken to';
       case 3:
-        return 'Connected';
+        return 'Attended CG';
       default:
-        return 'Not started';
+        return 'No contact';
     }
   };
 
@@ -154,7 +154,24 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
       <View style={styles.userSection}>
         <Avatar imageUrl={request.user?.avatar_url} name={fullName} size={48} />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{userName}</Text>
+          <View style={styles.userHeaderRow}>
+            <Text style={styles.userName}>{userName}</Text>
+            {request.user?.newcomer && (
+              <Badge variant="warning" size="small" style={styles.newcomerBadge}>
+                Newcomer
+              </Badge>
+            )}
+          </View>
+          {(request.user as any)?.church?.name && (
+            <Text style={styles.metaText}>
+              Church: {(request.user as any).church.name}
+            </Text>
+          )}
+          {(request.user as any)?.service?.name && (
+            <Text style={styles.metaText}>
+              Service: {(request.user as any).service.name}
+            </Text>
+          )}
           <Text style={styles.requestDate}>
             Requested {new Date(request.created_at || '').toLocaleDateString()}
           </Text>
@@ -585,14 +602,26 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
   },
+  userHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   userName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
     marginBottom: 2,
   },
+  newcomerBadge: {
+    marginLeft: 'auto',
+  },
   requestDate: {
     fontSize: 13,
+    color: '#6b7280',
+  },
+  metaText: {
+    fontSize: 12,
     color: '#6b7280',
   },
   groupSection: {
