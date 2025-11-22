@@ -1024,35 +1024,9 @@ export class UserAdminService {
         };
       }
 
-      // Determine if current admin is scoped to a specific service
-      const {
-        data: { user: authUser },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError) {
-        return { data: null, error: new Error(authError.message) };
-      }
-
-      let adminServiceId: string | null = null;
-
-      if (!authUser) {
-        return { data: null, error: new Error('User not authenticated') };
-      }
-
-      if (authUser.id) {
-        const { data: adminProfile, error: profileError } = await supabase
-          .from('users')
-          .select('service_id')
-          .eq('id', authUser.id)
-          .single();
-
-        if (profileError) {
-          return { data: null, error: new Error(profileError.message) };
-        }
-
-        adminServiceId = adminProfile?.service_id || null;
-      }
+      // For church-wide management views we do NOT filter by the admin's service.
+      // This query powers church-level dashboards and shows all church members
+      // regardless of which service they or the admin belongs to.
 
       let query = supabase
         .from('users')
@@ -1095,16 +1069,19 @@ export class UserAdminService {
       }
 
       // Transform to include group status
-      const serviceFilter = adminServiceId;
+      // Note: For church-wide views, we do NOT filter by service when calculating
+      // is_connected or group_count, as members connected to other services should
+      // still be classified as connected. All active approved groups across all
+      // services in the church are counted.
 
       let usersWithStatus: UserWithGroupStatus[] =
         data?.map((user) => {
+          // Count all active approved groups across all services (church-wide view)
           const activeGroups =
             user.group_memberships?.filter(
               (m: any) =>
                 m.status === 'active' &&
-                m.group?.status === 'approved' &&
-                (!serviceFilter || m.group?.service_id === serviceFilter)
+                m.group?.status === 'approved'
             ) || [];
 
           return {
