@@ -1075,10 +1075,10 @@ export class UserAdminService {
         .eq('church_id', churchId)
         .order('name');
 
-      // Scope results to the admin's service when applicable
-      if (adminServiceId) {
-        query = query.eq('service_id', adminServiceId);
-      }
+      // For church-wide management views we must not scope results to the admin's
+      // own service (if they have one). This query powers church-level dashboards
+      // and is protected by `manage_church_users`, so applying the service filter
+      // would incorrectly hide members from other services within the church.
 
       // Apply pagination if provided
       if (pagination) {
