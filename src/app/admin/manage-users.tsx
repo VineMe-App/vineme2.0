@@ -114,8 +114,11 @@ export default function ManageUsersScreen() {
     await Promise.all([refetch(), refetchSummary()]);
   };
 
-  const handleUserPress = (userId: string) => {
-    router.push(`/user/${userId}`);
+  const handleUserPress = () => {
+    Alert.alert(
+      'Profile unavailable',
+      'Viewing user profiles from this screen is not available right now.'
+    );
   };
 
   if (error) {
