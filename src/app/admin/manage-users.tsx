@@ -114,7 +114,8 @@ export default function ManageUsersScreen() {
     await Promise.all([refetch(), refetchSummary()]);
   };
 
-  const handleUserPress = () => {
+  const handleUserPress = (userId: string) => {
+    console.log(`User profile view attempted for user ID: ${userId}`);
     Alert.alert(
       'Profile unavailable',
       'Viewing user profiles from this screen is not available right now.'
