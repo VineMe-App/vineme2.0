@@ -64,20 +64,9 @@ export class MapClusterer {
     bbox: [number, number, number, number], // [west, south, east, north]
     zoom: number
   ): (Cluster | ClusterPoint)[] {
-    // At zoom levels 11-13 where clusters frequently split/combine (18->9,8,1),
-    // skip bounds filtering entirely to prevent groups from disappearing
-    // Only cluster all points to ensure all groups are included
-    if (zoom >= 11 && zoom <= 13) {
-      // Use all points without bounds filtering during cluster transitions
-      // If zoom is high enough, return individual points
-      if (zoom >= this.options.maxZoom) {
-        return this.points;
-      }
-      // Perform clustering on all points
-      return this.clusterPoints(this.points, zoom);
-    }
-    
-    // For other zoom levels, use bounds filtering with very generous buffer
+    // For zoom levels 11-13 where clusters frequently split/combine (18->9,8,1),
+    // use a larger buffer but still rely on bounds filtering to avoid reprocessing
+    // the entire dataset on every pan.
     const minLng = bbox[0];
     const minLat = bbox[1];
     const maxLng = bbox[2];
@@ -85,11 +74,11 @@ export class MapClusterer {
 
     const lngRange = maxLng - minLng;
     const latRange = maxLat - minLat;
-    
+
     // Use a very large buffer multiplier to include groups well outside the viewport
-    const bufferMultiplier = 2.0; // 200% buffer = 3x the viewport size
-    const minBuffer = 0.1; // Minimum 0.1 degrees (~11km)
-    
+    const bufferMultiplier = zoom >= 11 && zoom <= 13 ? 3.0 : 2.0; // Extra padding mid-zoom
+    const minBuffer = zoom >= 11 && zoom <= 13 ? 0.2 : 0.1; // Ensure generous bounds mid-zoom
+
     const lngBuffer = Math.max(lngRange * bufferMultiplier, minBuffer);
     const latBuffer = Math.max(latRange * bufferMultiplier, minBuffer);
 
@@ -108,18 +97,26 @@ export class MapClusterer {
       }
       // For cases crossing date line (west > east), check both sides
       return (
-        point.longitude >= minLng - lngBuffer || 
+        point.longitude >= minLng - lngBuffer ||
         point.longitude <= maxLng + lngBuffer
       );
     });
 
+    const midZoom = zoom >= 11 && zoom <= 13;
+    const pointsToCluster = midZoom && pointsInBounds.length === 0 ? this.points : pointsInBounds;
+
     // If zoom is high enough, return individual points
     if (zoom >= this.options.maxZoom) {
-      return pointsInBounds;
+      return pointsToCluster;
+    }
+
+    if (midZoom) {
+      // Cluster with bounded set to avoid O(N^2) work while keeping generous padding
+      return this.clusterPoints(pointsToCluster, zoom);
     }
 
     // Perform clustering
-    return this.clusterPoints(pointsInBounds, zoom);
+    return this.clusterPoints(pointsToCluster, zoom);
   }
 
   /**
