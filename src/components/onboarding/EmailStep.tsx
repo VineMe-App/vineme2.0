@@ -61,8 +61,16 @@ export default function EmailStep({
       return;
     }
 
-    // Link email to user account
-    const result = await linkEmail(email.trim(), {
+    const trimmedEmail = email.trim();
+
+    // If email matches the user's existing email, skip linking and proceed
+    if (user?.email && trimmedEmail.toLowerCase() === user.email.toLowerCase()) {
+      onNext({});
+      return;
+    }
+
+    // Link email to user account (only if it's different)
+    const result = await linkEmail(trimmedEmail, {
       marketingOptIn: newsletterOptIn,
     });
 
