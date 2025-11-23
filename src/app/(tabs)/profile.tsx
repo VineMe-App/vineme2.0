@@ -27,7 +27,7 @@ import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
 import { useTheme } from '@/theme/provider/useTheme';
 import { getDisplayName, getFullName } from '@/utils/name';
-import { setDeletionFlowActive } from '@/utils/errorSuppression';
+import { setDeletionFlowActive, isDeletionFlowActive } from '@/utils/errorSuppression';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 // Admin dashboard summary moved to /admin route
@@ -201,22 +201,31 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Set flag to suppress expected post-deletion errors
+              // Set flag FIRST to suppress error screen and post-deletion errors
               setDeletionFlowActive(true);
               
-              await deleteAccountMutation.mutateAsync(user.id);
-              await signOut();
-              // Don't navigate manually - let the root layout handle it
-              // This prevents race conditions with the layout's navigation logic
+              // Wait a tiny bit for the flag to take effect and prevent error screen flash
+              await new Promise(resolve => setTimeout(resolve, 50));
               
-              // Reset flag after a short delay to allow queries to complete
+              // Start deletion
+              await deleteAccountMutation.mutateAsync(user.id);
+              
+              // Navigate immediately after successful deletion
+              router.replace('/(auth)/welcome');
+              
+              // Then sign out (this will clear auth state but we've already navigated)
+              await signOut();
+              
+              // Reset flag after a short delay to allow cleanup
               setTimeout(() => setDeletionFlowActive(false), 2000);
             } catch (error) {
-              // Reset flag on error
+              // Reset flag on error so error can be shown
               setDeletionFlowActive(false);
               
+              console.error('[handleDeleteAccount] Error:', error);
+              
               // Check if it's a sole leader error (expected validation error)
-              const errorMessage = error instanceof Error ? error.message : '';
+              const errorMessage = error instanceof Error ? error.message : String(error);
               if (errorMessage.includes('sole leader')) {
                 // This is expected user feedback, not a system error
                 Alert.alert(
@@ -228,11 +237,11 @@ export default function ProfileScreen() {
                 return;
               }
               
-              // For unexpected errors, show generic message
-              Alert.alert(
-                'Error',
-                'Failed to delete account. Please try again.'
-              );
+              // For unexpected errors, show generic message with more details in dev
+              const userMessage = __DEV__ 
+                ? `Failed to delete account: ${errorMessage}`
+                : 'Failed to delete account. Please try again.';
+              Alert.alert('Error', userMessage);
             }
           },
         },
@@ -240,7 +249,10 @@ export default function ProfileScreen() {
     );
   };
 
-  if (profileError) {
+  // Don't show error screen during account deletion - user is being navigated away
+  const deletionActive = isDeletionFlowActive();
+  
+  if (profileError && !deletionActive) {
     return (
       <SafeAreaView
         style={[
@@ -258,7 +270,7 @@ export default function ProfileScreen() {
     );
   }
 
-  if (!userProfile && !isLoading) {
+  if (!userProfile && !isLoading && !deletionActive) {
     return (
       <SafeAreaView
         style={[
@@ -271,6 +283,24 @@ export default function ProfileScreen() {
             Profile not found
           </Text>
           <Button title="Refresh" onPress={handleRefresh} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
+  // Show loading state during deletion instead of error
+  if (deletionActive || (!userProfile && isLoading)) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
+        <View style={styles.errorContainer}>
+          <Text variant="body" style={styles.errorText}>
+            Loading...
+          </Text>
         </View>
       </SafeAreaView>
     );
