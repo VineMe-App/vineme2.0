@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  TextInput,
 } from 'react-native';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
-import { Button } from '../ui';
+import { Modal } from '../ui';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../theme/provider/useTheme';
 
 interface FilterPanelProps {
   isVisible: boolean;
@@ -26,34 +26,20 @@ const MEETING_DAYS = [
   { label: 'Saturday', value: 'Saturday' },
 ];
 
-const GROUP_CATEGORIES = [
-  { label: 'Bible Study', value: 'bible-study' },
-  { label: 'Prayer Group', value: 'prayer' },
-  { label: 'Youth Group', value: 'youth' },
-  { label: "Women's Ministry", value: 'womens' },
-  { label: "Men's Ministry", value: 'mens' },
-  { label: 'Small Group', value: 'small-group' },
-  { label: 'Fellowship', value: 'fellowship' },
-  { label: 'Discipleship', value: 'discipleship' },
-];
-
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   isVisible,
   onClose,
 }) => {
+  const { theme } = useTheme();
   const {
     filters,
     setMeetingDays,
-    setCategories,
-    setSearchQuery,
     setOnlyWithFriends,
     setHideFullGroups,
     clearFilters,
   } = useGroupFiltersStore();
 
-  const [localSearchQuery, setLocalSearchQuery] = useState(filters.searchQuery);
-
-  if (!isVisible) return null;
+  const styles = createStyles(theme);
 
   const handleMeetingDayToggle = (day: string) => {
     const newDays = filters.meetingDays.includes(day)
@@ -62,87 +48,64 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setMeetingDays(newDays);
   };
 
-  const handleCategoryToggle = (category: string) => {
-    const newCategories = filters.categories.includes(category)
-      ? filters.categories.filter((c) => c !== category)
-      : [...filters.categories, category];
-    setCategories(newCategories);
-  };
-
-  const handleSearchSubmit = () => {
-    setSearchQuery(localSearchQuery);
-  };
-
-  const handleClearFilters = () => {
+  const handleReset = () => {
     clearFilters();
-    setLocalSearchQuery('');
   };
-
-  const hasActiveFilters =
-    filters.meetingDays.length > 0 ||
-    filters.categories.length > 0 ||
-    filters.searchQuery.length > 0 ||
-    filters.onlyWithFriends ||
-    filters.hideFullGroups;
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.panel}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Filter Groups</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
+    <Modal
+      isVisible={isVisible}
+      onClose={onClose}
+      variant="centered"
+      scrollable={false}
+      closeOnOverlayPress={true}
+      showCloseButton={false}
+      size="medium"
+    >
+      <View style={styles.modalContent}>
+        {/* Close Button */}
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={onClose}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="close" size={24} color="#2C2235" />
+        </TouchableOpacity>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Search Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Search</Text>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search group titles/descriptions..."
-                placeholderTextColor="#9ca3af"
-                value={localSearchQuery}
-                onChangeText={setLocalSearchQuery}
-                onSubmitEditing={handleSearchSubmit}
-                returnKeyType="search"
-              />
-              <TouchableOpacity
-                style={styles.searchButton}
-                onPress={handleSearchSubmit}
-              >
-                <Ionicons name="search-outline" size={16} color="#666" />
-              </TouchableOpacity>
-            </View>
-          </View>
+        {/* Title */}
+        <Text style={styles.title}>Filter groups</Text>
 
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Meeting Days Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Meeting Days</Text>
+            <Text style={styles.sectionTitle}>Meeting days</Text>
             <View style={styles.buttonGrid}>
-              {MEETING_DAYS.map((day) => (
-                <TouchableOpacity
-                  key={day.value}
-                  style={[
-                    styles.filterButton,
-                    filters.meetingDays.includes(day.value) &&
-                      styles.filterButtonActive,
-                  ]}
-                  onPress={() => handleMeetingDayToggle(day.value)}
-                >
-                  <Text
+              {MEETING_DAYS.map((day) => {
+                const isActive = filters.meetingDays.includes(day.value);
+                return (
+                  <TouchableOpacity
+                    key={day.value}
                     style={[
-                      styles.filterButtonText,
-                      filters.meetingDays.includes(day.value) &&
-                        styles.filterButtonTextActive,
+                      styles.filterButton,
+                      isActive && styles.filterButtonActive,
                     ]}
+                    onPress={() => handleMeetingDayToggle(day.value)}
                   >
-                    {day.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.filterButtonText,
+                        isActive && styles.filterButtonTextActive,
+                      ]}
+                    >
+                      {day.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -191,185 +154,132 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Categories Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Group Types</Text>
-            <View style={styles.buttonGrid}>
-              {GROUP_CATEGORIES.map((category) => (
-                <TouchableOpacity
-                  key={category.value}
-                  style={[
-                    styles.filterButton,
-                    filters.categories.includes(category.value) &&
-                      styles.filterButtonActive,
-                  ]}
-                  onPress={() => handleCategoryToggle(category.value)}
-                >
-                  <Text
-                    style={[
-                      styles.filterButtonText,
-                      filters.categories.includes(category.value) &&
-                        styles.filterButtonTextActive,
-                    ]}
-                  >
-                    {category.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
         </ScrollView>
 
-        <View style={styles.footer}>
-          {hasActiveFilters && (
-            <Button
-              title="Clear All Filters"
-              onPress={handleClearFilters}
-              variant="secondary"
-              style={styles.clearButton}
-            />
-          )}
-          <Button
-            title="Apply Filters"
-            onPress={onClose}
-            variant="primary"
-            style={styles.applyButton}
-          />
+        {/* Action Buttons */}
+        <View style={styles.footerActions}>
+          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.applyButton} onPress={onClose}>
+            <Text style={styles.applyButtonText}>Apply filters</Text>
+          </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </Modal>
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 1000,
-  },
-  panel: {
-    position: 'absolute',
-    right: 0,
-    top: 60,
-    height: '80%',
-    width: '85%',
-    maxWidth: 400,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: -2,
-      height: 0,
+const createStyles = (theme: any) =>
+  StyleSheet.create({
+    modalContent: {
+      width: '100%',
+      paddingHorizontal: 30,
+      paddingTop: 28,
+      paddingBottom: 20,
+      position: 'relative',
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeText: {
-    fontSize: 18,
-    color: '#666',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 12,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 12,
-    backgroundColor: '#f8f9fa',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
+    closeButton: {
+      position: 'absolute',
+      top: 16,
+      right: 12,
+      width: 24,
+      height: 24,
+      zIndex: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
-  },
-  searchInput: {
-    flex: 1,
-    padding: 12,
-    fontSize: 16,
-    color: '#1a1a1a',
-    backgroundColor: 'transparent',
-  },
-  searchButton: {
-    padding: 12,
-    borderLeftWidth: 1,
-    borderLeftColor: '#ddd',
-  },
-  searchButtonText: {
-    fontSize: 16,
-  },
-  buttonGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: '#e3ffd1',
-    borderColor: '#e3ffd1',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-  },
-  filterButtonTextActive: {
-    color: '#000',
-    fontWeight: '600',
-  },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    gap: 8,
-  },
-  clearButton: {
-    marginBottom: 8,
-  },
-  applyButton: {
-    // Primary button styles will be applied from Button component
-  },
-});
+    title: {
+      fontSize: 20,
+      fontWeight: '800', // ExtraBold
+      color: '#2C2235',
+      letterSpacing: -0.4,
+      lineHeight: 22,
+      marginBottom: 32,
+      fontFamily: theme.typography.fontFamily.bold,
+    },
+    scrollView: {
+      maxHeight: 400,
+    },
+    scrollContent: {
+      paddingBottom: 16,
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '500', // Medium
+      color: '#2C2235',
+      letterSpacing: -0.32,
+      lineHeight: 16,
+      marginBottom: 12,
+      fontFamily: theme.typography.fontFamily.medium,
+    },
+    buttonGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    filterButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: '#F5F3F5', // Exact color from Figma
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 28,
+      height: 28,
+    },
+    filterButtonActive: {
+      backgroundColor: '#2C2235',
+    },
+    filterButtonText: {
+      fontSize: 12,
+      fontWeight: '500', // Medium from Figma
+      color: '#2C2235',
+      fontFamily: theme.typography.fontFamily.medium,
+      lineHeight: 12,
+      letterSpacing: 0,
+    },
+    filterButtonTextActive: {
+      color: '#F5F5F5', // Exact color from Figma variable
+    },
+    footerActions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    resetButton: {
+      flex: 1,
+      borderRadius: 100,
+      height: 42,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: '#2C2235',
+      backgroundColor: '#FFFFFF',
+    },
+    resetButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#2C2235',
+      fontFamily: theme.typography.fontFamily.bold,
+      textAlign: 'center',
+    },
+    applyButton: {
+      flex: 2,
+      backgroundColor: '#2C2235',
+      borderRadius: 100, // Pill shape from Figma
+      height: 42,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    applyButtonText: {
+      fontSize: 16,
+      fontWeight: '700', // Bold from Figma
+      color: '#FFFFFF',
+      fontFamily: theme.typography.fontFamily.bold,
+      textAlign: 'center',
+    },
+  });

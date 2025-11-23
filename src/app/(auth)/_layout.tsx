@@ -26,13 +26,6 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
-        name="email-login"
-        options={{
-          title: 'Email Login',
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
         name="onboarding"
         options={{
           title: 'Onboarding',

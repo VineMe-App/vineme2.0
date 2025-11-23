@@ -101,7 +101,7 @@ export default function PhoneSignUpScreen() {
   };
 
   const handleSignInWithEmail = () => {
-    router.push('/(auth)/email-login');
+    router.push('/(auth)/phone-login');
   };
 
   const displayPhone = fullPhone || `${countryCode}${sanitizedLocalNumber}`;
@@ -269,11 +269,13 @@ const styles = StyleSheet.create({
   },
   primaryScroll: {
     paddingHorizontal: 32,
-    paddingVertical: 24,
+    paddingTop: 100,
+    paddingBottom: 24,
   },
   secondaryScroll: {
     paddingHorizontal: 32,
-    paddingVertical: 32,
+    paddingTop: 100,
+    paddingBottom: 32,
   },
   screen: {
     flex: 1,
@@ -284,7 +286,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   heroSpacing: {
-    marginTop: 16,
+    marginTop: 0,
   },
   inputSection: {
     width: '100%',

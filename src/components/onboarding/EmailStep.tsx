@@ -64,11 +64,31 @@ export default function EmailStep({
     }
 
     // Check if email is already linked to this user
-    // If it matches the current user's email, skip linking and proceed
+    // If it matches the current user's email, skip linking but still update marketing preference
     if (user?.email && trimmedEmail.toLowerCase() === user.email.toLowerCase()) {
-      // Email already linked, just proceed
-      // Marketing preference will be saved when profile is created
-      onNext({});
+      // Email already linked, but we still need to save marketing preference
+      setError(null);
+      try {
+        // Directly update marketing preference since email is already linked
+        const { updateUserProfile, user: currentUser } = useAuthStore.getState();
+        if (currentUser?.id) {
+          await updateUserProfile({ marketing_opt_in: newsletterOptIn });
+        }
+        onNext({});
+      } catch (profileError) {
+        // If updating profile fails, try using linkEmail as fallback
+        // This handles the case where profile doesn't exist yet
+        const result = await linkEmail(trimmedEmail, {
+          marketingOptIn: newsletterOptIn,
+        });
+        if (result.success) {
+          onNext({});
+        } else {
+          // If both fail, just proceed - preference will be saved during profile creation
+          console.warn('Failed to update marketing preference, will be saved during profile creation:', profileError);
+          onNext({});
+        }
+      }
       return;
     }
 

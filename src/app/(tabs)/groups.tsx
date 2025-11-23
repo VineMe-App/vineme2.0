@@ -324,7 +324,6 @@ export default function GroupsScreen() {
   const renderEmptyState = () => {
     const hasFilters =
       filters.meetingDays.length > 0 ||
-      filters.categories.length > 0 ||
       filters.searchQuery.length > 0 ||
       filters.onlyWithFriends;
 
@@ -739,8 +738,8 @@ export default function GroupsScreen() {
               size={20}
               color={
                 sortBy === 'alphabetical'
-                  ? '#FFFFFF'
-                  : theme.colors.text.primary
+                  ? '#FF0083'
+                  : '#2C2235'
               }
             />
             <Text
@@ -766,15 +765,17 @@ export default function GroupsScreen() {
               }
               setSortBy('distance');
               setShowSortOptions(false);
-              // Open search bar for location input when sorting by distance
+              // Switch to location search mode and open search bar
+              setIsLocationSearchMode(true);
               setShowSearch(true);
+              setLocationSearchError(null);
             }}
           >
             <Ionicons
               name="navigate-outline"
               size={20}
               color={
-                sortBy === 'distance' ? '#FFFFFF' : theme.colors.text.primary
+                sortBy === 'distance' ? '#FF0083' : '#2C2235'
               }
             />
             <Text
@@ -791,6 +792,7 @@ export default function GroupsScreen() {
           <TouchableOpacity
             style={[
               styles.sortOption,
+              styles.sortOptionLast,
               sortBy === 'friends' && styles.sortOptionSelected,
             ]}
             onPress={() => {
@@ -812,7 +814,7 @@ export default function GroupsScreen() {
               name="people-outline"
               size={20}
               color={
-                sortBy === 'friends' ? '#FFFFFF' : theme.colors.text.primary
+                sortBy === 'friends' ? '#FF0083' : '#2C2235'
               }
             />
             <Text
@@ -867,7 +869,7 @@ export default function GroupsScreen() {
               Helpful tips
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Use filters and search to narrow by day, category, or friends in
+              • Use filters and search to narrow by day or friends in
               a group.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
@@ -1011,8 +1013,9 @@ const styles = StyleSheet.create({
   title: {
     color: '#2C2235',
     fontSize: 22,
-    letterSpacing: -1.1,
-    fontWeight: '900',
+    lineHeight: 22,
+    letterSpacing: -0.44,
+    fontWeight: '800',
   },
   headerActions: {
     flexDirection: 'row',
@@ -1150,28 +1153,46 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   sortOptionsPanel: {
-    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 8,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   sortOption: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 8,
     marginBottom: 4,
+    backgroundColor: 'transparent',
+  },
+  sortOptionLast: {
+    marginBottom: 0,
   },
   sortOptionSelected: {
-    backgroundColor: '#FF0083',
+    backgroundColor: '#FFE5F3',
   },
   sortOptionText: {
     marginLeft: 12,
-    color: '#1a1a1a',
+    color: '#2C2235',
+    fontSize: 14,
+    fontWeight: '500',
   },
   sortOptionTextSelected: {
-    color: '#fff',
+    color: '#2C2235',
+    fontWeight: '600',
   },
   infoModalContent: {
     paddingVertical: 4,
