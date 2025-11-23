@@ -3,7 +3,6 @@ import { persist } from 'zustand/middleware';
 
 export interface GroupFilters {
   meetingDays: string[];
-  categories: string[];
   searchQuery: string;
   onlyWithFriends: boolean;
   hideFullGroups: boolean;
@@ -12,7 +11,6 @@ export interface GroupFilters {
 interface GroupFiltersState {
   filters: GroupFilters;
   setMeetingDays: (days: string[]) => void;
-  setCategories: (categories: string[]) => void;
   setSearchQuery: (query: string) => void;
   setOnlyWithFriends: (only: boolean) => void;
   setHideFullGroups: (hide: boolean) => void;
@@ -22,7 +20,6 @@ interface GroupFiltersState {
 
 const defaultFilters: GroupFilters = {
   meetingDays: [],
-  categories: [],
   searchQuery: '',
   onlyWithFriends: false,
   hideFullGroups: false,
@@ -36,11 +33,6 @@ export const useGroupFiltersStore = create<GroupFiltersState>()(
       setMeetingDays: (days: string[]) =>
         set((state) => ({
           filters: { ...state.filters, meetingDays: days },
-        })),
-
-      setCategories: (categories: string[]) =>
-        set((state) => ({
-          filters: { ...state.filters, categories },
         })),
 
       setSearchQuery: (query: string) =>

@@ -324,7 +324,6 @@ export default function GroupsScreen() {
   const renderEmptyState = () => {
     const hasFilters =
       filters.meetingDays.length > 0 ||
-      filters.categories.length > 0 ||
       filters.searchQuery.length > 0 ||
       filters.onlyWithFriends;
 
@@ -870,7 +869,7 @@ export default function GroupsScreen() {
               Helpful tips
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Use filters and search to narrow by day, category, or friends in
+              • Use filters and search to narrow by day or friends in
               a group.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
