@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
   Platform,
   Image,
   TouchableOpacity,
+  Linking,
 } from 'react-native';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Card } from '@/components/ui/Card';
@@ -27,6 +28,7 @@ import {
 } from '@/services/notifications';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CommunicationAndSecurityScreen() {
   const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
@@ -81,6 +83,7 @@ export default function CommunicationAndSecurityScreen() {
   });
   const [hasNotifChanges, setHasNotifChanges] = useState(false);
   const [pushGranted, setPushGranted] = useState<boolean | null>(null);
+  const hasDisabledReferralsRef = useRef(false);
 
   useEffect(() => {
     checkPermissions()
@@ -102,13 +105,21 @@ export default function CommunicationAndSecurityScreen() {
         email_notifications: !!settings.email_notifications,
       });
       setHasNotifChanges(false);
-      
-      // Ensure referral_updates is always disabled
-      if (settings.referral_updates) {
-        updateSettings({ referral_updates: false });
-      }
     }
-  }, [settings, updateSettings]);
+  }, [settings]);
+
+  // Disable referral_updates once when settings load (if enabled)
+  useEffect(() => {
+    if (settings?.referral_updates && !hasDisabledReferralsRef.current) {
+      hasDisabledReferralsRef.current = true;
+      // Defer to next tick to break render cycle
+      setTimeout(() => {
+        updateSettings({ referral_updates: false });
+      }, 100);
+    }
+    // Only depend on settings existence, not its contents to prevent loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!settings]);
 
   const toggleNotif = (key: keyof typeof localNotif) => {
     setLocalNotif((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -566,6 +577,31 @@ export default function CommunicationAndSecurityScreen() {
             )}
           </View>
         </Card>
+
+        {/* Policies Section */}
+        <Card style={styles.card}>
+          <Text style={styles.cardTitle}>Policies</Text>
+          <TouchableOpacity
+            style={styles.policyLink}
+            onPress={() => {
+              Linking.openURL('https://hexagonal-aunt-16f.notion.site/VineMe-T-Cs-40a1160f674f4e87837f70e8513b558a');
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.policyLinkText}>Terms & Conditions</Text>
+            <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.policyLink}
+            onPress={() => {
+              Linking.openURL('https://hexagonal-aunt-16f.notion.site/VineMe-Privacy-Policy-1b7eccb261fd4a4fa053f8c5d09bd7ca');
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.policyLinkText}>Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+          </TouchableOpacity>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
@@ -683,4 +719,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   credBlock: {},
+  policyLink: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  policyLinkText: {
+    fontSize: 12,
+    color: '#2C2235',
+    fontWeight: '600',
+    letterSpacing: -0.6,
+  },
 });
