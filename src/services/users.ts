@@ -98,9 +98,11 @@ export class UserService {
       const accessToken = session.session.access_token;
 
       // Step 1: Call the RPC function to delete all user data from public schema
+      console.log('[deleteAccount] Step 1: Calling delete_my_account RPC...');
       const { data: rpcData, error: rpcError } = await supabase.rpc('delete_my_account');
       
       if (rpcError) {
+        console.error('[deleteAccount] RPC error:', rpcError);
         // Check if error is due to being sole leader
         if (rpcError.message?.includes('SOLE_LEADER:')) {
           // Extract the message after the prefix
@@ -110,16 +112,20 @@ export class UserService {
             error: new Error(message)
           };
         }
-        return { data: null, error: new Error(rpcError.message) };
+        return { data: null, error: new Error(rpcError.message || 'Failed to delete account data') };
       }
+      
+      console.log('[deleteAccount] RPC response:', rpcData);
       
       // Check if the RPC call was successful
       if (!rpcData || !rpcData.success) {
-        return { data: null, error: new Error('Account deletion failed') };
+        console.error('[deleteAccount] RPC returned unsuccessful result:', rpcData);
+        return { data: null, error: new Error(rpcData?.message || 'Account deletion failed') };
       }
 
       // Step 2: Delete the user from auth.users using the Edge Function
       // This ensures proper cleanup of sessions, refresh tokens, and email/phone
+      console.log('[deleteAccount] Step 2: Calling delete-auth-user edge function...');
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
       if (!supabaseUrl) {
         console.error('[deleteAccount] Missing EXPO_PUBLIC_SUPABASE_URL');
@@ -143,9 +149,12 @@ export class UserService {
       });
 
       if (fnError) {
-        console.error('[deleteAccount] Edge function error:', fnError);
-        return { data: null, error: new Error(fnError.message) };
+        console.error('[deleteAccount] Edge function invoke error:', fnError);
+        console.error('[deleteAccount] Edge function error details:', JSON.stringify(fnError, null, 2));
+        return { data: null, error: new Error(`Failed to delete auth account: ${fnError.message || 'Edge function invocation failed'}`) };
       }
+
+      console.log('[deleteAccount] Edge function response:', fnData);
 
       if (!fnData?.ok) {
         const message =
@@ -154,6 +163,7 @@ export class UserService {
         return { data: null, error: new Error(message) };
       }
 
+      console.log('[deleteAccount] Account deletion completed successfully');
       return { data: true, error: null };
     } catch (error) {
       return {

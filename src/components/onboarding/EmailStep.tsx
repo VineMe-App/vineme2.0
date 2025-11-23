@@ -54,36 +54,40 @@ export default function EmailStep({
   };
 
   const handleNext = async () => {
-    // Validate email
-    const validationError = validateEmail(email);
+    // Validate email format
+    const trimmedEmail = email.trim();
+    const validationError = validateEmail(trimmedEmail);
+    
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    const trimmedEmail = email.trim();
-
-    // If email matches the user's existing email, skip linking and proceed
+    // Check if email is already linked to this user
+    // If it matches the current user's email, skip linking and proceed
     if (user?.email && trimmedEmail.toLowerCase() === user.email.toLowerCase()) {
+      // Email already linked, just proceed
+      // Marketing preference will be saved when profile is created
       onNext({});
       return;
     }
 
-    // Link email to user account (only if it's different)
+    // Link the email to the user account
+    setError(null);
     const result = await linkEmail(trimmedEmail, {
       marketingOptIn: newsletterOptIn,
     });
 
     if (result.success) {
-      // Proceed to next step on success
+      // Email successfully linked, proceed to next step
       onNext({});
     } else {
-      // Show error if linking failed
-      setError(result.error || 'Failed to link email');
+      // Show error from linkEmail
+      setError(result.error || 'Failed to link email. Please try again.');
     }
   };
 
-  const disableContinue = isLoading || !email.trim();
+  const disableContinue = isLoading || !email.trim() || !!validateEmail(email.trim());
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

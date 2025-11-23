@@ -26,6 +26,7 @@ import {
   registerForPushNotifications,
 } from '../../services/notifications';
 import { buildInfo, describeBuild } from '../../devtools/buildInfo';
+import { isDeletionFlowActive } from '../../utils/errorSuppression';
 
 export function DevToolsOverlay() {
   const [open, setOpen] = useState(false);
@@ -571,6 +572,11 @@ function NotificationsPanel() {
     try {
       if (!user?.id) {
         console.warn('No user signed in');
+        return;
+      }
+      // Don't try to register for notifications during account deletion
+      if (isDeletionFlowActive()) {
+        console.warn('Skipping token fetch during account deletion');
         return;
       }
       await registerForPushNotifications(user.id);

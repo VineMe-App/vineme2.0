@@ -369,11 +369,14 @@ export const getNotificationSettings = async (userId: string) => {
       .from('user_notification_settings')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
-      // Not found error
-      console.error('Error fetching notification settings:', error);
+    if (error) {
+      // Handle errors (including "not found" which is expected if user doesn't exist)
+      if (error.code !== 'PGRST116') {
+        // Not a "not found" error, log it
+        console.error('Error fetching notification settings:', error);
+      }
       return null;
     }
 
@@ -1255,11 +1258,14 @@ export const getEnhancedNotificationSettings = async (
       .from('user_notification_settings')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
-      // Not found error
-      console.error('Error fetching enhanced notification settings:', error);
+    if (error) {
+      // Handle errors (including "not found" which is expected if user doesn't exist)
+      if (error.code !== 'PGRST116') {
+        // Not a "not found" error, log it
+        console.error('Error fetching enhanced notification settings:', error);
+      }
       return null;
     }
 

@@ -68,7 +68,14 @@ export function handleSupabaseError(
   // CRITICAL: Check for post-deletion errors FIRST, before processing error codes
   // This ensures we suppress expected errors during deletion/sign-out flows
   // BEFORE they get converted to ValidationError or other types
-  if (isPostDeletionError(error, context)) {
+  // Import here to avoid circular dependencies
+  const { isDeletionFlowActive } = require('./errorSuppression');
+  const deletionContext = {
+    ...context,
+    isPostDeletion: context?.isPostDeletion ?? isDeletionFlowActive(),
+  };
+  
+  if (isPostDeletionError(error, deletionContext)) {
     return createSilentError(error, 'Resource not found (expected after account deletion)');
   }
 
