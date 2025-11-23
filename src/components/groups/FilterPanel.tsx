@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  TextInput,
-  Platform,
 } from 'react-native';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
 import { Modal } from '../ui';
@@ -38,11 +36,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setMeetingDays,
     setOnlyWithFriends,
     setHideFullGroups,
-    setSearchQuery,
     clearFilters,
   } = useGroupFiltersStore();
 
-  const [localSearchQuery, setLocalSearchQuery] = useState(filters.searchQuery);
   const styles = createStyles(theme);
 
   const handleMeetingDayToggle = (day: string) => {
@@ -52,13 +48,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setMeetingDays(newDays);
   };
 
-  const handleSearchSubmit = () => {
-    setSearchQuery(localSearchQuery);
-  };
-
   const handleReset = () => {
     clearFilters();
-    setLocalSearchQuery('');
   };
 
   return (
@@ -89,28 +80,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Search Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Search</Text>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Hinted search text"
-                placeholderTextColor="rgba(44, 34, 53, 0.35)"
-                value={localSearchQuery}
-                onChangeText={setLocalSearchQuery}
-                onSubmitEditing={handleSearchSubmit}
-                returnKeyType="search"
-              />
-              <TouchableOpacity
-                style={styles.searchIconContainer}
-                onPress={handleSearchSubmit}
-              >
-                <Ionicons name="search-outline" size={24} color="#2C2235" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
           {/* Meeting Days Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Meeting days</Text>
@@ -227,7 +196,7 @@ const createStyles = (theme: any) =>
       color: '#2C2235',
       letterSpacing: -0.4,
       lineHeight: 22,
-      marginBottom: 16,
+      marginBottom: 32,
       fontFamily: theme.typography.fontFamily.bold,
     },
     scrollView: {
@@ -247,38 +216,6 @@ const createStyles = (theme: any) =>
       lineHeight: 16,
       marginBottom: 12,
       fontFamily: theme.typography.fontFamily.medium,
-    },
-    searchContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderRadius: 28, // Pill shape from Figma
-      backgroundColor: 'rgba(234, 234, 234, 0.5)',
-      height: 56,
-      paddingHorizontal: 4,
-      paddingVertical: 4,
-      position: 'relative',
-    },
-    searchInput: {
-      flex: 1,
-      paddingLeft: 20,
-      paddingRight: 60, // Extra padding on right for icon
-      paddingVertical: 0,
-      fontSize: 14,
-      color: '#2C2235',
-      backgroundColor: 'transparent',
-      fontFamily: theme.typography.fontFamily.regular,
-      lineHeight: 24,
-      height: 48,
-      includeFontPadding: false,
-    },
-    searchIconContainer: {
-      position: 'absolute',
-      right: 5,
-      width: 48,
-      height: 48,
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1,
     },
     buttonGrid: {
       flexDirection: 'row',
@@ -312,7 +249,6 @@ const createStyles = (theme: any) =>
     footerActions: {
       flexDirection: 'row',
       gap: 12,
-      marginTop: 20,
     },
     resetButton: {
       flex: 1,
