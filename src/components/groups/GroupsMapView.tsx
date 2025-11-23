@@ -316,38 +316,22 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     const endClustering = MapPerformanceMonitor.startClustering();
 
     try {
+      // Use even more generous bounds to ensure all groups are included during cluster splits
       const bounds = MapViewportOptimizer.getOptimalBounds(currentRegion);
       const zoom = MapViewportOptimizer.getZoomLevel(
         currentRegion.latitudeDelta
       );
       const newClusters = clusterer.getClusters(bounds, zoom);
 
-      // Only update if clusters actually changed to prevent unnecessary re-renders
-      setClusters((prevClusters) => {
-        if (prevClusters.length !== newClusters.length) {
-          return newClusters;
-        }
-
-        // Detect meaningful identity or position changes before updating state
-        const hasSignificantChange = newClusters.some((nextCluster, index) => {
-          const prevCluster = prevClusters[index];
-
-          if (!prevCluster || prevCluster.id !== nextCluster.id) {
-            return true;
-          }
-
-          return hasPositionChanged(prevCluster, nextCluster);
-        });
-
-        return hasSignificantChange ? newClusters : prevClusters;
-      });
+      // Always update clusters - ensure bounds are generous enough that all groups are included
+      setClusters(newClusters);
 
       MapPerformanceMonitor.recordPointCount(newClusters.length);
     } finally {
       endClustering();
       isUpdatingClusters.current = false;
     }
-  }, [enableClustering, currentRegion, clusterer, hasPositionChanged]);
+  }, [enableClustering, currentRegion, clusterer]);
 
   const resetViewTracking = useCallback(() => {
     setShouldTrackViewChanges(true);
@@ -372,6 +356,22 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       }
     };
   }, [clusters, activeGroupId, resetViewTracking]);
+
+  // Reload clusterer whenever groups change to ensure all groups are available
+  // This ensures groups don't get permanently filtered out
+  useEffect(() => {
+    if (enableClustering && clusterer && groups.length > 0) {
+      clusterer.load(groups);
+      // Trigger cluster update after a brief delay to ensure markers are processed
+      const timeoutId = setTimeout(() => {
+        if (currentRegion && markers.length > 0) {
+          updateClusters();
+        }
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups, enableClustering, clusterer]);
 
   // Initialize map region and process group locations
   // Only run when groups change, not when distanceOrigin changes
@@ -482,12 +482,13 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     }
 
     // Debounce cluster updates to prevent flashing during rapid zoom/pan
+    // Use shorter delay to ensure updates happen quickly during cluster splits
     const timeoutId = setTimeout(() => {
       const rafId = requestAnimationFrame(() => {
         updateClusters();
       });
       return () => cancelAnimationFrame(rafId);
-    }, 150); // 150ms debounce
+    }, 100); // Reduced from 150ms to 100ms for faster updates
 
     return () => clearTimeout(timeoutId);
   }, [currentRegion, markers, enableClustering, clusterer, updateClusters]);
