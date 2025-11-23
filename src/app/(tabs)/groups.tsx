@@ -94,39 +94,6 @@ export default function GroupsScreen() {
     }
   };
 
-  // Close and clear search bar when all icons are grey (no active filters/search/sort)
-  // Only close if there was something active that's now cleared (not just because showSearch is true)
-  // Note: distanceOrigin should persist even when filters are cleared - it's only cleared explicitly
-  useEffect(() => {
-    const hasActiveSearch = filters.searchQuery.length > 0;
-    // Check filters excluding search query (meetingDays, categories, onlyWithFriends, hideFullGroups)
-    const hasOtherFilters = 
-      filters.meetingDays.length > 0 ||
-      filters.categories.length > 0 ||
-      filters.onlyWithFriends ||
-      filters.hideFullGroups;
-    const hasActiveSort = sortBy !== 'alphabetical';
-    const hasLocationOrigin = !!distanceOrigin;
-    
-    // All icons are grey when:
-    // - No search query
-    // - No other active filters (categories, meeting days, etc.)
-    // - Sort is alphabetical
-    // - No distance origin (location search not active)
-    const allIconsGrey = !hasActiveSearch && !hasOtherFilters && !hasActiveSort && !hasLocationOrigin;
-    
-    // Only close the search bar if all icons are grey AND there's a search query to clear
-    // Don't clear distanceOrigin here - it should only be cleared explicitly by user action
-    // Don't close just because showSearch is true - user might have just opened it
-    if (allIconsGrey && filters.searchQuery.length > 0) {
-      setShowSearch(false);
-      setIsLocationSearchMode(false);
-      setLocationSearchError(null);
-      // Clear search query if it exists
-      setSearchQuery('');
-    }
-  }, [filters, sortBy, distanceOrigin, setSearchQuery]);
-
   // Close location search bar when switching away from distance sorting
   useEffect(() => {
     if (isLocationSearchMode && sortBy !== 'distance' && showSearch) {
