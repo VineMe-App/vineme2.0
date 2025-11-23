@@ -39,6 +39,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setOnlyWithFriends,
     setHideFullGroups,
     setSearchQuery,
+    clearFilters,
   } = useGroupFiltersStore();
 
   const [localSearchQuery, setLocalSearchQuery] = useState(filters.searchQuery);
@@ -53,6 +54,11 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const handleSearchSubmit = () => {
     setSearchQuery(localSearchQuery);
+  };
+
+  const handleReset = () => {
+    clearFilters();
+    setLocalSearchQuery('');
   };
 
   return (
@@ -181,10 +187,16 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           </View>
         </ScrollView>
 
-        {/* Apply Button */}
-        <TouchableOpacity style={styles.applyButton} onPress={onClose}>
-          <Text style={styles.applyButtonText}>Apply filters</Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.footerActions}>
+          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.applyButton} onPress={onClose}>
+            <Text style={styles.applyButtonText}>Apply filters</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
@@ -297,14 +309,35 @@ const createStyles = (theme: any) =>
     filterButtonTextActive: {
       color: '#F5F5F5', // Exact color from Figma variable
     },
+    footerActions: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 20,
+    },
+    resetButton: {
+      flex: 1,
+      borderRadius: 100,
+      height: 42,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: '#2C2235',
+      backgroundColor: '#FFFFFF',
+    },
+    resetButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#2C2235',
+      fontFamily: theme.typography.fontFamily.bold,
+      textAlign: 'center',
+    },
     applyButton: {
+      flex: 2,
       backgroundColor: '#2C2235',
       borderRadius: 100, // Pill shape from Figma
       height: 42,
       justifyContent: 'center',
       alignItems: 'center',
-      marginTop: 20,
-      width: '100%',
     },
     applyButtonText: {
       fontSize: 16,
