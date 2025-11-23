@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { Text } from '@/components/ui/Text';
 import { AuthButton } from '@/components/auth/AuthButton';
+import { AuthHero } from '@/components/auth/AuthHero';
 
 export default function NameStep({
   data,
@@ -15,11 +16,32 @@ export default function NameStep({
   const [lastName, setLastName] = useState('');
   const [firstNameError, setFirstNameError] = useState<string | null>(null);
   const [lastNameError, setLastNameError] = useState<string | null>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
     setFirstName(data.first_name || '');
     setLastName(data.last_name || '');
   }, [data.first_name, data.last_name]);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const validatePart = (value: string, label: string): string | null => {
     if (!value.trim()) {
@@ -67,17 +89,34 @@ export default function NameStep({
   const disableContinue = !firstName.trim() || !lastName.trim() || isLoading;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text variant="h3" weight="black" align="center" style={styles.title}>
-          What’s your name?
-        </Text>
-        <Text variant="bodyLarge" color="secondary" align="center" style={styles.subtitle}>
-          Share your first and last name so your church community can recognize you.
-        </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={[
+          styles.content,
+          isKeyboardVisible && styles.contentKeyboardVisible
+        ]}>
+        {!isKeyboardVisible && (
+          <AuthHero
+            title="What's your name?"
+            subtitle="Share your first and last name so your church community can recognize you."
+            containerStyle={styles.heroSpacing}
+          />
+        )}
+        {isKeyboardVisible && (
+          <View style={styles.keyboardHeader}>
+            <Text variant="h4" weight="black" align="center" style={styles.title}>
+              What's your name?
+            </Text>
+            <Text variant="bodyLarge" color="secondary" align="center" style={styles.subtitle}>
+              Share your first and last name so your church community can recognize you.
+            </Text>
+          </View>
+        )}
 
-        <View style={styles.inputGroup}>
-          <View style={styles.inputContainer}>
+        <View style={[
+          styles.inputGroup
+        ]}>
+          <View>
             <Text variant="labelSmall" color="secondary" style={styles.label}>
               First name
             </Text>
@@ -89,7 +128,6 @@ export default function NameStep({
               placeholderTextColor="#B4B4B4"
               autoCapitalize="words"
               autoCorrect={false}
-              autoFocus
               editable={!isLoading}
               maxLength={50}
             />
@@ -100,7 +138,7 @@ export default function NameStep({
             )}
           </View>
 
-          <View style={styles.inputContainer}>
+          <View>
             <Text variant="labelSmall" color="secondary" style={styles.label}>
               Last name
             </Text>
@@ -122,27 +160,50 @@ export default function NameStep({
             )}
           </View>
         </View>
+
+        {isKeyboardVisible && (
+          <View style={styles.keyboardFooter}>
+            <AuthButton
+              title="Next"
+              onPress={handleContinue}
+              loading={isLoading}
+              disabled={disableContinue}
+            />
+            <TouchableOpacity
+              onPress={onBack}
+              accessibilityRole="button"
+              style={styles.backButton}
+            >
+              <Text variant="body" color="secondary" align="center">
+                Back
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
-      <View style={styles.footer}>
-        <View style={styles.footerSpacer} />
-        <AuthButton
-          title="Next"
-          onPress={handleContinue}
-          loading={isLoading}
-          disabled={disableContinue}
-        />
-        <TouchableOpacity
-          onPress={onBack}
-          accessibilityRole="button"
-          style={styles.backButton}
-        >
-          <Text variant="body" color="secondary" align="center">
-            Back
-          </Text>
-        </TouchableOpacity>
+      {!isKeyboardVisible && (
+        <View style={styles.footer}>
+          <View style={styles.footerSpacer} />
+          <AuthButton
+            title="Next"
+            onPress={handleContinue}
+            loading={isLoading}
+            disabled={disableContinue}
+          />
+          <TouchableOpacity
+            onPress={onBack}
+            accessibilityRole="button"
+            style={styles.backButton}
+          >
+            <Text variant="body" color="secondary" align="center">
+              Back
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -158,20 +219,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  contentKeyboardVisible: {
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+  },
+  heroSpacing: {
+    marginBottom: 32,
+  },
+  keyboardHeader: {
+    marginBottom: 24,
+  },
   title: {
     color: '#2C2235',
     marginBottom: 12,
+    letterSpacing: -1.5,
+    fontWeight: '900',
   },
   subtitle: {
     color: '#2C2235',
-    marginBottom: 32,
     lineHeight: 24,
+    letterSpacing: -0.2,
+    maxWidth: 320,
+    marginTop: 4,
+    marginBottom: 12,
   },
   inputGroup: {
     gap: 24,
+    marginBottom: 24,
   },
-  inputContainer: {
-    gap: 8,
+  keyboardFooter: {
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 16,
   },
   label: {
     color: '#2C2235',

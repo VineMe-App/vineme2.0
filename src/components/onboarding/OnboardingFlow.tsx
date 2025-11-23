@@ -5,7 +5,6 @@ import {
   StyleSheet,
   StatusBar,
   Platform,
-  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -208,16 +207,14 @@ export default function OnboardingFlow() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.stepContainer}
       >
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <StepComponent
-            data={onboardingData}
-            onNext={handleNext}
-            onBack={handleBack}
-            canGoBack={currentStepIndex > 0}
-            isLoading={isLoading}
-            error={error}
-          />
-        </ScrollView>
+        <StepComponent
+          data={onboardingData}
+          onNext={handleNext}
+          onBack={handleBack}
+          canGoBack={currentStepIndex > 0}
+          isLoading={isLoading}
+          error={error}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

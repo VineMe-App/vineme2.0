@@ -219,11 +219,6 @@ export default function PhoneSignUpScreen() {
             Didn't receive a code? <Text style={styles.resendLink}>Resend</Text>
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSignInWithEmail} accessibilityRole="link">
-          <Text variant="body" style={styles.signInEmail}>
-            Sign in with email
-          </Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
