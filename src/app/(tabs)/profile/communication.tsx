@@ -102,8 +102,13 @@ export default function CommunicationAndSecurityScreen() {
         email_notifications: !!settings.email_notifications,
       });
       setHasNotifChanges(false);
+      
+      // Ensure referral_updates is always disabled
+      if (settings.referral_updates) {
+        updateSettings({ referral_updates: false });
+      }
     }
-  }, [settings]);
+  }, [settings, updateSettings]);
 
   const toggleNotif = (key: keyof typeof localNotif) => {
     setLocalNotif((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -136,7 +141,11 @@ export default function CommunicationAndSecurityScreen() {
         }
       }
 
-      await updateSettings({ ...localNotif });
+      // Always set referral_updates to false (temporarily disabled)
+      await updateSettings({ 
+        ...localNotif, 
+        referral_updates: false 
+      });
       Alert.alert('Saved', 'Notification settings updated.');
       setHasNotifChanges(false);
     } catch (e) {
