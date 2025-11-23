@@ -53,12 +53,29 @@ export default function EmailStep({
     return null;
   };
 
-  const handleNext = () => {
-    // Temporarily skip validation and email linking - just proceed to next page
-    onNext({});
+  const handleNext = async () => {
+    // Validate email
+    const validationError = validateEmail(email);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    // Link email to user account
+    const result = await linkEmail(email.trim(), {
+      marketingOptIn: newsletterOptIn,
+    });
+
+    if (result.success) {
+      // Proceed to next step on success
+      onNext({});
+    } else {
+      // Show error if linking failed
+      setError(result.error || 'Failed to link email');
+    }
   };
 
-  const disableContinue = isLoading;
+  const disableContinue = isLoading || !email.trim();
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
