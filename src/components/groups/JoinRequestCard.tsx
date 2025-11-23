@@ -526,23 +526,27 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
       />
 
       <View style={styles.actions}>
-        <Button
-          title="Archive"
-          onPress={handleArchive}
-          variant="secondary"
-          size="small"
-          disabled={isProcessing}
-          style={styles.archiveButton}
-        />
-        <Button
-          title="Add to group"
-          onPress={handleApprove}
-          variant="secondary"
-          size="small"
-          loading={approveRequestMutation.isPending}
-          disabled={!canActivate || isProcessing}
-          style={styles.approveButton}
-        />
+        <View style={styles.actionButtonWrapper}>
+          <Button
+            title="Archive"
+            onPress={handleArchive}
+            variant="secondary"
+            size="small"
+            disabled={isProcessing}
+            style={styles.archiveButton}
+          />
+        </View>
+        <View style={styles.actionButtonWrapper}>
+          <Button
+            title="Add to group"
+            onPress={handleApprove}
+            variant="secondary"
+            size="small"
+            loading={approveRequestMutation.isPending}
+            disabled={!canActivate || isProcessing}
+            style={styles.approveButton}
+          />
+        </View>
       </View>
 
       <ArchiveRequestModal
@@ -755,15 +759,25 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    width: '100%',
+    alignItems: 'stretch',
+    gap: 6,
     marginTop: 12,
   },
-  archiveButton: {
+  actionButtonWrapper: {
     flex: 1,
-    marginRight: 8,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
+  },
+  archiveButton: {
+    width: '100%',
+    minWidth: 0,
+    paddingHorizontal: 8,
   },
   approveButton: {
-    flex: 1,
-    marginLeft: 8,
+    width: '100%',
+    minWidth: 0,
+    paddingHorizontal: 8,
   },
 });

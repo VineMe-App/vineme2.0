@@ -141,34 +141,38 @@ function GroupManagementCard({
       <View style={styles.actionButtons}>
         {group.status === 'pending' && (
           <>
-            <Button
-              title="Approve"
-              onPress={() => onApprove(group.id)}
-              variant="primary"
-              size="small"
-              style={styles.actionButton}
-              disabled={isLoading}
-              accessibilityLabel={AdminAccessibilityLabels.adminAction(
-                'Approve',
-                'group',
-                group.title
-              )}
-              accessibilityHint="Double tap to approve this group request"
-            />
-            <Button
-              title="Decline"
-              onPress={() => onDecline(group.id)}
-              variant="error"
-              size="small"
-              style={styles.actionButton}
-              disabled={isLoading}
-              accessibilityLabel={AdminAccessibilityLabels.adminAction(
-                'Decline',
-                'group',
-                group.title
-              )}
-              accessibilityHint="Double tap to decline this group request"
-            />
+            <View style={styles.actionButtonWrapper}>
+              <Button
+                title="Approve"
+                onPress={() => onApprove(group.id)}
+                variant="primary"
+                size="small"
+                style={styles.actionButton}
+                disabled={isLoading}
+                accessibilityLabel={AdminAccessibilityLabels.adminAction(
+                  'Approve',
+                  'group',
+                  group.title
+                )}
+                accessibilityHint="Double tap to approve this group request"
+              />
+            </View>
+            <View style={styles.actionButtonWrapper}>
+              <Button
+                title="Decline"
+                onPress={() => onDecline(group.id)}
+                variant="error"
+                size="small"
+                style={styles.actionButton}
+                disabled={isLoading}
+                accessibilityLabel={AdminAccessibilityLabels.adminAction(
+                  'Decline',
+                  'group',
+                  group.title
+                )}
+                accessibilityHint="Double tap to decline this group request"
+              />
+            </View>
           </>
         )}
         {group.status === 'approved' && (
@@ -665,9 +669,7 @@ export default function ManageGroupsScreen() {
                     </Text>
                   </View>
 
-                  <View
-                    style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}
-                  >
+                  <View style={styles.filterContainer}>
                     {(['all', 'pending', 'approved', 'closed'] as const).map(
                       (key) => (
                         <TouchableOpacity
@@ -859,10 +861,20 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 4,
+    width: '100%',
+    alignItems: 'stretch',
+  },
+  actionButtonWrapper: {
+    flex: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
   },
   actionButton: {
-    flex: 1,
+    width: '100%',
+    minWidth: 0,
+    paddingHorizontal: 8,
   },
   emptyState: {
     flex: 1,
@@ -881,11 +893,23 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     textAlign: 'center',
   },
+  filterContainer: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+    width: '100%',
+  },
   filterChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    flex: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
     borderRadius: 16,
     backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterChipActive: {
     backgroundColor: '#007AFF',
@@ -894,6 +918,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#374151',
     fontWeight: '500',
+    textAlign: 'center',
   },
   filterChipTextActive: {
     color: '#fff',

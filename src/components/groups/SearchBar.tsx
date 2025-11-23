@@ -27,13 +27,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onErrorChange,
 }) => {
   const { filters, setSearchQuery } = useGroupFiltersStore();
-  const [localQuery, setLocalQuery] = useState(value || filters.searchQuery);
+  const [localQuery, setLocalQuery] = useState(
+    value !== undefined ? value : filters.searchQuery
+  );
 
   // Update local state when store changes (e.g., when filters are cleared)
   useEffect(() => {
     if (value !== undefined) {
-      // If external value is provided (for location search), use it
-      setLocalQuery(value || '');
+      // If external value is provided (for location search), use it (even if empty string)
+      setLocalQuery(value);
     } else {
       // Otherwise use search query from store
       setLocalQuery(filters.searchQuery);

@@ -316,38 +316,22 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     const endClustering = MapPerformanceMonitor.startClustering();
 
     try {
+      // Use even more generous bounds to ensure all groups are included during cluster splits
       const bounds = MapViewportOptimizer.getOptimalBounds(currentRegion);
       const zoom = MapViewportOptimizer.getZoomLevel(
         currentRegion.latitudeDelta
       );
       const newClusters = clusterer.getClusters(bounds, zoom);
 
-      // Only update if clusters actually changed to prevent unnecessary re-renders
-      setClusters((prevClusters) => {
-        if (prevClusters.length !== newClusters.length) {
-          return newClusters;
-        }
-
-        // Detect meaningful identity or position changes before updating state
-        const hasSignificantChange = newClusters.some((nextCluster, index) => {
-          const prevCluster = prevClusters[index];
-
-          if (!prevCluster || prevCluster.id !== nextCluster.id) {
-            return true;
-          }
-
-          return hasPositionChanged(prevCluster, nextCluster);
-        });
-
-        return hasSignificantChange ? newClusters : prevClusters;
-      });
+      // Always update clusters - ensure bounds are generous enough that all groups are included
+      setClusters(newClusters);
 
       MapPerformanceMonitor.recordPointCount(newClusters.length);
     } finally {
       endClustering();
       isUpdatingClusters.current = false;
     }
-  }, [enableClustering, currentRegion, clusterer, hasPositionChanged]);
+  }, [enableClustering, currentRegion, clusterer]);
 
   const resetViewTracking = useCallback(() => {
     setShouldTrackViewChanges(true);
@@ -372,6 +356,22 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       }
     };
   }, [clusters, activeGroupId, resetViewTracking]);
+
+  // Reload clusterer whenever groups change to ensure all groups are available
+  // This ensures groups don't get permanently filtered out
+  useEffect(() => {
+    if (enableClustering && clusterer && groups.length > 0) {
+      clusterer.load(groups);
+      // Trigger cluster update after a brief delay to ensure markers are processed
+      const timeoutId = setTimeout(() => {
+        if (currentRegion && markers.length > 0) {
+          updateClusters();
+        }
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups, enableClustering, clusterer]);
 
   // Initialize map region and process group locations
   // Only run when groups change, not when distanceOrigin changes
@@ -482,12 +482,13 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     }
 
     // Debounce cluster updates to prevent flashing during rapid zoom/pan
+    // Use shorter delay to ensure updates happen quickly during cluster splits
     const timeoutId = setTimeout(() => {
       const rafId = requestAnimationFrame(() => {
         updateClusters();
       });
       return () => cancelAnimationFrame(rafId);
-    }, 150); // 150ms debounce
+    }, 100); // Reduced from 150ms to 100ms for faster updates
 
     return () => clearTimeout(timeoutId);
   }, [currentRegion, markers, enableClustering, clusterer, updateClusters]);
@@ -912,54 +913,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         isProgrammaticMoveRef.current = false;
       }
 
-      // If user dragged the map and we have a callback,
-      // reverse geocode the center and update the distance origin
-      if (
-        isUserDraggingRef.current &&
-        onDistanceOriginChange &&
-        distanceOrigin // Only update if we're already using a custom location
-      ) {
-        // Check if the new location is significantly different from current distanceOrigin
-        const threshold = 0.0001; // ~11 meters
-        const latDiff = Math.abs(newRegion.latitude - distanceOrigin.coordinates.latitude);
-        const lonDiff = Math.abs(newRegion.longitude - distanceOrigin.coordinates.longitude);
-        
-        // Only update if the location changed significantly
-        if (latDiff > threshold || lonDiff > threshold) {
-          try {
-            const centerCoordinates = {
-              latitude: newRegion.latitude,
-              longitude: newRegion.longitude,
-            };
-            
-            // Reverse geocode to get the address
-            const address = await locationService.reverseGeocode(centerCoordinates);
-            
-            // Update the distance origin with the new location
-            onDistanceOriginChange({
-              coordinates: centerCoordinates,
-              address: address?.formattedAddress || undefined,
-            });
-
-            if (__DEV__) {
-              console.log(
-                '[MapDebug] Updated distance origin from map drag:',
-                centerCoordinates,
-                address?.formattedAddress
-              );
-            }
-          } catch (error) {
-            console.warn('Failed to reverse geocode map center:', error);
-            // Still update coordinates even if reverse geocoding fails
-            onDistanceOriginChange({
-              coordinates: {
-                latitude: newRegion.latitude,
-                longitude: newRegion.longitude,
-              },
-            });
-          }
-        }
-      }
+      // Don't update distance origin when map is dragged/zoomed
+      // The marker should only move when:
+      // 1. User drags the marker itself (handled in onDragEnd)
+      // 2. Address is changed in search bar (handled in parent component)
       
       // Reset dragging flag after processing (with a small delay to allow reverse geocoding to complete)
       // Only reset if we actually detected and processed a drag
@@ -1219,6 +1176,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         {/* Marker for searched location (distance origin) */}
         {distanceOrigin?.coordinates && Marker && (
           <Marker
+            key={`distance-origin-${distanceOrigin.coordinates.latitude}-${distanceOrigin.coordinates.longitude}`}
             coordinate={{
               latitude: distanceOrigin.coordinates.latitude,
               longitude: distanceOrigin.coordinates.longitude,
@@ -1226,6 +1184,31 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             title={distanceOrigin.address || 'Search location'}
             pinColor="#f10078"
             tracksViewChanges={false}
+            draggable={true}
+            onDragEnd={async (e) => {
+              const newCoordinates = e.nativeEvent.coordinate;
+              try {
+                // Reverse geocode to get the address for the new location
+                const address = await locationService.reverseGeocode(newCoordinates);
+                
+                // Update the distance origin with the new location immediately
+                if (onDistanceOriginChange) {
+                  onDistanceOriginChange({
+                    coordinates: newCoordinates,
+                    address: address?.formattedAddress || undefined,
+                  });
+                }
+              } catch (error) {
+                console.warn('Failed to reverse geocode marker position:', error);
+                // Still update coordinates even if reverse geocoding fails
+                if (onDistanceOriginChange) {
+                  onDistanceOriginChange({
+                    coordinates: newCoordinates,
+                    address: distanceOrigin.address, // Keep existing address if geocoding fails
+                  });
+                }
+              }
+            }}
           />
         )}
       </MapView>
