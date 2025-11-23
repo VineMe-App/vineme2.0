@@ -30,6 +30,7 @@ import { getDisplayName, getFullName } from '@/utils/name';
 import { setDeletionFlowActive, isDeletionFlowActive } from '@/utils/errorSuppression';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 // Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
@@ -297,10 +298,8 @@ export default function ProfileScreen() {
           { backgroundColor: theme.colors.background.primary },
         ]}
       >
-        <View style={styles.errorContainer}>
-          <Text variant="body" style={styles.errorText}>
-            Loading...
-          </Text>
+        <View style={styles.loadingContainer}>
+          <AuthLoadingAnimation />
         </View>
       </SafeAreaView>
     );
@@ -518,6 +517,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 24,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   errorContainer: {
     flex: 1,
