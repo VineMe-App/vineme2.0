@@ -40,38 +40,44 @@ serve(async (req) => {
     }
 
     // Create a client with the anon key to verify the user's session
-    // Note: This might fail if the user was already deleted from public.users,
-    // but we can still proceed with deletion since the RPC already verified ownership
     const supabaseAnon = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!
     );
 
-    // Try to verify the user's session, but don't fail if it doesn't work
-    // (user might already be deleted from public.users by the RPC)
+    // Verify the user's session and ensure the caller owns the account being deleted
     let userId: string | null = null;
     try {
       const { data: { user }, error: userError } = await supabaseAnon.auth.getUser(token);
-      if (!userError && user) {
-        userId = user.id;
-        // Verify the user is deleting their own account
-        if (user.id !== payload.userId) {
-          return new Response(
-            JSON.stringify({ ok: false, error: 'You can only delete your own account' }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Invalid or expired session' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      userId = user.id;
+
+      // Verify the user is deleting their own account
+      if (user.id !== payload.userId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'You can only delete your own account' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
       }
     } catch (verifyError) {
-      // User verification failed - this is expected if the RPC already deleted the user
-      // from public.users. We'll proceed with deletion since the RPC already verified ownership.
-      console.warn('User verification failed (expected if user already deleted from public.users):', verifyError);
+      console.warn('User verification failed:', verifyError);
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Unable to verify user session' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    // If we couldn't verify via getUser, we trust the userId from the payload
-    // since the RPC function (which requires authentication) already verified ownership
     if (!userId) {
-      userId = payload.userId;
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Unable to verify user session' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     // Create admin client with service role key
