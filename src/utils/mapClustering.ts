@@ -69,13 +69,21 @@ export class MapClusterer {
     const maxLng = bbox[2];
     const maxLat = bbox[3];
 
-    // Filter points within bounds
+    // Add a buffer to bounds to account for precision issues and edge cases
+    // Increase buffer when zoomed in (higher zoom levels) to prevent markers from disappearing
+    // Higher zoom = smaller bounds, so we need more buffer percentage-wise
+    const baseBuffer = 0.05; // 5% base buffer
+    const zoomBasedMultiplier = zoom >= 14 ? 0.1 : zoom >= 12 ? 0.07 : baseBuffer; // Up to 10% when very zoomed in
+    const lngBuffer = (maxLng - minLng) * zoomBasedMultiplier;
+    const latBuffer = (maxLat - minLat) * zoomBasedMultiplier;
+
+    // Filter points within bounds (with buffer to prevent edge-case filtering)
     const pointsInBounds = this.points.filter(
       (point) =>
-        point.longitude >= minLng &&
-        point.longitude <= maxLng &&
-        point.latitude >= minLat &&
-        point.latitude <= maxLat
+        point.longitude >= minLng - lngBuffer &&
+        point.longitude <= maxLng + lngBuffer &&
+        point.latitude >= minLat - latBuffer &&
+        point.latitude <= maxLat + latBuffer
     );
 
     // If zoom is high enough, return individual points
@@ -249,10 +257,10 @@ export class MapClusterer {
  * Viewport-based optimization for map rendering
  */
 export class MapViewportOptimizer {
-  private static readonly VIEWPORT_PADDING = 0.1; // 10% padding around viewport
+  private static readonly BASE_VIEWPORT_PADDING = 0.1; // 10% base padding around viewport
 
   /**
-   * Calculate optimal bounds with padding
+   * Calculate optimal bounds with adaptive padding (more padding when zoomed out and when zoomed in)
    */
   static getOptimalBounds(viewport: {
     latitude: number;
@@ -260,8 +268,28 @@ export class MapViewportOptimizer {
     latitudeDelta: number;
     longitudeDelta: number;
   }): [number, number, number, number] {
-    const latPadding = viewport.latitudeDelta * this.VIEWPORT_PADDING;
-    const lngPadding = viewport.longitudeDelta * this.VIEWPORT_PADDING;
+    // Increase padding both when zoomed out AND when zoomed in
+    // When zoomed out (large delta), need padding to include more groups
+    // When zoomed in (small delta), need padding to prevent precision issues from filtering out markers
+    const zoomLevel = this.getZoomLevel(viewport.latitudeDelta);
+    
+    let paddingMultiplier: number;
+    if (zoomLevel < 10) {
+      // Very zoomed out - use large padding
+      paddingMultiplier = 0.5;
+    } else if (zoomLevel < 12) {
+      // Moderately zoomed out - use medium padding
+      paddingMultiplier = 0.3;
+    } else if (zoomLevel >= 14) {
+      // Very zoomed in - use increased padding to prevent markers from disappearing
+      paddingMultiplier = 0.2;
+    } else {
+      // Medium zoom - use base padding
+      paddingMultiplier = this.BASE_VIEWPORT_PADDING;
+    }
+    
+    const latPadding = viewport.latitudeDelta * paddingMultiplier;
+    const lngPadding = viewport.longitudeDelta * paddingMultiplier;
 
     return [
       viewport.longitude - viewport.longitudeDelta / 2 - lngPadding, // west

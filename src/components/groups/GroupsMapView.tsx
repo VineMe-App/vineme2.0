@@ -912,54 +912,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         isProgrammaticMoveRef.current = false;
       }
 
-      // If user dragged the map and we have a callback,
-      // reverse geocode the center and update the distance origin
-      if (
-        isUserDraggingRef.current &&
-        onDistanceOriginChange &&
-        distanceOrigin // Only update if we're already using a custom location
-      ) {
-        // Check if the new location is significantly different from current distanceOrigin
-        const threshold = 0.0001; // ~11 meters
-        const latDiff = Math.abs(newRegion.latitude - distanceOrigin.coordinates.latitude);
-        const lonDiff = Math.abs(newRegion.longitude - distanceOrigin.coordinates.longitude);
-        
-        // Only update if the location changed significantly
-        if (latDiff > threshold || lonDiff > threshold) {
-          try {
-            const centerCoordinates = {
-              latitude: newRegion.latitude,
-              longitude: newRegion.longitude,
-            };
-            
-            // Reverse geocode to get the address
-            const address = await locationService.reverseGeocode(centerCoordinates);
-            
-            // Update the distance origin with the new location
-            onDistanceOriginChange({
-              coordinates: centerCoordinates,
-              address: address?.formattedAddress || undefined,
-            });
-
-            if (__DEV__) {
-              console.log(
-                '[MapDebug] Updated distance origin from map drag:',
-                centerCoordinates,
-                address?.formattedAddress
-              );
-            }
-          } catch (error) {
-            console.warn('Failed to reverse geocode map center:', error);
-            // Still update coordinates even if reverse geocoding fails
-            onDistanceOriginChange({
-              coordinates: {
-                latitude: newRegion.latitude,
-                longitude: newRegion.longitude,
-              },
-            });
-          }
-        }
-      }
+      // Don't update distance origin when map is dragged/zoomed
+      // The marker should only move when:
+      // 1. User drags the marker itself (handled in onDragEnd)
+      // 2. Address is changed in search bar (handled in parent component)
       
       // Reset dragging flag after processing (with a small delay to allow reverse geocoding to complete)
       // Only reset if we actually detected and processed a drag
@@ -1219,6 +1175,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         {/* Marker for searched location (distance origin) */}
         {distanceOrigin?.coordinates && Marker && (
           <Marker
+            key={`distance-origin-${distanceOrigin.coordinates.latitude}-${distanceOrigin.coordinates.longitude}`}
             coordinate={{
               latitude: distanceOrigin.coordinates.latitude,
               longitude: distanceOrigin.coordinates.longitude,
@@ -1226,6 +1183,31 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             title={distanceOrigin.address || 'Search location'}
             pinColor="#f10078"
             tracksViewChanges={false}
+            draggable={true}
+            onDragEnd={async (e) => {
+              const newCoordinates = e.nativeEvent.coordinate;
+              try {
+                // Reverse geocode to get the address for the new location
+                const address = await locationService.reverseGeocode(newCoordinates);
+                
+                // Update the distance origin with the new location immediately
+                if (onDistanceOriginChange) {
+                  onDistanceOriginChange({
+                    coordinates: newCoordinates,
+                    address: address?.formattedAddress || undefined,
+                  });
+                }
+              } catch (error) {
+                console.warn('Failed to reverse geocode marker position:', error);
+                // Still update coordinates even if reverse geocoding fails
+                if (onDistanceOriginChange) {
+                  onDistanceOriginChange({
+                    coordinates: newCoordinates,
+                    address: distanceOrigin.address, // Keep existing address if geocoding fails
+                  });
+                }
+              }
+            }}
           />
         )}
       </MapView>

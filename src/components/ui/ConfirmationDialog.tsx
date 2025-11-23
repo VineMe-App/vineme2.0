@@ -159,23 +159,27 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           )}
 
           <View style={styles.buttonContainer}>
-            <Button
-              title={cancelText}
-              onPress={onCancel}
-              variant={cancelVariant}
-              size="small"
-              style={styles.button}
-              disabled={isLoading}
-            />
-            <Button
-              title={confirmText}
-              onPress={handleConfirm}
-              variant={confirmVariant}
-              size="small"
-              style={styles.button}
-              disabled={!canConfirm}
-              loading={isLoading}
-            />
+            <View style={styles.buttonWrapper}>
+              <Button
+                title={confirmText}
+                onPress={handleConfirm}
+                variant={confirmVariant}
+                size="small"
+                style={styles.button}
+                disabled={!canConfirm}
+                loading={isLoading}
+              />
+            </View>
+            <View style={styles.buttonWrapper}>
+              <Button
+                title={cancelText}
+                onPress={onCancel}
+                variant={cancelVariant}
+                size="small"
+                style={styles.button}
+                disabled={isLoading}
+              />
+            </View>
           </View>
         </Card>
       </View>
@@ -510,12 +514,20 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
+    gap: 6,
+    alignItems: 'stretch',
     marginTop: 32,
+    width: '100%',
+  },
+  buttonWrapper: {
+    flex: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
   },
   button: {
-    flex: 1,
+    width: '100%',
     minWidth: 0,
+    paddingHorizontal: 8,
   },
 });
