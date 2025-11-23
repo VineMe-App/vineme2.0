@@ -199,6 +199,7 @@ export default function TabLayout() {
         name="profile/communication"
         options={{
           href: null,
+          headerShown: false,
         }}
       />
     </Tabs>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,16 +8,19 @@ import {
   TextInput,
   Alert,
   Platform,
+  Image,
+  TouchableOpacity,
 } from 'react-native';
+import { useTheme } from '@/theme/provider/useTheme';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { Text } from '@/components/ui/Text';
 import { useAuthStore } from '@/stores/auth';
 import {
   useNotificationSettings,
   useNotificationPermissions,
 } from '@/hooks/useNotifications';
+import { useUserGroupMemberships, useUserProfile } from '@/hooks/useUsers';
 import {
   registerForPushNotifications,
   unregisterFromPushNotifications,
@@ -26,9 +29,16 @@ import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
 
 export default function CommunicationAndSecurityScreen() {
-  const { user, userProfile, linkEmail, linkPhone, verifyOtp, isLoading } =
+  const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
     useAuthStore();
-  const userId = user?.id || userProfile?.id;
+  const userId = user?.id || authUserProfile?.id;
+  const { theme } = useTheme();
+  
+  // Get user profile from query hook to allow refetching
+  const { data: userProfile, refetch: refetchUserProfile } = useUserProfile(userId);
+  
+  // Use queried profile or fallback to auth store profile
+  const displayUserProfile = userProfile || authUserProfile;
 
   // Notification settings state
   const {
@@ -38,6 +48,26 @@ export default function CommunicationAndSecurityScreen() {
     isUpdating,
   } = useNotificationSettings(userId);
   const { checkPermissions, requestPermissions } = useNotificationPermissions();
+  
+  // Get user's group memberships to check leadership status
+  const { data: groupMemberships } = useUserGroupMemberships(userId);
+  
+  // Check if user is a leader of any group (including pending groups)
+  const isGroupLeader = useMemo(() => {
+    if (!groupMemberships) return false;
+    return groupMemberships.some((membership: any) => membership.role === 'leader');
+  }, [groupMemberships]);
+  
+  // Check if user is a leader of an approved group (for join requests)
+  const isApprovedGroupLeader = useMemo(() => {
+    if (!groupMemberships) return false;
+    return groupMemberships.some(
+      (membership: any) =>
+        membership.role === 'leader' &&
+        membership.group?.status === 'approved'
+    );
+  }, [groupMemberships]);
+  
   const [localNotif, setLocalNotif] = useState({
     friend_requests: true,
     friend_request_accepted: true,
@@ -45,7 +75,6 @@ export default function CommunicationAndSecurityScreen() {
     group_request_responses: true,
     join_requests: true,
     join_request_responses: true,
-    referral_updates: true,
     event_reminders: true,
     push_notifications: true,
     email_notifications: false,
@@ -68,7 +97,6 @@ export default function CommunicationAndSecurityScreen() {
         group_request_responses: !!settings.group_request_responses,
         join_requests: !!settings.join_requests,
         join_request_responses: !!settings.join_request_responses,
-        referral_updates: !!settings.referral_updates,
         event_reminders: !!settings.event_reminders,
         push_notifications: !!settings.push_notifications,
         email_notifications: !!settings.email_notifications,
@@ -127,8 +155,26 @@ export default function CommunicationAndSecurityScreen() {
   const [phoneCode, setPhoneCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
 
-  const currentEmail = user?.email || userProfile?.email;
-  const currentPhone = user?.phone || userProfile?.phone;
+  const currentEmail = displayUserProfile?.email || user?.email;
+  
+  // Format phone number - if UK number, ensure it's displayed with +44
+  const formatPhoneNumber = (phone: string | undefined): string => {
+    if (!phone) return '';
+    // Remove any existing + or spaces
+    const cleaned = phone.replace(/[\s+]/g, '');
+    // If it starts with 44 (UK country code without +), format as +44
+    if (cleaned.startsWith('44') && cleaned.length >= 12) {
+      return `+${cleaned}`;
+    }
+    // If it already starts with +, return as is
+    if (phone.startsWith('+')) {
+      return phone;
+    }
+    // Otherwise return as is (might have country code already)
+    return phone;
+  };
+  
+  const currentPhone = formatPhoneNumber(displayUserProfile?.phone || user?.phone);
 
   const handleLinkEmail = async () => {
     if (!newEmail.trim())
@@ -139,6 +185,11 @@ export default function CommunicationAndSecurityScreen() {
     if (result.success) {
       setEmailStep('idle');
       setNewEmail('');
+      // Refetch user profile to update email display
+      await Promise.all([
+        refetchUserProfile(),
+        loadUserProfile(),
+      ]);
       Alert.alert('Success', 'Email has been linked to your account!');
     } else {
       Alert.alert('Error', result.error || 'Failed to link email');
@@ -171,6 +222,11 @@ export default function CommunicationAndSecurityScreen() {
       setPhoneStep('idle');
       setLocalNumber('');
       setPhoneCode('');
+      // Refetch user profile to update phone display
+      await Promise.all([
+        refetchUserProfile(),
+        loadUserProfile(),
+      ]);
       Alert.alert('Success', 'Phone has been linked to your account!');
     } else {
       Alert.alert('Verification Failed', result.error || 'Invalid code');
@@ -178,14 +234,30 @@ export default function CommunicationAndSecurityScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Communication & Security</Text>
-          <Text style={styles.subtitle}>
-            Manage notifications and sign-in connections
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
+      <View
+        style={[
+          styles.compactHeader,
+          { backgroundColor: theme.colors.surface.primary },
+        ]}
+      >
+        <View style={styles.headerLeft}>
+          <Image
+            source={require('../../../../assets/figma-128-1563/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text variant="h4" weight="black" style={styles.headerTitle}>
+            Communication and Security
           </Text>
         </View>
+      </View>
+      <ScrollView contentContainerStyle={styles.content}>
 
         {/* Notifications Section */}
         <Card style={styles.card}>
@@ -195,67 +267,130 @@ export default function CommunicationAndSecurityScreen() {
           ) : (
             <>
               <View style={styles.settingItem}>
-                <Checkbox
-                  checked={localNotif.push_notifications}
+                <TouchableOpacity
+                  style={styles.checkboxRow}
                   onPress={() => toggleNotif('push_notifications')}
-                  label={`Enable push notifications${Platform.OS === 'android' ? ' (requires Google Play services)' : ''}`}
-                />
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.checkboxContainer}>
+                    <Text style={styles.checkboxLabel}>
+                      {`Enable push notifications${Platform.OS === 'android' ? ' (requires Google Play services)' : ''}`}
+                    </Text>
+                    <View style={[styles.checkbox, localNotif.push_notifications && styles.checkboxChecked]}>
+                      {localNotif.push_notifications && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
               </View>
 
               <Text style={styles.sectionLabel}>Friends</Text>
               <View style={styles.settingItem}>
-                <Checkbox
-                  checked={localNotif.friend_requests}
+                <TouchableOpacity
+                  style={styles.checkboxRow}
                   onPress={() => toggleNotif('friend_requests')}
-                  label="Friend request received"
-                />
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.checkboxContainer}>
+                    <Text style={styles.checkboxLabel}>Friend request received</Text>
+                    <View style={[styles.checkbox, localNotif.friend_requests && styles.checkboxChecked]}>
+                      {localNotif.friend_requests && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
               </View>
               <View style={styles.settingItem}>
-                <Checkbox
-                  checked={localNotif.friend_request_accepted}
+                <TouchableOpacity
+                  style={styles.checkboxRow}
                   onPress={() => toggleNotif('friend_request_accepted')}
-                  label="Friend request accepted"
-                />
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.checkboxContainer}>
+                    <Text style={styles.checkboxLabel}>Friend request accepted</Text>
+                    <View style={[styles.checkbox, localNotif.friend_request_accepted && styles.checkboxChecked]}>
+                      {localNotif.friend_request_accepted && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
               </View>
 
               <Text style={styles.sectionLabel}>Groups</Text>
+              {(displayUserProfile?.roles?.includes('church_admin') || displayUserProfile?.roles?.includes('superadmin')) && (
+                <View style={styles.settingItem}>
+                  <TouchableOpacity
+                    style={styles.checkboxRow}
+                    onPress={() => toggleNotif('group_requests')}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.checkboxContainer}>
+                      <Text style={styles.checkboxLabel}>Group creation notifications</Text>
+                      <View style={[styles.checkbox, localNotif.group_requests && styles.checkboxChecked]}>
+                        {localNotif.group_requests && (
+                          <Text style={styles.checkmark}>✓</Text>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {isGroupLeader && (
+                <View style={styles.settingItem}>
+                  <TouchableOpacity
+                    style={styles.checkboxRow}
+                    onPress={() => toggleNotif('group_request_responses')}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.checkboxContainer}>
+                      <Text style={styles.checkboxLabel}>Group approved notifications</Text>
+                      <View style={[styles.checkbox, localNotif.group_request_responses && styles.checkboxChecked]}>
+                        {localNotif.group_request_responses && (
+                          <Text style={styles.checkmark}>✓</Text>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {isApprovedGroupLeader && (
+                <View style={styles.settingItem}>
+                  <TouchableOpacity
+                    style={styles.checkboxRow}
+                    onPress={() => toggleNotif('join_requests')}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.checkboxContainer}>
+                      <Text style={styles.checkboxLabel}>Join requests</Text>
+                      <View style={[styles.checkbox, localNotif.join_requests && styles.checkboxChecked]}>
+                        {localNotif.join_requests && (
+                          <Text style={styles.checkmark}>✓</Text>
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              )}
               <View style={styles.settingItem}>
-                <Checkbox
-                  checked={localNotif.group_requests}
-                  onPress={() => toggleNotif('group_requests')}
-                  label="New group request (admins)"
-                />
-              </View>
-              <View style={styles.settingItem}>
-                <Checkbox
-                  checked={localNotif.group_request_responses}
-                  onPress={() => toggleNotif('group_request_responses')}
-                  label="Group request responses"
-                />
-              </View>
-              <View style={styles.settingItem}>
-                <Checkbox
-                  checked={localNotif.join_requests}
-                  onPress={() => toggleNotif('join_requests')}
-                  label="Join request received (leaders)"
-                />
-              </View>
-              <View style={styles.settingItem}>
-                <Checkbox
-                  checked={localNotif.join_request_responses}
+                <TouchableOpacity
+                  style={styles.checkboxRow}
                   onPress={() => toggleNotif('join_request_responses')}
-                  label="My join request responses"
-                />
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.checkboxContainer}>
+                    <Text style={styles.checkboxLabel}>Group accepted notifications</Text>
+                    <View style={[styles.checkbox, localNotif.join_request_responses && styles.checkboxChecked]}>
+                      {localNotif.join_request_responses && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
               </View>
 
-              <Text style={styles.sectionLabel}>Referrals</Text>
-              <View style={styles.settingItem}>
-                <Checkbox
-                  checked={localNotif.referral_updates}
-                  onPress={() => toggleNotif('referral_updates')}
-                  label="Referral updates"
-                />
-              </View>
               {/* Event reminders hidden for now - keeping code for future use */}
               {/* <View style={styles.settingItem}>
                 <Checkbox
@@ -309,19 +444,23 @@ export default function CommunicationAndSecurityScreen() {
                   editable={!isLoading}
                 />
                 <View style={styles.actionsRow}>
-                  <Button
-                    title="Cancel"
-                    onPress={() => {
-                      setEmailStep('idle');
-                      setNewEmail('');
-                    }}
-                    variant="secondary"
-                  />
-                  <Button
-                    title="Send Code"
-                    onPress={handleLinkEmail}
-                    loading={isLoading}
-                  />
+                  <View style={styles.actionButton}>
+                    <Button
+                      title="Cancel"
+                      onPress={() => {
+                        setEmailStep('idle');
+                        setNewEmail('');
+                      }}
+                      variant="secondary"
+                    />
+                  </View>
+                  <View style={styles.actionButton}>
+                    <Button
+                      title="Send Code"
+                      onPress={handleLinkEmail}
+                      loading={isLoading}
+                    />
+                  </View>
                 </View>
               </View>
             )}
@@ -329,7 +468,7 @@ export default function CommunicationAndSecurityScreen() {
 
           {/* Phone */}
           <View style={[styles.credBlock, { marginTop: 16 }]}>
-            <Text style={styles.label}>Phone</Text>
+            <Text style={styles.label}>Contact Details</Text>
             {currentPhone ? (
               <Text style={styles.currentValue}>{currentPhone}</Text>
             ) : (
@@ -361,19 +500,23 @@ export default function CommunicationAndSecurityScreen() {
                   editable={!isLoading}
                 />
                 <View style={styles.actionsRow}>
-                  <Button
-                    title="Cancel"
-                    onPress={() => {
-                      setPhoneStep('idle');
-                      setLocalNumber('');
-                    }}
-                    variant="secondary"
-                  />
-                  <Button
-                    title="Send Code"
-                    onPress={handleLinkPhone}
-                    loading={isLoading}
-                  />
+                  <View style={styles.actionButton}>
+                    <Button
+                      title="Cancel"
+                      onPress={() => {
+                        setPhoneStep('idle');
+                        setLocalNumber('');
+                      }}
+                      variant="secondary"
+                    />
+                  </View>
+                  <View style={styles.actionButton}>
+                    <Button
+                      title="Send Code"
+                      onPress={handleLinkPhone}
+                      loading={isLoading}
+                    />
+                  </View>
                 </View>
               </View>
             )}
@@ -391,20 +534,24 @@ export default function CommunicationAndSecurityScreen() {
                   length={6}
                 />
                 <View style={styles.actionsRow}>
-                  <Button
-                    title="Cancel"
-                    onPress={() => {
-                      setPhoneStep('idle');
-                      setLocalNumber('');
-                      setPhoneCode('');
-                    }}
-                    variant="secondary"
-                  />
-                  <Button
-                    title="Verify"
-                    onPress={handleVerifyPhone}
-                    loading={isLoading}
-                  />
+                  <View style={styles.actionButton}>
+                    <Button
+                      title="Cancel"
+                      onPress={() => {
+                        setPhoneStep('idle');
+                        setLocalNumber('');
+                        setPhoneCode('');
+                      }}
+                      variant="secondary"
+                    />
+                  </View>
+                  <View style={styles.actionButton}>
+                    <Button
+                      title="Verify"
+                      onPress={handleVerifyPhone}
+                      loading={isLoading}
+                    />
+                  </View>
                 </View>
               </View>
             )}
@@ -416,11 +563,31 @@ export default function CommunicationAndSecurityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1 },
+  compactHeader: {
+    paddingHorizontal: 19,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 60,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logo: {
+    width: 27,
+    height: 27,
+  },
+  headerTitle: {
+    color: '#2C2235',
+    fontSize: 22,
+    letterSpacing: -1.1,
+    fontWeight: '900',
+  },
   content: { padding: 16 },
-  header: { marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: '700', color: '#111827' },
-  subtitle: { fontSize: 14, color: '#6b7280', marginTop: 4 },
   card: { marginBottom: 16, padding: 20 },
   cardTitle: {
     fontSize: 18,
@@ -436,9 +603,54 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   settingItem: { marginBottom: 10 },
-  actionsRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  currentValue: { fontSize: 16, color: '#111827', marginBottom: 6 },
+  checkboxRow: {
+    marginBottom: 12,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  checkbox: {
+    width: 19,
+    height: 19,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#2C2235',
+    borderColor: '#2C2235',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 12,
+    includeFontPadding: false,
+  },
+  checkboxLabel: {
+    fontSize: 12,
+    color: '#2C2235',
+    fontWeight: '600',
+    flex: 1,
+    letterSpacing: -0.6,
+  },
+  actionsRow: { 
+    flexDirection: 'row', 
+    gap: 12, 
+    marginTop: 8,
+    width: '100%',
+  },
+  actionButton: {
+    flex: 1,
+  },
+  label: { fontSize: 12, fontWeight: '600', color: '#2C2235', marginBottom: 6, letterSpacing: -0.6 },
+  currentValue: { fontSize: 12, fontWeight: '600', color: '#2C2235', marginBottom: 6, letterSpacing: -0.6 },
   noCredential: {
     fontSize: 14,
     color: '#6b7280',
