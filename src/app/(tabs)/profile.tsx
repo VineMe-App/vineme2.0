@@ -21,7 +21,7 @@ import {
 import { useFriends } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
-import { Button } from '@/components/ui/Button';
+import { AuthButton } from '@/components/auth/AuthButton';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
@@ -324,48 +324,34 @@ export default function ProfileScreen() {
             <View style={styles.profileSection}>
               <View style={styles.avatarContainer}>
                 <Avatar
-                  size={100}
+                  size={121}
                   imageUrl={userProfile.avatar_url}
                   name={profileFullName}
                   onPress={handleAvatarPress}
                 />
                 <TouchableOpacity
-                  style={[
-                    styles.editIconButton,
-                    {
-                      backgroundColor: theme.colors.primary[500],
-                    },
-                  ]}
+                  style={styles.editIconButton}
                   onPress={handleAvatarEdit}
                   accessibilityLabel="Edit profile photo"
                   accessibilityRole="button"
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="pencil-sharp" size={16} color="#fff" />
+                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
                 </TouchableOpacity>
               </View>
 
-              <Text variant="h3" style={styles.name}>
+              <Text style={styles.name}>
                 {profileFullName || profileShortName || 'Your Profile'}
               </Text>
-              {user?.email ? (
-                <Text variant="body" color="secondary" style={styles.email}>
-                  {user.email}
-                </Text>
-              ) : null}
             </View>
 
             <View style={styles.infoSection}>
-              <Text variant="h4" style={styles.sectionTitle}>
-                Profile Information
-              </Text>
+              <Text style={styles.profileInfoTitle}>Profile Info</Text>
 
               {userProfile.church && (
                 <View style={styles.infoItem}>
-                  <Text variant="label" style={styles.infoLabel}>
-                    Church
-                  </Text>
-                  <Text variant="body" style={styles.infoValue}>
+                  <Text style={styles.infoLabel}>Church</Text>
+                  <Text style={styles.infoValue}>
                     {userProfile.church.name}
                   </Text>
                 </View>
@@ -373,74 +359,71 @@ export default function ProfileScreen() {
 
               {userProfile.service && (
                 <View style={styles.infoItem}>
-                  <Text variant="label" style={styles.infoLabel}>
-                    Service
-                  </Text>
-                  <Text variant="body" style={styles.infoValue}>
+                  <Text style={styles.infoLabel}>Service</Text>
+                  <Text style={styles.infoValue}>
                     {userProfile.service.name}
                   </Text>
                 </View>
               )}
 
               <View style={styles.infoItem}>
-                <Text variant="label" style={styles.infoLabel}>
-                  Member Since
-                </Text>
-                <Text variant="body" style={styles.infoValue}>
-                  {new Date(userProfile.created_at).toLocaleDateString()}
+                <Text style={styles.infoLabel}>Member since</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(userProfile.created_at).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })}
                 </Text>
               </View>
             </View>
 
-            {/* Friends Section - Just the manage button */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text variant="h4" style={styles.sectionTitle}>
-                  Friends
-                </Text>
-                <Button
-                  title={`Manage (${friendsQuery.data?.length || 0})`}
-                  onPress={() => setShowFriendsModal(true)}
-                  variant="secondary"
-                  size="small"
-                />
+            {/* Friends Section */}
+            <View style={styles.infoSection}>
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Friends</Text>
+                <TouchableOpacity onPress={() => setShowFriendsModal(true)}>
+                  <Text style={styles.infoLink}>Manage</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Admin Section */}
+            <ChurchAdminOnly>
+              <View style={styles.infoSection}>
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Admin</Text>
+                  <TouchableOpacity onPress={() => router.push('/admin')}>
+                    <Text style={styles.infoLink}>Open admin dashboard</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ChurchAdminOnly>
+
+            {/* Communication & Security Section */}
+            <View style={styles.infoSection}>
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Communication & Security</Text>
+                <TouchableOpacity onPress={() => router.push('/profile/communication')}>
+                  <Text style={styles.infoLink}>Settings</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </>
         )}
 
-        {/* Admin Features */}
-        <ChurchAdminOnly>
-          <View style={styles.section}>
-            <Text variant="h4" style={styles.sectionTitle}>
-              Admin
-            </Text>
-            <Button
-              title="Open Admin Dashboard"
-              onPress={() => router.push('/admin')}
-              variant="primary"
-            />
-          </View>
-        </ChurchAdminOnly>
-
         <View style={styles.actionsSection}>
-          <Button
-            title="Communication & Security"
-            onPress={() => router.push('/profile/communication')}
-            variant="secondary"
-            style={styles.privacyButton}
-          />
-          <Button
+          <AuthButton
             title="Sign Out"
             onPress={handleSignOut}
-            variant="outline"
+            variant="secondary"
             style={styles.signOutButton}
           />
-          <Button
+          <AuthButton
             title="Delete Account"
             onPress={handleDeleteAccount}
-            variant="outline"
-            style={styles.signOutButton}
+            variant="secondary"
+            style={styles.deleteButton}
           />
         </View>
 
@@ -516,7 +499,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 38,
+    paddingTop: 37,
   },
   loadingContainer: {
     flex: 1,
@@ -537,133 +521,98 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 36,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 24,
+    width: 121,
+    height: 121,
   },
   editIconButton: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    bottom: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 0,
-    borderColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   name: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 16,
-    color: '#6c757d',
-    marginTop: 4,
-    marginBottom: 16,
+    fontWeight: '700',
+    color: '#2C2235',
+    letterSpacing: -0.48,
+    lineHeight: 28,
+    textAlign: 'center',
+    marginTop: 8,
+    includeFontPadding: false,
   },
   infoSection: {
-    marginBottom: 32,
+    marginBottom: 0,
   },
-  section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  profileInfoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2C2235',
+    letterSpacing: -0.32,
+    lineHeight: 16,
     marginBottom: 16,
   },
   infoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E5E7EB',
+    minHeight: 14,
   },
   infoLabel: {
-    fontSize: 16,
-    color: '#6c757d',
+    fontSize: 14,
+    color: '#999999',
     fontWeight: '500',
+    letterSpacing: -0.28,
+    lineHeight: 14,
   },
   infoValue: {
-    fontSize: 16,
-    color: '#1a1a1a',
-    fontWeight: '400',
-    flex: 1,
-    textAlign: 'right',
-  },
-  membershipItem: {
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 8,
-  },
-  membershipInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  membershipTitle: {
-    fontSize: 16,
+    fontSize: 14,
+    color: '#2C2235',
     fontWeight: '600',
-    color: '#1a1a1a',
+    letterSpacing: -0.28,
+    lineHeight: 14,
+    textAlign: 'right',
     flex: 1,
+    marginLeft: 16,
   },
-  membershipRole: {
-    fontSize: 14,
-    color: '#007AFF',
+  infoLink: {
+    fontSize: 16,
+    color: '#FF0083',
     fontWeight: '500',
-  },
-  membershipDate: {
-    fontSize: 14,
-    color: '#6c757d',
+    letterSpacing: -0.32,
+    lineHeight: 16,
+    textDecorationLine: 'underline',
+    textAlign: 'right',
   },
   actionsSection: {
     marginTop: 32,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  privacyButton: {
-    marginBottom: 16,
+    paddingTop: 0,
   },
   signOutButton: {
-    marginTop: 16,
+    marginBottom: 12,
   },
-  adminActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  adminButton: {
-    flex: 1,
-    minWidth: 120,
-  },
-  bottomSpacing: {
-    height: 100, // Generous bottom spacing for navbar clearance
-    paddingBottom: 20, // Additional padding for extra safety
+  deleteButton: {
+    marginBottom: 0,
   },
   modalOverlay: {
     flex: 1,

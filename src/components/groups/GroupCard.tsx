@@ -235,14 +235,20 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         {/* Apply infoMyGroups to ALL cards on my-groups page, regardless of leader status */}
         <View style={[
           styles.info,
-          variant === 'my-groups' ? styles.infoMyGroups : styles.infoAllGroups
+          variant === 'my-groups' ? styles.infoMyGroups : styles.infoAllGroups,
+          // Add extra padding when there are 4 or more leaders to prevent text from getting too close
+          // Square container is 108px wide, positioned 20px from right = 128px minimum + extra spacing
+          leaders && leaders.length >= 4 
+            ? { paddingRight: variant === 'all-groups' ? 140 : 130 }
+            : null
         ]}>
           {/* Group Name */}
           <Text
             variant="h6"
             weight="bold"
             style={styles.groupName}
-            numberOfLines={1}
+            numberOfLines={2}
+            ellipsizeMode="tail"
           >
             {group.title}
           </Text>
@@ -260,6 +266,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
                 >
                   {formatMeetingTime(group.meeting_day, group.meeting_time)}
                 </Text>
@@ -273,6 +281,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
                 >
                   {distanceKm.toFixed(1)} km away
                 </Text>
@@ -286,7 +296,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 variant="bodySmall"
                 weight="medium"
                 style={styles.detailText}
-                numberOfLines={1}
+                numberOfLines={2}
                 ellipsizeMode="tail"
               >
                 {formatLocation(group.location)}
@@ -304,7 +314,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 <Text
                   variant="bodySmall"
                   weight="medium"
-                  style={styles.detailText}
+                  style={[styles.detailText, styles.ledByText]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
                 >
                   {leaders.length === 1
                     ? `Led by ${leaders[0].name || 'Unknown'}`
@@ -323,6 +335,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
                 >
                   {churchAndServiceLabel}
                 </Text>
@@ -675,9 +689,10 @@ const styles = StyleSheet.create({
     paddingBottom: 12, // Different bottom padding for All Groups page
   },
   groupName: {
-    color: '#2C2235',
-    fontSize: 22,
+    color: '#000000',
+    fontSize: 20,
     letterSpacing: -0.66,
+    lineHeight: 28,
     marginBottom: 8,
     fontWeight: '700',
   },
@@ -821,16 +836,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 2,
+    marginBottom: 6,
     flexWrap: 'wrap',
   },
   detailText: {
-    color: '#2C2235',
-    fontSize: 11,
-    letterSpacing: -0.55,
+    color: '#000000',
+    fontSize: 12,
+    letterSpacing: -0.22,
+    lineHeight: 18,
     flex: 1,
     fontWeight: '500',
     flexShrink: 1,
+    includeFontPadding: false,
+  },
+  ledByText: {
+    color: '#2C2235',
   },
   leaderTextAndAvatars: {
     flexDirection: 'row',
