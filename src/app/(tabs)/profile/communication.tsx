@@ -84,6 +84,10 @@ export default function CommunicationAndSecurityScreen() {
   const [hasNotifChanges, setHasNotifChanges] = useState(false);
   const [pushGranted, setPushGranted] = useState<boolean | null>(null);
   const hasDisabledReferralsRef = useRef(false);
+  const hasSyncedSettingsRef = useRef(false);
+  const referralDisableTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   useEffect(() => {
     checkPermissions()
@@ -92,36 +96,50 @@ export default function CommunicationAndSecurityScreen() {
   }, [checkPermissions]);
 
   useEffect(() => {
-    if (settings) {
-      setLocalNotif({
-        friend_requests: !!settings.friend_requests,
-        friend_request_accepted: !!settings.friend_request_accepted,
-        group_requests: !!settings.group_requests,
-        group_request_responses: !!settings.group_request_responses,
-        join_requests: !!settings.join_requests,
-        join_request_responses: !!settings.join_request_responses,
-        event_reminders: !!settings.event_reminders,
-        push_notifications: !!settings.push_notifications,
-        email_notifications: !!settings.email_notifications,
-      });
-      setHasNotifChanges(false);
-    }
-  }, [settings]);
+    if (!settings) return;
+    // Avoid overwriting in-progress edits during background refetches
+    if (hasNotifChanges && hasSyncedSettingsRef.current) return;
+
+    setLocalNotif({
+      friend_requests: !!settings.friend_requests,
+      friend_request_accepted: !!settings.friend_request_accepted,
+      group_requests: !!settings.group_requests,
+      group_request_responses: !!settings.group_request_responses,
+      join_requests: !!settings.join_requests,
+      join_request_responses: !!settings.join_request_responses,
+      event_reminders: !!settings.event_reminders,
+      push_notifications: !!settings.push_notifications,
+      email_notifications: !!settings.email_notifications,
+    });
+    setHasNotifChanges(false);
+    hasSyncedSettingsRef.current = true;
+  }, [settings, hasNotifChanges]);
 
   // Disable referral_updates once when settings load (if enabled)
   useEffect(() => {
     if (settings?.referral_updates && !hasDisabledReferralsRef.current) {
       hasDisabledReferralsRef.current = true;
       // Defer to next tick to break render cycle
-      setTimeout(() => {
+      referralDisableTimeoutRef.current = setTimeout(() => {
         updateSettings({ referral_updates: false });
+        referralDisableTimeoutRef.current = null;
       }, 100);
     }
+    return () => {
+      if (referralDisableTimeoutRef.current) {
+        clearTimeout(referralDisableTimeoutRef.current);
+        referralDisableTimeoutRef.current = null;
+      }
+    };
     // Only depend on settings existence, not its contents to prevent loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [!!settings]);
 
   const toggleNotif = (key: keyof typeof localNotif) => {
+    if (referralDisableTimeoutRef.current) {
+      clearTimeout(referralDisableTimeoutRef.current);
+      referralDisableTimeoutRef.current = null;
+    }
     setLocalNotif((prev) => ({ ...prev, [key]: !prev[key] }));
     setHasNotifChanges(true);
   };
