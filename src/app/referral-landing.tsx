@@ -1,10 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../components/ui/Text';
@@ -78,83 +73,123 @@ export default function ReferralLandingPage() {
       <Header title="Connect Someone" useSafeArea={false} />
       <ScrollView style={styles.container}>
         <View style={styles.content}>
-        <View style={styles.questionSection}>
-          <Text variant="h4" weight="semiBold" style={styles.questionTitle}>
-            Do you want to connect/refer someone else to a group?
-          </Text>
-          <Text variant="bodyLarge" color="secondary" style={styles.questionSubtitle}>
-            Choose the option that best fits their situation
-          </Text>
-        </View>
-
-        <View style={styles.optionsContainer}>
-          <CTACard
-            title="Yes, I know a group that fits"
-            description='Browse groups to find the right fit, then use the "Refer a friend" button on the group page to connect them directly'
-            iconName="people-outline"
-            iconColor="#007AFF"
-            iconSize={32}
-            onPress={handleGroupReferral}
-            variant="default"
-            style={styles.ctaCard}
-          />
-
-          <CTACard
-            title="No specific group fits"
-            description="Connect them to the community and our team will help match them with groups that fit their interests"
-            iconName="help-circle-outline"
-            iconColor="#ff0083"
-            iconSize={32}
-            onPress={handleGeneralReferral}
-            variant="default"
-          />
-        </View>
-
-        <View style={styles.infoSection}>
-          <View style={styles.infoCard}>
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color="#6b7280"
-            />
-            <Text variant="body" color="secondary" style={styles.infoText}>
-              Both options will create an account for the person you're
-              referring and send them an email to complete their setup.
+          <View style={styles.questionSection}>
+            <Text variant="h4" weight="semiBold" style={styles.questionTitle}>
+              Do you want to connect/refer someone else to a group?
+            </Text>
+            <Text
+              variant="bodyLarge"
+              color="secondary"
+              style={styles.questionSubtitle}
+            >
+              Choose the option that best fits their situation
             </Text>
           </View>
-        </View>
 
-        <View style={styles.instructionsSection}>
-          <Text variant="h5" weight="semiBold" style={styles.instructionsTitle}>How it works:</Text>
-          <View style={styles.instructionsList}>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text variant="bodySmall" weight="semiBold" style={styles.instructionNumberText}>1</Text>
-              </View>
-              <Text variant="body" color="secondary" style={styles.instructionText}>
-                Choose whether you know a specific group that fits or want a
-                general referral
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text variant="bodySmall" weight="semiBold" style={styles.instructionNumberText}>2</Text>
-              </View>
-              <Text variant="body" color="secondary" style={styles.instructionText}>
-                Provide their contact information and any helpful context
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text variant="bodySmall" weight="semiBold" style={styles.instructionNumberText}>3</Text>
-              </View>
-              <Text variant="body" color="secondary" style={styles.instructionText}>
-                They'll receive an email to verify their account and complete
-                setup
+          <View style={styles.optionsContainer}>
+            <CTACard
+              title="Yes, I know a group that fits"
+              description='Browse groups to find the right fit, then use the "Refer a friend" button on the group page to connect them directly'
+              iconName="people-outline"
+              iconColor="#007AFF"
+              iconSize={32}
+              onPress={handleGroupReferral}
+              variant="default"
+              style={styles.ctaCard}
+            />
+
+            <CTACard
+              title="No specific group fits"
+              description="Connect them to the community and our team will help match them with groups that fit their interests"
+              iconName="help-circle-outline"
+              iconColor="#ff0083"
+              iconSize={32}
+              onPress={handleGeneralReferral}
+              variant="default"
+            />
+          </View>
+
+          <View style={styles.infoSection}>
+            <View style={styles.infoCard}>
+              <Ionicons
+                name="information-circle-outline"
+                size={20}
+                color="#6b7280"
+              />
+              <Text variant="body" color="secondary" style={styles.infoText}>
+                Both options will create an account for the person you're
+                referring and send them an email to complete their setup.
               </Text>
             </View>
           </View>
-        </View>
+
+          <View style={styles.instructionsSection}>
+            <Text
+              variant="h5"
+              weight="semiBold"
+              style={styles.instructionsTitle}
+            >
+              How it works:
+            </Text>
+            <View style={styles.instructionsList}>
+              <View style={styles.instructionItem}>
+                <View style={styles.instructionNumber}>
+                  <Text
+                    variant="bodySmall"
+                    weight="semiBold"
+                    style={styles.instructionNumberText}
+                  >
+                    1
+                  </Text>
+                </View>
+                <Text
+                  variant="body"
+                  color="secondary"
+                  style={styles.instructionText}
+                >
+                  Choose whether you know a specific group that fits or want a
+                  general referral
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <View style={styles.instructionNumber}>
+                  <Text
+                    variant="bodySmall"
+                    weight="semiBold"
+                    style={styles.instructionNumberText}
+                  >
+                    2
+                  </Text>
+                </View>
+                <Text
+                  variant="body"
+                  color="secondary"
+                  style={styles.instructionText}
+                >
+                  Provide their contact information and any helpful context
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <View style={styles.instructionNumber}>
+                  <Text
+                    variant="bodySmall"
+                    weight="semiBold"
+                    style={styles.instructionNumberText}
+                  >
+                    3
+                  </Text>
+                </View>
+                <Text
+                  variant="body"
+                  color="secondary"
+                  style={styles.instructionText}
+                >
+                  They'll receive an email to verify their account and complete
+                  setup
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
 
         {/* General referral now handled via dedicated page */}
