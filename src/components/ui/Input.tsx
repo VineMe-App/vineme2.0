@@ -294,12 +294,25 @@ export const Input: React.FC<InputProps> = ({
         <Text 
           variant="labelSmall" 
           color="secondary" 
-          style={[labelStyles, labelStyle]} 
+          weight="medium"
+          style={[
+            labelStyles, 
+            labelStyle,
+            { fontFamily: theme.typography.fontFamily.medium } // Ensure font is applied last
+          ]} 
           testID={`${testID}-label`}
         >
           {label}
           {required && (
-            <Text style={[labelStyles, { color: theme.colors.error[500] }]}>
+            <Text 
+              variant="labelSmall" 
+              weight="medium" 
+              style={[
+                labelStyles, 
+                { color: theme.colors.error[500] },
+                { fontFamily: theme.typography.fontFamily.medium } // Ensure font is applied last
+              ]}
+            >
               {' '}
               *
             </Text>
@@ -357,7 +370,7 @@ export const Input: React.FC<InputProps> = ({
  */
 const getContainerStyles = (theme: any, fullWidth: boolean): ViewStyle => ({
   width: fullWidth ? '100%' : undefined,
-  marginBottom: theme.spacing.md,
+  marginBottom: theme.spacing.lg || 24, // Increased spacing between form fields
 });
 
 /**
@@ -478,6 +491,7 @@ const getInputStyles = (theme: any, size: string): TextStyle => {
 /**
  * Get label styles based on theme, size, and required state
  * Label styling is handled by Text component variant="labelSmall" color="secondary"
+ * We explicitly set the font family to ensure labels use Figtree-Medium
  */
 const getLabelStyles = (
   theme: any,
@@ -485,7 +499,9 @@ const getLabelStyles = (
   _required: boolean
 ): TextStyle => {
   return {
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.md || 12, // Increased spacing between label and input (12px)
+    // Explicitly set font family for medium weight (labelSmall uses medium)
+    fontFamily: theme.typography.fontFamily.medium,
   };
 };
 
