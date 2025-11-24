@@ -25,7 +25,8 @@ type Step = 'enter-credentials' | 'enter-code';
 
 export default function PhoneLoginScreen() {
   const router = useRouter();
-  const { signInWithPhone, signInWithEmail, verifyOtp, isLoading } = useAuthStore();
+  const { signInWithPhone, signInWithEmail, verifyOtp, isLoading } =
+    useAuthStore();
 
   const [step, setStep] = useState<Step>('enter-credentials');
   const [authMethod, setAuthMethod] = useState<AuthMethod>(null);
@@ -53,10 +54,14 @@ export default function PhoneLoginScreen() {
     if (isPhoneValid) {
       try {
         let processedNumber = sanitizedLocalNumber;
-        if (isUk && processedNumber.length === 11 && processedNumber.startsWith('0')) {
+        if (
+          isUk &&
+          processedNumber.length === 11 &&
+          processedNumber.startsWith('0')
+        ) {
           processedNumber = processedNumber.slice(1);
         }
-        
+
         const phone = `${countryCode}${processedNumber}`;
         setFullPhone(phone);
         setEmailOrPhone(phone);
@@ -69,7 +74,10 @@ export default function PhoneLoginScreen() {
         } else if (result.userNotFound) {
           Alert.alert('Phone Not Found', result.error);
         } else {
-          Alert.alert('Error', result.error || 'Failed to send verification code.');
+          Alert.alert(
+            'Error',
+            result.error || 'Failed to send verification code.'
+          );
         }
       } catch (error) {
         console.error('Login send code error', error);
@@ -94,7 +102,10 @@ export default function PhoneLoginScreen() {
       }
     } else {
       if (!isPhoneValid && !isEmailValid) {
-        Alert.alert('Invalid Input', 'Please enter a valid phone number or email address.');
+        Alert.alert(
+          'Invalid Input',
+          'Please enter a valid phone number or email address.'
+        );
       }
     }
   };
@@ -127,7 +138,10 @@ export default function PhoneLoginScreen() {
     } else if (authMethod === 'email') {
       const result = await signInWithEmail(emailOrPhone);
       if (result.success) {
-        Alert.alert('Verification Sent', 'A new verification has been sent to your email.');
+        Alert.alert(
+          'Verification Sent',
+          'A new verification has been sent to your email.'
+        );
       } else {
         Alert.alert('Error', result.error || 'Failed to resend verification');
       }
@@ -234,7 +248,8 @@ export default function PhoneLoginScreen() {
           style={styles.signUpLink}
         >
           <Text variant="body" style={styles.signUpText}>
-            Don't have an account? <Text style={styles.signUpLinkText}>Sign up</Text>
+            Don't have an account?{' '}
+            <Text style={styles.signUpLinkText}>Sign up</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -291,8 +306,16 @@ export default function PhoneLoginScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={theme.colors.background.primary}
+      />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -300,12 +323,16 @@ export default function PhoneLoginScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            step === 'enter-credentials' ? styles.primaryScroll : styles.secondaryScroll,
+            step === 'enter-credentials'
+              ? styles.primaryScroll
+              : styles.secondaryScroll,
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {step === 'enter-credentials' ? renderEnterCredentialsStep() : renderEnterCodeStep()}
+          {step === 'enter-credentials'
+            ? renderEnterCredentialsStep()
+            : renderEnterCodeStep()}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -314,140 +341,139 @@ export default function PhoneLoginScreen() {
 
 const createStyles = (theme: any) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  primaryScroll: {
-    paddingHorizontal: 34,
-    paddingTop: 100,
-    paddingBottom: 24,
-  },
-  secondaryScroll: {
-    paddingHorizontal: 32,
-    paddingTop: 100,
-    paddingBottom: 32,
-  },
-  screen: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  body: {
-    flex: 1,
-    width: '100%',
-  },
-  heroSpacing: {
-    marginTop: 0,
-    marginBottom: 0,
-  },
-  inputSection: {
-    width: '100%',
-    marginTop: 32,
-  },
-  otpSection: {
-    width: '100%',
-    marginTop: 32,
-  },
-  footerSpacer: {
-    height: 32,
-  },
-  phoneField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    height: 50,
-  },
-  countryTrigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: '100%',
-  },
-  countryFlag: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  countryCodeText: {
-    fontSize: 18,
-    color: theme.colors.text.primary,
-    fontWeight: '400',
-  },
-  phoneDivider: {
-    width: 1,
-    height: '60%',
-    backgroundColor: '#EAEAEA',
-  },
-  phoneInput: {
-    flex: 1,
-    paddingHorizontal: 16,
-    fontSize: 18,
-    color: theme.colors.text.primary,
-  },
-  orContainer: {
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  orText: {
-    fontSize: 14,
-    color: theme.colors.text.primary,
-    letterSpacing: -0.14,
-  },
-  emailField: {
-    borderWidth: 2,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    height: 50,
-  },
-  emailInput: {
-    flex: 1,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    color: theme.colors.text.primary,
-    letterSpacing: -0.28,
-  },
-  resendText: {
-    color: theme.colors.text.primary,
-    marginTop: 32,
-    textAlign: 'center',
-  },
-  authButton: {
-    marginBottom: 16,
-  },
-  resendLink: {
-    color: '#1082FF',
-  },
-  backButton: {
-    marginTop: 16,
-  },
-  footer: {
-    alignItems: 'center',
-    width: '100%',
-    paddingBottom: 12,
-    marginTop: 32,
-  },
-  actions: {
-    width: '100%',
-  },
-  signUpLink: {
-    marginTop: 16,
-  },
-  signUpText: {
-    fontSize: 14,
-    color: theme.colors.text.primary,
-    letterSpacing: -0.14,
-    textAlign: 'center',
-  },
-  signUpLinkText: {
-    color: '#1082FF',
-  },
-});
+    container: {
+      flex: 1,
+    },
+    keyboardContainer: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    primaryScroll: {
+      paddingHorizontal: 34,
+      paddingTop: 100,
+      paddingBottom: 24,
+    },
+    secondaryScroll: {
+      paddingHorizontal: 32,
+      paddingTop: 100,
+      paddingBottom: 32,
+    },
+    screen: {
+      flex: 1,
+      justifyContent: 'space-between',
+    },
+    body: {
+      flex: 1,
+      width: '100%',
+    },
+    heroSpacing: {
+      marginTop: 0,
+      marginBottom: 0,
+    },
+    inputSection: {
+      width: '100%',
+      marginTop: 32,
+    },
+    otpSection: {
+      width: '100%',
+      marginTop: 32,
+    },
+    footerSpacer: {
+      height: 32,
+    },
+    phoneField: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: '#EAEAEA',
+      borderRadius: 12,
+      backgroundColor: theme.colors.background.primary,
+      height: 50,
+    },
+    countryTrigger: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      height: '100%',
+    },
+    countryFlag: {
+      fontSize: 20,
+      marginRight: 8,
+    },
+    countryCodeText: {
+      fontSize: 18,
+      color: theme.colors.text.primary,
+      fontWeight: '400',
+    },
+    phoneDivider: {
+      width: 1,
+      height: '60%',
+      backgroundColor: '#EAEAEA',
+    },
+    phoneInput: {
+      flex: 1,
+      paddingHorizontal: 16,
+      fontSize: 18,
+      color: theme.colors.text.primary,
+    },
+    orContainer: {
+      alignItems: 'center',
+      marginVertical: 12,
+    },
+    orText: {
+      fontSize: 14,
+      color: theme.colors.text.primary,
+      letterSpacing: -0.14,
+    },
+    emailField: {
+      borderWidth: 2,
+      borderColor: '#EAEAEA',
+      borderRadius: 12,
+      backgroundColor: theme.colors.background.primary,
+      height: 50,
+    },
+    emailInput: {
+      flex: 1,
+      paddingHorizontal: 16,
+      fontSize: 14,
+      color: theme.colors.text.primary,
+      letterSpacing: -0.28,
+    },
+    resendText: {
+      color: theme.colors.text.primary,
+      marginTop: 32,
+      textAlign: 'center',
+    },
+    authButton: {
+      marginBottom: 16,
+    },
+    resendLink: {
+      color: '#1082FF',
+    },
+    backButton: {
+      marginTop: 16,
+    },
+    footer: {
+      alignItems: 'center',
+      width: '100%',
+      paddingBottom: 12,
+      marginTop: 32,
+    },
+    actions: {
+      width: '100%',
+    },
+    signUpLink: {
+      marginTop: 16,
+    },
+    signUpText: {
+      fontSize: 14,
+      color: theme.colors.text.primary,
+      letterSpacing: -0.14,
+      textAlign: 'center',
+    },
+    signUpLinkText: {
+      color: '#1082FF',
+    },
+  });

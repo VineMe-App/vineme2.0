@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import type { OnboardingData, OnboardingStep } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
+import { useTheme } from '@/theme/provider/useTheme';
 
 import NameStep from './NameStep';
 import EmailStep from './EmailStep';
@@ -58,6 +59,7 @@ export default function OnboardingFlow() {
   const [error, setError] = useState<string | null>(null);
 
   const { createUserProfile, user, signOut } = useAuthStore();
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Load any existing onboarding data from storage
@@ -182,8 +184,8 @@ export default function OnboardingFlow() {
   const StepComponent = currentStep.component;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background.primary} />
 
       <View style={styles.progressContainer} testID="progress-container">
         <View style={styles.stepDots}>
@@ -223,7 +225,6 @@ export default function OnboardingFlow() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   progressContainer: {
     paddingTop: 24,
