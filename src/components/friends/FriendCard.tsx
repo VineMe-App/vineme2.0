@@ -1,13 +1,14 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  TouchableOpacity,
   type GestureResponderEvent,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Avatar } from '../ui/Avatar';
+import { Text } from '../ui/Text';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 import { getDisplayName, getFullName } from '@/utils/name';
 
 import type { FriendshipWithUser } from '../../services/friendships';
@@ -61,32 +62,38 @@ export function FriendCard({
   // Block user action removed
 
   return (
-    <TouchableOpacity
-      style={styles.container}
+    <Card
+      variant="default"
+      interactive={true}
       onPress={handleCardPress}
-      activeOpacity={0.9}
-      accessibilityRole="button"
+      style={styles.container}
       accessibilityLabel={`View ${fullName || 'user'}'s profile`}
     >
       <View style={styles.userInfo}>
         <Avatar imageUrl={friend.avatar_url} name={fullName} size={50} />
         <View style={styles.textContainer}>
-          <Text style={styles.name}>{shortName || fullName || 'Friend'}</Text>
-          <Text style={styles.email}>{friend.email}</Text>
+          <Text variant="body" weight="semiBold" style={styles.name}>
+            {shortName || fullName || 'Friend'}
+          </Text>
+          <Text variant="bodySmall" color="secondary" style={styles.email}>
+            {friend.email}
+          </Text>
         </View>
       </View>
 
       {showActions && (
         <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.removeButton]}
+          <Button
+            title="Remove"
             onPress={handleActionPress}
-          >
-            <Text style={styles.removeButtonText}>Remove</Text>
-          </TouchableOpacity>
+            variant="ghost"
+            size="small"
+            style={styles.removeButton}
+            textStyle={styles.removeButtonText}
+          />
         </View>
       )}
-    </TouchableOpacity>
+    </Card>
   );
 }
 
@@ -95,18 +102,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
     marginVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   userInfo: {
     flexDirection: 'row',
@@ -118,25 +114,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 2,
   },
   email: {
-    fontSize: 14,
-    color: '#666',
+    // Typography handled by Text component variant
   },
   actions: {
     flexDirection: 'row',
     gap: 8,
-  },
-  actionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 9, // Updated to pill shape (half of paddingVertical: 6 * 2 + text height)
-    minWidth: 60,
-    alignItems: 'center',
   },
   removeButton: {
     backgroundColor: '#f3f4f6',
@@ -146,6 +131,5 @@ const styles = StyleSheet.create({
   removeButtonText: {
     color: '#374151',
     fontSize: 12,
-    fontWeight: '500',
   },
 });

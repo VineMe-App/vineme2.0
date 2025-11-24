@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
-  Text,
-  TextInput,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -10,6 +8,8 @@ import {
 } from 'react-native';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { Input } from '@/components/ui/Input';
 
 export interface MissingServiceFormData {
   churchId?: string;
@@ -131,100 +131,87 @@ export function MissingServiceModal({
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.description}>{description}</Text>
+          <Text variant="body" color="secondary" style={styles.description}>
+            {description}
+          </Text>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Church name</Text>
-            <TextInput
-              style={styles.input}
-              value={churchName}
-              onChangeText={setChurchName}
-              placeholder="Church name"
-              placeholderTextColor="#666"
-            />
-          </View>
+          <Input
+            label="Church name"
+            value={churchName}
+            onChangeText={setChurchName}
+            placeholder="Church name"
+            containerStyle={styles.inputContainer}
+          />
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Location (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={churchLocation}
-              onChangeText={setChurchLocation}
-              placeholder="Location or postcode"
-              placeholderTextColor="#666"
-            />
-          </View>
+          <Input
+            label="Location (optional)"
+            value={churchLocation}
+            onChangeText={setChurchLocation}
+            placeholder="Location or postcode"
+            containerStyle={styles.inputContainer}
+          />
 
           {mode === 'church' && (
-            <Text style={styles.sectionLabel}>
+            <Text variant="h6" weight="semiBold" style={styles.sectionLabel}>
               Service details (optional, if known)
             </Text>
           )}
 
           <View style={styles.fieldRow}>
-            <View style={[styles.fieldGroup, styles.flexHalf]}>
-              <Text style={styles.label}>Service name (optional)</Text>
-              <TextInput
-                style={styles.input}
+            <View style={styles.flexHalf}>
+              <Input
+                label="Service name (optional)"
                 value={serviceName}
                 onChangeText={setServiceName}
                 placeholder="Service name"
-                placeholderTextColor="#666"
+                containerStyle={styles.inputContainer}
               />
             </View>
-            <View style={[styles.fieldGroup, styles.flexHalf]}>
-              <Text style={styles.label}>Typical time (optional)</Text>
-              <TextInput
-                style={styles.input}
+            <View style={styles.flexHalf}>
+              <Input
+                label="Typical time (optional)"
                 value={serviceTime}
                 onChangeText={setServiceTime}
                 placeholder="e.g. Sundays 5pm"
-                placeholderTextColor="#666"
+                containerStyle={styles.inputContainer}
               />
             </View>
           </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Best contact name</Text>
-            <TextInput
-              style={styles.input}
-              value={contactName}
-              onChangeText={setContactName}
-              placeholder="Who should we follow up with?"
-              placeholderTextColor="#666"
-            />
-          </View>
+          <Input
+            label="Best contact name"
+            value={contactName}
+            onChangeText={setContactName}
+            placeholder="Who should we follow up with?"
+            containerStyle={styles.inputContainer}
+          />
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Best contact email</Text>
-            <TextInput
-              style={styles.input}
-              value={contactEmail}
-              onChangeText={setContactEmail}
-              placeholder="name@example.com"
-              placeholderTextColor="#666"
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
+          <Input
+            label="Best contact email"
+            value={contactEmail}
+            onChangeText={setContactEmail}
+            placeholder="name@example.com"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            containerStyle={styles.inputContainer}
+          />
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>
-              Anything else we should know? (optional)
+          <Input
+            label="Anything else we should know? (optional)"
+            value={additionalInfo}
+            onChangeText={setAdditionalInfo}
+            placeholder="Add context or questions"
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            containerStyle={styles.inputContainer}
+          />
+
+          {showError ? (
+            <Text variant="bodySmall" color="error" style={styles.errorText}>
+              {showError}
             </Text>
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              value={additionalInfo}
-              onChangeText={setAdditionalInfo}
-              placeholder="Add context or questions"
-              placeholderTextColor="#666"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
-
-          {showError ? <Text style={styles.errorText}>{showError}</Text> : null}
+          ) : null}
 
           <View style={styles.actions}>
             <Button
@@ -253,41 +240,21 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   description: {
-    fontSize: 15,
-    color: '#444',
     lineHeight: 22,
-  },
-  fieldGroup: {
-    gap: 6,
   },
   fieldRow: {
     flexDirection: 'row',
     gap: 12,
   },
   sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    marginTop: 8,
+    marginBottom: 8,
   },
   flexHalf: {
     flex: 1,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d8d8d8',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#fbfbfb',
-  },
-  multiline: {
-    minHeight: 96,
+  inputContainer: {
+    marginBottom: 0,
   },
   actions: {
     flexDirection: 'row',
@@ -296,7 +263,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   errorText: {
-    color: '#d73a49',
-    fontSize: 14,
+    marginTop: 4,
   },
 });

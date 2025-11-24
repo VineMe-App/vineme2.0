@@ -253,6 +253,8 @@ export const Input: React.FC<InputProps> = ({
       <View style={styles.messageContainer} testID={`${testID}-message`}>
         {message && (
           <Text
+            variant={error ? "bodySmall" : "bodySmall"}
+            color={error ? "error" : successMessage ? "success" : "secondary"}
             style={[messageStyles, styles.messageText]}
             testID={`${testID}-message-text`}
             accessibilityLiveRegion="polite"
@@ -289,7 +291,12 @@ export const Input: React.FC<InputProps> = ({
   return (
     <View style={[containerStyles, containerStyle]} testID={testID}>
       {label && (
-        <Text style={[labelStyles, labelStyle]} testID={`${testID}-label`}>
+        <Text 
+          variant="labelSmall" 
+          color="secondary" 
+          style={[labelStyles, labelStyle]} 
+          testID={`${testID}-label`}
+        >
           {label}
           {required && (
             <Text style={[labelStyles, { color: theme.colors.error[500] }]}>
@@ -317,7 +324,7 @@ export const Input: React.FC<InputProps> = ({
 
         <TextInput
           style={[inputStyles, inputStyle]}
-          placeholderTextColor={theme.colors.text.tertiary}
+          placeholderTextColor="#B4B4B4"
           onFocus={handleFocus}
           onBlur={handleBlur}
           onChangeText={handleChangeText}
@@ -355,6 +362,7 @@ const getContainerStyles = (theme: any, fullWidth: boolean): ViewStyle => ({
 
 /**
  * Get input container styles based on theme, variant, size, validation state, and focus
+ * Matches onboarding style: borderWidth: 2, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16
  */
 const getInputContainerStyles = (
   theme: any,
@@ -366,47 +374,51 @@ const getInputContainerStyles = (
   const baseStyles: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
   };
 
-  // Size styles
+  // Size styles - matching onboarding style
   const sizeStyles: Record<string, ViewStyle> = {
     small: {
       minHeight: 36,
-      paddingHorizontal: theme.spacing.sm,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
     },
     medium: {
       minHeight: 44,
-      paddingHorizontal: theme.spacing.md,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
     },
     large: {
       minHeight: 52,
-      paddingHorizontal: theme.spacing.lg,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
     },
   };
 
   // Variant styles
   const variantStyles: Record<string, ViewStyle> = {
     default: {
-      backgroundColor: theme.colors.surface.primary,
-      borderColor: theme.colors.border.primary,
+      backgroundColor: '#FFFFFF',
+      borderColor: '#EAEAEA',
     },
     filled: {
       backgroundColor: theme.colors.surface.secondary,
-      borderColor: 'transparent',
+      borderColor: '#EAEAEA',
     },
     outlined: {
       backgroundColor: 'transparent',
-      borderColor: theme.colors.border.primary,
+      borderColor: '#EAEAEA',
     },
   };
 
-  // Validation state styles
+  // Validation state styles - matching onboarding error color
   const validationStyles: Record<string, ViewStyle> = {
     default: {},
     error: {
-      borderColor: theme.colors.error[500],
+      borderColor: '#ff4444',
     },
     success: {
       borderColor: theme.colors.success[500],
@@ -424,11 +436,7 @@ const getInputContainerStyles = (
   };
 
   if (isFocused && validationState === 'default') {
-    combinedStyles.borderColor = theme.colors.border.focus;
-    combinedStyles.shadowColor = theme.colors.primary[500];
-    combinedStyles.shadowOffset = { width: 0, height: 0 };
-    combinedStyles.shadowRadius = 4;
-    combinedStyles.elevation = 2;
+    combinedStyles.borderColor = theme.colors.border.focus || '#EAEAEA';
   }
 
   return combinedStyles;
@@ -436,30 +444,26 @@ const getInputContainerStyles = (
 
 /**
  * Get input text styles based on theme and size
+ * Matches onboarding style: fontSize: 16, color: '#2C2235'
  */
 const getInputStyles = (theme: any, size: string): TextStyle => {
   const baseStyles: TextStyle = {
     flex: 1,
     fontFamily: theme.typography.fontFamily.regular,
-    color: theme.colors.text.primary,
+    color: '#2C2235',
     includeFontPadding: false,
+    fontSize: 16,
   };
 
   const sizeStyles: Record<string, TextStyle> = {
     small: {
-      fontSize: theme.typography.fontSize.sm,
-      lineHeight: theme.typography.lineHeight.sm,
-      paddingVertical: theme.spacing.xs,
+      fontSize: 14,
     },
     medium: {
-      fontSize: theme.typography.fontSize.base,
-      lineHeight: theme.typography.lineHeight.base,
-      paddingVertical: theme.spacing.sm,
+      fontSize: 16,
     },
     large: {
-      fontSize: theme.typography.fontSize.lg,
-      lineHeight: theme.typography.lineHeight.lg,
-      paddingVertical: theme.spacing.md,
+      fontSize: 18,
     },
   };
 
@@ -471,36 +475,15 @@ const getInputStyles = (theme: any, size: string): TextStyle => {
 
 /**
  * Get label styles based on theme, size, and required state
+ * Label styling is handled by Text component variant="labelSmall" color="secondary"
  */
 const getLabelStyles = (
   theme: any,
   size: string,
   _required: boolean
 ): TextStyle => {
-  const baseStyles: TextStyle = {
-    fontFamily: theme.typography.fontFamily.medium,
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.xs,
-  };
-
-  const sizeStyles: Record<string, TextStyle> = {
-    small: {
-      fontSize: theme.typography.fontSize.sm,
-      lineHeight: theme.typography.lineHeight.sm,
-    },
-    medium: {
-      fontSize: theme.typography.fontSize.base,
-      lineHeight: theme.typography.lineHeight.base,
-    },
-    large: {
-      fontSize: theme.typography.fontSize.lg,
-      lineHeight: theme.typography.lineHeight.lg,
-    },
-  };
-
   return {
-    ...baseStyles,
-    ...sizeStyles[size],
+    marginBottom: theme.spacing.xs,
   };
 };
 

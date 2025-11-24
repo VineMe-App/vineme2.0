@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
+import { Input } from '@/components/ui/Input';
 
 export default function EmailStep({
   data,
@@ -134,30 +135,23 @@ export default function EmailStep({
           </View>
         )}
         <View style={styles.inputGroup}>
-          <Text variant="labelSmall" color="secondary" style={styles.label}>
-            Email address
-          </Text>
-          <TextInput
-            style={[styles.input, error ? styles.inputError : null]}
+          <Input
+            label="Email address"
             value={email}
             onChangeText={(t) => {
               setEmail(t);
               if (error) setError(null);
             }}
             placeholder="you@example.com"
-            placeholderTextColor="#B4B4B4"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
             editable={!isLoading}
             returnKeyType="done"
             textContentType="emailAddress"
+            error={error || undefined}
+            containerStyle={styles.inputContainer}
           />
-          {error && (
-            <Text variant="bodySmall" color="error" style={styles.errorText}>
-              {error}
-            </Text>
-          )}
         </View>
 
         <TouchableOpacity
@@ -235,24 +229,8 @@ const styles = StyleSheet.create({
   inputGroup: {
     gap: 8,
   },
-  label: {
-    color: '#2C2235',
-  },
-  input: {
-    borderWidth: 2,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    backgroundColor: '#FFFFFF',
-    color: '#2C2235',
-  },
-  inputError: {
-    borderColor: '#ff4444',
-  },
-  errorText: {
-    marginTop: 4,
+  inputContainer: {
+    marginBottom: 0,
   },
   checkboxContainer: {
     flexDirection: 'row',

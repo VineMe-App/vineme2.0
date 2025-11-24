@@ -26,6 +26,8 @@ import { formatServiceTime } from '@/utils/helpers';
 import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithBadge';
 import { useNotificationBadge } from '@/hooks/useNotifications';
 import { Image } from 'react-native';
+import { CTACard } from '@/components/ui/CTACard';
+import { Button } from '@/components/ui/Button';
 
 const formatNameList = (names: string[]): string => {
   const filtered = names.filter((name) => name && name.trim().length > 0);
@@ -186,14 +188,24 @@ export default function HomeScreen() {
 
   if (isLoading && !userGroupMemberships) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
         <LoadingSpinner message="Loading your dashboard..." />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
       <ScrollView
         style={[
           styles.scrollView,
@@ -396,62 +408,21 @@ export default function HomeScreen() {
               ]}
             >
               {/* Connect a friend */}
-              <TouchableOpacity
-                style={styles.actionCard}
+              <CTACard
+                title="Connect a friend"
+                description="Help someone join our community"
                 onPress={() => router.push('/referral-landing')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.actionCardContent}>
-                  <Text
-                    variant="body"
-                    weight="bold"
-                    style={styles.actionCardTitle}
-                  >
-                    Connect a friend
-                  </Text>
-                  <Text
-                    variant="body"
-                    weight="normal"
-                    style={styles.actionCardDescription}
-                  >
-                    Help someone join our community
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward-outline"
-                  size={20}
-                  color="#2C2235"
-                />
-              </TouchableOpacity>
+                variant="default"
+                style={styles.actionCardSpacing}
+              />
 
               {/* Create a group */}
-              <TouchableOpacity
-                style={styles.actionCard}
+              <CTACard
+                title="Create a group"
+                description="Insert copy for description"
                 onPress={() => router.push('/group/create')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.actionCardContent}>
-                  <Text
-                    variant="body"
-                    weight="bold"
-                    style={styles.actionCardTitle}
-                  >
-                    Create a group
-                  </Text>
-                  <Text
-                    variant="body"
-                    weight="normal"
-                    style={styles.actionCardDescription}
-                  >
-                    Insert copy for description
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward-outline"
-                  size={20}
-                  color="#2C2235"
-                />
-              </TouchableOpacity>
+                variant="default"
+              />
             </View>
           ) : (
             <View style={styles.emptyStateContainer}>
@@ -472,86 +443,35 @@ export default function HomeScreen() {
                   Join a Bible study group now and get connected with your
                   community
                 </Text>
-                <TouchableOpacity
-                  style={styles.findGroupButton}
+                <Button
+                  title="Find a group"
                   onPress={() => router.push('/(tabs)/groups')}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name="search-outline"
-                    size={18}
-                    color="#FFFFFF"
-                    style={styles.searchIcon}
-                  />
-                  <Text
-                    variant="body"
-                    weight="bold"
-                    style={styles.findGroupButtonText}
-                  >
-                    Find a group
-                  </Text>
-                </TouchableOpacity>
+                  variant="secondary"
+                  icon={
+                    <Ionicons name="search-outline" size={18} color="#FFFFFF" />
+                  }
+                  style={styles.findGroupButton}
+                />
               </View>
 
               {/* Other action cards */}
               <View style={styles.actionCardsContainer}>
                 {/* Connect a friend */}
-                <TouchableOpacity
-                  style={styles.actionCard}
+                <CTACard
+                  title="Connect a friend"
+                  description="Help someone join our community"
                   onPress={() => router.push('/referral-landing')}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.actionCardContent}>
-                    <Text
-                      variant="body"
-                      weight="bold"
-                      style={styles.actionCardTitle}
-                    >
-                      Connect a friend
-                    </Text>
-                    <Text
-                      variant="body"
-                      weight="normal"
-                      style={styles.actionCardDescription}
-                    >
-                      Help someone join our community
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward-outline"
-                    size={20}
-                    color="#2C2235"
-                  />
-                </TouchableOpacity>
+                  variant="default"
+                  style={styles.actionCardSpacing}
+                />
 
                 {/* Create a group */}
-                <TouchableOpacity
-                  style={styles.actionCard}
+                <CTACard
+                  title="Create a group"
+                  description="Insert copy for description"
                   onPress={() => router.push('/group/create')}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.actionCardContent}>
-                    <Text
-                      variant="body"
-                      weight="bold"
-                      style={styles.actionCardTitle}
-                    >
-                      Create a group
-                    </Text>
-                    <Text
-                      variant="body"
-                      weight="normal"
-                      style={styles.actionCardDescription}
-                    >
-                      Insert copy for description
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward-outline"
-                    size={20}
-                    color="#2C2235"
-                  />
-                </TouchableOpacity>
+                  variant="default"
+                />
               </View>
             </View>
           )}
@@ -790,24 +710,7 @@ const styles = StyleSheet.create({
     fontWeight: '300',
   },
   findGroupButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FF0083',
-    borderRadius: 21,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    minHeight: 42,
     width: 278,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  findGroupButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    fontWeight: '700',
   },
   actionCardsContainer: {
     gap: 12,
@@ -816,51 +719,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 17,
     marginTop: 16,
   },
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F9FAFC',
-    borderRadius: 12,
-    paddingHorizontal: 32,
-    paddingVertical: 24,
-    minHeight: 96,
-    position: 'relative',
-  },
-  actionCardSelected: {
-    backgroundColor: '#2C2235',
-  },
-  actionCardContent: {
-    flex: 1,
-  },
-  actionCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  actionCardTitle: {
-    color: '#2C2235',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    fontWeight: '700',
-  },
-  actionCardTitleSelected: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    fontWeight: '700',
-  },
-  actionCardDescription: {
-    color: '#2C2235',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    lineHeight: 20,
-  },
-  actionCardDescriptionSelected: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    lineHeight: 20,
+  actionCardSpacing: {
+    marginBottom: 12,
   },
 });

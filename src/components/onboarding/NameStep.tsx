@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { Text } from '@/components/ui/Text';
+import { Input } from '@/components/ui/Input';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { AuthHero } from '@/components/auth/AuthHero';
 
@@ -116,49 +117,31 @@ export default function NameStep({
         <View style={[
           styles.inputGroup
         ]}>
-          <View>
-            <Text variant="labelSmall" color="secondary" style={styles.label}>
-              First name
-            </Text>
-            <TextInput
-              style={[styles.input, firstNameError ? styles.inputError : null]}
-              value={firstName}
-              onChangeText={handleFirstChange}
-              placeholder="First name"
-              placeholderTextColor="#B4B4B4"
-              autoCapitalize="words"
-              autoCorrect={false}
-              editable={!isLoading}
-              maxLength={50}
-            />
-            {firstNameError && (
-              <Text variant="bodySmall" color="error" style={styles.errorText}>
-                {firstNameError}
-              </Text>
-            )}
-          </View>
+          <Input
+            label="First name"
+            value={firstName}
+            onChangeText={handleFirstChange}
+            placeholder="First name"
+            autoCapitalize="words"
+            autoCorrect={false}
+            editable={!isLoading}
+            maxLength={50}
+            error={firstNameError || undefined}
+            containerStyle={styles.inputContainer}
+          />
 
-          <View>
-            <Text variant="labelSmall" color="secondary" style={styles.label}>
-              Last name
-            </Text>
-            <TextInput
-              style={[styles.input, lastNameError ? styles.inputError : null]}
-              value={lastName}
-              onChangeText={handleLastChange}
-              placeholder="Last name"
-              placeholderTextColor="#B4B4B4"
-              autoCapitalize="words"
-              autoCorrect={false}
-              editable={!isLoading}
-              maxLength={50}
-            />
-            {lastNameError && (
-              <Text variant="bodySmall" color="error" style={styles.errorText}>
-                {lastNameError}
-              </Text>
-            )}
-          </View>
+          <Input
+            label="Last name"
+            value={lastName}
+            onChangeText={handleLastChange}
+            placeholder="Last name"
+            autoCapitalize="words"
+            autoCorrect={false}
+            editable={!isLoading}
+            maxLength={50}
+            error={lastNameError || undefined}
+            containerStyle={styles.inputContainer}
+          />
         </View>
 
         {isKeyboardVisible && (
@@ -252,24 +235,8 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 16,
   },
-  label: {
-    color: '#2C2235',
-  },
-  input: {
-    borderWidth: 2,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    backgroundColor: '#FFFFFF',
-    color: '#2C2235',
-  },
-  inputError: {
-    borderColor: '#ff4444',
-  },
-  errorText: {
-    marginTop: 4,
+  inputContainer: {
+    marginBottom: 0,
   },
   footer: {
     alignItems: 'center',
