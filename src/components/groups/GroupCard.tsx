@@ -264,7 +264,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             variant="h6"
             weight="bold"
             style={styles.groupName}
-            numberOfLines={2}
+            numberOfLines={variant === 'my-groups' ? 1 : 2}
             ellipsizeMode="tail"
           >
             {group.title}
@@ -307,13 +307,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             )}
 
             {/* Location */}
-            <View style={styles.detailRow}>
+            <View style={[
+              styles.detailRow,
+              variant === 'my-groups' && styles.detailRowNoWrap
+            ]}>
               <Ionicons name="location-outline" size={16} color="#2C2235" />
               <Text
                 variant="bodySmall"
                 weight="medium"
                 style={styles.detailText}
-                numberOfLines={2}
+                numberOfLines={variant === 'my-groups' ? 1 : 2}
                 ellipsizeMode="tail"
               >
                 {formatLocation(group.location)}
@@ -346,13 +349,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
             {/* Church and Service */}
             {churchAndServiceLabel && (
-              <View style={styles.detailRow}>
+              <View style={[
+                styles.detailRow,
+                variant === 'my-groups' && styles.detailRowNoWrap
+              ]}>
                 <Ionicons name="business-outline" size={16} color="#2C2235" />
                 <Text
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
-                  numberOfLines={2}
+                  numberOfLines={variant === 'my-groups' ? 1 : 2}
                   ellipsizeMode="tail"
                 >
                   {churchAndServiceLabel}
@@ -697,11 +703,11 @@ const styles = StyleSheet.create({
   },
   infoMyGroups: {
     paddingRight: 10, // Match padding to prevent text from being covered by profile pictures - applies to ALL cards on my-groups page
-    paddingBottom: 40, // Keep bottom padding for my groups page
+    paddingBottom: 20, // Keep bottom padding for my groups page
   },
   infoAllGroups: {
     paddingRight: 100, // Restored original padding for profile pictures
-    paddingBottom: 12, // Different bottom padding for All Groups page
+    paddingBottom: 8, // Different bottom padding for All Groups page
   },
   groupName: {
     color: '#000000',
@@ -853,6 +859,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 6,
     flexWrap: 'wrap',
+  },
+  detailRowNoWrap: {
+    flexWrap: 'nowrap',
   },
   detailText: {
     color: '#000000',

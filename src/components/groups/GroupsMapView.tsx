@@ -736,10 +736,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       // For greyed out markers, use a darker/desaturated version, but keep outside groups dark
       if (isGreyedOut && category !== 'outside') {
         // Return a darker version for greyed out non-outside groups
-        switch (category) {
-          case 'service':
+      switch (category) {
+        case 'service':
             return '#cc0067'; // Darker pink
-          case 'church':
+        case 'church':
             return '#6b184c'; // Darker blend
           default:
             return '#FF0083';
