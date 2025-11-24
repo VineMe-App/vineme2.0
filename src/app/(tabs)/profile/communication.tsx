@@ -8,7 +8,6 @@ import {
   TextInput,
   Alert,
   Platform,
-  Image,
   TouchableOpacity,
   Linking,
 } from 'react-native';
@@ -278,23 +277,6 @@ export default function CommunicationAndSecurityScreen() {
         { backgroundColor: theme.colors.background.primary },
       ]}
     >
-      <View
-        style={[
-          styles.compactHeader,
-          { backgroundColor: theme.colors.surface.primary },
-        ]}
-      >
-        <View style={styles.headerLeft}>
-          <Image
-            source={require('../../../../assets/figma-128-1563/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text variant="h4" weight="black" style={styles.headerTitle}>
-            Communication and Security
-          </Text>
-        </View>
-      </View>
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Notifications Section */}
@@ -627,29 +609,6 @@ export default function CommunicationAndSecurityScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  compactHeader: {
-    paddingHorizontal: 19,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 60,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  logo: {
-    width: 27,
-    height: 27,
-  },
-  headerTitle: {
-    color: '#2C2235',
-    fontSize: 22,
-    letterSpacing: -1.1,
-    fontWeight: '900',
-  },
   content: { padding: 16 },
   card: { marginBottom: 16, padding: 20 },
   cardTitle: {

@@ -178,16 +178,18 @@ function getVariantStyles(
 ): ViewStyle {
   const { colors } = theme;
 
+  const defaultBackground = '#F9FAFC';
+
   switch (variant) {
     case 'outlined':
       return {
-        backgroundColor: colors.surface.primary,
+        backgroundColor: defaultBackground,
         borderWidth: 1,
         borderColor: disabled ? colors.border.secondary : colors.border.primary,
       };
     case 'elevated':
       return {
-        backgroundColor: colors.surface.primary,
+        backgroundColor: defaultBackground,
       };
     case 'filled':
       return {
@@ -200,7 +202,7 @@ function getVariantStyles(
     case 'default':
     default:
       return {
-        backgroundColor: colors.surface.primary,
+        backgroundColor: defaultBackground,
       };
   }
 }

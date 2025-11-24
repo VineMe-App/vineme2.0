@@ -182,7 +182,7 @@ function RootLayoutNav() {
         <Stack.Screen name="notifications" options={{ headerShown: true }} />
         <Stack.Screen
           name="referral-landing"
-          options={{ headerShown: false }}
+          options={{ headerShown: true }}
         />
         <Stack.Screen name="admin" options={{ headerShown: false }} />
         <Stack.Screen name="group" options={{ headerShown: false }} />

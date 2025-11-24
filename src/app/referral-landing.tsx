@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../components/ui/Text';
 import { Header } from '../components/ui/Header';
@@ -70,7 +70,11 @@ export default function ReferralLandingPage() {
 
   return (
     <>
-      <Header title="Connect Someone" useSafeArea={false} />
+      <Stack.Screen
+        options={{
+          header: () => <Header title="Connect Someone" />,
+        }}
+      />
       <ScrollView style={styles.container}>
         <View style={styles.content}>
           <View style={styles.questionSection}>

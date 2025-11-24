@@ -197,7 +197,6 @@ export const CTACard: React.FC<CTACardProps> = ({
 
 const styles = StyleSheet.create({
   defaultCard: {
-    backgroundColor: '#F9FAFC',
     borderRadius: 12,
     paddingHorizontal: 32,
     paddingVertical: 24,
@@ -242,4 +241,3 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-

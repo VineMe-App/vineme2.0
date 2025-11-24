@@ -1151,7 +1151,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             elementType: 'geometry',
             stylers: [
               {
-                color: '#bcddbd',
+                color: '#ffe8f2',
               },
             ],
           },

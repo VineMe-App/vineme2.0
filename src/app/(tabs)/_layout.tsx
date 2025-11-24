@@ -6,6 +6,7 @@ import { useTheme } from '@/theme/provider/useTheme';
 import { Text } from '@/components/ui/Text';
 import { Avatar } from '@/components/ui/Avatar';
 import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithBadge';
+import { Header } from '@/components/ui/Header';
 import { useNotificationBadge } from '@/hooks/useNotifications';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'expo-router';
@@ -193,13 +194,26 @@ export default function TabLayout() {
         name="profile/security"
         options={{
           href: null,
+          headerShown: true,
+          header: () => (
+            <Header
+              title="Security Settings"
+              subtitle="Manage your account credentials"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile/communication"
         options={{
           href: null,
-          headerShown: false,
+          headerShown: true,
+          header: () => (
+            <Header
+              title="Communication & Security"
+              subtitle="Notifications and contact preferences"
+            />
+          ),
         }}
       />
     </Tabs>
