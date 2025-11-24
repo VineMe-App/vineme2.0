@@ -12,7 +12,6 @@ import {
 import Text from './Text';
 import { useTheme } from '../../theme/provider/useTheme';
 import { Spinner } from './Loading/Spinner';
-import { tertiaryColors } from '@/theme/tokens';
 
 export interface ButtonProps {
   /**
@@ -331,8 +330,8 @@ const getButtonStyles = (
   // Variant styles
   const variantStyles: Record<string, ViewStyle> = {
     primary: {
-      backgroundColor: tertiaryColors[500], // Dark color
-      borderColor: tertiaryColors[500],
+      backgroundColor: theme.colors.text.primary,
+      borderColor: theme.colors.text.primary,
     },
     secondary: {
       backgroundColor: theme.colors.primary[500], // Changed to use primary color (pink)

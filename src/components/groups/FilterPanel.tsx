@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import { useGroupFiltersStore } from '../../stores/groupFilters';
 import { Modal } from '../ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/provider/useTheme';
-import { tertiaryColors } from '@/theme/tokens';
 
 interface FilterPanelProps {
   isVisible: boolean;
@@ -32,6 +31,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onClose,
 }) => {
   const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const {
     filters,
     setMeetingDays,
@@ -39,8 +39,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setHideFullGroups,
     clearFilters,
   } = useGroupFiltersStore();
-
-  const styles = createStyles(theme);
 
   const handleMeetingDayToggle = (day: string) => {
     const newDays = filters.meetingDays.includes(day)
@@ -70,7 +68,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           onPress={onClose}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="close" size={24} color={tertiaryColors[500]} />
+          <Ionicons name="close" size={24} color={theme.colors.text.primary} />
         </TouchableOpacity>
 
         {/* Title */}
@@ -194,7 +192,7 @@ const createStyles = (theme: any) =>
     title: {
       fontSize: 20,
       fontWeight: '800', // ExtraBold
-      color: tertiaryColors[500],
+      color: theme.colors.text.primary,
       letterSpacing: -0.4,
       lineHeight: 22,
       marginBottom: 32,
@@ -212,7 +210,7 @@ const createStyles = (theme: any) =>
     sectionTitle: {
       fontSize: 16,
       fontWeight: '500', // Medium
-      color: tertiaryColors[500],
+      color: theme.colors.text.primary,
       letterSpacing: -0.32,
       lineHeight: 16,
       marginBottom: 12,
@@ -234,12 +232,12 @@ const createStyles = (theme: any) =>
       height: 28,
     },
     filterButtonActive: {
-      backgroundColor: tertiaryColors[500],
+      backgroundColor: theme.colors.text.primary,
     },
     filterButtonText: {
       fontSize: 12,
       fontWeight: '500', // Medium from Figma
-      color: tertiaryColors[500],
+      color: theme.colors.text.primary,
       fontFamily: theme.typography.fontFamily.medium,
       lineHeight: 12,
       letterSpacing: 0,
@@ -258,19 +256,19 @@ const createStyles = (theme: any) =>
       justifyContent: 'center',
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: tertiaryColors[500],
+      borderColor: theme.colors.text.primary,
       backgroundColor: '#FFFFFF',
     },
     resetButtonText: {
       fontSize: 16,
       fontWeight: '700',
-      color: tertiaryColors[500],
+      color: theme.colors.text.primary,
       fontFamily: theme.typography.fontFamily.bold,
       textAlign: 'center',
     },
     applyButton: {
       flex: 2,
-      backgroundColor: tertiaryColors[500],
+      backgroundColor: theme.colors.text.primary,
       borderRadius: 100, // Pill shape from Figma
       height: 42,
       justifyContent: 'center',

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Image, StyleSheet, ImageSourcePropType, ViewStyle } from 'react-native';
 import { Text } from '@/components/ui/Text';
-import { tertiaryColors } from '@/theme/tokens';
 
 const defaultLogo = require('../../../assets/figma-105-1538/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png');
 
@@ -22,7 +21,13 @@ export const AuthHero: React.FC<AuthHeroProps> = ({
     <View style={[styles.container, containerStyle]}>
       <Image source={logoSource} style={styles.logo} resizeMode="contain" />
       {title ? (
-        <Text variant="h4" weight="black" align="center" style={styles.title}>
+        <Text
+          variant="h4"
+          weight="black"
+          align="center"
+          color="primary"
+          style={styles.title}
+        >
           {title}
         </Text>
       ) : null}
@@ -50,13 +55,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    color: tertiaryColors[500],
     marginBottom: 12,
     letterSpacing: -1.5,
     fontWeight: '900',
   },
   subtitle: {
-    color: tertiaryColors[500],
     lineHeight: 24,
     letterSpacing: -0.2,
     maxWidth: 320,
@@ -68,4 +71,3 @@ const styles = StyleSheet.create({
 });
 
 export default AuthHero;
-

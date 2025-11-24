@@ -15,7 +15,7 @@ import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { Card } from '../ui/Card';
-import { tertiaryColors } from '@/theme/tokens';
+import { useTheme } from '@/theme/provider/useTheme';
 
 interface GroupCardProps {
   group: GroupWithDetails | null | undefined;
@@ -52,6 +52,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 }) => {
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
+
+  const { theme } = useTheme();
 
   const churchName = group?.church?.name?.trim();
   const serviceName = group?.service?.name?.trim();
@@ -117,7 +119,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       case 'church':
         return '#96115c'; // Blend of pink and dark (50% pink, 50% dark) - darker
       case 'outside':
-        return tertiaryColors[500]; // Dark color
+        return theme.colors.text.primary;
       default:
         return '#EDEDED';
     }
@@ -272,7 +274,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {/* Time */}
             {group.meeting_day && group.meeting_time && (
               <View style={styles.detailRow}>
-                <Ionicons name="time-outline" size={16} color={tertiaryColors[500]} />
+                <Ionicons
+                  name="time-outline"
+                  size={16}
+                  color={theme.colors.text.primary}
+                />
                 <Text
                   variant="bodySmall"
                   weight="medium"
@@ -287,7 +293,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {/* Distance (shown when sorting by distance) */}
             {typeof distanceKm === 'number' && (
               <View style={styles.detailRow}>
-                <Ionicons name="navigate-outline" size={16} color={tertiaryColors[500]} />
+                <Ionicons
+                  name="navigate-outline"
+                  size={16}
+                  color={theme.colors.text.primary}
+                />
                 <Text
                   variant="bodySmall"
                   weight="medium"
@@ -305,7 +315,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               styles.detailRow,
               variant === 'my-groups' && styles.detailRowNoWrap
             ]}>
-              <Ionicons name="location-outline" size={16} color={tertiaryColors[500]} />
+              <Ionicons
+                name="location-outline"
+                size={16}
+                color={theme.colors.text.primary}
+              />
               <Text
                 variant="bodySmall"
                 weight="medium"
@@ -328,7 +342,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 <Text
                   variant="bodySmall"
                   weight="medium"
-                  style={[styles.detailText, styles.ledByText]}
+                  style={[
+                    styles.detailText,
+                    { color: theme.colors.text.primary },
+                  ]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
@@ -347,7 +364,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 styles.detailRow,
                 variant === 'my-groups' && styles.detailRowNoWrap
               ]}>
-                <Ionicons name="business-outline" size={16} color={tertiaryColors[500]} />
+                <Ionicons
+                  name="business-outline"
+                  size={16}
+                  color={theme.colors.text.primary}
+                />
                 <Text
                   variant="bodySmall"
                   weight="medium"
@@ -884,9 +905,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flexShrink: 1,
     includeFontPadding: false,
-  },
-  ledByText: {
-    color: tertiaryColors[500],
   },
   leaderTextAndAvatars: {
     flexDirection: 'row',

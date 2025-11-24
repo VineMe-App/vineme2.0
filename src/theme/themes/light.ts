@@ -48,7 +48,7 @@ export const lightTheme: ThemeConfig = {
 
     // Background colors
     background: {
-      primary: '#ffffff', // White
+      primary: '#fffbee', // White
       secondary: '#FFFBEE', // Updated to use light cream color
       tertiary: '#fff8e0', // Lighter cream variant
       inverse: tertiaryColors[500], // Updated to use dark color
@@ -59,7 +59,7 @@ export const lightTheme: ThemeConfig = {
       primary: tertiaryColors[500], // Updated to use dark color
       secondary: '#475569',
       tertiary: '#64748b',
-      inverse: '#ffffff',
+      inverse: '#fffbee',
       disabled: '#94a3b8',
     },
 
@@ -73,7 +73,7 @@ export const lightTheme: ThemeConfig = {
 
     // Surface colors
     surface: {
-      primary: '#ffffff', // White for cards/surfaces
+      primary: '#FFFFFE', // White for cards/surfaces
       secondary: '#FFFBEE', // Updated to use light cream color
       tertiary: '#fff8e0', // Lighter cream variant
       overlay: 'rgba(44, 34, 53, 0.5)', // Updated to use dark color with opacity

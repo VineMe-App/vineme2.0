@@ -48,7 +48,6 @@ import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '@/theme/provider/useTheme';
-import { tertiaryColors } from '@/theme/tokens';
 import { Image } from 'react-native';
 
 export default function GroupsScreen() {
@@ -57,6 +56,7 @@ export default function GroupsScreen() {
   const { filters, setSearchQuery } = useGroupFiltersStore();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const friendsQuery = useFriends(userProfile?.id);
   const [showSearch, setShowSearch] = useState(false);
   const [isLocationSearchMode, setIsLocationSearchMode] = useState(false);
@@ -479,7 +479,7 @@ export default function GroupsScreen() {
       <View
         style={[
           styles.compactHeader,
-          { backgroundColor: theme.colors.surface.primary },
+          { backgroundColor: theme.colors.background.primary },
         ]}
       >
         <View style={styles.headerLeft}>
@@ -529,7 +529,7 @@ export default function GroupsScreen() {
                 color={
                   (showSearch && !isLocationSearchMode) || filters.searchQuery.length > 0
                     ? '#FFFFFF'
-                    : tertiaryColors[500]
+                    : theme.colors.text.inverse
                 }
               />
             </View>
@@ -550,7 +550,9 @@ export default function GroupsScreen() {
               <Ionicons
                 name={currentView === 'list' ? 'map-outline' : 'list-outline'}
                 size={16}
-                color={currentView === 'map' ? '#FFFFFF' : tertiaryColors[500]}
+                color={
+                  currentView === 'map' ? '#FFFFFF' : theme.colors.text.inverse
+                }
               />
             </View>
           </TouchableOpacity>
@@ -573,7 +575,7 @@ export default function GroupsScreen() {
                 name="funnel-outline"
                 size={16}
                 color={
-                  getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : tertiaryColors[500]
+                  getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : theme.colors.text.inverse
                 }
               />
             </View>
@@ -603,7 +605,7 @@ export default function GroupsScreen() {
                     ? '#8B8A8C'
                     : sortBy !== 'alphabetical'
                       ? '#FFFFFF'
-                      : tertiaryColors[500]
+                      : theme.colors.text.inverse
                 }
               />
             </View>
@@ -642,7 +644,9 @@ export default function GroupsScreen() {
               <Ionicons
                 name="navigate-outline"
                 size={16}
-                color={sortBy === 'distance' ? '#FFFFFF' : tertiaryColors[500]}
+                color={
+                  sortBy === 'distance' ? '#FFFFFF' : theme.colors.text.inverse
+                }
               />
             </View>
           </TouchableOpacity>
@@ -653,7 +657,11 @@ export default function GroupsScreen() {
               accessibilityLabel="Create group"
             >
               <View style={styles.iconButtonInner}>
-                <Ionicons name="add-outline" size={24} color={tertiaryColors[500]} />
+                <Ionicons
+                  name="add-outline"
+                  size={24}
+                  color={theme.colors.text.inverse}
+                />
               </View>
             </TouchableOpacity>
           )}
@@ -746,7 +754,7 @@ export default function GroupsScreen() {
               color={
                 sortBy === 'alphabetical'
                   ? '#FF0083'
-                  : tertiaryColors[500]
+                  : theme.colors.text.primary
               }
             />
             <Text
@@ -782,7 +790,7 @@ export default function GroupsScreen() {
               name="navigate-outline"
               size={20}
               color={
-                sortBy === 'distance' ? '#FF0083' : tertiaryColors[500]
+                sortBy === 'distance' ? '#FF0083' : theme.colors.text.primary
               }
             />
             <Text
@@ -821,7 +829,7 @@ export default function GroupsScreen() {
               name="people-outline"
               size={20}
               color={
-                sortBy === 'friends' ? '#FF0083' : tertiaryColors[500]
+                sortBy === 'friends' ? '#FF0083' : theme.colors.text.primary
               }
             />
             <Text
@@ -1000,7 +1008,8 @@ const GroupItemWithMembership: React.FC<{
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -1022,7 +1031,7 @@ const styles = StyleSheet.create({
     height: 27,
   },
   title: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     fontSize: 22,
     lineHeight: 22,
     letterSpacing: -0.44,
@@ -1044,7 +1053,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: theme.colors.background.inverse,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1118,8 +1127,8 @@ const styles = StyleSheet.create({
   noGroupFitsButton: {
     paddingHorizontal: 14,
     maxWidth: 120, // Compact width to match the drawn outline
-    backgroundColor: tertiaryColors[500], // Match friends badge color
-    borderColor: tertiaryColors[500],
+    backgroundColor: theme.colors.text.primary, // Match friends badge color
+    borderColor: theme.colors.text.primary,
   },
   noGroupFitsButtonText: {
     color: '#FFFFFF', // Ensure white text on dark purple background
@@ -1197,12 +1206,12 @@ const styles = StyleSheet.create({
   },
   sortOptionText: {
     marginLeft: 12,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     fontSize: 14,
     fontWeight: '500',
   },
   sortOptionTextSelected: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     fontWeight: '600',
   },
   infoModalContent: {
@@ -1224,4 +1233,4 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 8,
   },
-});
+  });

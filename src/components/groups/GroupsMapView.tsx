@@ -37,7 +37,7 @@ import type { GroupWithDetails } from '../../types/database';
 import { useGroupMembership, useGroupMembers } from '../../hooks/useGroups';
 import { useFriends } from '../../hooks/useFriendships';
 import { useAuthStore } from '../../stores/auth';
-import { tertiaryColors } from '@/theme/tokens';
+import { useTheme } from '@/theme/provider/useTheme';
 
 // Dynamically import MapView - not available in Expo Go
 // Using try-catch to gracefully handle when the module isn't available
@@ -224,6 +224,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 }) => {
   // Always declare hooks first (Rules of Hooks)
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const [markers, setMarkers] = useState<GroupMarker[]>([]);
   const [region, setRegion] = useState<typeof DEFAULT_REGION>(DEFAULT_REGION);
   const [currentRegion, setCurrentRegion] =
@@ -751,14 +752,14 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         case 'service':
           return '#FF0083'; // Primary pink color
         case 'church':
-          return '#96115c'; // Blend of pink (#ff0083) and dark (tertiaryColors[500]) - 50% pink, 50% dark (darker)
+          return '#96115c'; // Blend of pink (#ff0083) and dark text color
         case 'outside':
-          return tertiaryColors[500]; // Dark color (always use dark, never grey)
+          return theme.colors.text.primary; // Dark color (always use dark, never grey)
         default:
           return '#FF0083';
       }
     },
-    []
+    [theme.colors.text.primary]
   );
 
   /**
@@ -1433,7 +1434,13 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
               onPress={onNoGroupFits}
               variant="secondary"
               size="small"
-              style={styles.noGroupFitsButton}
+              style={[
+                styles.noGroupFitsButton,
+                {
+                  backgroundColor: theme.colors.text.primary,
+                  borderColor: theme.colors.text.primary,
+                },
+              ]}
               textStyle={styles.noGroupFitsButtonText}
             />
           </View>
@@ -1449,7 +1456,11 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           accessibilityRole="button"
           activeOpacity={0.85}
         >
-          <Ionicons name="locate-outline" size={18} color={tertiaryColors[500]} />
+          <Ionicons
+            name="locate-outline"
+            size={18}
+            color={theme.colors.text.primary}
+          />
         </TouchableOpacity>
       )}
 
@@ -1680,8 +1691,6 @@ const styles = StyleSheet.create({
   noGroupFitsButton: {
     paddingHorizontal: 10,
     maxWidth: 120, // Compact width to match the drawn outline
-    backgroundColor: tertiaryColors[500], // Match friends badge color
-    borderColor: tertiaryColors[500],
   },
   noGroupFitsButtonText: {
     color: '#FFFFFF', // Ensure white text on dark purple background
