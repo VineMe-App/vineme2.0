@@ -66,8 +66,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary[500],
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarActiveTintColor: theme.colors.primary[500], // Primary pink color
+        tabBarInactiveTintColor: theme.colors.text.primary, // Dark color for unselected tabs
         tabBarStyle: {
           backgroundColor: 'transparent',
           borderTopWidth: 0,
