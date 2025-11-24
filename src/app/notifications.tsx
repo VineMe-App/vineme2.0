@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { NotificationItem } from '@/components/ui/NotificationItem';
 import { Button } from '@/components/ui/Button';
+import { Header } from '@/components/ui/Header';
 import { useAuthStore } from '@/stores/auth';
 import { useEnhancedNotifications } from '@/hooks/useNotifications';
 
@@ -77,7 +78,11 @@ export default function NotificationsScreen() {
         { backgroundColor: theme.colors.background.primary },
       ]}
     >
-      <Stack.Screen options={{ title: 'Notifications' }} />
+      <Stack.Screen
+        options={{
+          header: () => <Header title="Notifications" />,
+        }}
+      />
 
       {isLoading && notifications.length === 0 ? (
         <View style={styles.loadingContainer}>

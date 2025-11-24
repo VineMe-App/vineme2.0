@@ -13,6 +13,11 @@ export interface HeaderProps {
   title: string;
 
   /**
+   * Optional accessory displayed inline with the title
+   */
+  titleAccessory?: React.ReactNode;
+
+  /**
    * Subtitle text (optional)
    */
   subtitle?: string;
@@ -58,6 +63,7 @@ export interface HeaderProps {
  */
 export const Header: React.FC<HeaderProps> = ({
   title,
+  titleAccessory,
   subtitle,
   showBackButton = true,
   onBackPress,
@@ -69,6 +75,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const router = useRouter();
   const { theme } = useTheme();
+  const iconColor = theme.colors.text.primary;
 
   const handleBackPress = () => {
     if (onBackPress) {
@@ -79,7 +86,16 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const headerContent = (
-    <View style={[styles.header, contentStyle]}>
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: theme.colors.background.primary,
+          borderBottomColor: theme.colors.border.primary,
+        },
+        contentStyle,
+      ]}
+    >
       <View style={styles.leftSection}>
         {showBackButton && (
           <TouchableOpacity
@@ -87,17 +103,28 @@ export const Header: React.FC<HeaderProps> = ({
             onPress={handleBackPress}
             accessibilityLabel="Go back"
             accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             testID={testID ? `${testID}-back-button` : undefined}
           >
-            <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
+            <Ionicons name="arrow-back" size={22} color={iconColor} />
           </TouchableOpacity>
         )}
       </View>
 
       <View style={styles.centerSection}>
-        <Text variant="h5" weight="semiBold" style={styles.headerTitle} numberOfLines={1}>
-          {title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text
+            variant="h5"
+            weight="semiBold"
+            style={styles.headerTitle}
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+          {titleAccessory ? (
+            <View style={styles.titleAccessory}>{titleAccessory}</View>
+          ) : null}
+        </View>
         {subtitle && (
           <Text variant="bodySmall" color="secondary" numberOfLines={1}>
             {subtitle}
@@ -105,24 +132,35 @@ export const Header: React.FC<HeaderProps> = ({
         )}
       </View>
 
-      {rightActions && (
-        <View style={styles.rightSection}>
-          {rightActions}
-        </View>
-      )}
+      <View style={styles.rightSection}>{rightActions}</View>
     </View>
   );
 
   if (useSafeArea) {
     return (
-      <SafeAreaView style={[styles.safeArea, style]} edges={['top']} testID={testID}>
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          { backgroundColor: theme.colors.background.primary },
+          style,
+        ]}
+        edges={['top']}
+        testID={testID}
+      >
         {headerContent}
       </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, style]} testID={testID}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+        style,
+      ]}
+      testID={testID}
+    >
       {headerContent}
     </View>
   );
@@ -130,23 +168,23 @@ export const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
   },
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    minHeight: 64,
   },
   leftSection: {
-    marginRight: 16,
+    width: 48,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   backButton: {
     padding: 4,
@@ -155,12 +193,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-start',
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  titleAccessory: {
+    marginLeft: 8,
+  },
   headerTitle: {
     // Typography handled by Text component variant
   },
   rightSection: {
-    marginLeft: 16,
-    alignItems: 'flex-end',
+    minWidth: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
   },
 });
-

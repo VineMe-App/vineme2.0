@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
+import { Header } from '@/components/ui/Header';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/Button';
 import { GroupLeaderPanel } from '@/components/groups/GroupLeaderPanel';
@@ -43,9 +44,15 @@ export default function GroupManagementScreen() {
     <View style={styles.screen}>
       <Stack.Screen
         options={{
-          title: group?.title
-            ? `${group.title} Management`
-            : 'Group Management',
+          header: () => (
+            <Header
+              title={
+                group?.title
+                  ? `${group.title} Management`
+                  : 'Group Management'
+              }
+            />
+          ),
         }}
       />
 

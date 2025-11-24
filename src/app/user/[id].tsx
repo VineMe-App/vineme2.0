@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { Header } from '@/components/ui/Header';
 import { useUserProfile, useUserGroupMemberships } from '@/hooks/useUsers';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -143,26 +144,16 @@ export default function OtherUserProfileScreen() {
     }
   }, [navigation, router]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     navigation.setOptions({
-      headerShown: true,
-      headerTitle: '',
-      headerBackVisible: false,
-      headerStyle: {
-        backgroundColor: '#fff',
-      },
-      headerLeft: () => (
-        <TouchableOpacity
-          style={styles.headerBackButton}
-          onPress={handleBackPress}
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color="#111827" />
-          <Text style={styles.headerBackText}>Back</Text>
-        </TouchableOpacity>
+      header: () => (
+        <Header
+          title={profileShortName || 'Profile'}
+          onBackPress={handleBackPress}
+        />
       ),
     });
-  }, [navigation, handleBackPress]);
+  }, [navigation, handleBackPress, profileShortName]);
 
   const ActionButton = () => {
     if (isSelf) return null;
@@ -395,18 +386,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  headerBackButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  headerBackText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
   },
   content: {
     flex: 1,

@@ -9,6 +9,7 @@ import GroupEditorForm, {
   GroupEditorValues,
 } from '../../components/groups/GroupEditorForm';
 import { groupMediaService } from '../../services/groupMedia';
+import { Header } from '../../components/ui/Header';
 
 export default function CreateGroupPage() {
   const router = useRouter();
@@ -98,7 +99,11 @@ export default function CreateGroupPage() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Create New Group' }} />
+      <Stack.Screen
+        options={{
+          header: () => <Header title="Create New Group" />,
+        }}
+      />
       <GroupEditorForm
         mode="create"
         subTitle="Share your group details and set your group location by using the map below."
