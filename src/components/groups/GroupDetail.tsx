@@ -579,6 +579,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                 onPress={handleJoinGroup}
                 loading={isLoading}
                 disabled={isLoading}
+                variant="primary"
               />
               <Button
                 title="Refer a Friend"

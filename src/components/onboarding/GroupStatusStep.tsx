@@ -3,7 +3,8 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { Text } from '@/components/ui/Text';
 import { AuthHero } from '@/components/auth/AuthHero';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Button } from '@/components/ui/Button';
+import { tertiaryColors } from '@/theme/tokens';
 
 export default function GroupStatusStep({
   data,
@@ -106,11 +107,14 @@ export default function GroupStatusStep({
 
       <View style={styles.footer}>
         <View style={styles.footerSpacer} />
-        <AuthButton
+        <Button
           title="Next"
+          variant="primary"
           onPress={handleNext}
           loading={isLoading}
           disabled={!selectedStatus || isLoading}
+          fullWidth
+          style={styles.authButton}
         />
         <TouchableOpacity onPress={onBack} accessibilityRole="button">
           <Text variant="body" color="secondary" align="center">
@@ -192,7 +196,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.7,
   },
   optionSubtitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontSize: 11,
     lineHeight: 14,
     letterSpacing: -0.33,
@@ -211,5 +215,8 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     height: 32,
+  },
+  authButton: {
+    marginBottom: 16,
   },
 });

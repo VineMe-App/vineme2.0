@@ -37,6 +37,7 @@ import type { GroupWithDetails } from '../../types/database';
 import { useGroupMembership, useGroupMembers } from '../../hooks/useGroups';
 import { useFriends } from '../../hooks/useFriendships';
 import { useAuthStore } from '../../stores/auth';
+import { tertiaryColors } from '@/theme/tokens';
 
 // Dynamically import MapView - not available in Expo Go
 // Using try-catch to gracefully handle when the module isn't available
@@ -750,9 +751,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         case 'service':
           return '#FF0083'; // Primary pink color
         case 'church':
-          return '#96115c'; // Blend of pink (#ff0083) and dark (#2C2235) - 50% pink, 50% dark (darker)
+          return '#96115c'; // Blend of pink (#ff0083) and dark (tertiaryColors[500]) - 50% pink, 50% dark (darker)
         case 'outside':
-          return '#2C2235'; // Dark color (always use dark, never grey)
+          return tertiaryColors[500]; // Dark color (always use dark, never grey)
         default:
           return '#FF0083';
       }
@@ -1448,7 +1449,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           accessibilityRole="button"
           activeOpacity={0.85}
         >
-          <Ionicons name="locate-outline" size={18} color="#2C2235" />
+          <Ionicons name="locate-outline" size={18} color={tertiaryColors[500]} />
         </TouchableOpacity>
       )}
 
@@ -1679,8 +1680,8 @@ const styles = StyleSheet.create({
   noGroupFitsButton: {
     paddingHorizontal: 10,
     maxWidth: 120, // Compact width to match the drawn outline
-    backgroundColor: '#2C2235', // Match friends badge color
-    borderColor: '#2C2235',
+    backgroundColor: tertiaryColors[500], // Match friends badge color
+    borderColor: tertiaryColors[500],
   },
   noGroupFitsButtonText: {
     color: '#FFFFFF', // Ensure white text on dark purple background

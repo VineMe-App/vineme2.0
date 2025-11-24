@@ -3,9 +3,10 @@ import { View, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithou
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { AuthHero } from '@/components/auth/AuthHero';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
+import { tertiaryColors } from '@/theme/tokens';
 
 export default function EmailStep({
   data,
@@ -173,11 +174,14 @@ export default function EmailStep({
 
       <View style={styles.footer}>
         <View style={styles.footerSpacer} />
-        <AuthButton
+        <Button
           title="Next"
+          variant="primary"
           onPress={handleNext}
           loading={isLoading}
           disabled={disableContinue}
+          fullWidth
+          style={styles.authButton}
         />
         <TouchableOpacity onPress={onBack} accessibilityRole="button">
           <Text variant="body" color="secondary" align="center">
@@ -214,13 +218,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 12,
     letterSpacing: -1.5,
     fontWeight: '900',
   },
   subtitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     lineHeight: 24,
     letterSpacing: -0.2,
     maxWidth: 320,
@@ -250,8 +254,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#2C2235',
-    borderColor: '#2C2235',
+    backgroundColor: tertiaryColors[500],
+    borderColor: tertiaryColors[500],
   },
   checkmark: {
     color: '#FFFFFF',
@@ -263,7 +267,7 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: 12,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     letterSpacing: -0.6,
     flex: 1,
   },
@@ -274,5 +278,7 @@ const styles = StyleSheet.create({
   footerSpacer: {
     height: 32,
   },
+  authButton: {
+    marginBottom: 16,
+  },
 });
-

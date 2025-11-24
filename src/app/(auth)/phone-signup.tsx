@@ -12,12 +12,13 @@ import {
   StatusBar,
 } from 'react-native';
 import { AuthHero } from '@/components/auth/AuthHero';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Button } from '@/components/ui/Button';
 import { AuthSignInPrompt } from '@/components/auth/AuthSignInPrompt';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
+import { tertiaryColors } from '@/theme/tokens';
 
 export default function PhoneSignUpScreen() {
   const router = useRouter();
@@ -156,11 +157,14 @@ export default function PhoneSignUpScreen() {
 
       <View style={styles.footer}>
         <View style={styles.actions}>
-          <AuthButton
+          <Button
             title="Sign up"
+            variant="primary"
             onPress={handleSendCode}
             disabled={!isPhoneValid}
             loading={isLoading}
+            fullWidth
+            style={styles.authButton}
           />
         </View>
         <AuthSignInPrompt />
@@ -195,11 +199,14 @@ export default function PhoneSignUpScreen() {
       </View>
       <View style={styles.footer}>
         <View style={styles.footerSpacer} />
-        <AuthButton
+        <Button
           title="Verify"
+          variant="primary"
           onPress={handleVerify}
           loading={isLoading}
           disabled={code.length !== 6}
+          fullWidth
+          style={styles.authButton}
         />
         <TouchableOpacity
           onPress={handleBackToPhone}
@@ -320,7 +327,7 @@ const styles = StyleSheet.create({
   },
   countryCodeText: {
     fontSize: 16,
-    color: '#2C2235',
+    color: tertiaryColors[500],
   },
   phoneDivider: {
     width: 1,
@@ -331,7 +338,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: '#2C2235',
+    color: tertiaryColors[500],
   },
   otpInput: {
     width: '100%',
@@ -341,7 +348,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     height: 70,
     fontSize: 30,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     backgroundColor: '#FFFFFF',
     marginBottom: 16,
     textAlign: 'center',
@@ -349,7 +356,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   resendText: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginTop: 32,
     textAlign: 'center',
   },
@@ -364,6 +371,9 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: 16,
+  },
+  authButton: {
+    marginBottom: 16,
   },
   footer: {
     alignItems: 'center',

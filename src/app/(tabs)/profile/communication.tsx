@@ -28,6 +28,7 @@ import {
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
 import { Ionicons } from '@expo/vector-icons';
+import { tertiaryColors } from '@/theme/tokens';
 
 export default function CommunicationAndSecurityScreen() {
   const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
@@ -644,8 +645,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#2C2235',
-    borderColor: '#2C2235',
+    backgroundColor: tertiaryColors[500],
+    borderColor: tertiaryColors[500],
   },
   checkmark: {
     color: '#FFFFFF',
@@ -657,7 +658,7 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: 12,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontWeight: '600',
     flex: 1,
     letterSpacing: -0.6,
@@ -671,8 +672,8 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
   },
-  label: { fontSize: 12, fontWeight: '600', color: '#2C2235', marginBottom: 6, letterSpacing: -0.6 },
-  currentValue: { fontSize: 12, fontWeight: '600', color: '#2C2235', marginBottom: 6, letterSpacing: -0.6 },
+  label: { fontSize: 12, fontWeight: '600', color: tertiaryColors[500], marginBottom: 6, letterSpacing: -0.6 },
+  currentValue: { fontSize: 12, fontWeight: '600', color: tertiaryColors[500], marginBottom: 6, letterSpacing: -0.6 },
   noCredential: {
     fontSize: 14,
     color: '#6b7280',
@@ -704,7 +705,7 @@ const styles = StyleSheet.create({
   },
   policyLinkText: {
     fontSize: 12,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontWeight: '600',
     letterSpacing: -0.6,
   },

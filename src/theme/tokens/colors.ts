@@ -19,6 +19,7 @@ export interface ColorToken {
 export interface SemanticColors {
   primary: ColorToken;
   secondary: ColorToken;
+  tertiary: ColorToken;
   success: ColorToken;
   warning: ColorToken;
   error: ColorToken;
@@ -78,7 +79,7 @@ export const primaryColors: ColorToken = {
 // Secondary color palette - Updated to use #FFFBEE (light cream)
 export const secondaryColors: ColorToken = {
   50: '#fffef9',
-  100: '#FFFBEE', // Base secondary - light cream
+  100: '#fffbee', // Base secondary - light cream
   200: '#fff8e0',
   300: '#fff5d1',
   400: '#fff2c2',
@@ -87,6 +88,20 @@ export const secondaryColors: ColorToken = {
   700: '#ccbf8f',
   800: '#b3a77d',
   900: '#998f6b',
+};
+
+// Tertiary color palette - Based on main dark color (#2C2235)
+export const tertiaryColors: ColorToken = {
+  50: '#edecec',
+  100: '#d4d2db',
+  200: '#a6a2bd',
+  300: '#7a769f',
+  400: '#4e4c81',
+  500: '#2C2235', // Base tertiary - main dark color
+  600: '#241b2a',
+  700: '#1d1621',
+  800: '#161119',
+  900: '#0d080d',
 };
 
 // Success color palette - Using primary pink instead of green

@@ -3,8 +3,9 @@ import { View, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithou
 import type { OnboardingStepProps } from '@/types/app';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Button } from '@/components/ui/Button';
 import { AuthHero } from '@/components/auth/AuthHero';
+import { tertiaryColors } from '@/theme/tokens';
 
 export default function NameStep({
   data,
@@ -146,11 +147,14 @@ export default function NameStep({
 
         {isKeyboardVisible && (
           <View style={styles.keyboardFooter}>
-            <AuthButton
+            <Button
               title="Next"
+              variant="primary"
               onPress={handleContinue}
               loading={isLoading}
               disabled={disableContinue}
+              fullWidth
+              style={styles.authButton}
             />
             <TouchableOpacity
               onPress={onBack}
@@ -168,11 +172,14 @@ export default function NameStep({
       {!isKeyboardVisible && (
         <View style={styles.footer}>
           <View style={styles.footerSpacer} />
-          <AuthButton
+          <Button
             title="Next"
+            variant="primary"
             onPress={handleContinue}
             loading={isLoading}
             disabled={disableContinue}
+            fullWidth
+            style={styles.authButton}
           />
           <TouchableOpacity
             onPress={onBack}
@@ -213,13 +220,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 12,
     letterSpacing: -1.5,
     fontWeight: '900',
   },
   subtitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     lineHeight: 24,
     letterSpacing: -0.2,
     maxWidth: 320,
@@ -241,6 +248,9 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     width: '100%',
+  },
+  authButton: {
+    marginBottom: 16,
   },
   footerSpacer: {
     height: 32,

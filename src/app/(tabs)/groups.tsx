@@ -48,6 +48,7 @@ import { useFriends } from '../../hooks/useFriendships';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '@/theme/provider/useTheme';
+import { tertiaryColors } from '@/theme/tokens';
 import { Image } from 'react-native';
 
 export default function GroupsScreen() {
@@ -528,7 +529,7 @@ export default function GroupsScreen() {
                 color={
                   (showSearch && !isLocationSearchMode) || filters.searchQuery.length > 0
                     ? '#FFFFFF'
-                    : '#2C2235'
+                    : tertiaryColors[500]
                 }
               />
             </View>
@@ -549,7 +550,7 @@ export default function GroupsScreen() {
               <Ionicons
                 name={currentView === 'list' ? 'map-outline' : 'list-outline'}
                 size={16}
-                color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
+                color={currentView === 'map' ? '#FFFFFF' : tertiaryColors[500]}
               />
             </View>
           </TouchableOpacity>
@@ -572,7 +573,7 @@ export default function GroupsScreen() {
                 name="funnel-outline"
                 size={16}
                 color={
-                  getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'
+                  getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : tertiaryColors[500]
                 }
               />
             </View>
@@ -602,7 +603,7 @@ export default function GroupsScreen() {
                     ? '#8B8A8C'
                     : sortBy !== 'alphabetical'
                       ? '#FFFFFF'
-                      : '#2C2235'
+                      : tertiaryColors[500]
                 }
               />
             </View>
@@ -641,7 +642,7 @@ export default function GroupsScreen() {
               <Ionicons
                 name="navigate-outline"
                 size={16}
-                color={sortBy === 'distance' ? '#FFFFFF' : '#2C2235'}
+                color={sortBy === 'distance' ? '#FFFFFF' : tertiaryColors[500]}
               />
             </View>
           </TouchableOpacity>
@@ -652,7 +653,7 @@ export default function GroupsScreen() {
               accessibilityLabel="Create group"
             >
               <View style={styles.iconButtonInner}>
-                <Ionicons name="add-outline" size={24} color="#2C2235" />
+                <Ionicons name="add-outline" size={24} color={tertiaryColors[500]} />
               </View>
             </TouchableOpacity>
           )}
@@ -745,7 +746,7 @@ export default function GroupsScreen() {
               color={
                 sortBy === 'alphabetical'
                   ? '#FF0083'
-                  : '#2C2235'
+                  : tertiaryColors[500]
               }
             />
             <Text
@@ -781,7 +782,7 @@ export default function GroupsScreen() {
               name="navigate-outline"
               size={20}
               color={
-                sortBy === 'distance' ? '#FF0083' : '#2C2235'
+                sortBy === 'distance' ? '#FF0083' : tertiaryColors[500]
               }
             />
             <Text
@@ -820,7 +821,7 @@ export default function GroupsScreen() {
               name="people-outline"
               size={20}
               color={
-                sortBy === 'friends' ? '#FF0083' : '#2C2235'
+                sortBy === 'friends' ? '#FF0083' : tertiaryColors[500]
               }
             />
             <Text
@@ -1021,7 +1022,7 @@ const styles = StyleSheet.create({
     height: 27,
   },
   title: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontSize: 22,
     lineHeight: 22,
     letterSpacing: -0.44,
@@ -1117,8 +1118,8 @@ const styles = StyleSheet.create({
   noGroupFitsButton: {
     paddingHorizontal: 14,
     maxWidth: 120, // Compact width to match the drawn outline
-    backgroundColor: '#2C2235', // Match friends badge color
-    borderColor: '#2C2235',
+    backgroundColor: tertiaryColors[500], // Match friends badge color
+    borderColor: tertiaryColors[500],
   },
   noGroupFitsButtonText: {
     color: '#FFFFFF', // Ensure white text on dark purple background
@@ -1196,12 +1197,12 @@ const styles = StyleSheet.create({
   },
   sortOptionText: {
     marginLeft: 12,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontSize: 14,
     fontWeight: '500',
   },
   sortOptionTextSelected: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontWeight: '600',
   },
   infoModalContent: {

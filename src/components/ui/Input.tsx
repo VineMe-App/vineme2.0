@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
-  Text,
   StyleSheet,
   TextInputProps,
   TouchableOpacity,
@@ -12,7 +11,9 @@ import {
   AccessibilityInfo,
   ColorValue,
 } from 'react-native';
+import { Text } from './Text';
 import { useTheme } from '../../theme/provider/useTheme';
+import { tertiaryColors } from '@/theme/tokens';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   /**
@@ -296,9 +297,9 @@ export const Input: React.FC<InputProps> = ({
           color="secondary" 
           weight="medium"
           style={[
-            labelStyles, 
-            labelStyle,
-            { fontFamily: theme.typography.fontFamily.medium } // Ensure font is applied last
+            labelStyles,
+            labelStyle as TextStyle,
+            { fontFamily: theme.typography.fontFamily.medium }, // Ensure font is applied last
           ]} 
           testID={`${testID}-label`}
         >
@@ -465,7 +466,7 @@ const getInputStyles = (theme: any, size: string): TextStyle => {
   const baseStyles: TextStyle = {
     flex: 1,
     fontFamily: theme.typography.fontFamily.regular,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     includeFontPadding: false,
     fontSize: 16,
   };
