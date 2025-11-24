@@ -88,7 +88,7 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
   const getNoteIcon = (type: GroupMembershipNoteWithUser['note_type']) => {
     switch (type) {
       case 'request_approved':
-        return { name: 'checkmark-circle' as const, color: '#10b981' };
+        return { name: 'checkmark-circle' as const, color: '#ff0083' };
       case 'request_archived':
         return { name: 'archive' as const, color: '#6b7280' };
       case 'member_left':

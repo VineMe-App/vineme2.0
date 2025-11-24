@@ -136,7 +136,7 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
       case 2:
         return '#3b82f6'; // blue
       case 3:
-        return '#10b981'; // green
+        return '#ff0083'; // primary pink (replacing green)
       default:
         return '#9ca3af'; // gray
     }
@@ -505,7 +505,7 @@ export default function JoinRequestsScreen() {
                 <Ionicons
                   name="checkmark-circle-outline"
                   size={64}
-                  color="#10b981"
+                  color="#ff0083"
                 />
                 <Text style={styles.emptyTitle}>All Caught Up!</Text>
                 <Text style={styles.emptyText}>

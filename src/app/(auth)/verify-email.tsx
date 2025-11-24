@@ -118,7 +118,7 @@ export default function VerifyEmailScreen() {
         <Card style={styles.card}>
           <View style={styles.content}>
             <View style={styles.iconContainer}>
-              <Ionicons name="checkmark-circle" size={64} color="#34C759" />
+              <Ionicons name="checkmark-circle" size={64} color="#ff0083" />
             </View>
             <Text style={styles.title}>Email Verified!</Text>
             <Text style={styles.message}>

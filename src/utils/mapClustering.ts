@@ -12,6 +12,7 @@ export interface Coordinates {
 export interface ClusterPoint extends Coordinates {
   id: string;
   data: GroupWithDetails;
+  category?: 'service' | 'church' | 'outside';
 }
 
 export interface Cluster {
@@ -19,6 +20,7 @@ export interface Cluster {
   coordinates: Coordinates;
   points: ClusterPoint[];
   count: number;
+  category?: 'service' | 'church' | 'outside';
 }
 
 export interface ClusteringOptions {
@@ -132,6 +134,7 @@ export class MapClusterer {
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
       data: group,
+      category: (group as any).__category,
     };
   }
 
@@ -170,7 +173,7 @@ export class MapClusterer {
 
   /**
    * Cluster points using simple distance-based clustering
-   * Ensures all points are included (either in clusters or as individual points)
+   * Split clusters by category to ensure different colored groups don't cluster together
    */
   private clusterPoints(
     points: ClusterPoint[],
@@ -186,10 +189,12 @@ export class MapClusterer {
     for (const point of points) {
       if (processed.has(point.id)) continue;
 
-      // Find nearby points within cluster radius
+      // Find nearby points WITH THE SAME CATEGORY
       const nearbyPoints = points.filter(
         (p) =>
-          !processed.has(p.id) && this.getDistance(point, p) <= clusterRadius
+          !processed.has(p.id) &&
+          this.getDistance(point, p) <= clusterRadius &&
+          p.category === point.category // Only cluster same category
       );
 
       if (nearbyPoints.length === 1) {
@@ -197,12 +202,13 @@ export class MapClusterer {
         clusters.push(point);
         processed.add(point.id);
       } else {
-        // Create cluster
+        // Create cluster with category
         const cluster: Cluster = {
           id: `cluster_${point.id}_${nearbyPoints.length}`,
           coordinates: this.getCenterPoint(nearbyPoints),
           points: nearbyPoints,
           count: nearbyPoints.length,
+          category: point.category, // Assign category to cluster
         };
 
         clusters.push(cluster);

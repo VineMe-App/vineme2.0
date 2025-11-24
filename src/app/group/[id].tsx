@@ -131,7 +131,7 @@ export default function GroupDetailScreen() {
                 style={{
                   fontSize: 22,
                   fontWeight: '700',
-                  fontFamily: 'Manrope-Bold',
+                  fontFamily: 'Figtree-Bold',
                   textAlign: 'center',
                   marginTop: -15,
                 }}

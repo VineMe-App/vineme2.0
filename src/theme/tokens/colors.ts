@@ -61,46 +61,46 @@ export interface ThemeColors extends SemanticColors {
   };
 }
 
-// Primary color palette - Updated to use #f10078
+// Primary color palette - Updated to use #ff0083 (hot pink)
 export const primaryColors: ColorToken = {
-  50: '#fdf2f8',
-  100: '#fce7f3',
-  200: '#fbcfe8',
-  300: '#f9a8d4',
-  400: '#f472b6',
-  500: '#f10078', // Base primary - the requested color
-  600: '#db2777',
-  700: '#be185d',
-  800: '#9d174d',
-  900: '#831843',
+  50: '#fff0f8',
+  100: '#ffe0f1',
+  200: '#ffc1e3',
+  300: '#ff82c7',
+  400: '#ff43ab',
+  500: '#ff0083', // Base primary - hot pink
+  600: '#e60075',
+  700: '#cc0067',
+  800: '#b30059',
+  900: '#99004b',
 };
 
-// Secondary color palette - Updated to use #e3ffd1
+// Secondary color palette - Updated to use #FFFBEE (light cream)
 export const secondaryColors: ColorToken = {
-  50: '#f7fef4',
-  100: '#e3ffd1', // Base secondary - the requested color
-  200: '#c7ffa3',
-  300: '#abff75',
-  400: '#8fff47',
-  500: '#73ff19',
-  600: '#5ce600',
-  700: '#45b300',
-  800: '#2e8000',
-  900: '#174d00',
+  50: '#fffef9',
+  100: '#FFFBEE', // Base secondary - light cream
+  200: '#fff8e0',
+  300: '#fff5d1',
+  400: '#fff2c2',
+  500: '#ffefb3',
+  600: '#e6d7a1',
+  700: '#ccbf8f',
+  800: '#b3a77d',
+  900: '#998f6b',
 };
 
-// Success color palette
+// Success color palette - Using primary pink instead of green
 export const successColors: ColorToken = {
-  50: '#f0fdf4',
-  100: '#dcfce7',
-  200: '#bbf7d0',
-  300: '#86efac',
-  400: '#4ade80',
-  500: '#22c55e', // Base success
-  600: '#16a34a',
-  700: '#15803d',
-  800: '#166534',
-  900: '#14532d',
+  50: '#fff0f8',
+  100: '#ffe0f1',
+  200: '#ffc1e3',
+  300: '#ff82c7',
+  400: '#ff43ab',
+  500: '#ff0083', // Base success - using primary pink
+  600: '#e60075',
+  700: '#cc0067',
+  800: '#b30059',
+  900: '#99004b',
 };
 
 // Warning color palette
@@ -145,7 +145,7 @@ export const infoColors: ColorToken = {
   900: '#1e3a8a',
 };
 
-// Neutral color palette
+// Neutral color palette - Updated dark colors to use #2C2235
 export const neutralColors: ColorToken = {
   50: '#fafafa',
   100: '#f0f3ea',
@@ -155,8 +155,8 @@ export const neutralColors: ColorToken = {
   500: '#71717a', // Base neutral
   600: '#52525b',
   700: '#3f3f46',
-  800: '#27272a',
-  900: '#18181b',
+  800: '#2C2235', // Updated to use dark color
+  900: '#1a1a1f',
 };
 
 // Blue color palette
@@ -173,18 +173,18 @@ export const blueColors: ColorToken = {
   900: '#1e3a8a',
 };
 
-// Green color palette
+// Green color palette - Replaced with primary pink palette (no longer using green)
 export const greenColors: ColorToken = {
-  50: '#f0fdf4',
-  100: '#dcfce7',
-  200: '#bbf7d0',
-  300: '#86efac',
-  400: '#4ade80',
-  500: '#22c55e', // Base green
-  600: '#16a34a',
-  700: '#15803d',
-  800: '#166534',
-  900: '#14532d',
+  50: '#fff0f8',
+  100: '#ffe0f1',
+  200: '#ffc1e3',
+  300: '#ff82c7',
+  400: '#ff43ab',
+  500: '#ff0083', // Base - using primary pink instead of green
+  600: '#e60075',
+  700: '#cc0067',
+  800: '#b30059',
+  900: '#99004b',
 };
 
 // Orange color palette

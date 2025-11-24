@@ -285,7 +285,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           <Ionicons
             name={group.at_capacity ? 'people' : 'checkmark-circle'}
             size={20}
-            color={group.at_capacity ? '#f97316' : '#10b981'}
+            color={group.at_capacity ? '#f97316' : '#ff0083'}
           />
           <View style={styles.capacityTextContainer}>
             <Text style={styles.capacityLabel}>
@@ -319,7 +319,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                     : 'close-circle-outline'
                 }
                 size={16}
-                color={group.at_capacity ? '#10b981' : '#f97316'}
+                color={group.at_capacity ? '#ff0083' : '#f97316'}
               />
               <Text
                 style={[
@@ -595,8 +595,8 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   capacityToggleFull: {
-    backgroundColor: '#f0fdf4',
-    borderColor: '#10b981',
+    backgroundColor: '#fff0f8',
+    borderColor: '#ff0083',
   },
   capacityToggleAvailable: {
     backgroundColor: '#fff7ed',
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   capacityToggleTextAvailable: {
-    color: '#10b981',
+    color: '#ff0083',
   },
   capacityToggleTextFull: {
     color: '#f97316',

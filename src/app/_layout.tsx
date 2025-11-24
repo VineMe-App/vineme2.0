@@ -4,6 +4,7 @@ import { StatusBar, Text as RNText } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
+import * as Font from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
@@ -24,6 +25,31 @@ function RootLayoutNav() {
   const [onboardingCompleted, setOnboardingCompleted] = useState<
     boolean | null
   >(null);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  // Load fonts
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          // Variable fonts for dynamic weights
+          'Figtree-VariableFont_wght': require('../../assets/fonts/Figtree-VariableFont_wght.ttf'),
+          'Figtree-Italic-VariableFont_wght': require('../../assets/fonts/Figtree-Italic-VariableFont_wght.ttf'),
+          // Individual weight files for specific weights
+          'Figtree-Regular': require('../../assets/fonts/Figtree-Regular.ttf'),
+          'Figtree-Medium': require('../../assets/fonts/Figtree-Medium.ttf'),
+          'Figtree-SemiBold': require('../../assets/fonts/Figtree-SemiBold.ttf'),
+          'Figtree-Bold': require('../../assets/fonts/Figtree-Bold.ttf'),
+        });
+        setFontsLoaded(true);
+      } catch (error) {
+        console.error('Error loading fonts:', error);
+        setFontsLoaded(true); // Continue even if fonts fail to load
+      }
+    }
+
+    loadFonts();
+  }, []);
 
   // Initialize notifications
   useNotifications();
@@ -146,7 +172,7 @@ function RootLayoutNav() {
       <Stack
         screenOptions={{
           headerTitleStyle: {
-            fontFamily: 'Manrope-Bold',
+            fontFamily: 'Figtree-Bold',
           },
         }}
       >

@@ -130,7 +130,7 @@ export default function ReferralLandingPage() {
                   <Ionicons
                     name="help-circle-outline"
                     size={32}
-                    color="#10b981"
+                    color="#ff0083"
                   />
                 </View>
                 <View style={styles.optionTextContainer}>

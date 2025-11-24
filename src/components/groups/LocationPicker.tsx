@@ -493,7 +493,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               elementType: 'geometry',
               stylers: [
                 {
-                  color: '#f0f9f0', // Faint green tint using brand color
+                  color: '#FFFBEE', // Light cream color
                 },
               ],
             },
@@ -571,7 +571,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               elementType: 'geometry',
               stylers: [
                 {
-                  color: '#d9e3d9', // Very faint green tint for roads
+                  color: '#f5f5f5', // Light gray for roads
                 },
               ],
             },
@@ -634,7 +634,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               elementType: 'geometry',
               stylers: [
                 {
-                  color: '#d0e8d0', // Slightly more green for water
+                  color: '#e8f4f8', // Light blue-gray for water
                 },
               ],
             },

@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   stepDotActive: {
-    backgroundColor: '#F10078',
+    backgroundColor: '#ff0083',
   },
   stepContainer: {
     flex: 1,

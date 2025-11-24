@@ -30,6 +30,7 @@ interface GroupCardProps {
   pendingTooltip?: string;
   currentUserId?: string; // ID of the current user to determine if they're the creator
   variant?: 'my-groups' | 'all-groups'; // Variant to determine padding based on page
+  category?: 'service' | 'church' | 'outside'; // Color coding category
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -38,6 +39,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   membershipStatus,
   friendsCount,
   friendsInGroup,
+  category,
   leaders,
   onPressFriends,
   style,
@@ -107,6 +109,21 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   const shouldBlockNavigation = showPendingBadge;
   const pressAnim = React.useRef(new Animated.Value(0)).current;
 
+  // Get border color based on category (matching map marker colors)
+  const getBorderColor = () => {
+    if (!category) return '#EDEDED'; // Default
+    switch (category) {
+      case 'service':
+        return '#FF0083'; // Primary pink color
+      case 'church':
+        return '#96115c'; // Blend of pink and dark (50% pink, 50% dark) - darker
+      case 'outside':
+        return '#2C2235'; // Dark color
+      default:
+        return '#EDEDED';
+    }
+  };
+
   const handlePressIn = React.useCallback(() => {
     if (!shouldBlockNavigation) return;
     Animated.timing(pressAnim, {
@@ -173,7 +190,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               resizeMode="cover"
             />
           ) : (
-            <GroupPlaceholderImage style={styles.image} />
+            <GroupPlaceholderImage style={styles.image} category={category} />
           )}
 
           {/* Leader Badge - Top Right */}
@@ -247,7 +264,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             variant="h6"
             weight="bold"
             style={styles.groupName}
-            numberOfLines={2}
+            numberOfLines={variant === 'my-groups' ? 1 : 2}
             ellipsizeMode="tail"
           >
             {group.title}
@@ -290,13 +307,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             )}
 
             {/* Location */}
-            <View style={styles.detailRow}>
+            <View style={[
+              styles.detailRow,
+              variant === 'my-groups' && styles.detailRowNoWrap
+            ]}>
               <Ionicons name="location-outline" size={16} color="#2C2235" />
               <Text
                 variant="bodySmall"
                 weight="medium"
                 style={styles.detailText}
-                numberOfLines={2}
+                numberOfLines={variant === 'my-groups' ? 1 : 2}
                 ellipsizeMode="tail"
               >
                 {formatLocation(group.location)}
@@ -329,13 +349,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
             {/* Church and Service */}
             {churchAndServiceLabel && (
-              <View style={styles.detailRow}>
+              <View style={[
+                styles.detailRow,
+                variant === 'my-groups' && styles.detailRowNoWrap
+              ]}>
                 <Ionicons name="business-outline" size={16} color="#2C2235" />
                 <Text
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
-                  numberOfLines={2}
+                  numberOfLines={variant === 'my-groups' ? 1 : 2}
                   ellipsizeMode="tail"
                 >
                   {churchAndServiceLabel}
@@ -595,8 +618,6 @@ const styles = StyleSheet.create({
     marginVertical: 0,
     marginBottom: 12,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#EDEDED',
     backgroundColor: '#F9FAFC',
     minHeight: 300,
     // Background color now set dynamically with theme
@@ -621,7 +642,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: '#f10078', // Primary pink color
+    backgroundColor: '#ff0083', // Primary pink color
     borderRadius: 16,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -682,11 +703,11 @@ const styles = StyleSheet.create({
   },
   infoMyGroups: {
     paddingRight: 10, // Match padding to prevent text from being covered by profile pictures - applies to ALL cards on my-groups page
-    paddingBottom: 40, // Keep bottom padding for my groups page
+    paddingBottom: 20, // Keep bottom padding for my groups page
   },
   infoAllGroups: {
     paddingRight: 100, // Restored original padding for profile pictures
-    paddingBottom: 12, // Different bottom padding for All Groups page
+    paddingBottom: 8, // Different bottom padding for All Groups page
   },
   groupName: {
     color: '#000000',
@@ -838,6 +859,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 6,
     flexWrap: 'wrap',
+  },
+  detailRowNoWrap: {
+    flexWrap: 'nowrap',
   },
   detailText: {
     color: '#000000',

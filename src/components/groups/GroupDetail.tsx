@@ -61,6 +61,22 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
   const friendsQuery = useFriends(userProfile?.id);
 
+  // Determine category for placeholder image
+  const category = useMemo(() => {
+    const userChurchId = userProfile?.church_id;
+    const userServiceId = userProfile?.service_id;
+    const isInUserService = !!userServiceId && group.service_id === userServiceId;
+    const isInUserChurch = !!userChurchId && group.church_id === userChurchId;
+
+    if (isInUserService) {
+      return 'service' as const;
+    } else if (isInUserChurch) {
+      return 'church' as const;
+    } else {
+      return 'outside' as const;
+    }
+  }, [userProfile?.church_id, userProfile?.service_id, group.service_id, group.church_id]);
+
   const formatMeetingTime = (day: string, time: string) => {
     const date = new Date(`2000-01-01T${time}`);
     const formattedTime = date.toLocaleTimeString('en-US', {
@@ -301,7 +317,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
             resizeMode="cover"
           />
         ) : (
-          <GroupPlaceholderImage style={styles.headerImage} />
+          <GroupPlaceholderImage style={styles.headerImage} category={category} />
         )}
 
         {/* Badge positioned at top right of image */}

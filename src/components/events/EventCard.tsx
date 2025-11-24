@@ -205,7 +205,7 @@ export const EventCard: React.FC<EventCardProps> = ({
 
             {event.price && (
               <View style={styles.metaRow}>
-                <Ionicons name="cash-outline" size={14} color="#16a34a" />
+                <Ionicons name="cash-outline" size={14} color="#ff0083" />
                 <Text style={styles.eventMeta}>${event.price}</Text>
               </View>
             )}

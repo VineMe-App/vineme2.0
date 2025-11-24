@@ -17,11 +17,14 @@ export interface ThemeTypography {
 }
 
 // Font family definitions
+// Using Figtree variable font for flexibility, with individual weight files as fallbacks
 export const fontFamily = {
-  regular: 'Manrope-Regular',
-  medium: 'Manrope-Medium',
-  semiBold: 'Manrope-SemiBold',
-  bold: 'Manrope-Bold',
+  regular: 'Figtree-Regular',
+  medium: 'Figtree-Medium',
+  semiBold: 'Figtree-SemiBold',
+  bold: 'Figtree-Bold',
+  // Variable font for dynamic weights
+  variable: 'Figtree-VariableFont_wght',
 };
 
 // Font size scale (in pixels)

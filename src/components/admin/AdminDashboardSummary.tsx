@@ -127,7 +127,7 @@ export function AdminDashboardSummary({
         {
           label: 'Connected',
           value: newcomersStats.connected,
-          color: '#10b981',
+          color: '#ff0083',
         },
         {
           label: 'Not Connected',
@@ -142,7 +142,7 @@ export function AdminDashboardSummary({
         {
           label: 'Not at Capacity',
           value: groupsStats.notAtCapacity,
-          color: '#10b981',
+          color: '#ff0083',
         },
         {
           label: 'At Capacity',
