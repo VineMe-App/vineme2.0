@@ -28,6 +28,7 @@ import { useNotificationBadge } from '@/hooks/useNotifications';
 import { Image } from 'react-native';
 import { CTACard } from '@/components/ui/CTACard';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 const formatNameList = (names: string[]): string => {
   const filtered = names.filter((name) => name && name.trim().length > 0);
@@ -241,11 +242,11 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Church + Service Card - Updated to match Figma */}
+        {/* Church + Service Card */}
         <View style={styles.header}>
           <ChurchAdminOnly
             fallback={
-              <View style={styles.churchCard}>
+              <Card variant="default" style={styles.churchCard}>
                 <Ionicons
                   name="location-outline"
                   size={25}
@@ -274,12 +275,15 @@ export default function HomeScreen() {
                     </Text>
                   )}
                 </View>
-              </View>
+              </Card>
             }
           >
-            <TouchableOpacity
-              style={styles.churchCard}
+            <Card
+              variant="default"
+              interactive
               onPress={() => router.push('/admin')}
+              style={styles.churchCard}
+              accessibilityLabel="Manage church settings"
             >
               <Ionicons
                 name="location-outline"
@@ -320,7 +324,7 @@ export default function HomeScreen() {
                   color="#6b7280"
                 />
               </View>
-            </TouchableOpacity>
+            </Card>
           </ChurchAdminOnly>
         </View>
 
@@ -487,241 +491,237 @@ export default function HomeScreen() {
 
 const createStyles = (theme: any) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingTop: 10,
-    paddingLeft: 17,
-    paddingRight: 20,
-    paddingBottom: 0,
-    minHeight: 121,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    position: 'relative',
-    width: 189,
-    height: 121,
-  },
-  logo1: {
-    width: 50,
-    height: 50,
-    position: 'absolute',
-    left: 0,
-    top: 35,
-    zIndex: 2,
-  },
-  logo2: {
-    width: 121.25,
-    height: 121.25,
-    position: 'absolute',
-    left: 50,
-    top: 0,
-    zIndex: 1,
-  },
-  notificationContainer: {
-    justifyContent: 'center',
-    height: 121,
-  },
-  header: {
-    paddingTop: 0,
-    paddingLeft: 22,
-    paddingRight: 20,
-    paddingBottom: 0,
-    marginTop: -10,
-  },
-  churchCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E6E7EA',
-    borderRadius: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    minHeight: 71,
-    marginTop: 8,
-  },
-  locationIcon: {
-    marginRight: 16,
-  },
-  churchCardContent: {
-    flex: 1,
-  },
-  churchName: {
-    color: theme.colors.text.primary,
-    fontSize: 16,
-    letterSpacing: -0.8,
-    marginBottom: 4,
-  },
-  serviceTime: {
-    color: '#8B8A8C',
-    fontSize: 12,
-    letterSpacing: -0.6,
-  },
-  orgCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 8,
-  },
-  orgCardClickable: {
-    // Background color will be set inline with theme
-  },
-  orgLeft: {
-    flex: 1,
-  },
-  orgRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 2,
-  },
-  orgText: {
-    color: '#374151',
-    flexShrink: 1,
-  },
-  orgRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginLeft: 12,
-  },
-  orgCta: {
-    color: '#111827',
-  },
-  statsSection: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionSpacing: {
-    marginTop: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingLeft: 34,
-    paddingRight: 20,
-    marginBottom: 16,
-  },
-  manageButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#111827',
-    borderRadius: 9999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  manageButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  sectionTitle: {
-    color: theme.colors.text.primary,
-    fontSize: 27.5,
-    letterSpacing: -1.375,
-    fontWeight: '900',
-  },
-  seeAllText: {
-    // Typography handled by Text component variant
-  },
-  horizontalScroll: {
-    paddingLeft: 16,
-    paddingRight: 12,
-  },
-  horizontalCard: {
-    marginRight: 12,
-  },
-  emptyIcon: {},
-  actionButton: {
-    borderRadius: 9999, // Fully rounded corners
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: '#fff',
-  },
-  bottomSpacing: {
-    height: 100,
-  },
-  emptyStateContainer: {
-    paddingHorizontal: 18,
-    gap: 12,
-  },
-  emptyStateCard: {
-    backgroundColor: theme.colors.text.primary,
-    borderRadius: 12,
-    paddingHorizontal: 40,
-    paddingVertical: 38,
-    minHeight: 216,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyStateTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    textAlign: 'center',
-    marginBottom: 12,
-    fontWeight: '700',
-  },
-  emptyStateSubtitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    lineHeight: 20,
-    textAlign: 'center',
-    marginBottom: 24,
-    fontWeight: '300',
-  },
-  findGroupButton: {
-    width: 278,
-  },
-  actionCardsContainer: {
-    gap: 12,
-  },
-  actionCardsContainerWithGroups: {
-    paddingHorizontal: 17,
-    marginTop: 16,
-  },
-  actionCardSpacing: {
-    marginBottom: 12,
-  },
+    container: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingTop: 10,
+      paddingLeft: 17,
+      paddingRight: 20,
+      paddingBottom: 0,
+      minHeight: 121,
+    },
+    logoContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      position: 'relative',
+      width: 189,
+      height: 121,
+    },
+    logo1: {
+      width: 50,
+      height: 50,
+      position: 'absolute',
+      left: 0,
+      top: 35,
+      zIndex: 2,
+    },
+    logo2: {
+      width: 121.25,
+      height: 121.25,
+      position: 'absolute',
+      left: 50,
+      top: 0,
+      zIndex: 1,
+    },
+    notificationContainer: {
+      justifyContent: 'center',
+      height: 121,
+    },
+    header: {
+      paddingTop: 0,
+      paddingLeft: 22,
+      paddingRight: 20,
+      paddingBottom: 0,
+      marginTop: -10,
+    },
+    churchCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 71,
+      marginTop: 8,
+      paddingHorizontal: 24,
+      paddingVertical: 16,
+    },
+    locationIcon: {
+      marginRight: 16,
+    },
+    churchCardContent: {
+      flex: 1,
+    },
+    churchName: {
+      color: theme.colors.text.primary,
+      fontSize: 16,
+      letterSpacing: -0.8,
+      marginBottom: 4,
+    },
+    serviceTime: {
+      color: '#8B8A8C',
+      fontSize: 12,
+      letterSpacing: -0.6,
+    },
+    orgCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      borderColor: '#e5e7eb',
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginTop: 8,
+    },
+    orgCardClickable: {
+      // Background color will be set inline with theme
+    },
+    orgLeft: {
+      flex: 1,
+    },
+    orgRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 2,
+    },
+    orgText: {
+      color: '#374151',
+      flexShrink: 1,
+    },
+    orgRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginLeft: 12,
+    },
+    orgCta: {
+      color: '#111827',
+    },
+    statsSection: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      gap: 12,
+    },
+    statCard: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 16,
+    },
+    statNumber: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      marginBottom: 4,
+    },
+    statLabel: {
+      fontSize: 14,
+      color: '#666',
+      fontWeight: '500',
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionSpacing: {
+      marginTop: 16,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingLeft: 34,
+      paddingRight: 20,
+      marginBottom: 16,
+    },
+    manageButton: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#111827',
+      borderRadius: 9999,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    manageButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    sectionTitle: {
+      color: theme.colors.text.primary,
+      fontSize: 27.5,
+      letterSpacing: -1.375,
+      fontWeight: '900',
+    },
+    seeAllText: {
+      // Typography handled by Text component variant
+    },
+    horizontalScroll: {
+      paddingLeft: 16,
+      paddingRight: 12,
+    },
+    horizontalCard: {
+      marginRight: 12,
+    },
+    emptyIcon: {},
+    actionButton: {
+      borderRadius: 9999, // Fully rounded corners
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    actionButtonText: {
+      color: '#fff',
+    },
+    bottomSpacing: {
+      height: 100,
+    },
+    emptyStateContainer: {
+      paddingHorizontal: 18,
+      gap: 12,
+    },
+    emptyStateCard: {
+      backgroundColor: theme.colors.text.primary,
+      borderRadius: 12,
+      paddingHorizontal: 40,
+      paddingVertical: 38,
+      minHeight: 216,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyStateTitle: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      letterSpacing: -0.48,
+      textAlign: 'center',
+      marginBottom: 12,
+      fontWeight: '700',
+    },
+    emptyStateSubtitle: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      letterSpacing: -0.48,
+      lineHeight: 20,
+      textAlign: 'center',
+      marginBottom: 24,
+      fontWeight: '300',
+    },
+    findGroupButton: {
+      width: 278,
+    },
+    actionCardsContainer: {
+      gap: 12,
+    },
+    actionCardsContainerWithGroups: {
+      paddingHorizontal: 17,
+      marginTop: 16,
+    },
+    actionCardSpacing: {
+      marginBottom: 12,
+    },
   });

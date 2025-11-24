@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Alert,
@@ -20,6 +19,7 @@ import {
   Select,
   Card,
   Button,
+  Text,
   useFormContext,
   Checkbox,
 } from '../ui';
@@ -356,21 +356,19 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
 
       <Form config={formConfig} onSubmit={handleValidatedSubmit}>
         <Card style={styles.card}>
-          <Text style={styles.sectionTitle}>Group Information</Text>
+          <Text variant="bodyLarge" weight="bold" style={styles.sectionTitle}>
+            Group Information
+          </Text>
           <FormField name="title">
             {({ value, error, onChange, onBlur }) => (
               <View style={styles.fieldContainer}>
-                <Text style={styles.inputLabel}>
-                  Group Name
-                  <Text style={styles.requiredAsterisk}> *</Text>
-                </Text>
-                <Text style={styles.exampleText}>e.g. Hammersmith Connect</Text>
                 <Input
+                  label="Group Name"
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   error={error}
-                  inputStyle={styles.textInput}
+                  placeholder="Hammersmith Connect"
                   required
                   size="small"
                 />
@@ -380,22 +378,13 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           <FormField name="description">
             {({ value, error, onChange, onBlur }) => (
               <View style={styles.fieldContainer}>
-                <Text style={styles.inputLabel}>
-                  Description
-                  <Text style={styles.requiredAsterisk}> *</Text>
-                </Text>
-                <Text style={styles.exampleText}>
-                  What can people expect from your group?
-                </Text>
                 <Input
+                  label="Description"
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   error={error}
-                  inputStyle={StyleSheet.flatten([
-                    styles.textInput,
-                    styles.textAreaInput,
-                  ])}
+                  placeholder="What can people expect from your group?"
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -408,13 +397,13 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           <FormField name="whatsapp_link">
             {({ value, error, onChange, onBlur }) => (
               <View style={styles.fieldContainer}>
-                <Text style={styles.inputLabel}>WhatsApp Group Link</Text>
-                <Text style={styles.exampleText}>Optional</Text>
                 <Input
+                  label="WhatsApp Group Link"
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   error={error}
+                  placeholder="Optional"
                   size="small"
                 />
               </View>
@@ -423,17 +412,20 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           <FormField name="meeting_day">
             {({ value, error, onChange }) => (
               <View style={styles.fieldContainer}>
-                <Text style={styles.inputLabel}>
-                  Group Day
-                  <Text style={styles.requiredAsterisk}> *</Text>
-                </Text>
-                <Text style={styles.exampleText}>Select a day of the week</Text>
+                <View style={styles.selectLabelContainer}>
+                  <Text variant="labelSmall" color="secondary" weight="medium">
+                    Group Day{' '}
+                    <Text variant="labelSmall" weight="medium" style={{ color: theme.colors.error[500] }}>
+                      *
+                    </Text>
+                  </Text>
+                </View>
                 <Select
                   options={MEETING_DAYS}
                   value={value}
                   onSelect={(opt) => onChange(opt.value)}
                   error={error}
-                  placeholder=""
+                  placeholder="Select a day of the week"
                   variant="dropdown"
                 />
               </View>
@@ -442,11 +434,14 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
           <FormField name="meeting_time">
             {({ value, error, onChange }) => (
               <View style={styles.fieldContainer}>
-                <Text style={styles.inputLabel}>
-                  Group Time
-                  <Text style={styles.requiredAsterisk}> *</Text>
-                </Text>
-                <View style={styles.timePickerSpacing} />
+                <View style={styles.selectLabelContainer}>
+                  <Text variant="labelSmall" color="secondary" weight="medium">
+                    Group Time{' '}
+                    <Text variant="labelSmall" weight="medium" style={{ color: theme.colors.error[500] }}>
+                      *
+                    </Text>
+                  </Text>
+                </View>
                 {Platform.OS === 'android' ? (
                   <>
                     <TouchableOpacity
@@ -502,7 +497,9 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
         </Card>
 
         <Card style={styles.card}>
-          <Text style={styles.sectionTitle}>Meeting Location</Text>
+          <Text variant="bodyLarge" weight="bold" style={styles.sectionTitle}>
+            Meeting Location
+          </Text>
           <Text style={styles.sectionSubtitle}>
             Search for a location by typing an address, place, or postcode, or
             pinch and drag the map to move the pin.
@@ -531,7 +528,9 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
         </Card>
 
         <Card style={styles.card}>
-          <Text style={styles.sectionTitle}>Group Photo (Optional)</Text>
+          <Text variant="bodyLarge" weight="bold" style={styles.sectionTitle}>
+            Group Photo (Optional)
+          </Text>
           {imageState ? (
             <View style={styles.imagePreviewWrapper}>
               <Image
@@ -644,11 +643,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
   },
-  exampleText: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-    lineHeight: 16,
+  selectLabelContainer: {
+    marginBottom: 12,
   },
   topSpacing: {
     height: 12,
@@ -660,9 +656,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 8,
   },
   sectionSubtitle: {
@@ -670,15 +663,6 @@ const styles = StyleSheet.create({
     color: '#4a4a4a',
     marginTop: 0,
     marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  timePickerSpacing: {
-    height: 8,
   },
   timePicker: {
     width: '100%',
@@ -752,16 +736,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000000',
     marginLeft: 8,
-  },
-  requiredAsterisk: {
-    color: '#ff3b30',
-  },
-  textInput: {
-    paddingHorizontal: 12,
-  },
-  textAreaInput: {
-    paddingTop: 12,
-    paddingBottom: 12,
   },
   submitHint: {
     fontSize: 12,
