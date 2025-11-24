@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
@@ -21,6 +21,7 @@ export default function EmailStep({
   const [newsletterOptIn, setNewsletterOptIn] = useState(true);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     // Pre-fill email if exists on auth user
@@ -209,7 +210,8 @@ export default function EmailStep({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
@@ -261,7 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 2,
     borderColor: '#EAEAEA',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background.primary,
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -289,4 +291,4 @@ const styles = StyleSheet.create({
   authButton: {
     marginBottom: 16,
   },
-});
+  });

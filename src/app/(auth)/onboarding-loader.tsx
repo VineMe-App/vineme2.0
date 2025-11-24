@@ -1,11 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
+import { useTheme } from '@/theme/provider/useTheme';
 
 const LOADER_DURATION_MS = 2000;
 
 export default function OnboardingLoaderScreen() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       router.replace('/(auth)/onboarding');
@@ -15,8 +19,8 @@ export default function OnboardingLoaderScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background.primary} />
       <View style={styles.body}>
         <AuthLoadingAnimation />
       </View>
@@ -24,15 +28,15 @@ export default function OnboardingLoaderScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   body: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+  });
 

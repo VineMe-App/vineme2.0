@@ -244,8 +244,8 @@ export default function PhoneSignUpScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background.primary} />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -269,7 +269,6 @@ const createStyles = (theme: any) =>
   StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardContainer: {
     flex: 1,
@@ -315,7 +314,7 @@ const createStyles = (theme: any) =>
     borderWidth: 1,
     borderColor: '#EAEAEA',
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background.primary,
     height: 50,
   },
   countryTrigger: {
@@ -352,7 +351,7 @@ const createStyles = (theme: any) =>
     height: 70,
     fontSize: 30,
     color: theme.colors.text.primary,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background.primary,
     marginBottom: 16,
     textAlign: 'center',
     letterSpacing: 12,

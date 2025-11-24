@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -47,6 +47,7 @@ export default function ProfileDetailsStep({
   const bioSectionRef = useRef<View>(null);
   const [bioSectionY, setBioSectionY] = useState(0);
   const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     setBio(data.bio ?? '');
@@ -345,7 +346,8 @@ export default function ProfileDetailsStep({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
@@ -410,7 +412,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 6,
     right: 6,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background.primary,
     borderRadius: 12,
     width: 24,
     height: 24,
@@ -458,4 +460,4 @@ const styles = StyleSheet.create({
   authButton: {
     marginBottom: 16,
   },
-});
+  });

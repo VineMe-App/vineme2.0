@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { Text } from '@/components/ui/Text';
 import { AuthHero } from '@/components/auth/AuthHero';
 import { Button } from '@/components/ui/Button';
+import { useTheme } from '@/theme/provider/useTheme';
 
 export default function GroupStatusStep({
   data,
@@ -16,6 +17,8 @@ export default function GroupStatusStep({
   const [selectedStatus, setSelectedStatus] = useState<
     'existing' | 'looking' | null
   >(data.group_status || null);
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   useEffect(() => {
     if (data.group_status) {
@@ -125,7 +128,8 @@ export default function GroupStatusStep({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
@@ -150,7 +154,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background.primary,
     minHeight: 92,
     justifyContent: 'center',
   },
@@ -170,13 +174,13 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     borderWidth: 2,
     borderColor: '#EAEAEA',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioSelected: {
     borderColor: '#F54099',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background.primary,
   },
   radioInner: {
     width: 20,
@@ -217,4 +221,4 @@ const styles = StyleSheet.create({
   authButton: {
     marginBottom: 16,
   },
-});
+  });

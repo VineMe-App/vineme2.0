@@ -658,7 +658,7 @@ const createStyles = (theme: any) =>
     borderColor: '#EAEAEA',
     borderRadius: 12,
     marginBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background.primary,
   },
   churchCardSelected: {
     borderColor: '#F54099',
@@ -723,7 +723,7 @@ const createStyles = (theme: any) =>
     borderRadius: 4,
     borderWidth: 2,
     borderColor: '#EAEAEA',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -799,7 +799,7 @@ const createStyles = (theme: any) =>
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.background.primary,
     gap: 12,
   },
   otherServiceTextGroup: {
