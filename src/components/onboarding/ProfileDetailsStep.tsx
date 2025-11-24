@@ -23,7 +23,7 @@ import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { userService } from '@/services/users';
 import { getFullName } from '@/utils/name';
-import { tertiaryColors } from '@/theme/tokens';
+import { useTheme } from '@/theme/provider/useTheme';
 
 const BIO_MAX_LENGTH = 240;
 
@@ -46,6 +46,7 @@ export default function ProfileDetailsStep({
   const bioInputRef = useRef<any>(null);
   const bioSectionRef = useRef<View>(null);
   const [bioSectionY, setBioSectionY] = useState(0);
+  const { theme } = useTheme();
 
   useEffect(() => {
     setBio(data.bio ?? '');
@@ -223,10 +224,21 @@ export default function ProfileDetailsStep({
             )}
             {isKeyboardVisible && (
               <View style={styles.keyboardHeader}>
-                <Text variant="h4" weight="black" align="center" style={styles.title}>
+                <Text
+                  variant="h4"
+                  weight="black"
+                  align="center"
+                  color="primary"
+                  style={styles.title}
+                >
                   Add a friendly face
                 </Text>
-                <Text variant="bodyLarge" color="secondary" align="center" style={styles.subtitle}>
+                <Text
+                  variant="bodyLarge"
+                  color="secondary"
+                  align="center"
+                  style={styles.subtitle}
+                >
                   Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later.
                 </Text>
               </View>
@@ -240,7 +252,10 @@ export default function ProfileDetailsStep({
           >
             {uploading ? (
               <View style={styles.avatarLoading}>
-                <ActivityIndicator size="large" color={tertiaryColors[500]} />
+                <ActivityIndicator
+                  size="large"
+                  color={theme.colors.text.primary}
+                />
               </View>
             ) : avatarUrl ? (
               <View style={styles.avatarContainer}>
@@ -249,14 +264,22 @@ export default function ProfileDetailsStep({
                   style={styles.avatarImage}
                 />
                 <View style={styles.editIcon}>
-                  <Ionicons name="pencil-outline" size={14} color={tertiaryColors[500]} />
+                  <Ionicons
+                    name="pencil-outline"
+                    size={14}
+                    color={theme.colors.text.primary}
+                  />
                 </View>
               </View>
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Ionicons name="add" size={48} color="#999999" />
                 <View style={styles.editIcon}>
-                  <Ionicons name="pencil-outline" size={14} color={tertiaryColors[500]} />
+                  <Ionicons
+                    name="pencil-outline"
+                    size={14}
+                    color={theme.colors.text.primary}
+                  />
                 </View>
               </View>
             )}
@@ -348,13 +371,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    color: tertiaryColors[500],
     marginBottom: 12,
     letterSpacing: -1.5,
     fontWeight: '900',
   },
   subtitle: {
-    color: tertiaryColors[500],
     lineHeight: 24,
     letterSpacing: -0.2,
     maxWidth: 320,

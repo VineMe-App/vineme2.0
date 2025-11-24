@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -24,7 +24,7 @@ import { supabase } from '@/services/supabase';
 import { AuthHero } from '@/components/auth/AuthHero';
 import { Button } from '@/components/ui/Button';
 import { Text as AppText } from '@/components/ui/Text';
-import { tertiaryColors } from '@/theme/tokens';
+import { useTheme } from '@/theme/provider/useTheme';
 
 export default function ChurchStep({
   data,
@@ -58,6 +58,8 @@ export default function ChurchStep({
     'church' | 'service' | null
   >(null);
   const [serviceAdmins, setServiceAdmins] = useState<User[]>([]);
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [adminsLoading, setAdminsLoading] = useState(false);
 
   const { user } = useAuthStore();
@@ -587,7 +589,8 @@ export default function ChurchStep({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 32,
@@ -672,11 +675,11 @@ const styles = StyleSheet.create({
   churchName: {
     fontSize: 16,
     fontWeight: '600',
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     marginBottom: 4,
   },
   churchNameSelected: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
   },
   churchAddress: {
     fontSize: 14,
@@ -692,7 +695,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '180deg' }],
   },
   expandIndicatorActive: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     transform: [{ rotate: '0deg' }],
   },
   serviceSection: {
@@ -703,7 +706,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   serviceLabel: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     marginBottom: 16,
   },
   serviceCheckboxRow: {
@@ -725,8 +728,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   serviceCheckboxChecked: {
-    backgroundColor: tertiaryColors[500],
-    borderColor: tertiaryColors[500],
+    backgroundColor: theme.colors.text.primary,
+    borderColor: theme.colors.text.primary,
   },
   serviceCheckmark: {
     color: '#FFFFFF',
@@ -738,7 +741,7 @@ const styles = StyleSheet.create({
   },
   serviceCheckboxLabel: {
     fontSize: 12,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     fontWeight: '600',
     flex: 1,
     letterSpacing: -0.6,
@@ -780,11 +783,11 @@ const styles = StyleSheet.create({
   serviceEmptyRequestTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
   },
   serviceEmptyRequestSubtitle: {
     fontSize: 13,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     lineHeight: 18,
   },
   otherServiceCard: {
@@ -803,18 +806,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   otherServiceTitle: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     marginBottom: 8,
   },
   otherServiceSubtitle: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     lineHeight: 20,
   },
   otherServiceIcon: {
     width: 37,
     height: 37,
     borderRadius: 18.5,
-    backgroundColor: tertiaryColors[500],
+    backgroundColor: theme.colors.text.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -893,11 +896,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   missingServiceTitle: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     marginBottom: 8,
   },
   missingServiceSubtitle: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     lineHeight: 20,
   },
   missingServiceIcon: {
@@ -932,11 +935,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   missingChurchTitle: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     marginBottom: 8,
   },
   missingChurchSubtitle: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     lineHeight: 20,
   },
   missingChurchTextGroup: {
@@ -1016,4 +1019,4 @@ const styles = StyleSheet.create({
     color: '#856404',
     fontStyle: 'italic',
   },
-});
+  });

@@ -4,7 +4,6 @@ import type { OnboardingStepProps } from '@/types/app';
 import { Text } from '@/components/ui/Text';
 import { AuthHero } from '@/components/auth/AuthHero';
 import { Button } from '@/components/ui/Button';
-import { tertiaryColors } from '@/theme/tokens';
 
 export default function GroupStatusStep({
   data,
@@ -196,7 +195,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.7,
   },
   optionSubtitle: {
-    color: tertiaryColors[500],
     fontSize: 11,
     lineHeight: 14,
     letterSpacing: -0.33,

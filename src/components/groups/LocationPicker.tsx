@@ -17,7 +17,7 @@ import { Input, Button } from '../ui';
 import { locationService, type Coordinates } from '../../services/location';
 import { MapViewFallback } from './MapViewFallback';
 import { Ionicons } from '@expo/vector-icons';
-import { tertiaryColors } from '@/theme/tokens';
+import { useTheme } from '@/theme/provider/useTheme';
 
 // Dynamically import MapView - not available in Expo Go or on web
 // Using Platform check and try-catch to gracefully handle when the module isn't available
@@ -115,6 +115,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     },
     [deferChanges, onChange]
   );
+
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (!deferChanges && pendingChangeRef.current) {
@@ -664,7 +666,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             accessibilityRole="button"
             activeOpacity={0.85}
           >
-            <Ionicons name="locate-outline" size={18} color={tertiaryColors[500]} />
+          <Ionicons
+            name="locate-outline"
+            size={18}
+            color={theme.colors.text.primary}
+          />
           </TouchableOpacity>
         </View>
       </View>

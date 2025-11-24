@@ -6,7 +6,7 @@ import { AuthHero } from '@/components/auth/AuthHero';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
-import { tertiaryColors } from '@/theme/tokens';
+import { useTheme } from '@/theme/provider/useTheme';
 
 export default function EmailStep({
   data,
@@ -20,6 +20,7 @@ export default function EmailStep({
   const [error, setError] = useState<string | null>(null);
   const [newsletterOptIn, setNewsletterOptIn] = useState(true);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Pre-fill email if exists on auth user
@@ -127,7 +128,13 @@ export default function EmailStep({
         )}
         {isKeyboardVisible && (
           <View style={styles.keyboardHeader}>
-            <Text variant="h4" weight="black" align="center" style={styles.title}>
+            <Text
+              variant="h4"
+              weight="black"
+              align="center"
+              color="primary"
+              style={styles.title}
+            >
               What's your email?
             </Text>
             <Text variant="bodyLarge" color="secondary" align="center" style={styles.subtitle}>
@@ -161,12 +168,20 @@ export default function EmailStep({
           disabled={isLoading}
           activeOpacity={0.85}
         >
-          <View style={[styles.checkbox, newsletterOptIn && styles.checkboxChecked]}>
+          <View
+            style={[
+              styles.checkbox,
+              newsletterOptIn && {
+                backgroundColor: theme.colors.text.primary,
+                borderColor: theme.colors.text.primary,
+              },
+            ]}
+          >
             {newsletterOptIn && (
               <Text style={styles.checkmark}>✓</Text>
             )}
           </View>
-          <Text style={styles.checkboxLabel}>
+          <Text style={styles.checkboxLabel} color="primary">
             Send me news and updates.
           </Text>
         </TouchableOpacity>
@@ -218,13 +233,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    color: tertiaryColors[500],
     marginBottom: 12,
     letterSpacing: -1.5,
     fontWeight: '900',
   },
   subtitle: {
-    color: tertiaryColors[500],
     lineHeight: 24,
     letterSpacing: -0.2,
     maxWidth: 320,
@@ -253,10 +266,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: tertiaryColors[500],
-    borderColor: tertiaryColors[500],
-  },
   checkmark: {
     color: '#FFFFFF',
     fontSize: 12,
@@ -267,7 +276,6 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: 12,
-    color: tertiaryColors[500],
     letterSpacing: -0.6,
     flex: 1,
   },

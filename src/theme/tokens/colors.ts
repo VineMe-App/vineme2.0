@@ -95,8 +95,8 @@ export const tertiaryColors: ColorToken = {
   50: '#edecec',
   100: '#d4d2db',
   200: '#a6a2bd',
-  300: '#7a769f',
-  400: '#4e4c81',
+  300: 'rgb(129 118 159)',
+  400: '#674C81',
   500: '#2C2235', // Base tertiary - main dark color
   600: '#241b2a',
   700: '#1d1621',

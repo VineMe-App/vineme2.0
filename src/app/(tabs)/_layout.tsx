@@ -98,7 +98,7 @@ export default function TabLayout() {
               backgroundColor:
                 theme.name === 'dark'
                   ? 'rgba(30, 41, 59, 0.3)'
-                  : 'rgba(255, 255, 255, 0.3)',
+                  : theme.colors.background.primary,
             }}
           />
         ),

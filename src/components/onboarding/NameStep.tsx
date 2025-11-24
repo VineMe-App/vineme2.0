@@ -5,7 +5,6 @@ import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { AuthHero } from '@/components/auth/AuthHero';
-import { tertiaryColors } from '@/theme/tokens';
 
 export default function NameStep({
   data,
@@ -106,7 +105,13 @@ export default function NameStep({
         )}
         {isKeyboardVisible && (
           <View style={styles.keyboardHeader}>
-            <Text variant="h4" weight="black" align="center" style={styles.title}>
+            <Text
+              variant="h4"
+              weight="black"
+              align="center"
+              color="primary"
+              style={styles.title}
+            >
               What's your name?
             </Text>
             <Text variant="bodyLarge" color="secondary" align="center" style={styles.subtitle}>
@@ -220,13 +225,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    color: tertiaryColors[500],
     marginBottom: 12,
     letterSpacing: -1.5,
     fontWeight: '900',
   },
   subtitle: {
-    color: tertiaryColors[500],
     lineHeight: 24,
     letterSpacing: -0.2,
     maxWidth: 320,

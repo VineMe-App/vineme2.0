@@ -28,13 +28,13 @@ import {
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
 import { Ionicons } from '@expo/vector-icons';
-import { tertiaryColors } from '@/theme/tokens';
 
 export default function CommunicationAndSecurityScreen() {
   const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
     useAuthStore();
   const userId = user?.id || authUserProfile?.id;
   const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   
   // Get user profile from query hook to allow refetching
   const { data: userProfile, refetch: refetchUserProfile } = useUserProfile(userId);
@@ -608,7 +608,8 @@ export default function CommunicationAndSecurityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
   card: { marginBottom: 16, padding: 20 },
@@ -645,8 +646,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: tertiaryColors[500],
-    borderColor: tertiaryColors[500],
+    backgroundColor: theme.colors.text.primary,
+    borderColor: theme.colors.text.primary,
   },
   checkmark: {
     color: '#FFFFFF',
@@ -658,7 +659,7 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: 12,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     fontWeight: '600',
     flex: 1,
     letterSpacing: -0.6,
@@ -672,8 +673,8 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
   },
-  label: { fontSize: 12, fontWeight: '600', color: tertiaryColors[500], marginBottom: 6, letterSpacing: -0.6 },
-  currentValue: { fontSize: 12, fontWeight: '600', color: tertiaryColors[500], marginBottom: 6, letterSpacing: -0.6 },
+  label: { fontSize: 12, fontWeight: '600', color: theme.colors.text.primary, marginBottom: 6, letterSpacing: -0.6 },
+  currentValue: { fontSize: 12, fontWeight: '600', color: theme.colors.text.primary, marginBottom: 6, letterSpacing: -0.6 },
   noCredential: {
     fontSize: 14,
     color: '#6b7280',
@@ -705,8 +706,8 @@ const styles = StyleSheet.create({
   },
   policyLinkText: {
     fontSize: 12,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     fontWeight: '600',
     letterSpacing: -0.6,
   },
-});
+  });

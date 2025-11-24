@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,7 +18,7 @@ import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
-import { tertiaryColors } from '@/theme/tokens';
+import { useTheme } from '@/theme/provider/useTheme';
 
 export default function PhoneSignUpScreen() {
   const router = useRouter();
@@ -29,6 +29,8 @@ export default function PhoneSignUpScreen() {
   const [localNumber, setLocalNumber] = useState('');
   const [code, setCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const sanitizedLocalNumber = localNumber.replace(/\D/g, '');
   // Validate UK numbers as 10–11 digits (allow leading 0 in local part), otherwise use a general E.164-style length check (6–15 digits)
@@ -263,7 +265,8 @@ export default function PhoneSignUpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -327,7 +330,7 @@ const styles = StyleSheet.create({
   },
   countryCodeText: {
     fontSize: 16,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
   },
   phoneDivider: {
     width: 1,
@@ -338,7 +341,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
   },
   otpInput: {
     width: '100%',
@@ -348,7 +351,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     height: 70,
     fontSize: 30,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     backgroundColor: '#FFFFFF',
     marginBottom: 16,
     textAlign: 'center',
@@ -356,7 +359,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   resendText: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     marginTop: 32,
     textAlign: 'center',
   },

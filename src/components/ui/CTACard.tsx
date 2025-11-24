@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card } from './Card';
 import { Text } from './Text';
 import { useTheme } from '../../theme/provider/useTheme';
-import { tertiaryColors } from '@/theme/tokens';
 
 export interface CTACardProps {
   /**
@@ -167,6 +166,7 @@ export const CTACard: React.FC<CTACardProps> = ({
           <Text
             variant="body"
             weight="bold"
+            color="primary"
             style={variant === 'default' ? styles.titleDefault : undefined}
           >
             {title}
@@ -227,13 +227,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleDefault: {
-    color: tertiaryColors[500],
     fontSize: 16,
     letterSpacing: -0.48,
     fontWeight: '700',
   },
   descriptionDefault: {
-    color: tertiaryColors[500],
     fontSize: 16,
     letterSpacing: -0.48,
     lineHeight: 20,

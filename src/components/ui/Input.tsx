@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { Text } from './Text';
 import { useTheme } from '../../theme/provider/useTheme';
-import { tertiaryColors } from '@/theme/tokens';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   /**
@@ -466,7 +465,7 @@ const getInputStyles = (theme: any, size: string): TextStyle => {
   const baseStyles: TextStyle = {
     flex: 1,
     fontFamily: theme.typography.fontFamily.regular,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     includeFontPadding: false,
     fontSize: 16,
   };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
-import { tertiaryColors } from '@/theme/tokens';
+import { useTheme } from '@/theme/provider/useTheme';
 
 type AuthMethod = 'phone' | 'email' | null;
 type Step = 'enter-credentials' | 'enter-code';
@@ -35,6 +35,8 @@ export default function PhoneLoginScreen() {
   const [code, setCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
   const [emailOrPhone, setEmailOrPhone] = useState(''); // For displaying on code screen
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const sanitizedLocalNumber = localNumber.replace(/\D/g, '');
   const isUk = countryCode === '+44';
@@ -310,7 +312,8 @@ export default function PhoneLoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -375,7 +378,7 @@ const styles = StyleSheet.create({
   },
   countryCodeText: {
     fontSize: 18,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     fontWeight: '400',
   },
   phoneDivider: {
@@ -387,7 +390,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     fontSize: 18,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
   },
   orContainer: {
     alignItems: 'center',
@@ -395,7 +398,7 @@ const styles = StyleSheet.create({
   },
   orText: {
     fontSize: 14,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     letterSpacing: -0.14,
   },
   emailField: {
@@ -409,11 +412,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     fontSize: 14,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     letterSpacing: -0.28,
   },
   resendText: {
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     marginTop: 32,
     textAlign: 'center',
   },
@@ -440,7 +443,7 @@ const styles = StyleSheet.create({
   },
   signUpText: {
     fontSize: 14,
-    color: tertiaryColors[500],
+    color: theme.colors.text.primary,
     letterSpacing: -0.14,
     textAlign: 'center',
   },
