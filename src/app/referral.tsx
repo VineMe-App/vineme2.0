@@ -1,6 +1,6 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useLayoutEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Form,
@@ -9,7 +9,6 @@ import {
   Button,
   Card,
   Text,
-  Header,
   useFormContext,
 } from '../components/ui';
 import { CountryCodePicker } from '../components/ui/CountryCodePicker';
@@ -33,7 +32,15 @@ export default function ReferralPage() {
     : params.groupName;
   const isGroupReferral = Boolean(groupId);
   const router = useRouter();
+  const navigation = useNavigation();
   const { userProfile } = useAuthStore();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerTitle: 'Refer someone to a group',
+    });
+  }, [navigation]);
 
   const formConfig = useMemo(
     () =>
@@ -150,10 +157,6 @@ export default function ReferralPage() {
 
   return (
     <>
-      <Header
-        title={isGroupReferral ? 'Refer a Friend' : 'General Referral'}
-        useSafeArea={false}
-      />
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           {/* Context Card: Group selected vs no group */}
@@ -243,7 +246,6 @@ export default function ReferralPage() {
               marginTop: 8,
             }}
           >
-            <Ionicons name="person-add-outline" size={18} color="#374151" />
             <Text variant="h5" weight="bold">
               Referral details
             </Text>
@@ -332,26 +334,11 @@ export default function ReferralPage() {
               </FormField>
             </View>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 10,
-                marginTop: 24,
-                marginBottom: 16,
-              }}
-            >
-              <Ionicons name="create-outline" size={18} color="#374151" />
-              <Text variant="h5" weight="bold">
-                Context (optional)
-              </Text>
-            </View>
-
             <View style={styles.formFieldContainer}>
               <FormField name="note">
                 {({ value, error, onChange, onBlur }) => (
                   <Input
-                    label="Note (Optional)"
+                    label="Note"
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
@@ -379,6 +366,7 @@ export default function ReferralPage() {
               marginTop: 20,
               textAlign: 'center',
               paddingHorizontal: 16,
+              marginBottom: 40,
             }}
           >
             By sending a referral, you confirm you have permission to share this
@@ -450,7 +438,7 @@ const SubmitControls: React.FC<{
       <Button
         title="Send Referral"
         variant="secondary"
-        size="small"
+        size="large"
         fullWidth
         onPress={handlePress}
         loading={isSubmitting}

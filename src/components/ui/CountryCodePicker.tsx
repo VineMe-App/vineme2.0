@@ -6,8 +6,10 @@ import {
   StyleSheet,
   TextInput,
   FlatList,
+  ViewStyle,
 } from 'react-native';
 import Text from './Text';
+import { useTheme } from '../../theme/provider/useTheme';
 
 export type Country = {
   name: string;
@@ -223,6 +225,7 @@ export interface CountryCodePickerProps {
   label?: string;
   hideLabel?: boolean;
   renderTrigger?: (options: { selected: Country; open: () => void }) => React.ReactNode;
+  containerStyle?: ViewStyle;
 }
 
 export function CountryCodePicker({
@@ -231,7 +234,9 @@ export function CountryCodePicker({
   label = 'Country',
   hideLabel = false,
   renderTrigger,
+  containerStyle,
 }: CountryCodePickerProps) {
+  const { theme } = useTheme();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -278,8 +283,17 @@ export function CountryCodePicker({
   }, [openPicker, renderTrigger, selected]);
 
   return (
-    <>
-      {!hideLabel && label ? <Text style={styles.label}>{label}</Text> : null}
+    <View style={[styles.container, containerStyle]}>
+      {!hideLabel && label ? (
+        <Text 
+          variant="labelSmall" 
+          color="primary" 
+          weight="medium"
+          style={styles.label}
+        >
+          {label}
+        </Text>
+      ) : null}
       {trigger}
 
       <Modal visible={visible} transparent animationType="fade">
@@ -326,25 +340,29 @@ export function CountryCodePicker({
           </View>
         </View>
       </Modal>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    marginBottom: 24, // Match Input component container spacing
+  },
   label: {
     fontSize: 14,
-    color: '#374151',
-    marginBottom: 8,
+    marginBottom: 12, // Match Input component label spacing
+    // Color is handled by Text component's color="primary" prop (uses theme.colors.text.primary)
   },
   selector: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
+    borderWidth: 2, // Match Input component border
+    borderColor: '#EAEAEA', // Match Input component border color
+    borderRadius: 12, // Match Input component border radius
+    paddingHorizontal: 12, // Match Input small size
+    paddingVertical: 8, // Match Input small size
+    minHeight: 36, // Match Input small size minHeight
+    backgroundColor: '#FFFFFF', // Match Input component background
   },
   flag: {
     fontSize: 18,
