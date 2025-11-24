@@ -190,7 +190,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               resizeMode="cover"
             />
           ) : (
-            <GroupPlaceholderImage style={styles.image} />
+            <GroupPlaceholderImage style={styles.image} category={category} />
           )}
 
           {/* Leader Badge - Top Right */}
