@@ -10,14 +10,12 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Button } from '@/components/ui/Button';
-import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
 import { Card } from '@/components/ui/Card';
 
 export default function ProfileSecurityScreen() {
-  const router = useRouter();
   const { user, userProfile, linkEmail, linkPhone, verifyOtp, isLoading } =
     useAuthStore();
 
@@ -96,11 +94,6 @@ export default function ProfileSecurityScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Security Settings</Text>
-          <Text style={styles.subtitle}>Manage your account credentials</Text>
-        </View>
-
         {/* Email Section */}
         <Card style={styles.card}>
           <Text style={styles.cardTitle}>Email Address</Text>
@@ -260,19 +253,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
   },
   card: {
     marginBottom: 16,

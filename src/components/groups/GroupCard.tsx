@@ -14,7 +14,7 @@ import { Avatar } from '../ui/Avatar';
 import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
-import { useTheme } from '../../theme/provider/useTheme';
+import { Card } from '../ui/Card';
 
 interface GroupCardProps {
   group: GroupWithDetails | null | undefined;
@@ -51,8 +51,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 }) => {
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
-
-  const { theme } = useTheme();
 
   const churchName = group?.church?.name?.trim();
   const serviceName = group?.service?.name?.trim();
@@ -149,16 +147,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     outputRange: [0, 0.18],
   });
 
-  return (
-    <TouchableOpacity
-      style={[
-        styles.card,
-        style,
-      ]}
-      onPress={shouldBlockNavigation ? undefined : onPress}
-      activeOpacity={0.7}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+  const cardContent = (
+    <Card
+      style={[styles.card, style]}
+      interactive={!shouldBlockNavigation}
+      onPress={!shouldBlockNavigation ? onPress : undefined}
     >
       {showPendingBadge && (
         <View pointerEvents="none" style={styles.pendingWash} />
@@ -607,18 +600,35 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </Text>
         </TouchableOpacity>
       )}
-    </TouchableOpacity>
+    </Card>
   );
+
+  if (shouldBlockNavigation) {
+    return (
+      <TouchableOpacity
+        style={styles.blockingWrapper}
+        activeOpacity={1}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+      >
+        {cardContent}
+      </TouchableOpacity>
+    );
+  }
+
+  return cardContent;
 };
 
 const styles = StyleSheet.create({
+  blockingWrapper: {
+    borderRadius: 12,
+  },
   card: {
     borderRadius: 12,
     marginHorizontal: 17,
     marginVertical: 0,
     marginBottom: 12,
     overflow: 'hidden',
-    backgroundColor: '#F9FAFC',
     minHeight: 300,
     // Background color now set dynamically with theme
   },

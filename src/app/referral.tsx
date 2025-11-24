@@ -1,6 +1,6 @@
-import React, { useCallback, useMemo, useLayoutEffect } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Form,
@@ -33,14 +33,7 @@ export default function ReferralPage() {
     : params.groupName;
   const isGroupReferral = Boolean(groupId);
   const router = useRouter();
-  const navigation = useNavigation();
   const { userProfile } = useAuthStore();
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      header: () => <Header title="Referral Form" />,
-    });
-  }, [navigation]);
 
   const formConfig = useMemo(
     () =>
@@ -157,6 +150,11 @@ export default function ReferralPage() {
 
   return (
     <>
+      <Stack.Screen
+        options={{
+          header: () => <Header title="Referral Form" />,
+        }}
+      />
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           {/* Context Card: Group selected vs no group */}

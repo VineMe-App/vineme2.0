@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  RefreshControl,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { router } from 'expo-router';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -21,6 +15,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { Card } from '@/components/ui/Card';
 
 interface AdminDashboardSummaryProps {
   onRefresh?: () => void;
@@ -196,9 +191,10 @@ export function AdminDashboardSummary({
 
       {/* Quick Action Buttons at Top */}
       <View style={styles.buttonsSection}>
-        <TouchableOpacity
-          style={styles.actionButton}
+        <Card
+          interactive
           onPress={() => router.push('/admin/manage-groups')}
+          style={styles.actionCard}
         >
           <View style={styles.buttonContent}>
             <Ionicons name="grid-outline" size={20} color="#007AFF" />
@@ -210,21 +206,24 @@ export function AdminDashboardSummary({
               size="small"
             />
           )}
-        </TouchableOpacity>
+        </Card>
 
-        <TouchableOpacity
-          style={styles.actionButton}
+        <Card
+          interactive
           onPress={() => router.push('/admin/manage-users')}
+          style={styles.actionCard}
         >
           <View style={styles.buttonContent}>
             <Ionicons name="people-outline" size={20} color="#007AFF" />
             <Text style={styles.buttonText}>User Management</Text>
           </View>
-        </TouchableOpacity>
+        </Card>
 
-        <TouchableOpacity
-          style={styles.actionButton}
+        <Card
+          interactive
           onPress={() => router.push('/admin/join-requests')}
+          style={styles.actionCard}
+          variant="default"
         >
           <View style={styles.buttonContent}>
             <Ionicons name="mail-outline" size={20} color="#007AFF" />
@@ -237,26 +236,26 @@ export function AdminDashboardSummary({
               color="#8b5cf6"
             />
           )}
-        </TouchableOpacity>
+        </Card>
       </View>
 
       {/* Stats Section */}
       <View style={styles.statsSection}>
         {/* Newcomers */}
-        <View style={styles.statCard}>
+        <Card style={styles.statCard}>
           {/* <Text style={styles.statTitle}>Newcomers</Text> */}
           <Text style={styles.statTitle}>Newcomers requesting</Text>
-         <SimplePieChart segments={newcomersChartData} />
-       </View>
+          <SimplePieChart segments={newcomersChartData} />
+        </Card>
 
         {/* Groups */}
-        <View style={styles.statCard}>
+        <Card style={styles.statCard}>
           <Text style={styles.statTitle}>Groups</Text>
           <SimplePieChart segments={groupsChartData} />
-        </View>
+        </Card>
 
         {/* Requests */}
-        <View style={styles.statCard}>
+        <Card style={styles.statCard}>
           <Text style={styles.statTitle}>Group Join Requests</Text>
 
           {/* Outstanding Requests Number */}
@@ -280,7 +279,7 @@ export function AdminDashboardSummary({
               <Text style={styles.noDataText}>No archived requests</Text>
             </View>
           )}
-        </View>
+        </Card>
       </View>
     </ScrollView>
   );
@@ -329,24 +328,11 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 20,
   },
-  actionButton: {
+  actionCard: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    position: 'relative',
+    justifyContent: 'center',
+    gap: 8,
   },
   buttonContent: {
     alignItems: 'center',
@@ -365,19 +351,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   statCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f3f4f6',
+    gap: 12,
   },
   statTitle: {
     fontSize: 16,
