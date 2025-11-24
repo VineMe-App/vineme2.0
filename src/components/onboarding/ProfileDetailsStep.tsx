@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   ActivityIndicator,
   Alert,
   Image,
@@ -16,6 +15,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
+import { Input } from '@/components/ui/Input';
 import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,7 +42,7 @@ export default function ProfileDetailsStep({
   const [error, setError] = useState<string | null>(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const bioInputRef = useRef<TextInput>(null);
+  const bioInputRef = useRef<any>(null);
   const bioSectionRef = useRef<View>(null);
   const [bioSectionY, setBioSectionY] = useState(0);
 
@@ -270,14 +270,9 @@ export default function ProfileDetailsStep({
             setBioSectionY(y);
           }}
         >
-          <Text variant="body" weight="semiBold" style={styles.label}>
-            Bio (optional)
-          </Text>
-          <TextInput
+          <Input
             ref={bioInputRef}
-            style={styles.bioInput}
-            placeholder="Tell us a little bit about yourself..."
-            placeholderTextColor="#CBCBCB"
+            label="Bio (optional)"
             value={bio}
             onChangeText={(text) => {
               if (text.length <= BIO_MAX_LENGTH) {
@@ -285,11 +280,14 @@ export default function ProfileDetailsStep({
               }
             }}
             onFocus={handleBioFocus}
+            placeholder="Tell us a little bit about yourself..."
             multiline
             numberOfLines={6}
             textAlignVertical="top"
             maxLength={BIO_MAX_LENGTH}
             editable={!isLoading && !uploading}
+            containerStyle={styles.bioInputContainer}
+            inputStyle={styles.bioInput}
           />
         </View>
 
@@ -413,20 +411,13 @@ const styles = StyleSheet.create({
   bioSection: {
     gap: 8,
   },
-  label: {
-    color: '#2C2235',
+  bioInputContainer: {
+    marginBottom: 0,
   },
   bioInput: {
-    borderWidth: 2,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    fontSize: 16,
-    backgroundColor: '#FFFFFF',
-    color: '#2C2235',
     minHeight: 165,
     textAlignVertical: 'top',
+    paddingVertical: 16,
   },
   errorText: {
     marginTop: 16,

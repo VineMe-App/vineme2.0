@@ -91,12 +91,12 @@ import { Button } from '../components/ui';
 
 ### Input
 
-A flexible input component with validation support.
+A flexible input component with validation support. Styled to match the onboarding design with consistent borderWidth: 2, borderRadius: 12, and padding.
 
 ```tsx
 import { Input } from '../components/ui';
 
-// Basic usage
+// Basic usage (matches onboarding style)
 <Input
   label="Email"
   placeholder="Enter your email"
@@ -113,6 +113,16 @@ import { Input } from '../components/ui';
   error={passwordError}
   required
   secureTextEntry
+/>
+
+// Multiline input
+<Input
+  label="Bio (optional)"
+  value={bio}
+  onChangeText={setBio}
+  multiline
+  numberOfLines={6}
+  textAlignVertical="top"
 />
 
 // With variants
@@ -145,6 +155,83 @@ import { Card } from '../components/ui';
 <Card variant="elevated">
   <Text>Elevated card</Text>
 </Card>
+```
+
+### CTACard
+
+A standardized call-to-action card component for consistent CTA styling across the app.
+
+```tsx
+import { CTACard } from '../components/ui';
+
+// Basic usage
+<CTACard
+  title="Connect a friend"
+  description="Help someone join our community"
+  onPress={() => router.push('/referral-landing')}
+/>
+
+// With icon
+<CTACard
+  title="Create a group"
+  description="Start your own group"
+  iconName="people-outline"
+  iconColor="#007AFF"
+  onPress={() => router.push('/group/create')}
+/>
+
+// With variants
+<CTACard variant="default" title="Default CTA" onPress={() => {}} />
+<CTACard variant="filled" title="Filled CTA" onPress={() => {}} />
+<CTACard variant="outlined" title="Outlined CTA" onPress={() => {}} />
+```
+
+### Header
+
+A standardized header component for consistent header styling across screens.
+
+```tsx
+import { Header } from '../components/ui';
+
+// Basic usage
+<Header title="Screen Title" />
+
+// With back button handler
+<Header
+  title="Edit Profile"
+  onBackPress={() => router.back()}
+/>
+
+// With right actions
+<Header
+  title="Notifications"
+  rightActions={
+    <TouchableOpacity onPress={handleSettings}>
+      <Ionicons name="settings-outline" size={24} />
+    </TouchableOpacity>
+  }
+/>
+
+// With subtitle
+<Header
+  title="Groups"
+  subtitle="Find your community"
+/>
+```
+
+### Footer
+
+A standardized footer component for consistent footer styling.
+
+```tsx
+import { Footer } from '../components/ui';
+
+<Footer>
+  <Button title="Submit" onPress={handleSubmit} />
+  <Text variant="caption" color="secondary">
+    By continuing, you agree to our Terms
+  </Text>
+</Footer>
 ```
 
 ### Form with Validation
@@ -333,6 +420,18 @@ npm test -- src/components/ui/__tests__/ui-components.test.tsx
 
 See the `ComponentShowcase.tsx` file in the `__examples__` directory for a comprehensive demonstration of all components and their usage patterns.
 
+## Styling Consistency
+
+The UI component library ensures consistent styling across the app:
+
+- **CTAs**: Use `CTACard` component for all call-to-action cards
+- **Cards**: Use `Card` component or ensure consistent borderRadius (12), shadows, and padding
+- **Buttons**: Always use `Button` component instead of custom TouchableOpacity
+- **Inputs**: Use `Input` component which matches onboarding style (borderWidth: 2, borderRadius: 12)
+- **Text**: Use `Text` component from `@/components/ui/Text` instead of raw React Native Text
+- **Modals**: Use `Modal` component for all modal dialogs
+- **Headers/Footers**: Use `Header` and `Footer` components for consistent navigation
+
 ## Best Practices
 
 1. **Use Design Tokens**: Always use theme values instead of hardcoded values
@@ -341,6 +440,7 @@ See the `ComponentShowcase.tsx` file in the `__examples__` directory for a compr
 4. **Type Safety**: Leverage TypeScript for better development experience
 5. **Test Coverage**: Write tests for custom components and validation logic
 6. **Performance**: Use React.memo for components that don't need frequent re-renders
+7. **Single Source of Truth**: Use standardized components (CTACard, Header, Footer, Button, Input, Card) instead of custom implementations
 
 ## Contributing
 
