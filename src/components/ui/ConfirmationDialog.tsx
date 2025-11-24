@@ -216,7 +216,7 @@ export class AdminConfirmations {
         onCancel={onCancel}
         isLoading={isLoading}
         icon={
-          <Ionicons name="checkmark-circle-outline" size={24} color="#16a34a" />
+          <Ionicons name="checkmark-circle-outline" size={24} color="#ff0083" />
         }
       />
     );

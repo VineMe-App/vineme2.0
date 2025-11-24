@@ -26,7 +26,7 @@ export function LoadingSpinner({
   // Safely access theme context - won't throw if provider isn't ready
   const themeContext = useContext(ThemeContext);
   const spinnerColor =
-    color || themeContext?.theme?.colors?.primary?.[500] || '#f10078';
+    color || themeContext?.theme?.colors?.primary?.[500] || '#ff0083';
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;

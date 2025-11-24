@@ -177,7 +177,7 @@ export default function ReferralPage() {
                   isGroupReferral ? 'people-outline' : 'help-circle-outline'
                 }
                 size={22}
-                color={isGroupReferral ? '#2563eb' : '#10b981'}
+                color={isGroupReferral ? '#2563eb' : '#ff0083'}
               />
             </View>
             <View style={styles.contextTextWrap}>

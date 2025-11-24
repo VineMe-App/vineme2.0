@@ -109,16 +109,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   const shouldBlockNavigation = showPendingBadge;
   const pressAnim = React.useRef(new Animated.Value(0)).current;
 
-  // Get border color based on category
+  // Get border color based on category (matching map marker colors)
   const getBorderColor = () => {
     if (!category) return '#EDEDED'; // Default
     switch (category) {
       case 'service':
-        return theme.colors.primary[500]; // Primary color for user's service
+        return '#FF0083'; // Primary pink color
       case 'church':
-        return theme.colors.secondary[100]; // Secondary color for user's church
+        return '#96115c'; // Blend of pink and dark (50% pink, 50% dark) - darker
       case 'outside':
-        return theme.colors.tertiary?.[100] || '#9CA3AF'; // Tertiary color for outside groups
+        return '#2C2235'; // Dark color
       default:
         return '#EDEDED';
     }
@@ -153,10 +153,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <TouchableOpacity
       style={[
         styles.card,
-        {
-          borderColor: getBorderColor(),
-          borderWidth: 2,
-        },
         style,
       ]}
       onPress={shouldBlockNavigation ? undefined : onPress}
@@ -616,8 +612,6 @@ const styles = StyleSheet.create({
     marginVertical: 0,
     marginBottom: 12,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#EDEDED',
     backgroundColor: '#F9FAFC',
     minHeight: 300,
     // Background color now set dynamically with theme
@@ -642,7 +636,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: '#f10078', // Primary pink color
+    backgroundColor: '#ff0083', // Primary pink color
     borderRadius: 16,
     paddingHorizontal: 10,
     paddingVertical: 6,

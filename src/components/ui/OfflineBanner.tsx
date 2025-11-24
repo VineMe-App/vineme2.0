@@ -101,8 +101,8 @@ export function OfflineBanner() {
   const getBackgroundColor = () => {
     if (showReconnected) {
       return theme.name === 'dark'
-        ? 'rgba(72, 187, 120, 0.3)' // Green for reconnected (dark theme)
-        : 'rgba(72, 187, 120, 0.3)'; // Green for reconnected (light theme)
+        ? 'rgba(255, 0, 131, 0.3)' // Primary pink for reconnected (dark theme)
+        : 'rgba(255, 0, 131, 0.3)'; // Primary pink for reconnected (light theme)
     }
     return theme.name === 'dark'
       ? 'rgba(245, 101, 101, 0.3)' // Red for offline (dark theme)

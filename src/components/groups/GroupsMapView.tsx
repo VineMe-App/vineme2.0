@@ -132,7 +132,7 @@ const getClusterVisuals = (count: number) => {
   if (count >= 25) {
     return {
       size: 52,
-      bubbleColor: '#f10078', // Primary brand pink
+      bubbleColor: '#ff0083', // Primary brand pink
     } as const;
   }
 
@@ -730,15 +730,29 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   };
 
   const getMarkerColor = useCallback(
-    (category?: 'service' | 'church' | 'outside') => {
+    (category?: 'service' | 'church' | 'outside', isGreyedOut?: boolean) => {
       if (!category) return '#FF0083'; // Default primary color
+      
+      // For greyed out markers, use a darker/desaturated version, but keep outside groups dark
+      if (isGreyedOut && category !== 'outside') {
+        // Return a darker version for greyed out non-outside groups
+        switch (category) {
+          case 'service':
+            return '#cc0067'; // Darker pink
+          case 'church':
+            return '#6b184c'; // Darker blend
+          default:
+            return '#FF0083';
+        }
+      }
+      
       switch (category) {
         case 'service':
-          return '#FF0083'; // Primary color
+          return '#FF0083'; // Primary pink color
         case 'church':
-          return '#00C853'; // Secondary color (green)
+          return '#96115c'; // Blend of pink (#ff0083) and dark (#2C2235) - 50% pink, 50% dark (darker)
         case 'outside':
-          return '#9CA3AF'; // Tertiary color (gray)
+          return '#2C2235'; // Dark color (always use dark, never grey)
         default:
           return '#FF0083';
       }
@@ -832,7 +846,8 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       const { data: group, latitude, longitude, category } = point;
       const isActive = activeGroupId === group.id;
       const isGreyedOut = Boolean((group as any).__isGreyedOut);
-      const markerColor = getMarkerColor(category);
+      // Pass isGreyedOut to getMarkerColor so it can return appropriate color
+      const markerColor = getMarkerColor(category, isGreyedOut);
       
       // Apply category-based offset to prevent overlap
       const offset = getCategoryOffset(category);
@@ -867,7 +882,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
               styles.markerBubble,
               { backgroundColor: markerColor },
               isActive && styles.markerBubbleActive,
-              isGreyedOut && styles.markerBubbleGrey,
+              // Don't apply grey style - color is already handled in getMarkerColor
             ]}
           >
             <Ionicons name="people" size={16} color="#ffffff" />
@@ -884,8 +899,8 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       const digitCount = `${cluster.count}`.length;
       const fontSize = digitCount === 1 ? 16 : digitCount === 2 ? 14 : 12;
       
-      // Use category color for cluster
-      const clusterColor = getMarkerColor(cluster.category);
+      // Use category color for cluster (clusters are never greyed out)
+      const clusterColor = getMarkerColor(cluster.category, false);
       
       // Apply category-based offset to prevent overlap with other category clusters
       const offset = getCategoryOffset(cluster.category);
@@ -1076,7 +1091,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             elementType: 'geometry',
             stylers: [
               {
-                color: '#f0f9f0', // Faint green tint using brand color
+                color: '#FFFBEE', // Light cream color
               },
             ],
           },
@@ -1154,7 +1169,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             elementType: 'geometry',
             stylers: [
               {
-                color: '#d9e3d9', // Very faint green tint for roads
+                color: '#f5f5f5', // Light gray for roads
               },
             ],
           },
@@ -1217,7 +1232,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             elementType: 'geometry',
             stylers: [
               {
-                color: '#d0e8d0', // Slightly more green for water
+                color: '#e8f4f8', // Light blue-gray for water
               },
             ],
           },
@@ -1264,7 +1279,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
               longitude: distanceOrigin.coordinates.longitude,
             }}
             title={distanceOrigin.address || 'Search location'}
-            pinColor="#f10078"
+            pinColor="#ff0083"
             tracksViewChanges={false}
             draggable={true}
             onDragEnd={async (e) => {
@@ -1464,7 +1479,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f10078', // Primary brand pink
+    backgroundColor: '#ff0083', // Primary brand pink
     justifyContent: 'center',
     alignItems: 'center',
   },

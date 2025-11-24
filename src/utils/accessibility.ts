@@ -211,9 +211,9 @@ export class ColorContrastUtils {
         border: '#f59e0b', // Orange
       },
       approved: {
-        background: '#d1fae5', // Light green
-        text: '#065f46', // Dark green
-        border: '#10b981', // Green
+        background: '#fff0f8', // Light pink
+        text: '#99004b', // Dark pink
+        border: '#ff0083', // Primary pink
       },
       denied: {
         background: '#fee2e2', // Light red

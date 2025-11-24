@@ -46,15 +46,15 @@ export const lightTheme: ThemeConfig = {
 
     // Background colors
     background: {
-      primary: '#ffffff', // Reverted back to white
-      secondary: '#f8fafc', // Reverted back to light gray
-      tertiary: '#f1f5f9', // Reverted back to previous tertiary
-      inverse: '#0f172a',
+      primary: '#ffffff', // White
+      secondary: '#FFFBEE', // Updated to use light cream color
+      tertiary: '#fff8e0', // Lighter cream variant
+      inverse: '#2C2235', // Updated to use dark color
     },
 
     // Text colors
     text: {
-      primary: '#000000', // Updated to use black as requested
+      primary: '#2C2235', // Updated to use dark color
       secondary: '#475569',
       tertiary: '#64748b',
       inverse: '#ffffff',
@@ -72,9 +72,9 @@ export const lightTheme: ThemeConfig = {
     // Surface colors
     surface: {
       primary: '#ffffff', // White for cards/surfaces
-      secondary: '#f5f3f5', // Light gray for subtle surfaces
-      tertiary: '#f1f5f9', // Slightly darker gray
-      overlay: 'rgba(15, 23, 42, 0.5)',
+      secondary: '#FFFBEE', // Updated to use light cream color
+      tertiary: '#fff8e0', // Lighter cream variant
+      overlay: 'rgba(44, 34, 53, 0.5)', // Updated to use dark color with opacity
     },
   },
 
