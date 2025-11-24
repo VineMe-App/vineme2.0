@@ -6,23 +6,25 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Text,
 } from 'react-native';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { GroupDetail } from '../../components/groups';
 import { useGroup, useGroupMembership } from '../../hooks/useGroups';
 import { useAuthStore } from '../../stores/auth';
 import { shareGroup } from '../../utils/deepLinking';
+import { Header } from '../../components/ui/Header';
+import { useTheme } from '../../theme/provider/useTheme';
 
 export default function GroupDetailScreen() {
   const params = useLocalSearchParams<{ id: string; friends?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const headerActionBackground = theme.colors.surface.secondary;
+  const headerIconColor = theme.colors.text.primary;
   const { userProfile } = useAuthStore();
 
   const {
@@ -53,97 +55,67 @@ export default function GroupDetailScreen() {
     return Boolean(isLeader || isChurchAdminForService);
   }, [group, userProfile, membershipData]);
 
-  // Update the header title and add share action to header when available
-  React.useEffect(() => {
-    if (group?.title) {
-      navigation.setOptions({
-        header: () => (
-          <View
-            style={{
-              height: 125,
-              backgroundColor: 'white',
-              paddingTop: insets.top,
-            }}
-          >
-            {/* Top row: small back + text on left, cog/share on right */}
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: 16,
-                paddingTop: 4,
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => router.back()}
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 6,
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="chevron-back" size={18} color="#000" />
-                <Text style={{ fontSize: 14, marginLeft: 2, color: '#000' }}>
-                  Back
-                </Text>
-              </TouchableOpacity>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-              >
-                {canManageGroup && (
-                  <TouchableOpacity
-                    onPress={() => router.push(`/group-management/${group.id}`)}
-                    style={{ paddingVertical: 6, paddingHorizontal: 8 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open group management"
-                  >
-                    <Ionicons
-                      name="settings-outline"
-                      size={20}
-                      color="#374151"
-                    />
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  onPress={handleShare}
-                  style={{ paddingVertical: 6, paddingHorizontal: 8 }}
-                >
-                  <Ionicons name="share-outline" size={20} color="#374151" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Centered title area (description removed per request) */}
-            <View
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: 24,
-              }}
-            >
-              <Text
-                numberOfLines={1}
-                style={{
-                  fontSize: 22,
-                  fontWeight: '700',
-                  fontFamily: 'Figtree-Bold',
-                  textAlign: 'center',
-                  marginTop: -15,
-                }}
-              >
-                {group.title}
-              </Text>
-            </View>
-          </View>
-        ),
-      });
+  const handleShare = React.useCallback(() => {
+    if (group) {
+      shareGroup(group.id, group.title);
     }
-  }, [group?.title, group?.id, canManageGroup, navigation, insets.top, router]);
+  }, [group]);
+
+  // Update the header title and add share action to header when available
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      header: () => (
+        <Header
+          title={group?.title || 'Group'}
+          rightActions={
+            <View style={styles.headerActions}>
+              {canManageGroup && group && (
+                <TouchableOpacity
+                  onPress={() => router.push(`/group-management/${group.id}`)}
+                  style={[
+                    styles.headerActionButton,
+                    { backgroundColor: headerActionBackground },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open group management"
+                >
+                  <Ionicons
+                    name="settings-outline"
+                    size={20}
+                    color={headerIconColor}
+                  />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                onPress={handleShare}
+                style={[
+                  styles.headerActionButton,
+                  { backgroundColor: headerActionBackground },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Share group"
+              >
+                <Ionicons
+                  name="share-outline"
+                  size={20}
+                  color={headerIconColor}
+                />
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      ),
+    });
+  }, [
+    navigation,
+    group?.title,
+    group?.id,
+    canManageGroup,
+    router,
+    handleShare,
+    headerActionBackground,
+    headerIconColor,
+  ]);
 
   const handleRefresh = async () => {
     await Promise.all([refetchGroup(), refetchMembership()]);
@@ -153,12 +125,6 @@ export default function GroupDetailScreen() {
     // Refetch both group data and membership status
     refetchGroup();
     refetchMembership();
-  };
-
-  const handleShare = () => {
-    if (group) {
-      shareGroup(group.id, group.title);
-    }
   };
 
   if (groupLoading && !group) {
@@ -205,5 +171,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerActionButton: {
+    padding: 8,
+    borderRadius: 999,
   },
 });

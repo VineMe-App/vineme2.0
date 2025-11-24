@@ -5,12 +5,13 @@
 
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { NotificationBadge } from '../ui/NotificationBadge';
 import { AdminNavigation } from '../../utils/adminNavigation';
+import { Header } from '@/components/ui/Header';
+import { useTheme } from '@/theme/provider/useTheme';
 
 interface AdminHeaderProps {
   title: string;
@@ -33,8 +34,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   onHelpPress,
   onRefresh,
   isRefreshing = false,
-  rightActions,
+  rightActions: customRightActions,
 }) => {
+  const { theme } = useTheme();
+  const iconColor = theme.colors.text.primary;
+  const actionBackground = theme.colors.surface.secondary;
+
   const handleBackPress = () => {
     AdminNavigation.goBack('/(tabs)/profile');
   };
@@ -51,76 +56,64 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     }
   };
 
+  const actions = (
+    <View style={styles.actionRow}>
+      {onRefresh && (
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            { backgroundColor: actionBackground },
+          ]}
+          onPress={handleRefreshPress}
+          disabled={isRefreshing}
+          accessibilityLabel="Refresh data"
+          accessibilityRole="button"
+        >
+          <Ionicons
+            name="refresh"
+            size={20}
+            color={isRefreshing ? theme.colors.text.secondary : iconColor}
+            style={isRefreshing ? styles.refreshingIcon : undefined}
+          />
+        </TouchableOpacity>
+      )}
+
+      {showHelpButton && (
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            { backgroundColor: actionBackground },
+          ]}
+          onPress={handleHelpPress}
+          accessibilityLabel="Get help"
+          accessibilityRole="button"
+        >
+          <Ionicons name="help-circle-outline" size={20} color={iconColor} />
+        </TouchableOpacity>
+      )}
+
+      {customRightActions}
+    </View>
+  );
+
+  const titleAccessory =
+    (notificationCount ?? 0) > 0 ? (
+      <NotificationBadge
+        count={notificationCount ?? 0}
+        size="small"
+        style={styles.titleBadge}
+      />
+    ) : undefined;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.leftSection}>
-          {showBackButton && (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBackPress}
-              accessibilityLabel="Go back"
-              accessibilityRole="button"
-            >
-              <Ionicons name="chevron-back" size={24} color="#007AFF" />
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <View style={styles.centerSection}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title} numberOfLines={1}>
-              {title}
-            </Text>
-            {(notificationCount ?? 0) > 0 && (
-              <NotificationBadge
-                count={notificationCount ?? 0}
-                size="small"
-                style={styles.titleBadge}
-              />
-            )}
-          </View>
-          {subtitle && (
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.rightSection}>
-          {onRefresh && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleRefreshPress}
-              disabled={isRefreshing}
-              accessibilityLabel="Refresh data"
-              accessibilityRole="button"
-            >
-              <Ionicons
-                name="refresh"
-                size={20}
-                color={isRefreshing ? '#999' : '#007AFF'}
-                style={isRefreshing ? styles.refreshingIcon : undefined}
-              />
-            </TouchableOpacity>
-          )}
-
-          {showHelpButton && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleHelpPress}
-              accessibilityLabel="Get help"
-              accessibilityRole="button"
-            >
-              <Ionicons name="help-circle-outline" size={20} color="#007AFF" />
-            </TouchableOpacity>
-          )}
-
-          {rightActions}
-        </View>
-      </View>
-    </SafeAreaView>
+    <Header
+      title={title}
+      subtitle={subtitle}
+      showBackButton={showBackButton}
+      onBackPress={handleBackPress}
+      rightActions={actions}
+      titleAccessory={titleAccessory}
+    />
   );
 };
 
@@ -224,72 +217,17 @@ export const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    backgroundColor: '#fff',
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    minHeight: 60,
-  },
-  leftSection: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  centerSection: {
-    flex: 2,
-    alignItems: 'center',
-  },
-  rightSection: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingRight: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '500',
-    marginLeft: 2,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
-  },
   titleBadge: {
-    position: 'absolute',
-    top: -14, // Half of 28px small badge height for proper positioning
-    right: -24, // Half of 48px large badge height for proper positioning
+    marginLeft: 4,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 2,
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   actionButton: {
     padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#f8f9fa',
+    borderRadius: 999,
   },
   refreshingIcon: {
     opacity: 0.5,

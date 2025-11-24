@@ -12,6 +12,7 @@ import {
   useFormContext,
 } from '../components/ui';
 import { CountryCodePicker } from '../components/ui/CountryCodePicker';
+import { Header } from '../components/ui/Header';
 import { referralService } from '../services/referrals';
 import { useAuthStore } from '../stores/auth';
 import {
@@ -37,8 +38,7 @@ export default function ReferralPage() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerShown: true,
-      headerTitle: 'Refer someone to a group',
+      header: () => <Header title="Referral Form" />,
     });
   }, [navigation]);
 

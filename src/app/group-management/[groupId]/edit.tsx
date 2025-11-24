@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, View, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
+import { Header } from '@/components/ui/Header';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/Button';
 import { useGroup } from '@/hooks/useGroups';
@@ -142,7 +143,11 @@ export default function EditGroupScreen() {
     <View style={styles.screen}>
       <Stack.Screen
         options={{
-          title: group?.title ? `${group.title} Settings` : 'Edit Group',
+          header: () => (
+            <Header
+              title={group?.title ? `${group.title} Settings` : 'Edit Group'}
+            />
+          ),
         }}
       />
 
