@@ -19,8 +19,10 @@ import {
   validateReferralForm,
   type ReferralFormData,
 } from '../utils/referralValidation';
+import { useTheme } from '../theme/provider/useTheme';
 
 export default function ReferralPage() {
+  const { theme } = useTheme();
   const params = useLocalSearchParams<{
     groupId?: string;
     groupName?: string;
@@ -155,7 +157,13 @@ export default function ReferralPage() {
           header: () => <Header title="Referral Form" />,
         }}
       />
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.content}>
           {/* Context Card: Group selected vs no group */}
           <Card style={{ marginBottom: 20 }}>
@@ -234,20 +242,6 @@ export default function ReferralPage() {
                 : "Please inform the person you're referring that their contact details will be shared with church admins."}
             </Text>
           </Card>
-
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 10,
-              marginBottom: 16,
-              marginTop: 8,
-            }}
-          >
-            <Text variant="h5" weight="bold">
-              Referral details
-            </Text>
-          </View>
 
           <Form config={formConfig} onSubmit={handleSubmit}>
             <View style={styles.row}>
@@ -379,7 +373,6 @@ export default function ReferralPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   content: {
     padding: 20,

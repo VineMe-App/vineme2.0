@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useContext } from 'react';
-import { ActivityIndicator, StyleSheet, Animated } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Animated, ViewStyle } from 'react-native';
 import { Text } from './Text';
-import { ThemeContext } from '../../theme/provider/ThemeContext';
-import { fadeIn, pulse } from '../../utils/animations';
+import { fadeIn } from '../../utils/animations';
+import { AuthLoadingAnimation } from '../auth/AuthLoadingAnimation';
 
 type SpinnerSize = 'small' | 'medium' | 'large';
 
@@ -15,6 +15,12 @@ interface LoadingSpinnerProps {
   animated?: boolean;
 }
 
+const SIZE_SCALE_MAP = {
+  small: 0.6,
+  medium: 0.8,
+  large: 1.0,
+};
+
 export function LoadingSpinner({
   size = 'large',
   color,
@@ -23,38 +29,25 @@ export function LoadingSpinner({
   testID,
   animated = true,
 }: LoadingSpinnerProps) {
-  // Safely access theme context - won't throw if provider isn't ready
-  const themeContext = useContext(ThemeContext);
-  const spinnerColor =
-    color || themeContext?.theme?.colors?.primary?.[500] || '#ff0083';
-
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (animated) {
       // Fade in animation
       fadeIn(fadeAnim, 300).start();
-
-      // Pulse animation for the container
-      pulse(pulseAnim, 0.98, 1.02, 2000).start();
     } else {
       fadeAnim.setValue(1);
-      pulseAnim.setValue(1);
     }
-  }, [fadeAnim, pulseAnim, animated]);
+  }, [fadeAnim, animated]);
 
   const containerStyle = overlay
     ? [styles.container, styles.overlay]
     : styles.container;
 
-  const indicatorNativeSize = size === 'small' ? 'small' : 'large';
-  const indicatorStyle =
-    size === 'small'
-      ? styles.indicatorSmall
-      : size === 'medium'
-        ? styles.indicatorMedium
-        : styles.indicatorLarge;
+  const scale = SIZE_SCALE_MAP[size];
+  const animationStyle: ViewStyle = {
+    transform: [{ scale }],
+  };
 
   return (
     <Animated.View
@@ -62,16 +55,13 @@ export function LoadingSpinner({
         containerStyle,
         animated && {
           opacity: fadeAnim,
-          transform: [{ scale: pulseAnim }],
         },
       ]}
       testID={testID}
     >
-      <ActivityIndicator
-        size={indicatorNativeSize}
-        color={spinnerColor}
-        style={indicatorStyle}
-      />
+      <Animated.View style={animationStyle}>
+        <AuthLoadingAnimation />
+      </Animated.View>
       {message && (
         <Animated.View style={animated && { opacity: fadeAnim }}>
           <Text variant="body" color="secondary" style={styles.message}>
@@ -88,18 +78,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 18, // lg spacing
-  },
-  indicatorSmall: {
-    width: 20,
-    height: 20,
-  },
-  indicatorMedium: {
-    width: 32,
-    height: 32,
-  },
-  indicatorLarge: {
-    width: 44,
-    height: 44,
   },
   overlay: {
     position: 'absolute',

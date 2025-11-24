@@ -5,12 +5,15 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { router } from 'expo-router';
+import { useTheme } from '@/theme/provider/useTheme';
 
 export default function AdminLayout() {
+  const { theme } = useTheme();
+  
   return (
     <ChurchAdminOnly
       fallback={
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
           <View style={styles.errorContainer}>
             <Text style={styles.errorTitle}>Access Denied</Text>
             <ErrorMessage
@@ -67,7 +70,6 @@ export default function AdminLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   errorContainer: {
     flex: 1,

@@ -193,8 +193,10 @@ export const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
   rightActions,
   children,
 }) => {
+  const { theme } = useTheme();
+  
   return (
-    <View style={styles.pageContainer}>
+    <View style={[styles.pageContainer, { backgroundColor: theme.colors.background.primary }]}>
       <AdminHeader
         title={title}
         subtitle={subtitle}
@@ -264,7 +266,6 @@ const styles = StyleSheet.create({
   },
   pageContainer: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   pageContent: {
     flex: 1,

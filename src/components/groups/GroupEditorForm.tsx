@@ -24,6 +24,7 @@ import {
   Checkbox,
 } from '../ui';
 import { LocationPicker } from './LocationPicker';
+import { useTheme } from '../../theme/provider/useTheme';
 
 const MEETING_DAYS = [
   { label: 'Sunday', value: 'Sunday' },
@@ -163,6 +164,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
   headerTitle,
   subTitle,
 }) => {
+  const { theme } = useTheme();
   const mergedInitials = useMemo(() => {
     const base = { ...defaultInitials, ...initialValues };
     const parsedTime = base.meeting_time
@@ -346,7 +348,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       {headerTitle && <Text style={styles.pageTitle}>{headerTitle}</Text>}
       {subTitle && <Text style={styles.pageSubtitle}>{subTitle}</Text>}
 
@@ -620,7 +622,6 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     paddingBottom: 40,
-    backgroundColor: '#f8f9fa',
   },
   pageTitle: {
     fontSize: 24,

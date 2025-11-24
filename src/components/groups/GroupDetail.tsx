@@ -30,6 +30,7 @@ import { useFriends } from '../../hooks/useFriendships';
 import { Modal } from '../ui/Modal';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
+import { useTheme } from '../../theme/provider/useTheme';
 // Referral handled via /referral page
 // import { referralService } from '../../services/referrals';
 
@@ -48,6 +49,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   onShare,
   openFriendsOnMount = false,
 }) => {
+  const { theme } = useTheme();
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const [showAllMembers, setShowAllMembers] = useState(false);
@@ -306,7 +308,13 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   // Referral submission handled in /referral page
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.headerContainer}>
         {group.image_url ? (
           <OptimizedImage
@@ -659,7 +667,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   headerContainer: {
     position: 'relative',

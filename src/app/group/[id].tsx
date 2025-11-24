@@ -147,7 +147,7 @@ export default function GroupDetailScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
       refreshControl={
         <RefreshControl refreshing={groupLoading} onRefresh={handleRefresh} />
       }
@@ -165,7 +165,6 @@ export default function GroupDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,

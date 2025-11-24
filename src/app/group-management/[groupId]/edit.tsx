@@ -13,6 +13,7 @@ import GroupEditorForm, {
   GroupEditorLocation,
 } from '@/components/groups/GroupEditorForm';
 import { groupMediaService } from '@/services/groupMedia';
+import { useTheme } from '@/theme/provider/useTheme';
 
 const parseLocation = (location: any): GroupEditorLocation => {
   if (!location) return {};
@@ -43,6 +44,7 @@ export default function EditGroupScreen() {
     : params.groupId;
   const router = useRouter();
   const { userProfile } = useAuthStore();
+  const { theme } = useTheme();
   const updateGroupMutation = useUpdateGroupDetails();
   const [submitting, setSubmitting] = useState(false);
 
@@ -140,7 +142,7 @@ export default function EditGroupScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: theme.colors.background.primary }]}>
       <Stack.Screen
         options={{
           header: () => (
@@ -195,7 +197,6 @@ export default function EditGroupScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#f8fafc',
   },
   centerContent: {
     flex: 1,
