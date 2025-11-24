@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,6 +7,11 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
+  Platform,
+  TouchableWithoutFeedback,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/Avatar';
@@ -35,11 +40,57 @@ export default function ProfileDetailsStep({
   );
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const bioInputRef = useRef<TextInput>(null);
+  const bioSectionRef = useRef<View>(null);
+  const [bioSectionY, setBioSectionY] = useState(0);
 
   useEffect(() => {
     setBio(data.bio ?? '');
     setAvatarUrl(data.avatar_url);
   }, [data.bio, data.avatar_url]);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  const handleBioFocus = () => {
+    // Scroll to center the bio in the visible viewport when focused
+    setTimeout(() => {
+      const screenHeight = Dimensions.get('window').height;
+      // Estimate keyboard height (typically around 300-350px)
+      const keyboardHeight = Platform.OS === 'ios' ? 336 : 280;
+      // Footer height (Done button + spacing)
+      const footerHeight = 120;
+      // Available visible height above keyboard and footer
+      const visibleHeight = screenHeight - keyboardHeight - footerHeight;
+      // Bio section height (approximately)
+      const bioSectionHeight = 200;
+      // Calculate scroll position to center the bio section
+      const scrollOffset = bioSectionY - (visibleHeight / 2) + (bioSectionHeight / 2);
+      scrollViewRef.current?.scrollTo({ 
+        y: Math.max(0, scrollOffset), 
+        animated: true 
+      });
+    }, 350); // Delay to allow keyboard to appear first
+  };
 
   const handleChoosePhoto = () => {
     Alert.alert('Profile photo', 'Choose an option', [
@@ -152,15 +203,35 @@ export default function ProfileDetailsStep({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <AuthHero
-          title="Add a friendly face"
-          subtitle="Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later."
-          containerStyle={styles.heroSpacing}
-        />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {!isKeyboardVisible && (
+              <AuthHero
+                title="Add a friendly face"
+                subtitle="Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later."
+                containerStyle={styles.heroSpacing}
+              />
+            )}
+            {isKeyboardVisible && (
+              <View style={styles.keyboardHeader}>
+                <Text variant="h4" weight="black" align="center" style={styles.title}>
+                  Add a friendly face
+                </Text>
+                <Text variant="bodyLarge" color="secondary" align="center" style={styles.subtitle}>
+                  Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later.
+                </Text>
+              </View>
+            )}
 
-        <View style={styles.avatarSection}>
+            <View style={styles.avatarSection}>
           <TouchableOpacity
             onPress={handleChoosePhoto}
             disabled={uploading}
@@ -177,22 +248,33 @@ export default function ProfileDetailsStep({
                   style={styles.avatarImage}
                 />
                 <View style={styles.editIcon}>
-                  <Ionicons name="pencil-outline" size={14} color="#fff" />
+                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
                 </View>
               </View>
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Ionicons name="add" size={48} color="#999999" />
+                <View style={styles.editIcon}>
+                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
+                </View>
               </View>
             )}
           </TouchableOpacity>
         </View>
 
-        <View style={styles.bioSection}>
+        <View 
+          ref={bioSectionRef} 
+          style={styles.bioSection}
+          onLayout={(event) => {
+            const { y } = event.nativeEvent.layout;
+            setBioSectionY(y);
+          }}
+        >
           <Text variant="body" weight="semiBold" style={styles.label}>
             Bio (optional)
           </Text>
           <TextInput
+            ref={bioInputRef}
             style={styles.bioInput}
             placeholder="Tell us a little bit about yourself..."
             placeholderTextColor="#CBCBCB"
@@ -202,6 +284,7 @@ export default function ProfileDetailsStep({
                 setBio(text);
               }
             }}
+            onFocus={handleBioFocus}
             multiline
             numberOfLines={6}
             textAlignVertical="top"
@@ -210,14 +293,15 @@ export default function ProfileDetailsStep({
           />
         </View>
 
-        {error && (
-          <Text variant="bodySmall" color="error" style={styles.errorText}>
-            {error}
-          </Text>
-        )}
-      </View>
+            {error && (
+              <Text variant="bodySmall" color="error" style={styles.errorText}>
+                {error}
+              </Text>
+            )}
+          </ScrollView>
+        </View>
 
-      <View style={styles.footer}>
+        <View style={styles.footer}>
         <View style={styles.footerSpacer} />
         <AuthButton
           title="Done"
@@ -231,7 +315,8 @@ export default function ProfileDetailsStep({
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -245,10 +330,33 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingVertical: 16,
   },
   heroSpacing: {
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  keyboardHeader: {
     marginBottom: 32,
+  },
+  title: {
+    color: '#2C2235',
+    marginBottom: 12,
+    letterSpacing: -1.5,
+    fontWeight: '900',
+  },
+  subtitle: {
+    color: '#2C2235',
+    lineHeight: 24,
+    letterSpacing: -0.2,
+    maxWidth: 320,
+    marginTop: 4,
   },
   avatarSection: {
     alignItems: 'center',
@@ -273,6 +381,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAEAEA',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   editIcon: {
     position: 'absolute',

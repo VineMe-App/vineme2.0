@@ -13,64 +13,86 @@ import {
 } from 'react-native';
 import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
-import { AuthSignInPrompt } from '@/components/auth/AuthSignInPrompt';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
+import { OtpInput } from '@/components/ui/OtpInput';
+
+type AuthMethod = 'phone' | 'email' | null;
+type Step = 'enter-credentials' | 'enter-code';
 
 export default function PhoneLoginScreen() {
   const router = useRouter();
-  const { signInWithPhone, verifyOtp, isLoading } = useAuthStore();
+  const { signInWithPhone, signInWithEmail, verifyOtp, isLoading } = useAuthStore();
 
-  const [step, setStep] = useState<'enter-phone' | 'enter-code'>('enter-phone');
+  const [step, setStep] = useState<Step>('enter-credentials');
+  const [authMethod, setAuthMethod] = useState<AuthMethod>(null);
   const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
+  const [emailOrPhone, setEmailOrPhone] = useState(''); // For displaying on code screen
 
   const sanitizedLocalNumber = localNumber.replace(/\D/g, '');
   const isUk = countryCode === '+44';
   const isPhoneValid = isUk
     ? sanitizedLocalNumber.length === 10 || sanitizedLocalNumber.length === 11
     : sanitizedLocalNumber.length >= 6 && sanitizedLocalNumber.length <= 15;
+  const isEmailValid = /\S+@\S+\.\S+/.test(email.trim());
+  const canSubmit = isPhoneValid || isEmailValid;
 
-  const handleSendCode = async () => {
-    if (!isPhoneValid || isLoading) {
-      if (!isPhoneValid) {
-        const message = isUk
-          ? 'Enter a valid UK phone number (10-11 digits).'
-          : 'Enter a valid phone number (6-15 digits).';
-        Alert.alert('Invalid Number', message);
+  const handleSubmit = async () => {
+    if (isLoading) return;
+
+    // Prioritize phone if both are filled
+    if (isPhoneValid) {
+      try {
+        let processedNumber = sanitizedLocalNumber;
+        if (isUk && processedNumber.length === 11 && processedNumber.startsWith('0')) {
+          processedNumber = processedNumber.slice(1);
+        }
+        
+        const phone = `${countryCode}${processedNumber}`;
+        setFullPhone(phone);
+        setEmailOrPhone(phone);
+        setAuthMethod('phone');
+
+        const result = await signInWithPhone(phone);
+
+        if (result.success) {
+          setStep('enter-code');
+        } else if (result.userNotFound) {
+          Alert.alert('Phone Not Found', result.error);
+        } else {
+          Alert.alert('Error', result.error || 'Failed to send verification code.');
+        }
+      } catch (error) {
+        console.error('Login send code error', error);
+        Alert.alert(
+          'Network Error',
+          'Unable to send the verification code right now. Please check your connection and try again.'
+        );
       }
-      return;
-    }
+    } else if (isEmailValid) {
+      const trimmedEmail = email.trim();
+      setEmailOrPhone(trimmedEmail);
+      setAuthMethod('email');
 
-    try {
-      // If UK number (+44) and 11 digits starting with 0, remove the leading 0
-      let processedNumber = sanitizedLocalNumber;
-      if (isUk && processedNumber.length === 11 && processedNumber.startsWith('0')) {
-        processedNumber = processedNumber.slice(1); // Remove leading 0
-      }
-      
-      const phone = `${countryCode}${processedNumber}`;
-      setFullPhone(phone);
-
-      const result = await signInWithPhone(phone);
+      const result = await signInWithEmail(trimmedEmail);
 
       if (result.success) {
         setStep('enter-code');
       } else if (result.userNotFound) {
-        Alert.alert('Phone Not Found', result.error);
+        Alert.alert('Email Not Found', result.error);
       } else {
-        Alert.alert('Error', result.error || 'Failed to send verification code.');
+        Alert.alert('Error', result.error || 'Failed to send verification.');
       }
-    } catch (error) {
-      console.error('Login send code error', error);
-      Alert.alert(
-        'Network Error',
-        'Unable to send the verification code right now. Please check your connection and try again.'
-      );
+    } else {
+      if (!isPhoneValid && !isEmailValid) {
+        Alert.alert('Invalid Input', 'Please enter a valid phone number or email address.');
+      }
     }
   };
 
@@ -80,7 +102,11 @@ export default function PhoneLoginScreen() {
       return;
     }
 
-    const result = await verifyOtp(fullPhone, code, 'sms');
+    const result = await verifyOtp(
+      authMethod === 'phone' ? fullPhone : emailOrPhone,
+      code,
+      authMethod === 'phone' ? 'sms' : 'email'
+    );
 
     if (result.success) {
       router.replace('/(tabs)');
@@ -90,33 +116,40 @@ export default function PhoneLoginScreen() {
   };
 
   const handleResendCode = async () => {
-    const result = await signInWithPhone(fullPhone);
-    if (!result.success) {
-      Alert.alert('Error', result.error || 'Failed to resend code');
+    if (authMethod === 'phone') {
+      const result = await signInWithPhone(fullPhone);
+      if (!result.success) {
+        Alert.alert('Error', result.error || 'Failed to resend code');
+      }
+    } else if (authMethod === 'email') {
+      const result = await signInWithEmail(emailOrPhone);
+      if (result.success) {
+        Alert.alert('Verification Sent', 'A new verification has been sent to your email.');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to resend verification');
+      }
     }
   };
 
-  const handleBackToPhone = () => {
-    setStep('enter-phone');
+  const handleBackToCredentials = () => {
+    setStep('enter-credentials');
     setCode('');
-  };
-
-  const handleSignInWithEmail = () => {
-    router.push('/(auth)/email-login');
+    setAuthMethod(null);
   };
 
   const displayPhone = fullPhone || `${countryCode}${sanitizedLocalNumber}`;
 
-  const renderEnterPhoneStep = () => (
+  const renderEnterCredentialsStep = () => (
     <View style={styles.screen}>
       <View style={styles.body}>
         <AuthHero
-          title="Welcome back"
-          subtitle="Enter your phone number to sign in"
+          title="Sign in"
+          subtitle="Enter your phone number to get started"
           containerStyle={styles.heroSpacing}
         />
 
         <View style={styles.inputSection}>
+          {/* Phone Number Input */}
           <View style={styles.phoneField}>
             <CountryCodePicker
               value={countryCode}
@@ -143,13 +176,38 @@ export default function PhoneLoginScreen() {
               style={styles.phoneInput}
               keyboardType="phone-pad"
               placeholder="7123456789"
-              placeholderTextColor="#B4B4B4"
+              placeholderTextColor="#939393"
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
-              onSubmitEditing={handleSendCode}
+              onSubmitEditing={handleSubmit}
               editable={!isLoading}
               accessibilityLabel="Phone number"
+            />
+          </View>
+
+          {/* Or Divider */}
+          <View style={styles.orContainer}>
+            <Text variant="body" color="secondary" style={styles.orText}>
+              or
+            </Text>
+          </View>
+
+          {/* Email Input */}
+          <View style={styles.emailField}>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              style={styles.emailInput}
+              keyboardType="email-address"
+              placeholder="Please enter your email"
+              placeholderTextColor="#939393"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+              editable={!isLoading}
+              accessibilityLabel="Email address"
             />
           </View>
         </View>
@@ -158,22 +216,21 @@ export default function PhoneLoginScreen() {
       <View style={styles.footer}>
         <View style={styles.actions}>
           <AuthButton
-            title="Sign in"
-            onPress={handleSendCode}
-            disabled={!isPhoneValid}
+            title="Submit"
+            onPress={handleSubmit}
+            disabled={!canSubmit}
             loading={isLoading}
           />
         </View>
-        <TouchableOpacity onPress={handleSignInWithEmail} accessibilityRole="link">
-          <Text variant="body" style={styles.emailLink}>
-            Sign in with email
+        <TouchableOpacity
+          onPress={() => router.push('/(auth)/phone-signup')}
+          accessibilityRole="link"
+          style={styles.signUpLink}
+        >
+          <Text variant="body" style={styles.signUpText}>
+            Don't have an account? <Text style={styles.signUpLinkText}>Sign up</Text>
           </Text>
         </TouchableOpacity>
-        <AuthSignInPrompt
-          message="Need an account?"
-          linkLabel="Sign up"
-          href="/(auth)/phone-signup"
-        />
       </View>
     </View>
   );
@@ -181,25 +238,16 @@ export default function PhoneLoginScreen() {
   const renderEnterCodeStep = () => (
     <View style={styles.screen}>
       <View style={styles.body}>
-        <AuthHero subtitle={`Sent to ${displayPhone}`} containerStyle={styles.heroSpacing} />
+        <AuthHero
+          subtitle={`Sent to ${emailOrPhone}`}
+          containerStyle={styles.heroSpacing}
+        />
 
         <View style={styles.otpSection}>
-          <TextInput
+          <OtpInput
             value={code}
-            onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
-            style={styles.otpInput}
-            keyboardType="number-pad"
-            placeholder="123456"
-            placeholderTextColor="#C0C0C3"
-            maxLength={6}
-            textAlign="center"
-            autoFocus
-            accessibilityLabel="Verification code"
-            textContentType="oneTimeCode"
-            autoComplete="sms-otp"
-            importantForAutofill="yes"
-            inputMode="numeric"
-            returnKeyType="done"
+            onChange={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
+            length={6}
           />
         </View>
       </View>
@@ -212,7 +260,7 @@ export default function PhoneLoginScreen() {
           disabled={code.length !== 6}
         />
         <TouchableOpacity
-          onPress={handleBackToPhone}
+          onPress={handleBackToCredentials}
           accessibilityRole="button"
           style={styles.backButton}
         >
@@ -229,17 +277,9 @@ export default function PhoneLoginScreen() {
             Didn't receive a code? <Text style={styles.resendLink}>Resend</Text>
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSignInWithEmail} accessibilityRole="link">
-          <Text variant="body" style={styles.emailLink}>
-            Use email instead
-          </Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
-
-  const renderStep = () =>
-    step === 'enter-phone' ? renderEnterPhoneStep() : renderEnterCodeStep();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -251,12 +291,12 @@ export default function PhoneLoginScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            step === 'enter-phone' ? styles.primaryScroll : styles.secondaryScroll,
+            step === 'enter-credentials' ? styles.primaryScroll : styles.secondaryScroll,
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {renderStep()}
+          {step === 'enter-credentials' ? renderEnterCredentialsStep() : renderEnterCodeStep()}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -275,12 +315,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   primaryScroll: {
-    paddingHorizontal: 32,
-    paddingVertical: 24,
+    paddingHorizontal: 34,
+    paddingTop: 100,
+    paddingBottom: 24,
   },
   secondaryScroll: {
     paddingHorizontal: 32,
-    paddingVertical: 32,
+    paddingTop: 100,
+    paddingBottom: 32,
   },
   screen: {
     flex: 1,
@@ -291,7 +333,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   heroSpacing: {
-    marginTop: 16,
+    marginTop: 0,
+    marginBottom: 0,
   },
   inputSection: {
     width: '100%',
@@ -307,7 +350,7 @@ const styles = StyleSheet.create({
   phoneField: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#EAEAEA',
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
@@ -324,8 +367,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   countryCodeText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#2C2235',
+    fontWeight: '400',
   },
   phoneDivider: {
     width: 1,
@@ -335,23 +379,31 @@ const styles = StyleSheet.create({
   phoneInput: {
     flex: 1,
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: 18,
     color: '#2C2235',
   },
-  otpInput: {
-    width: '100%',
-    borderWidth: 1,
+  orContainer: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  orText: {
+    fontSize: 14,
+    color: '#2C2235',
+    letterSpacing: -0.14,
+  },
+  emailField: {
+    borderWidth: 2,
     borderColor: '#EAEAEA',
     borderRadius: 12,
-    paddingVertical: 16,
-    height: 70,
-    fontSize: 30,
-    color: '#2C2235',
     backgroundColor: '#FFFFFF',
-    marginBottom: 16,
-    textAlign: 'center',
-    letterSpacing: 12,
-    fontWeight: '700',
+    height: 50,
+  },
+  emailInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: '#2C2235',
+    letterSpacing: -0.28,
   },
   resendText: {
     color: '#2C2235',
@@ -360,12 +412,6 @@ const styles = StyleSheet.create({
   },
   resendLink: {
     color: '#1082FF',
-  },
-  emailLink: {
-    color: '#1082FF',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
-    marginTop: 16,
   },
   backButton: {
     marginTop: 16,
@@ -379,4 +425,17 @@ const styles = StyleSheet.create({
   actions: {
     width: '100%',
   },
+  signUpLink: {
+    marginTop: 16,
+  },
+  signUpText: {
+    fontSize: 14,
+    color: '#2C2235',
+    letterSpacing: -0.14,
+    textAlign: 'center',
+  },
+  signUpLinkText: {
+    color: '#1082FF',
+  },
 });
+

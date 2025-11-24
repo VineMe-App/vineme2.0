@@ -221,7 +221,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   const leaders = leadersData || [];
   const regularMembers = (members || []).filter(
-    (member) => member.role === 'member'
+    (member) => member.role === 'member' && member.status === 'active'
   );
   const displayMembers = showAllMembers
     ? regularMembers

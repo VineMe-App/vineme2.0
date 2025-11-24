@@ -14,7 +14,7 @@ serve(async (req) => {
     if (req.method !== 'POST') {
       return new Response(
         JSON.stringify({ ok: false, error: 'Method Not Allowed' }),
-        { status: 405, headers: { 'Content-Type': 'application/json' } }
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -23,12 +23,21 @@ serve(async (req) => {
     if (!authHeader) {
       return new Response(
         JSON.stringify({ ok: false, error: 'Missing Authorization header' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     // Extract the token from "Bearer <token>"
     const token = authHeader.replace('Bearer ', '');
+
+    const payload = (await req.json()) as DeleteAuthUserPayload;
+
+    if (!payload?.userId || typeof payload.userId !== 'string') {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'User ID is required' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Create a client with the anon key to verify the user's session
     const supabaseAnon = createClient(
@@ -36,30 +45,38 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY')!
     );
 
-    // Verify the user's session
-    const { data: { user }, error: userError } = await supabaseAnon.auth.getUser(token);
-    
-    if (userError || !user) {
+    // Verify the user's session and ensure the caller owns the account being deleted
+    let userId: string | null = null;
+    try {
+      const { data: { user }, error: userError } = await supabaseAnon.auth.getUser(token);
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Invalid or expired session' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      userId = user.id;
+
+      // Verify the user is deleting their own account
+      if (user.id !== payload.userId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'You can only delete your own account' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (verifyError) {
+      console.warn('User verification failed:', verifyError);
       return new Response(
-        JSON.stringify({ ok: false, error: 'Unauthorized' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'Unable to verify user session' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const payload = (await req.json()) as DeleteAuthUserPayload;
-
-    if (!payload?.userId || typeof payload.userId !== 'string') {
+    if (!userId) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'User ID is required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Verify the user is deleting their own account
-    if (user.id !== payload.userId) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'You can only delete your own account' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ ok: false, error: 'Unable to verify user session' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -71,7 +88,7 @@ serve(async (req) => {
 
     // Delete the user from auth.users using Admin API
     // This properly cleans up sessions, refresh tokens, and related auth data
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(payload.userId);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteError) {
       return new Response(
@@ -87,7 +104,7 @@ serve(async (req) => {
       JSON.stringify({
         ok: true,
         message: 'Auth user deleted successfully',
-        userId: payload.userId,
+        userId: userId,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

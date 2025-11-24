@@ -926,7 +926,15 @@ export class GroupAdminService {
         .select(
           `
           *,
-          user:users(id, first_name, last_name, avatar_url),
+          user:users(
+            id,
+            first_name,
+            last_name,
+            avatar_url,
+            newcomer,
+            church:churches(id, name),
+            service:services(id, name)
+          ),
           group:groups(
             id,
             title,
@@ -1016,6 +1024,10 @@ export class UserAdminService {
         };
       }
 
+      // For church-wide management views we do NOT filter by the admin's service.
+      // This query powers church-level dashboards and shows all church members
+      // regardless of which service they or the admin belongs to.
+
       let query = supabase
         .from('users')
         .select(
@@ -1029,13 +1041,18 @@ export class UserAdminService {
             role,
             status,
             joined_at,
-            group:groups(id, title, status)
+            group:groups(id, title, status, service_id)
           )
         `,
           { count: pagination ? 'exact' : undefined }
         )
         .eq('church_id', churchId)
         .order('name');
+
+      // For church-wide management views we must not scope results to the admin's
+      // own service (if they have one). This query powers church-level dashboards
+      // and is protected by `manage_church_users`, so applying the service filter
+      // would incorrectly hide members from other services within the church.
 
       // Apply pagination if provided
       if (pagination) {
@@ -1052,12 +1069,19 @@ export class UserAdminService {
       }
 
       // Transform to include group status
+      // Note: For church-wide views, we do NOT filter by service when calculating
+      // is_connected or group_count, as members connected to other services should
+      // still be classified as connected. All active approved groups across all
+      // services in the church are counted.
+
       let usersWithStatus: UserWithGroupStatus[] =
         data?.map((user) => {
+          // Count all active approved groups across all services (church-wide view)
           const activeGroups =
             user.group_memberships?.filter(
               (m: any) =>
-                m.status === 'active' && m.group?.status === 'approved'
+                m.status === 'active' &&
+                m.group?.status === 'approved'
             ) || [];
 
           return {
@@ -1166,7 +1190,7 @@ export class UserAdminService {
         .select(
           `
           *,
-          group:groups(id, title, status, church_id)
+          group:groups(id, title, status, church_id, service_id)
         `
         )
         .eq('user_id', userId)

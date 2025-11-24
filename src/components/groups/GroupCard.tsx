@@ -256,14 +256,20 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         {/* Apply infoMyGroups to ALL cards on my-groups page, regardless of leader status */}
         <View style={[
           styles.info,
-          variant === 'my-groups' ? styles.infoMyGroups : styles.infoAllGroups
+          variant === 'my-groups' ? styles.infoMyGroups : styles.infoAllGroups,
+          // Add extra padding when there are 4 or more leaders to prevent text from getting too close
+          // Square container is 108px wide, positioned 20px from right = 128px minimum + extra spacing
+          leaders && leaders.length >= 4 
+            ? { paddingRight: variant === 'all-groups' ? 140 : 130 }
+            : null
         ]}>
           {/* Group Name */}
           <Text
             variant="h6"
             weight="bold"
             style={styles.groupName}
-            numberOfLines={1}
+            numberOfLines={2}
+            ellipsizeMode="tail"
           >
             {group.title}
           </Text>
@@ -281,6 +287,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
                 >
                   {formatMeetingTime(group.meeting_day, group.meeting_time)}
                 </Text>
@@ -294,6 +302,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
                 >
                   {distanceKm.toFixed(1)} km away
                 </Text>
@@ -307,7 +317,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 variant="bodySmall"
                 weight="medium"
                 style={styles.detailText}
-                numberOfLines={1}
+                numberOfLines={2}
                 ellipsizeMode="tail"
               >
                 {formatLocation(group.location)}
@@ -325,9 +335,15 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 <Text
                   variant="bodySmall"
                   weight="medium"
-                  style={styles.detailText}
+                  style={[styles.detailText, styles.ledByText]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
                 >
-                  Led by {leaders[0].name}
+                  {leaders.length === 1
+                    ? `Led by ${leaders[0].name || 'Unknown'}`
+                    : leaders.length === 2
+                    ? `Led by ${leaders[0].name || 'Unknown'} and ${leaders[1].name || 'Unknown'}`
+                    : `Led by ${leaders.slice(0, -1).map(l => l.name || 'Unknown').join(', ')}, and ${leaders[leaders.length - 1].name || 'Unknown'}`}
                 </Text>
               </View>
             )}
@@ -340,7 +356,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   variant="bodySmall"
                   weight="medium"
                   style={styles.detailText}
-                  numberOfLines={1}
+                  numberOfLines={2}
                   ellipsizeMode="tail"
                 >
                   {churchAndServiceLabel}
@@ -355,67 +371,224 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           <View style={styles.memberCountBadge}>
             <View style={styles.memberCountInner}>
               <Text style={styles.memberCountText}>{group.member_count}</Text>
-              <Ionicons name="person-outline" size={16} color="#2C2235" />
+              <Ionicons name="person-outline" size={16} color="rgba(255, 255, 255, 0.8)" />
             </View>
           </View>
         )}
 
-        {/* Profile Pictures - Center of Description Section */}
-        {(friendsInGroup && friendsInGroup.length > 0) || (leaders && leaders.length > 0) ? (
+        {/* Profile Pictures - Center of Description Section - Show all group leaders */}
+        {leaders && leaders.length > 0 && (
           <View style={styles.profilePicturesContainer}>
-            {friendsInGroup && friendsInGroup.length > 0 ? (
-              friendsInGroup.slice(0, 3).map((friend, index) => {
-                const avatarSize = index === 0 ? 60 : index === 1 ? 57 : 54;
-                return (
+            {leaders.length === 1 ? (
+              // Single leader - 60px
+              <View
+                style={[
+                  styles.profilePicture,
+                  {
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                  },
+                ]}
+              >
+                <Avatar
+                  imageUrl={leaders[0].avatar_url}
+                  name={leaders[0].name || undefined}
+                  size={60}
+                />
+              </View>
+            ) : leaders.length === 2 ? (
+              // Two leaders - side by side, 55px each
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View
+                  style={[
+                    styles.profilePicture,
+                    {
+                      width: 59,
+                      height: 59,
+                      borderRadius: 29.5,
+                      marginRight: -8,
+                    },
+                  ]}
+                >
+                  <Avatar
+                    imageUrl={leaders[0].avatar_url}
+                    name={leaders[0].name || undefined}
+                    size={55}
+                  />
+                </View>
+                <View
+                  style={[
+                    styles.profilePicture,
+                    {
+                      width: 59,
+                      height: 59,
+                      borderRadius: 29.5,
+                    },
+                  ]}
+                >
+                  <Avatar
+                    imageUrl={leaders[1].avatar_url}
+                    name={leaders[1].name || undefined}
+                    size={55}
+                  />
+                </View>
+              </View>
+            ) : leaders.length === 3 ? (
+              // Three leaders - pyramid formation (2 on top, 1 below), 50px each
+              <View style={styles.pyramidContainer}>
+                <View style={styles.pyramidRow}>
                   <View
-                    key={friend.id}
                     style={[
                       styles.profilePicture,
                       {
-                        width: avatarSize + 4,
-                        height: avatarSize + 4,
-                        borderRadius: (avatarSize + 4) / 2,
-                        marginLeft: index > 0 ? -8 : 0,
-                        zIndex: 3 - index,
+                        width: 54,
+                        height: 54,
+                        borderRadius: 27,
+                        marginRight: -8,
                       },
                     ]}
                   >
                     <Avatar
-                      imageUrl={friend.avatar_url}
-                      name={friend.name || undefined}
-                      size={avatarSize}
+                      imageUrl={leaders[0].avatar_url}
+                      name={leaders[0].name || undefined}
+                      size={50}
                     />
                   </View>
-                );
-              })
-            ) : leaders && leaders.length > 0 ? (
-              leaders.slice(0, 3).map((leader, index) => {
-                const avatarSize = index === 0 ? 60 : index === 1 ? 57 : 54;
-                return (
                   <View
-                    key={leader.id}
                     style={[
                       styles.profilePicture,
                       {
-                        width: avatarSize + 4,
-                        height: avatarSize + 4,
-                        borderRadius: (avatarSize + 4) / 2,
-                        marginLeft: index > 0 ? -8 : 0,
-                        zIndex: 3 - index,
+                        width: 54,
+                        height: 54,
+                        borderRadius: 27,
                       },
                     ]}
                   >
                     <Avatar
-                      imageUrl={leader.avatar_url}
-                      name={leader.name || undefined}
-                      size={avatarSize}
+                      imageUrl={leaders[1].avatar_url}
+                      name={leaders[1].name || undefined}
+                      size={50}
                     />
                   </View>
-                );
-              })
-            ) : null}
+                </View>
+                <View style={[styles.pyramidRow, { marginTop: -8 }]}>
+                  <View
+                    style={[
+                      styles.profilePicture,
+                      {
+                        width: 54,
+                        height: 54,
+                        borderRadius: 27,
+                        marginLeft: 23, // Center the bottom avatar under the gap between top two
+                      },
+                    ]}
+                  >
+                    <Avatar
+                      imageUrl={leaders[2].avatar_url}
+                      name={leaders[2].name || undefined}
+                      size={50}
+                    />
+                  </View>
+                </View>
+              </View>
+            ) : (
+              // Four or more leaders - square/2x2 grid formation, 50px each
+              <View style={styles.squareContainer}>
+                {/* Top row: first 2 leaders */}
+                <View style={[styles.squareRow, { marginTop: 0 }]}>
+                  {leaders.slice(0, 2).map((leader, index) => (
+                    <View
+                      key={leader.id || `leader-${index}`}
+                      style={[
+                        styles.profilePicture,
+                        styles.squareAvatarItem,
+                        {
+                          width: 54,
+                          height: 54,
+                          borderRadius: 27,
+                          marginRight: index === 0 ? -8 : 0,
+                        },
+                      ]}
+                    >
+                      <Avatar
+                        imageUrl={leader.avatar_url}
+                        name={leader.name || undefined}
+                        size={50}
+                      />
+                    </View>
+                  ))}
+                </View>
+                {/* Bottom row: next 2 leaders (or "+N" indicator) */}
+                <View style={[styles.squareRow, { marginTop: -8 }]}>
+                  {leaders.length === 4 ? (
+                    // Show both leaders if exactly 4
+                    leaders.slice(2, 4).map((leader, index) => (
+                      <View
+                        key={leader.id || `leader-${index + 2}`}
+                        style={[
+                          styles.profilePicture,
+                          styles.squareAvatarItem,
+                          {
+                            width: 54,
+                            height: 54,
+                            borderRadius: 27,
+                            marginRight: index === 0 ? -8 : 0,
+                          },
+                        ]}
+                      >
+                        <Avatar
+                          imageUrl={leader.avatar_url}
+                          name={leader.name || undefined}
+                          size={50}
+                        />
+                      </View>
+                    ))
+                  ) : (
+                    // Show 3rd leader and "+N" indicator if more than 4
+                    <>
+                      <View
+                        style={[
+                          styles.profilePicture,
+                          styles.squareAvatarItem,
+                          {
+                            width: 54,
+                            height: 54,
+                            borderRadius: 27,
+                            marginRight: -8,
+                          },
+                        ]}
+                      >
+                        <Avatar
+                          imageUrl={leaders[2].avatar_url}
+                          name={leaders[2].name || undefined}
+                          size={50}
+                        />
+                      </View>
+                      <View
+                        style={[
+                          styles.profilePicture,
+                          {
+                            width: 54,
+                            height: 54,
+                            borderRadius: 27,
+                            backgroundColor: 'rgba(44, 34, 53, 0.9)',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          },
+                        ]}
+                      >
+                        <Text style={styles.moreLeadersIndicatorText}>
+                          +{leaders.length - 3}
+                        </Text>
+                      </View>
+                    </>
+                  )}
+                </View>
+              </View>
+            )}
           </View>
-        ) : null}
+        )}
       </View>
 
       {showPendingTip && tooltipMessage && (
@@ -469,13 +642,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: '#f10078', // Primary pink color
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   friendAvatars: {
     flexDirection: 'row',
@@ -488,7 +669,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   friendsCount: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '500',
   },
@@ -525,13 +706,14 @@ const styles = StyleSheet.create({
     paddingBottom: 40, // Keep bottom padding for my groups page
   },
   infoAllGroups: {
-    paddingRight: 100, // Add padding to prevent text from being covered by profile pictures
+    paddingRight: 100, // Restored original padding for profile pictures
     paddingBottom: 12, // Different bottom padding for All Groups page
   },
   groupName: {
-    color: '#2C2235',
-    fontSize: 22,
+    color: '#000000',
+    fontSize: 20,
     letterSpacing: -0.66,
+    lineHeight: 28,
     marginBottom: 8,
     fontWeight: '700',
   },
@@ -579,37 +761,76 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   memberCountInner: {
-    backgroundColor: 'rgba(217, 217, 217, 0.9)',
-    borderRadius: 7,
-    paddingHorizontal: 9,
+    backgroundColor: 'rgba(44, 34, 53, 0.75)', // Dark purple, slightly greyed out (matching no group fits button style)
+    borderRadius: 16, // Match button border radius
+    paddingHorizontal: 10, // Match button padding
     paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6, // Match button gap
     minWidth: 46,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   memberCountText: {
-    color: '#2C2235',
-    fontSize: 16,
-    letterSpacing: -0.48,
+    color: 'rgba(255, 255, 255, 0.9)', // White text, slightly greyed out
+    fontSize: 12, // Match button text size
     fontWeight: '500',
   },
   profilePicturesContainer: {
     position: 'absolute',
     right: 20,
     top: 200,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    zIndex: 1,
+    overflow: 'visible',
+  },
+  pyramidContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pyramidRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    zIndex: 1,
+    justifyContent: 'center',
+  },
+  squareContainer: {
+    width: 108, // 2 avatars × 54px (with -8px overlap)
+    height: 108, // 2 rows × 54px (with -8px overlap)
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  squareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  squareAvatarItem: {
+    // Ensure each square avatar item has proper positioning
+    position: 'relative',
   },
   profilePicture: {
     borderWidth: 2,
-    borderColor: '#FF0083',
+    borderColor: '#FF0083', // Pink border
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  moreLeadersIndicatorText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   adminBadge: {
     backgroundColor: '#fce4ec',
@@ -636,16 +857,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 2,
+    marginBottom: 6,
     flexWrap: 'wrap',
   },
   detailText: {
-    color: '#2C2235',
-    fontSize: 11,
-    letterSpacing: -0.55,
+    color: '#000000',
+    fontSize: 12,
+    letterSpacing: -0.22,
+    lineHeight: 18,
     flex: 1,
     fontWeight: '500',
     flexShrink: 1,
+    includeFontPadding: false,
+  },
+  ledByText: {
+    color: '#2C2235',
   },
   leaderTextAndAvatars: {
     flexDirection: 'row',

@@ -186,14 +186,14 @@ export default function HomeScreen() {
 
   if (isLoading && !userGroupMemberships) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
         <LoadingSpinner message="Loading your dashboard..." />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <ScrollView
         style={[
           styles.scrollView,

@@ -202,8 +202,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                 setSearch(address.formattedAddress);
                 propagateChange(
                   {
-                    address: address.formattedAddress,
-                    coordinates: currentLocation,
+                  address: address.formattedAddress,
+                  coordinates: currentLocation,
                   },
                   { forceImmediate: true }
                 );
@@ -211,8 +211,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                 setSearch('Current Location');
                 propagateChange(
                   {
-                    address: 'Current Location',
-                    coordinates: currentLocation,
+                  address: 'Current Location',
+                  coordinates: currentLocation,
                   },
                   { forceImmediate: true }
                 );
@@ -222,8 +222,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               setSearch('Current Location');
               propagateChange(
                 {
-                  address: 'Current Location',
-                  coordinates: currentLocation,
+                address: 'Current Location',
+                coordinates: currentLocation,
                 },
                 { forceImmediate: true }
               );
@@ -244,8 +244,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             setSearch('Default Location');
             propagateChange(
               {
-                address: 'Default Location',
-                coordinates: DEFAULT_COORDINATES,
+              address: 'Default Location',
+              coordinates: DEFAULT_COORDINATES,
               },
               { forceImmediate: true }
             );
@@ -265,8 +265,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           setSearch('Default Location');
           propagateChange(
             {
-              address: 'Default Location',
-              coordinates: DEFAULT_COORDINATES,
+            address: 'Default Location',
+            coordinates: DEFAULT_COORDINATES,
             },
             { forceImmediate: true }
           );
@@ -479,15 +479,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
       <View style={styles.mapContainer}>
         <View style={styles.mapInner}>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            provider={PROVIDER_GOOGLE}
-            mapId={GOOGLE_MAPS_MAP_ID}
-            initialRegion={region}
-            onRegionChangeComplete={handleRegionChangeComplete}
-            showsUserLocation
-            showsMyLocationButton={Platform.OS === 'android'}
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          mapId={GOOGLE_MAPS_MAP_ID}
+          initialRegion={region}
+          onRegionChangeComplete={handleRegionChangeComplete}
+          showsUserLocation
+          showsMyLocationButton={Platform.OS === 'android'}
           customMapStyle={[
             {
               elementType: 'geometry',
@@ -648,15 +648,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               ],
             },
           ]}
-          >
-            {console.log('Rendering marker with coordinates:', selectedCoords)}
-            <Marker
-              coordinate={selectedCoords}
-              title="Meeting Location"
-              description="Move the map to adjust location"
-              pinColor="red"
-            />
-          </MapView>
+        >
+          {console.log('Rendering marker with coordinates:', selectedCoords)}
+          <Marker
+            coordinate={selectedCoords}
+            title="Meeting Location"
+            description="Move the map to adjust location"
+            pinColor="red"
+          />
+        </MapView>
           <TouchableOpacity
             style={styles.recenterButton}
             onPress={handleRecenter}
@@ -669,28 +669,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         </View>
       </View>
 
-      <View style={styles.actionContainer}>
-        <View style={styles.actionSpacer}>
-          <AuthButton
-            title="Search map"
-            onPress={handleSearchPress}
-            fullWidth={true}
-          />
-        </View>
-        <Button
-          title="View groups"
-          onPress={() => {
-            propagateChange(
-              {
-                address: search || 'Selected Location',
-                coordinates: selectedCoords,
-              },
-              { forceImmediate: true }
-            );
-            onSubmit?.();
-          }}
-        />
-      </View>
+      {/* Buttons removed - search is triggered by keyboard search button */}
     </View>
   );
 };

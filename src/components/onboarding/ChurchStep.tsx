@@ -6,6 +6,7 @@ import {
   StyleSheet,
   FlatList,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import type { OnboardingStepProps } from '@/types/app';
@@ -152,8 +153,18 @@ export default function ChurchStep({
 
   const handleChurchSelect = (churchId: string) => {
     const isSameChurch = selectedChurchId === churchId;
-    setSelectedChurchId(churchId);
-    if (!isSameChurch) {
+    // Toggle: if clicking the same church, close it (deselect)
+    if (isSameChurch) {
+      setSelectedChurchId(undefined);
+      setSelectedServiceId(undefined);
+      setServices([]);
+      setServicesLoading(false);
+      if (missingServiceLastMode !== 'church') {
+        setMissingServiceSubmitted(false);
+      }
+      setMissingServiceRequestError(null);
+    } else {
+      setSelectedChurchId(churchId);
       setSelectedServiceId(undefined);
       setServices([]);
       setServicesLoading(true);
@@ -292,11 +303,16 @@ export default function ChurchStep({
                   // Format service name with time (e.g., "Sunday Morning 10:30")
                   const serviceDisplayName = svc.name || `${svc.day_of_week || ''} ${svc.start_time || ''}`.trim();
 
+                  const handleServiceToggle = () => {
+                    // Toggle: if clicking the same service, uncheck it; otherwise select it
+                    setSelectedServiceId(prevId => prevId === svc.id ? undefined : svc.id);
+                  };
+
                   return (
                     <TouchableOpacity
                       key={svc.id}
                       style={styles.serviceCheckboxRow}
-                      onPress={() => setSelectedServiceId(svc.id)}
+                      onPress={handleServiceToggle}
                       disabled={isLoading}
                       activeOpacity={0.85}
                     >
@@ -331,7 +347,7 @@ export default function ChurchStep({
                   activeOpacity={0.85}
                 >
                   <Text style={styles.serviceEmptyRequestTitle}>
-                    Request this service
+                    Request a service
                   </Text>
                   <Text style={styles.serviceEmptyRequestSubtitle}>
                     Tell us the service details and we&apos;ll reach out when it&apos;s
@@ -340,49 +356,6 @@ export default function ChurchStep({
                 </TouchableOpacity>
               </View>
             )}
-
-            <View style={styles.missingServiceContainer}>
-              <TouchableOpacity
-                style={styles.missingServiceButton}
-                onPress={() => handleOpenMissingServiceModal('service')}
-                disabled={missingServiceSubmitting}
-                activeOpacity={0.85}
-              >
-                <View style={styles.missingServiceTextGroup}>
-                  <AppText
-                    variant="body"
-                    weight="semiBold"
-                    style={styles.missingServiceTitle}
-                  >
-                    Can't find your service?
-                  </AppText>
-                  <AppText
-                    variant="bodySmall"
-                    color="secondary"
-                    style={styles.missingServiceSubtitle}
-                  >
-                    Tell us about the service you attend so we can add it for
-                    this church.
-                  </AppText>
-                </View>
-                <View style={styles.missingServiceIcon}>
-                  <Text style={styles.missingServiceIconText}>+</Text>
-                </View>
-              </TouchableOpacity>
-              {missingServiceSubmitted &&
-                missingServiceLastMode === 'service' && (
-                  <Text style={styles.missingServiceNotice}>
-                    Thanks! We'll reach out soon about adding that service.
-                  </Text>
-                )}
-              {missingServiceRequestError &&
-                missingServiceLastMode === 'service' &&
-                !showMissingServiceModal && (
-                  <Text style={styles.serviceInlineError}>
-                    {missingServiceRequestError}
-                  </Text>
-                )}
-            </View>
 
             {selectedServiceId && (
               <View style={styles.adminDisclosureContainer}>
@@ -460,21 +433,65 @@ export default function ChurchStep({
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <AuthHero
-          title="Select your church"
-          subtitle="This helps us show you relevant groups and events"
-          containerStyle={styles.heroSpacing}
-        />
-
-        <FlatList
-          data={churches}
-          renderItem={renderChurchItem}
-          keyExtractor={(item) => item.id}
-          style={styles.churchList}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.churchListContent}
-          ListFooterComponent={() => (
+          keyboardShouldPersistTaps="handled"
+        >
+          <AuthHero
+            title="Select your church"
+            subtitle="This helps us show you relevant groups and events"
+            containerStyle={styles.heroSpacing}
+          />
+
+          {churches.map((church) => (
+            <View key={church.id}>{renderChurchItem({ item: church })}</View>
+          ))}
+
+          <View style={styles.listFooter}>
             <View style={styles.listFooter}>
+              <View style={styles.missingServiceContainer}>
+                <TouchableOpacity
+                  style={styles.missingServiceButton}
+                  onPress={() => handleOpenMissingServiceModal('service')}
+                  disabled={missingServiceSubmitting}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.missingServiceTextGroup}>
+                    <AppText
+                      variant="body"
+                      weight="semiBold"
+                      style={styles.missingServiceTitle}
+                    >
+                      Can't find your service?
+                    </AppText>
+                    <AppText
+                      variant="bodySmall"
+                      color="secondary"
+                      style={styles.missingServiceSubtitle}
+                    >
+                      Tell us more about the service you attend so we can add it to VineMe.
+                    </AppText>
+                  </View>
+                  <View style={styles.missingServiceIcon}>
+                    <Text style={styles.missingServiceIconText}>+</Text>
+                  </View>
+                </TouchableOpacity>
+                {missingServiceSubmitted &&
+                  missingServiceLastMode === 'service' && (
+                    <Text style={styles.missingServiceNotice}>
+                      Thanks! We'll reach out soon about adding that service.
+                    </Text>
+                  )}
+                {missingServiceRequestError &&
+                  missingServiceLastMode === 'service' &&
+                  !showMissingServiceModal && (
+                    <Text style={styles.serviceInlineError}>
+                      {missingServiceRequestError}
+                    </Text>
+                  )}
+              </View>
               <TouchableOpacity
                 style={styles.missingChurchButton}
                 onPress={() => handleOpenMissingServiceModal('church')}
@@ -508,9 +525,8 @@ export default function ChurchStep({
                   </Text>
                 )}
             </View>
-          )}
-          ListFooterComponentStyle={styles.listFooterContainer}
-        />
+          </View>
+        </ScrollView>
       </View>
 
       <View style={styles.footer}>
@@ -619,15 +635,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingVertical: 16,
+  },
   heroSpacing: {
     marginTop: 16,
     marginBottom: 24,
-  },
-  churchList: {
-    flex: 1,
-  },
-  churchListContent: {
-    paddingBottom: 16,
   },
   churchCard: {
     borderWidth: 2,
@@ -847,11 +864,10 @@ const styles = StyleSheet.create({
   },
   listFooter: {
     marginTop: 12,
-    gap: 8,
+    gap: 16,
   },
   
   missingServiceContainer: {
-    marginTop: 16,
     gap: 8,
   },
   missingServiceButton: {

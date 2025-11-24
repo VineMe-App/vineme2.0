@@ -115,8 +115,11 @@ export default function ManageUsersScreen() {
   };
 
   const handleUserPress = (userId: string) => {
-    // Navigate to user detail view (to be implemented)
-    Alert.alert('User Details', 'User detail view coming soon!');
+    console.log(`User profile view attempted for user ID: ${userId}`);
+    Alert.alert(
+      'Profile unavailable',
+      'Viewing user profiles from this screen is not available right now.'
+    );
   };
 
   if (error) {

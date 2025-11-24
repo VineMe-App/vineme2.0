@@ -66,6 +66,7 @@ export const usePromoteToLeader = () => {
     onSuccess: (data, { groupId }) => {
       // Invalidate group members to refetch with updated roles
       queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.leaders(groupId) }); // Invalidate leaders query
       queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
       // Invalidate notes queries (since we create a role change note)
       queryClient.invalidateQueries({ queryKey: noteKeys.all });
@@ -103,6 +104,7 @@ export const useDemoteFromLeader = () => {
     onSuccess: (data, { groupId }) => {
       // Invalidate group members to refetch with updated roles
       queryClient.invalidateQueries({ queryKey: groupKeys.members(groupId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.leaders(groupId) }); // Invalidate leaders query
       queryClient.invalidateQueries({ queryKey: groupKeys.byId(groupId) });
       // Invalidate notes queries (since we create a role change note)
       queryClient.invalidateQueries({ queryKey: noteKeys.all });
