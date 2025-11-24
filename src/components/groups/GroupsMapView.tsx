@@ -746,6 +746,39 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     []
   );
 
+  /**
+   * Get coordinate offset for a category to prevent overlapping markers
+   * Offsets are applied in a circular pattern around the original point
+   * Offset is proportional to viewport size for consistent visual separation
+   */
+  const getCategoryOffset = useCallback(
+    (category?: 'service' | 'church' | 'outside') => {
+      if (!category) return { latOffset: 0, lngOffset: 0 };
+      
+      // Make offset proportional to the current viewport (4% of latitudeDelta)
+      // This ensures markers are always visibly separated regardless of zoom level
+      const baseOffset = currentRegion.latitudeDelta * 0.04;
+      
+      switch (category) {
+        case 'service':
+          // No offset for primary category (center position)
+          return { latOffset: 0, lngOffset: 0 };
+        case 'church':
+          // Offset to the right (0°)
+          return { latOffset: 0, lngOffset: baseOffset };
+        case 'outside':
+          // Offset to the bottom-left (240°)
+          return {
+            latOffset: -baseOffset * 0.866,
+            lngOffset: -baseOffset * 0.5,
+          };
+        default:
+          return { latOffset: 0, lngOffset: 0 };
+      }
+    },
+    [currentRegion.latitudeDelta]
+  );
+
   const handleRecenter = useCallback(async () => {
     try {
       if (!MapView || !mapRef.current) return;
@@ -800,11 +833,22 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       const isActive = activeGroupId === group.id;
       const isGreyedOut = Boolean((group as any).__isGreyedOut);
       const markerColor = getMarkerColor(category);
+      
+      // Apply category-based offset to prevent overlap
+      const offset = getCategoryOffset(category);
+      const adjustedLatitude = latitude + offset.latOffset;
+      const adjustedLongitude = longitude + offset.lngOffset;
+      
+      if (__DEV__ && Math.abs(offset.latOffset) > 0 || Math.abs(offset.lngOffset) > 0) {
+        console.log(
+          `[MapDebug] Marker offset for ${category}: lat ${offset.latOffset.toFixed(6)}, lng ${offset.lngOffset.toFixed(6)}`
+        );
+      }
 
       return (
         <Marker
           key={`group-${group.id}`}
-          coordinate={{ latitude, longitude }}
+          coordinate={{ latitude: adjustedLatitude, longitude: adjustedLongitude }}
           tracksViewChanges={shouldTrackViewChanges}
           onPress={() => {
             setSelectedItems([group]);
@@ -831,7 +875,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </Marker>
       );
     },
-    [activeGroupId, shouldTrackViewChanges, getMarkerColor]
+    [activeGroupId, shouldTrackViewChanges, getMarkerColor, getCategoryOffset]
   );
 
   const renderClusterMarker = useCallback(
@@ -842,11 +886,22 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       
       // Use category color for cluster
       const clusterColor = getMarkerColor(cluster.category);
+      
+      // Apply category-based offset to prevent overlap with other category clusters
+      const offset = getCategoryOffset(cluster.category);
+      const adjustedLatitude = cluster.coordinates.latitude + offset.latOffset;
+      const adjustedLongitude = cluster.coordinates.longitude + offset.lngOffset;
+      
+      if (__DEV__ && (Math.abs(offset.latOffset) > 0 || Math.abs(offset.lngOffset) > 0)) {
+        console.log(
+          `[MapDebug] Cluster offset for ${cluster.category} (${cluster.count} groups): lat ${offset.latOffset.toFixed(6)}, lng ${offset.lngOffset.toFixed(6)}`
+        );
+      }
 
       return (
         <Marker
           key={`cluster-${cluster.id}`}
-          coordinate={cluster.coordinates}
+          coordinate={{ latitude: adjustedLatitude, longitude: adjustedLongitude }}
           accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
             cluster.count
           )}
@@ -863,6 +918,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             );
 
             // Center and zoom on the cluster, positioning it in the top half
+            // Use the original coordinates (not offset) for centering
             if (mapRef.current) {
               // Calculate offset to position cluster in top half of screen
               const { height } = Dimensions.get('window');
@@ -903,7 +959,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         </Marker>
       );
     },
-    [shouldTrackViewChanges, getMarkerColor]
+    [shouldTrackViewChanges, getMarkerColor, getCategoryOffset]
   );
 
   const renderMarker = useCallback(
