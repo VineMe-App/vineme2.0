@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,12 +6,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
-  Platform,
 } from 'react-native';
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { useRouter } from 'expo-router';
 import {
@@ -19,7 +15,9 @@ import {
   GroupsMapView,
   FilterPanel,
   SearchBar,
+  OverflowMenu,
   type ViewMode,
+  type SortOption,
 } from '../../components/groups';
 import {
   useGroupsByChurch,
@@ -53,23 +51,15 @@ import { Image } from 'react-native';
 export default function GroupsScreen() {
   const router = useRouter();
   const { userProfile } = useAuthStore();
-  const { filters, setSearchQuery } = useGroupFiltersStore();
+  const { filters } = useGroupFiltersStore();
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const friendsQuery = useFriends(userProfile?.id);
   const [showSearch, setShowSearch] = useState(false);
-  const [isLocationSearchMode, setIsLocationSearchMode] = useState(false);
-  const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showNoGroupFitsModal, setShowNoGroupFitsModal] = useState(false);
-  const [locationSearchError, setLocationSearchError] = useState<string | null>(
-    null
-  );
-  const [sortBy, setSortBy] = useState<'alphabetical' | 'distance' | 'friends'>(
-    'alphabetical'
-  );
-  const [userCoords, setUserCoords] = useState<{
+  const [sortBy, setSortBy] = useState<SortOption>('alphabetical');
+  const [userCoords] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
@@ -84,26 +74,10 @@ export default function GroupsScreen() {
   const [currentView, setCurrentView] = useState<ViewMode>('list');
   const updateUserProfile = useUpdateUserProfile();
 
-  // Hide sort options when switching to map view
+  // Handle view change
   const handleViewChange = (view: ViewMode) => {
     setCurrentView(view);
-    if (view === 'map') {
-      setShowSortOptions(false);
-      // Keep search bar visible if sorting by distance and location is set
-      if (sortBy === 'distance' && distanceOrigin) {
-        setShowSearch(true);
-      }
-    }
   };
-
-  // Close location search bar when switching away from distance sorting
-  useEffect(() => {
-    if (isLocationSearchMode && sortBy !== 'distance' && showSearch) {
-      setShowSearch(false);
-      setIsLocationSearchMode(false);
-      setLocationSearchError(null);
-    }
-  }, [sortBy, isLocationSearchMode, showSearch]);
 
   const isChurchAdmin = userProfile?.roles?.includes('church_admin') ?? false;
 
@@ -120,7 +94,9 @@ export default function GroupsScreen() {
     isLoading: isLoadingChurchGroups,
     error: churchGroupsError,
     refetch: refetchChurchGroups,
-  } = useGroupsByChurch(!shouldFetchAllGroups ? userProfile?.church_id : undefined);
+  } = useGroupsByChurch(
+    !shouldFetchAllGroups ? userProfile?.church_id : undefined
+  );
 
   const {
     data: adminGroups,
@@ -134,7 +110,9 @@ export default function GroupsScreen() {
     isLoadingLeaderCheck ||
     (shouldFetchAllGroups ? isLoadingAdminGroups : isLoadingChurchGroups);
   const error = shouldFetchAllGroups ? adminGroupsError : churchGroupsError;
-  const refetch = shouldFetchAllGroups ? refetchAdminGroups : refetchChurchGroups;
+  const refetch = shouldFetchAllGroups
+    ? refetchAdminGroups
+    : refetchChurchGroups;
 
   const friendIds = useMemo(
     () =>
@@ -157,57 +135,55 @@ export default function GroupsScreen() {
         __isGreyedOut?: boolean;
         __category?: 'service' | 'church' | 'outside';
       })[]
-    >(
-      (acc, group) => {
-        const isInUserChurch =
-          !!userChurchId && group.church_id === userChurchId;
-        const isInUserService =
-          !!userServiceId && group.service_id === userServiceId;
-        const friendInGroup = (group.memberships || []).some(
-          (membership: any) =>
-            membership.status === 'active' && friendIds.has(membership.user_id)
-        );
+    >((acc, group) => {
+      const isInUserChurch = !!userChurchId && group.church_id === userChurchId;
+      const isInUserService =
+        !!userServiceId && group.service_id === userServiceId;
+      const friendInGroup = (group.memberships || []).some(
+        (membership: any) =>
+          membership.status === 'active' && friendIds.has(membership.user_id)
+      );
 
-        let include = false;
-        let isGreyedOut = false;
-        let category: 'service' | 'church' | 'outside' = 'outside';
+      let include = false;
+      let isGreyedOut = false;
+      let category: 'service' | 'church' | 'outside' = 'outside';
 
-        // Determine category for color coding
-        if (isInUserService) {
-          category = 'service';
-        } else if (isInUserChurch) {
-          category = 'church';
-        } else {
-          category = 'outside';
-        }
+      // Determine category for color coding
+      if (isInUserService) {
+        category = 'service';
+      } else if (isInUserChurch) {
+        category = 'church';
+      } else {
+        category = 'outside';
+      }
 
-        // Church admins and group leaders can see ALL groups
-        if (isChurchAdmin || isGroupLeader) {
+      // Church admins and group leaders can see ALL groups
+      if (isChurchAdmin || isGroupLeader) {
+        include = true;
+        // Grey out groups outside their church
+        isGreyedOut = userChurchId ? group.church_id !== userChurchId : false;
+      } else {
+        // Regular users can see:
+        // 1. All groups in their church (not just their service)
+        // 2. Groups where their friends are members (greyed out if not in their church)
+        if (isInUserChurch) {
           include = true;
-          // Grey out groups outside their church
-          isGreyedOut = userChurchId
-            ? group.church_id !== userChurchId
-            : false;
-        } else {
-          // Regular users can see:
-          // 1. All groups in their church (not just their service)
-          // 2. Groups where their friends are members (greyed out if not in their church)
-          if (isInUserChurch) {
-            include = true;
-          } else if (friendInGroup) {
-            include = true;
-            isGreyedOut = true;
-          }
+        } else if (friendInGroup) {
+          include = true;
+          isGreyedOut = true;
         }
+      }
 
-        if (include) {
-          acc.push({ ...group, __isGreyedOut: isGreyedOut, __category: category });
-        }
+      if (include) {
+        acc.push({
+          ...group,
+          __isGreyedOut: isGreyedOut,
+          __category: category,
+        });
+      }
 
-        return acc;
-      },
-      []
-    );
+      return acc;
+    }, []);
   }, [
     allGroups,
     friendIds,
@@ -310,10 +286,6 @@ export default function GroupsScreen() {
     router.push('/group/create');
   };
 
-  const handleCreateSuccess = () => {
-    refetch(); // In case we come back and want to refresh
-  };
-
   const renderGroupItem = ({
     item: group,
   }: {
@@ -373,25 +345,6 @@ export default function GroupsScreen() {
 
   const renderListView = () => (
     <View style={styles.listViewContainer}>
-      <View
-        style={[
-          styles.noGroupFitsButtonFloating,
-          Platform.OS === 'ios'
-            ? { top: -50 + insets.top } // iOS: hover above first card (negative offset to float above)
-            : { top: 8 }, // Android: align with first card padding
-        ]}
-      >
-        <View style={styles.noGroupFitsButtonContainer}>
-          <Button
-            title="No group fits?"
-            onPress={handleNoGroupFits}
-            variant="secondary"
-            size="small"
-            style={styles.noGroupFitsButton}
-            textStyle={styles.noGroupFitsButtonText}
-          />
-        </View>
-      </View>
       <FlatList
         data={groupsWithDistance as any}
         renderItem={renderGroupItem}
@@ -414,7 +367,6 @@ export default function GroupsScreen() {
       groups={filteredGroups}
       onGroupPress={handleGroupPress}
       isLoading={isLoading}
-      onNoGroupFits={handleNoGroupFits}
       distanceOrigin={distanceOrigin}
       onDistanceOriginChange={(origin) => {
         // Update distance origin when user moves the map
@@ -493,47 +445,7 @@ export default function GroupsScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.figmaIconButton}
-            onPress={() => {
-              if (showSearch) {
-                // If search bar is already open
-                if (isLocationSearchMode) {
-                  // If in location mode, switch to group search mode (don't close)
-                  setIsLocationSearchMode(false);
-                  setLocationSearchError(null);
-                } else {
-                  // If already in group search mode, close the search bar
-                  setShowSearch(false);
-                }
-              } else {
-                // If search bar is closed, open it in group search mode
-                setIsLocationSearchMode(false);
-                setLocationSearchError(null);
-                setShowSearch(true);
-              }
-            }}
-            accessibilityLabel="Search groups"
-          >
-            <View
-              style={[
-                styles.iconButtonInner,
-                (showSearch && !isLocationSearchMode) || filters.searchQuery.length > 0
-                  ? styles.iconButtonInnerActive
-                  : null,
-              ]}
-            >
-              <Ionicons
-                name="search-outline"
-                size={16}
-                color={
-                  (showSearch && !isLocationSearchMode) || filters.searchQuery.length > 0
-                    ? '#FFFFFF'
-                    : theme.colors.text.inverse
-                }
-              />
-            </View>
-          </TouchableOpacity>
+          {/* Map/List toggle - far left */}
           <TouchableOpacity
             style={styles.figmaIconButton}
             onPress={() =>
@@ -556,294 +468,91 @@ export default function GroupsScreen() {
               />
             </View>
           </TouchableOpacity>
+
+          {/* Search button */}
           <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
+            style={styles.figmaIconButton}
+            onPress={() => setShowSearch(!showSearch)}
+            accessibilityLabel="Search groups"
+          >
+            <View
+              style={[
+                styles.iconButtonInner,
+                (showSearch || filters.searchQuery.length > 0) &&
+                  styles.iconButtonInnerActive,
+              ]}
+            >
+              <Ionicons
+                name="search-outline"
+                size={16}
+                color={
+                  showSearch || filters.searchQuery.length > 0
+                    ? '#FFFFFF'
+                    : theme.colors.text.inverse
+                }
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* Filter & Sort button */}
+          <TouchableOpacity
+            style={styles.figmaIconButton}
             onPress={() => setShowFilterPanel(true)}
-            accessibilityLabel="Filter groups"
+            accessibilityLabel="Filter and sort groups"
           >
             <View
               style={[
                 styles.iconButtonInner,
-                getActiveFiltersCount(filters) > 0 &&
+                (getActiveFiltersCount(filters) > 0 ||
+                  sortBy !== 'alphabetical') &&
                   styles.iconButtonInnerActive,
               ]}
             >
               <Ionicons
-                name="funnel-outline"
-                size={16}
+                name="options-outline"
+                size={18}
                 color={
-                  getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : theme.colors.text.inverse
+                  getActiveFiltersCount(filters) > 0 ||
+                  sortBy !== 'alphabetical'
+                    ? '#FFFFFF'
+                    : theme.colors.text.inverse
                 }
               />
             </View>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.figmaIconButton}
-            onPress={() =>
-              currentView !== 'map' && setShowSortOptions((s) => !s)
-            }
-            accessibilityLabel="Sort options"
-            disabled={currentView === 'map'}
-          >
-            <View
-              style={[
-                styles.iconButtonInner,
-                currentView === 'map' && styles.iconButtonDisabled,
-                currentView !== 'map' &&
-                  sortBy !== 'alphabetical' &&
-                  styles.iconButtonInnerActive,
-              ]}
-            >
-              <Ionicons
-                name="swap-vertical-outline"
-                size={20}
-                color={
-                  currentView === 'map'
-                    ? '#8B8A8C'
-                    : sortBy !== 'alphabetical'
-                      ? '#FFFFFF'
-                      : theme.colors.text.inverse
-                }
-              />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.figmaIconButton}
-            onPress={() => {
-              if (showSearch && isLocationSearchMode) {
-                // If search bar is already open in location mode, close it and clear distance sorting
-                setShowSearch(false);
-                setIsLocationSearchMode(false);
-                setLocationSearchError(null);
-                // Clear distance sorting - go back to alphabetical
-                setSortBy('alphabetical');
-                // Clear distance origin
-                setDistanceOrigin(null);
-              } else {
-                // If search bar is not shown, open it in location mode
-                setIsLocationSearchMode(true);
-                // Set sort to distance (makes arrow pink)
-                setSortBy('distance');
-                // Open search bar in location mode
-                setShowSearch(true);
-                // Clear location search errors when opening
-                setLocationSearchError(null);
-              }
-            }}
-            accessibilityLabel="Choose location to measure distance from"
-          >
-            <View
-              style={[
-                styles.iconButtonInner,
-                sortBy === 'distance' && styles.iconButtonInnerActive, // Pink when distance is selected
-              ]}
-            >
-              <Ionicons
-                name="navigate-outline"
-                size={16}
-                color={
-                  sortBy === 'distance' ? '#FFFFFF' : theme.colors.text.inverse
-                }
-              />
-            </View>
-          </TouchableOpacity>
-          {userProfile?.church_id && (
-            <TouchableOpacity
-              style={styles.figmaIconButton}
-              onPress={handleCreateGroup}
-              accessibilityLabel="Create group"
-            >
-              <View style={styles.iconButtonInner}>
-                <Ionicons
-                  name="add-outline"
-                  size={24}
-                  color={theme.colors.text.inverse}
-                />
-              </View>
-            </TouchableOpacity>
-          )}
+
+          {/* Overflow menu for secondary actions */}
+          <OverflowMenu
+            items={[
+              ...(userProfile?.church_id
+                ? [
+                    {
+                      id: 'create-group',
+                      label: 'Create a group',
+                      icon: 'add-circle-outline' as const,
+                      onPress: handleCreateGroup,
+                    },
+                  ]
+                : []),
+              {
+                id: 'no-group-fits',
+                label: 'No group fits?',
+                icon: 'help-circle-outline',
+                onPress: handleNoGroupFits,
+              },
+              {
+                id: 'info',
+                label: 'About groups',
+                icon: 'information-circle-outline',
+                onPress: () => setShowInfoModal(true),
+              },
+            ]}
+          />
         </View>
       </View>
 
-      {showSearch && (!isLocationSearchMode || sortBy === 'distance') && (
-        <SearchBar
-          key={isLocationSearchMode ? 'location-search' : 'group-search'}
-          placeholder={
-            isLocationSearchMode ? 'Enter search location' : 'Search groups...'
-          }
-          value={isLocationSearchMode ? (distanceOrigin?.address || '') : undefined}
-          onLocationSearch={
-            isLocationSearchMode
-              ? async (query: string) => {
-                  try {
-                    // Clear any previous errors
-                    setLocationSearchError(null);
-                    // Geocode the search query to get coordinates
-                    const coordinates =
-                      await locationService.geocodeAddress(query);
-                    if (coordinates) {
-                      // Get reverse geocode to get a formatted address
-                      const address =
-                        await locationService.reverseGeocode(coordinates);
-                      setDistanceOrigin({
-                        address: address?.formattedAddress || query,
-                        coordinates,
-                      });
-                      // Don't clear search query - filters should remain when sorting by location
-                      // Clear error on success
-                      setLocationSearchError(null);
-                      // Keep search bar open so user can see/change the location
-                    } else {
-                      // Set error state instead of using global error handler
-                      setLocationSearchError('Location not found');
-                    }
-                  } catch (error) {
-                    // Set error state instead of using global error handler
-                    setLocationSearchError('Location not found');
-                  }
-                }
-              : undefined
-          }
-          onLocationClear={
-            isLocationSearchMode
-              ? () => {
-                  setDistanceOrigin(null);
-                  // Don't clear search query - filters should remain when clearing location
-                  setLocationSearchError(null);
-                }
-              : undefined
-          }
-          error={locationSearchError}
-          onErrorChange={setLocationSearchError}
-        />
-      )}
-
-      {showSortOptions && (
-        <View
-          style={[
-            styles.sortOptionsPanel,
-            { backgroundColor: theme.colors.surface.primary },
-          ]}
-        >
-          <TouchableOpacity
-            style={[
-              styles.sortOption,
-              sortBy === 'alphabetical' && styles.sortOptionSelected,
-            ]}
-            onPress={() => {
-              setSortBy('alphabetical');
-              setShowSortOptions(false);
-              // Clear distance origin and close search bar when switching away from distance sorting
-              if (distanceOrigin) {
-                setDistanceOrigin(null);
-              }
-              // Close search bar if it's open in location mode
-              if (isLocationSearchMode) {
-                setIsLocationSearchMode(false);
-                setLocationSearchError(null);
-                setShowSearch(false);
-              }
-            }}
-          >
-            <Ionicons
-              name="text-outline"
-              size={20}
-              color={
-                sortBy === 'alphabetical'
-                  ? '#FF0083'
-                  : theme.colors.text.primary
-              }
-            />
-            <Text
-              variant="body"
-              style={[
-                styles.sortOptionText,
-                sortBy === 'alphabetical' ? styles.sortOptionTextSelected : {},
-              ]}
-            >
-              Alphabetically
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.sortOption,
-              sortBy === 'distance' && styles.sortOptionSelected,
-            ]}
-            onPress={async () => {
-              if (!userCoords) {
-                const coords = await locationService.getCurrentLocation();
-                if (coords) setUserCoords(coords);
-              }
-              setSortBy('distance');
-              setShowSortOptions(false);
-              // Switch to location search mode and open search bar
-              setIsLocationSearchMode(true);
-              setShowSearch(true);
-              setLocationSearchError(null);
-            }}
-          >
-            <Ionicons
-              name="navigate-outline"
-              size={20}
-              color={
-                sortBy === 'distance' ? '#FF0083' : theme.colors.text.primary
-              }
-            />
-            <Text
-              variant="body"
-              style={[
-                styles.sortOptionText,
-                sortBy === 'distance' ? styles.sortOptionTextSelected : {},
-              ]}
-            >
-              By distance
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.sortOption,
-              styles.sortOptionLast,
-              sortBy === 'friends' && styles.sortOptionSelected,
-            ]}
-            onPress={() => {
-              setSortBy('friends');
-              setShowSortOptions(false);
-              // Clear distance origin and close search bar when switching away from distance sorting
-              if (distanceOrigin) {
-                setDistanceOrigin(null);
-              }
-              // Close search bar if it's open in location mode
-              if (isLocationSearchMode) {
-                setIsLocationSearchMode(false);
-                setLocationSearchError(null);
-                setShowSearch(false);
-              }
-            }}
-          >
-            <Ionicons
-              name="people-outline"
-              size={20}
-              color={
-                sortBy === 'friends' ? '#FF0083' : theme.colors.text.primary
-              }
-            />
-            <Text
-              variant="body"
-              style={[
-                styles.sortOptionText,
-                sortBy === 'friends' ? styles.sortOptionTextSelected : {},
-              ]}
-            >
-              By number of friends
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Search bar */}
+      {showSearch && <SearchBar placeholder="Search groups..." />}
 
       <View style={styles.contentContainer}>
         {currentView === 'list' ? renderListView() : renderMapView()}
@@ -852,48 +561,157 @@ export default function GroupsScreen() {
       <Modal
         isVisible={showInfoModal}
         onClose={() => setShowInfoModal(false)}
-        title="Groups Overview"
+        title=""
         scrollable
+        showCloseButton={false}
       >
         <View style={styles.infoModalContent}>
-          <Text variant="body" style={styles.infoModalParagraph}>
-            Explore Bible study groups from here, switch between the list and
-            map views, and tap any card to see full details or request to join.
+          {/* Close button */}
+          <TouchableOpacity
+            style={styles.infoModalCloseButton}
+            onPress={() => setShowInfoModal(false)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name="close"
+              size={24}
+              color={theme.colors.text.primary}
+            />
+          </TouchableOpacity>
+
+          {/* Title */}
+          <Text variant="h5" weight="bold" style={styles.infoModalTitle}>
+            About Groups
           </Text>
 
+          <Text variant="body" style={styles.infoModalIntro}>
+            Find and join Bible study groups that fit your schedule and
+            interests. Tap any group card to view details and request to join.
+          </Text>
+
+          {/* Features section */}
           <View style={styles.infoModalSection}>
-            <Text variant="h6" style={styles.infoModalHeading}>
-              Visibility rules
-            </Text>
-            <Text variant="body" style={styles.infoModalBullet}>
-              • Members see groups in their own service. Groups with your
-              friends outside the service appear in grey.
-            </Text>
-            <Text variant="body" style={styles.infoModalBullet}>
-              • Group leaders see every group in their church plus grey markers
-              for friend groups in other churches.
-            </Text>
-            <Text variant="body" style={styles.infoModalBullet}>
-              • Church admins see every approved group. Groups outside your
-              church are tinted grey for context.
-            </Text>
+            <View style={styles.infoFeatureRow}>
+              <View
+                style={[
+                  styles.infoFeatureIcon,
+                  { backgroundColor: theme.colors.background.inverse },
+                ]}
+              >
+                <Ionicons
+                  name="map-outline"
+                  size={16}
+                  color={theme.colors.text.inverse}
+                />
+              </View>
+              <View style={styles.infoFeatureText}>
+                <Text
+                  variant="body"
+                  weight="semiBold"
+                  style={styles.infoFeatureTitle}
+                >
+                  List & Map Views
+                </Text>
+                <Text variant="caption" color="secondary">
+                  Toggle between list and map to browse groups by location
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoFeatureRow}>
+              <View
+                style={[
+                  styles.infoFeatureIcon,
+                  { backgroundColor: theme.colors.background.inverse },
+                ]}
+              >
+                <Ionicons
+                  name="options-outline"
+                  size={16}
+                  color={theme.colors.text.inverse}
+                />
+              </View>
+              <View style={styles.infoFeatureText}>
+                <Text
+                  variant="body"
+                  weight="semiBold"
+                  style={styles.infoFeatureTitle}
+                >
+                  Filter & Sort
+                </Text>
+                <Text variant="caption" color="secondary">
+                  Filter by meeting days, sort by distance or friends in group
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoFeatureRow}>
+              <View
+                style={[
+                  styles.infoFeatureIcon,
+                  { backgroundColor: theme.colors.background.inverse },
+                ]}
+              >
+                <Ionicons
+                  name="search-outline"
+                  size={16}
+                  color={theme.colors.text.inverse}
+                />
+              </View>
+              <View style={styles.infoFeatureText}>
+                <Text
+                  variant="body"
+                  weight="semiBold"
+                  style={styles.infoFeatureTitle}
+                >
+                  Search
+                </Text>
+                <Text variant="caption" color="secondary">
+                  Search groups by name, description, or leader
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoFeatureRow}>
+              <View
+                style={[
+                  styles.infoFeatureIcon,
+                  { backgroundColor: theme.colors.background.inverse },
+                ]}
+              >
+                <Ionicons
+                  name="people-outline"
+                  size={16}
+                  color={theme.colors.text.inverse}
+                />
+              </View>
+              <View style={styles.infoFeatureText}>
+                <Text
+                  variant="body"
+                  weight="semiBold"
+                  style={styles.infoFeatureTitle}
+                >
+                  Friends
+                </Text>
+                <Text variant="caption" color="secondary">
+                  See which groups your friends are in
+                </Text>
+              </View>
+            </View>
           </View>
 
-          <View style={styles.infoModalSection}>
-            <Text variant="h6" style={styles.infoModalHeading}>
-              Helpful tips
+          {/* Tips section */}
+          <View style={styles.infoTipsSection}>
+            <Text
+              variant="caption"
+              weight="semiBold"
+              style={styles.infoTipsTitle}
+            >
+              QUICK TIP
             </Text>
-            <Text variant="body" style={styles.infoModalBullet}>
-              • Use filters and search to narrow by day or friends in
-              a group.
-            </Text>
-            <Text variant="body" style={styles.infoModalBullet}>
-              • Switch to the map to browse by location and tap pins for quick
-              access to the group card.
-            </Text>
-            <Text variant="body" style={styles.infoModalBullet}>
-              • Grey groups are outside your immediate scope but include
-              friends—reach out if you&apos;re interested.
+            <Text variant="body" style={styles.infoTipsText}>
+              Can't find a group that fits? Tap the menu (⋯) and select "No
+              group fits?" to let your connections team know.
             </Text>
           </View>
         </View>
@@ -902,6 +720,10 @@ export default function GroupsScreen() {
       <FilterPanel
         isVisible={showFilterPanel}
         onClose={() => setShowFilterPanel(false)}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        distanceOrigin={distanceOrigin}
+        onDistanceOriginChange={setDistanceOrigin}
       />
 
       {/* No Group Fits Modal */}
@@ -952,8 +774,6 @@ const GroupItemWithMembership: React.FC<{
   );
   const { data: members } = useGroupMembers(group.id);
   const friendsQuery = useFriends(userProfile?.id);
-
-  const router = useRouter();
 
   const membershipStatus = membershipData?.membership?.role || null;
 
@@ -1010,227 +830,165 @@ const GroupItemWithMembership: React.FC<{
 
 const createStyles = (theme: any) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  compactHeader: {
-    paddingHorizontal: 19,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 60,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  logo: {
-    width: 27,
-    height: 27,
-  },
-  title: {
-    color: theme.colors.text.primary,
-    fontSize: 22,
-    lineHeight: 22,
-    letterSpacing: -0.44,
-    fontWeight: '800',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  figmaIconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconButtonInner: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: theme.colors.background.inverse,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchButtonInner: {
-    backgroundColor: '#FF0083',
-  },
-  iconButtonInnerActive: {
-    backgroundColor: '#FF0083',
-  },
-  iconButtonDisabled: {
-    opacity: 0.5,
-  },
-  iconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  toggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 17,
-    minWidth: 60,
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#8b5cf6',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  badgeText: { color: '#fff' },
-  contentContainer: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
-    paddingBottom: 16,
-    paddingHorizontal: 0,
-  },
-  listViewContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  noGroupFitsButtonContainer: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    container: {
+      flex: 1,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  noGroupFitsButtonFloating: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 10,
-  },
-  noGroupFitsButton: {
-    paddingHorizontal: 14,
-    maxWidth: 120, // Compact width to match the drawn outline
-    backgroundColor: theme.colors.text.primary, // Match friends badge color
-    borderColor: theme.colors.text.primary,
-  },
-  noGroupFitsButtonText: {
-    color: '#FFFFFF', // Ensure white text on dark purple background
-  },
-  noGroupFitsModalContent: {
-    padding: 20,
-    paddingTop: 48, // 12 (top spacing) + 24 (icon height) + 12 (padding below icon)
-    alignItems: 'center',
-    position: 'relative',
-  },
-  noGroupFitsModalCloseButton: {
-    position: 'absolute',
-    right: 12,
-    top: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  noGroupFitsModalText: {
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  noGroupFitsButtonModal: {
-    minWidth: 200,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  loadingText: {
-    marginTop: 16,
-  },
-  errorContainer: {
-    margin: 16,
-  },
-  createButton: {
-    marginTop: 16,
-  },
-  sortOptionsPanel: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
+    compactHeader: {
+      paddingHorizontal: 19,
+      paddingVertical: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: 60,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  sortOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 4,
-    backgroundColor: 'transparent',
-  },
-  sortOptionLast: {
-    marginBottom: 0,
-  },
-  sortOptionSelected: {
-    backgroundColor: '#FFE5F3',
-  },
-  sortOptionText: {
-    marginLeft: 12,
-    color: theme.colors.text.primary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  sortOptionTextSelected: {
-    color: theme.colors.text.primary,
-    fontWeight: '600',
-  },
-  infoModalContent: {
-    paddingVertical: 4,
-  },
-  infoModalParagraph: {
-    color: '#374151',
-    marginBottom: 12,
-  },
-  infoModalSection: {
-    marginBottom: 16,
-  },
-  infoModalHeading: {
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  infoModalBullet: {
-    color: '#374151',
-    marginBottom: 8,
-  },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    logo: {
+      width: 27,
+      height: 27,
+    },
+    title: {
+      color: theme.colors.text.primary,
+      fontSize: 22,
+      lineHeight: 22,
+      letterSpacing: -0.44,
+      fontWeight: '800',
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    figmaIconButton: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconButtonInner: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: theme.colors.background.inverse,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconButtonInnerActive: {
+      backgroundColor: '#FF0083',
+    },
+    contentContainer: {
+      flex: 1,
+    },
+    listContent: {
+      flexGrow: 1,
+      paddingBottom: 16,
+      paddingHorizontal: 0,
+    },
+    listViewContainer: {
+      flex: 1,
+      position: 'relative',
+    },
+    noGroupFitsModalContent: {
+      padding: 20,
+      paddingTop: 48, // 12 (top spacing) + 24 (icon height) + 12 (padding below icon)
+      alignItems: 'center',
+      position: 'relative',
+    },
+    noGroupFitsModalCloseButton: {
+      position: 'absolute',
+      right: 12,
+      top: 12,
+      width: 24,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10,
+    },
+    noGroupFitsModalText: {
+      textAlign: 'center',
+      marginBottom: 24,
+      lineHeight: 22,
+    },
+    noGroupFitsButtonModal: {
+      minWidth: 200,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 32,
+    },
+    loadingText: {
+      marginTop: 16,
+    },
+    errorContainer: {
+      margin: 16,
+    },
+    infoModalContent: {
+      paddingHorizontal: 24,
+      paddingTop: 20,
+      paddingBottom: 24,
+      position: 'relative',
+    },
+    infoModalCloseButton: {
+      position: 'absolute',
+      top: 12,
+      right: 8,
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10,
+    },
+    infoModalTitle: {
+      color: theme.colors.text.primary,
+      marginBottom: 12,
+      letterSpacing: -0.4,
+    },
+    infoModalIntro: {
+      color: theme.colors.text.secondary,
+      marginBottom: 24,
+      lineHeight: 22,
+    },
+    infoModalSection: {
+      gap: 16,
+      marginBottom: 24,
+    },
+    infoFeatureRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+    infoFeatureIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    infoFeatureText: {
+      flex: 1,
+      gap: 2,
+    },
+    infoFeatureTitle: {
+      color: theme.colors.text.primary,
+    },
+    infoTipsSection: {
+      backgroundColor: '#FFF0F7',
+      borderRadius: 12,
+      padding: 16,
+    },
+    infoTipsTitle: {
+      color: '#FF0083',
+      marginBottom: 6,
+      letterSpacing: 0.5,
+    },
+    infoTipsText: {
+      color: theme.colors.text.primary,
+      lineHeight: 20,
+    },
   });
