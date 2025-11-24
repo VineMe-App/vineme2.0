@@ -185,7 +185,7 @@ export const Text: React.FC<TextProps> = ({
             theme.typography.fontFamily.bold
           );
         case 'black':
-          // Manrope may not include Black; fall back to ExtraBold, then Bold
+          // Figtree may not include Black; fall back to ExtraBold, then Bold
           return (
             (theme.typography.fontFamily as any).black ||
             theme.typography.fontFamily.extraBold ||

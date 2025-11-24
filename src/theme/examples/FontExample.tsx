@@ -4,7 +4,7 @@ import { useTheme } from '../provider/useTheme';
 
 /**
  * Font Example Component
- * Demonstrates the Manrope font family across different weights and sizes
+ * Demonstrates the Figtree font family across different weights and sizes
  */
 export function FontExample() {
   const { theme } = useTheme();
@@ -53,9 +53,9 @@ export function FontExample() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Manrope Font Family</Text>
+        <Text style={styles.sectionTitle}>Figtree Font Family</Text>
         <Text style={styles.description}>
-          This example demonstrates the Manrope font family across different
+          This example demonstrates the Figtree font family across different
           weights and sizes.
         </Text>
       </View>
@@ -134,7 +134,7 @@ export function FontExample() {
               { fontFamily: theme.typography.fontFamily.regular, fontSize: 16 },
             ]}
           >
-            This is body text using the Manrope font family. It provides
+            This is body text using the Figtree font family. It provides
             excellent readability and a modern appearance.
           </Text>
         </View>
@@ -172,14 +172,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1a1a1a',
     marginBottom: 16,
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'Figtree-Bold',
   },
   description: {
     fontSize: 16,
     color: '#666666',
     lineHeight: 24,
     marginBottom: 16,
-    fontFamily: 'Manrope-Regular',
+    fontFamily: 'Figtree-Regular',
   },
   fontExample: {
     marginBottom: 20,
@@ -191,11 +191,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     marginBottom: 8,
-    fontFamily: 'Manrope-Medium',
+    fontFamily: 'Figtree-Medium',
   },
   fontText: {
     color: '#1a1a1a',
     lineHeight: 24,
-    fontFamily: 'Manrope-Regular',
+    fontFamily: 'Figtree-Regular',
   },
 });

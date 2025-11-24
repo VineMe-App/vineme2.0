@@ -2,31 +2,25 @@
 
 This directory contains custom fonts for the VineMe app.
 
-## Manrope Font
+## Figtree Font
 
-The app is configured to use the **Manrope** font family throughout the interface.
+The app is configured to use the **Figtree** font family throughout the interface.
 
 ### Required Font Files
 
-To complete the font setup, you need to add the following Manrope font files to this directory:
+The following Figtree font files are included in this directory:
 
-- `Manrope-Regular.ttf` (400 - Regular)
-- `Manrope-Medium.ttf` (500 - Medium) 
-- `Manrope-SemiBold.ttf` (600 - SemiBold)
-- `Manrope-Bold.ttf` (700 - Bold)
+- `Figtree-VariableFont_wght.ttf` (Variable font for dynamic weights)
+- `Figtree-Italic-VariableFont_wght.ttf` (Variable italic font)
+- `Figtree-Regular.ttf` (400 - Regular)
+- `Figtree-Medium.ttf` (500 - Medium) 
+- `Figtree-SemiBold.ttf` (600 - SemiBold)
+- `Figtree-Bold.ttf` (700 - Bold)
 
 ### Font Sources
 
-You can download the Manrope font from:
-- **Google Fonts**: https://fonts.google.com/specimen/Manrope
-- **Official Repository**: https://github.com/microsoft/Manrope
-
-### Installation Steps
-
-1. Download the Manrope font files (TTF format)
-2. Place them in this `assets/fonts/` directory
-3. Ensure the filenames match exactly as listed above
-4. Rebuild the app to include the fonts
+You can download the Figtree font from:
+- **Google Fonts**: https://fonts.google.com/specimen/Figtree
 
 ### Font Weights Used
 
@@ -36,8 +30,12 @@ The app uses these specific font weights:
 - **SemiBold (600)**: Headings, buttons, strong emphasis
 - **Bold (700)**: Main headings, titles
 
+### Variable Fonts
+
+The app uses variable font files (`Figtree-VariableFont_wght.ttf`) which support a wide range of font weights dynamically. Individual weight files are also loaded for specific use cases.
+
 ### Note
 
-After adding the font files, you may need to:
+After adding or updating font files, you may need to:
 - Clear the Metro bundler cache: `npx expo start --clear`
 - Rebuild the app for the fonts to take effect

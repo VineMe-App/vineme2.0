@@ -1,18 +1,20 @@
-# Manrope Font Setup Guide
+# Figtree Font Setup Guide
 
-This guide explains how to implement the Manrope font family throughout your VineMe app.
+This guide explains how the Figtree font family is implemented throughout your VineMe app.
 
 ## 🎯 What's Been Set Up
 
-The following components have been configured to use the Manrope font:
+The following components have been configured to use the Figtree font:
 
 ### 1. **Typography Tokens** (`src/theme/tokens/typography.ts`)
-- Updated font family definitions to use Manrope variants
+- Updated font family definitions to use Figtree variants
 - Regular (400), Medium (500), SemiBold (600), Bold (700)
+- Variable font support for dynamic weights
 
 ### 2. **Font Loading System** ✅ **COMPLETED**
 - Integrated font loading directly into `src/app/_layout.tsx`
 - Uses Expo's built-in `Font.loadAsync()` for clean, standard font loading
+- Loads both variable fonts and individual weight files
 - No wrapper components needed!
 
 ### 3. **App Configuration** (`app.config.ts`)
@@ -25,20 +27,22 @@ The following components have been configured to use the Manrope font:
 
 ## 📁 Required Font Files
 
-You need to add these Manrope font files to `assets/fonts/`:
+The following Figtree font files are included in `assets/fonts/`:
 
 ```
 assets/fonts/
-├── Manrope-Regular.ttf    (400 - Regular)
-├── Manrope-Medium.ttf     (500 - Medium)
-├── Manrope-SemiBold.ttf   (600 - SemiBold)
-└── Manrope-Bold.ttf       (700 - Bold)
+├── Figtree-VariableFont_wght.ttf          (Variable font)
+├── Figtree-Italic-VariableFont_wght.ttf  (Variable italic font)
+├── Figtree-Regular.ttf                    (400 - Regular)
+├── Figtree-Medium.ttf                     (500 - Medium)
+├── Figtree-SemiBold.ttf                   (600 - SemiBold)
+└── Figtree-Bold.ttf                       (700 - Bold)
 ```
 
 ## 🚀 Implementation Steps
 
 ### Step 1: Download Font Files ✅ **COMPLETED**
-1. Visit [Google Fonts - Manrope](https://fonts.google.com/specimen/Manrope)
+1. Visit [Google Fonts - Figtree](https://fonts.google.com/specimen/Figtree)
 2. Download the font family
 3. Extract the TTF files
 
@@ -47,7 +51,7 @@ assets/fonts/
 2. Ensure filenames match exactly (case-sensitive)
 
 ### Step 3: Font Loading ✅ **COMPLETED**
-Font loading is already integrated into your `_layout.tsx` using Expo's standard approach:
+Font loading is integrated into your `_layout.tsx` using Expo's standard approach:
 
 ```tsx
 // This is already done in your _layout.tsx
@@ -55,10 +59,14 @@ useEffect(() => {
   async function loadFonts() {
     try {
       await Font.loadAsync({
-        'Manrope-Regular': require('../assets/fonts/Manrope-Regular.ttf'),
-        'Manrope-Medium': require('../assets/fonts/Manrope-Medium.ttf'),
-        'Manrope-SemiBold': require('../assets/fonts/Manrope-SemiBold.ttf'),
-        'Manrope-Bold': require('../assets/fonts/Manrope-Bold.ttf'),
+        // Variable fonts for dynamic weights
+        'Figtree-VariableFont_wght': require('../../assets/fonts/Figtree-VariableFont_wght.ttf'),
+        'Figtree-Italic-VariableFont_wght': require('../../assets/fonts/Figtree-Italic-VariableFont_wght.ttf'),
+        // Individual weight files for specific weights
+        'Figtree-Regular': require('../../assets/fonts/Figtree-Regular.ttf'),
+        'Figtree-Medium': require('../../assets/fonts/Figtree-Medium.ttf'),
+        'Figtree-SemiBold': require('../../assets/fonts/Figtree-SemiBold.ttf'),
+        'Figtree-Bold': require('../../assets/fonts/Figtree-Bold.ttf'),
       });
       setFontsLoaded(true);
     } catch (error) {
@@ -98,12 +106,23 @@ const { theme } = useTheme();
 ```tsx
 const styles = StyleSheet.create({
   title: {
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'Figtree-Bold',
     fontSize: 24,
   },
   body: {
-    fontFamily: 'Manrope-Regular',
+    fontFamily: 'Figtree-Regular',
     fontSize: 16,
+  },
+});
+```
+
+### Using Variable Fonts
+```tsx
+// Variable fonts allow dynamic weight adjustment
+const styles = StyleSheet.create({
+  dynamicWeight: {
+    fontFamily: 'Figtree-VariableFont_wght',
+    fontWeight: '500', // Can use any weight value
   },
 });
 ```
@@ -129,12 +148,13 @@ const styles = StyleSheet.create({
 4. Check console for font loading errors
 
 ### Font Fallbacks
-If Manrope fails to load, the app will fall back to system fonts. The font loading is handled gracefully in your `_layout.tsx`.
+If Figtree fails to load, the app will fall back to system fonts. The font loading is handled gracefully in your `_layout.tsx`.
 
 ### Performance
 - Fonts are loaded once when the app starts
 - Subsequent app launches will use cached fonts
 - Font loading is optimized with Expo's font system
+- Variable fonts reduce the number of font files needed
 
 ## 📱 Platform Considerations
 
@@ -157,11 +177,11 @@ If Manrope fails to load, the app will fall back to system fonts. The font loadi
 ✅ **Font loading integrated into _layout.tsx**
 ✅ **App configuration updated**
 
-**Your Manrope font setup is complete!** The fonts will now be used throughout your app automatically.
+**Your Figtree font setup is complete!** The fonts will now be used throughout your app automatically.
 
 ## 📚 Additional Resources
 
-- [Manrope Font on Google Fonts](https://fonts.google.com/specimen/Manrope)
+- [Figtree Font on Google Fonts](https://fonts.google.com/specimen/Figtree)
 - [Expo Font Documentation](https://docs.expo.dev/versions/latest/sdk/font/)
 - [React Native Typography Best Practices](https://reactnative.dev/docs/text#style)
 

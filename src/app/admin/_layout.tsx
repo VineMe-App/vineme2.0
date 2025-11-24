@@ -26,7 +26,7 @@ export default function AdminLayout() {
           screenOptions={{
             headerShown: false,
             headerTitleStyle: {
-              fontFamily: 'Manrope-Bold',
+              fontFamily: 'Figtree-Bold',
             },
           }}
         >
