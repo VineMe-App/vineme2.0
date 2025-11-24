@@ -422,7 +422,7 @@ export default function HomeScreen() {
                 description="Insert copy for description"
                 onPress={() => router.push('/group/create')}
                 variant="default"
-              />
+                />
             </View>
           ) : (
             <View style={styles.emptyStateContainer}>
@@ -471,7 +471,7 @@ export default function HomeScreen() {
                   description="Insert copy for description"
                   onPress={() => router.push('/group/create')}
                   variant="default"
-                />
+                  />
               </View>
             </View>
           )}

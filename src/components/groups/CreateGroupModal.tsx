@@ -307,6 +307,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             placeholder="e.g., Young Adults Bible Study"
             required
             editable={!isSubmitting}
+            size="small"
           />
         )}
       </FormField>
@@ -325,6 +326,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             textAlignVertical="top"
             required
             editable={!isSubmitting}
+            size="small"
           />
         )}
       </FormField>

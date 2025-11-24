@@ -370,6 +370,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                   error={error}
                   inputStyle={styles.textInput}
                   required
+                  size="small"
                 />
               </View>
             )}
@@ -397,6 +398,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                   numberOfLines={4}
                   textAlignVertical="top"
                   required
+                  size="small"
                 />
               </View>
             )}
@@ -411,6 +413,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                   onChangeText={onChange}
                   onBlur={onBlur}
                   error={error}
+                  size="small"
                 />
               </View>
             )}
