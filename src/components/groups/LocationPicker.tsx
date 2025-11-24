@@ -14,10 +14,10 @@ import {
 import { Text } from '../ui/Text';
 import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
 import { Input, Button } from '../ui';
-import { AuthButton } from '@/components/auth/AuthButton';
 import { locationService, type Coordinates } from '../../services/location';
 import { MapViewFallback } from './MapViewFallback';
 import { Ionicons } from '@expo/vector-icons';
+import { tertiaryColors } from '@/theme/tokens';
 
 // Dynamically import MapView - not available in Expo Go or on web
 // Using Platform check and try-catch to gracefully handle when the module isn't available
@@ -664,7 +664,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             accessibilityRole="button"
             activeOpacity={0.85}
           >
-            <Ionicons name="locate-outline" size={18} color="#2C2235" />
+            <Ionicons name="locate-outline" size={18} color={tertiaryColors[500]} />
           </TouchableOpacity>
         </View>
       </View>

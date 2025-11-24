@@ -22,8 +22,9 @@ import { Avatar } from '@/components/ui/Avatar';
 import { getFullName, getDisplayName } from '@/utils/name';
 import { supabase } from '@/services/supabase';
 import { AuthHero } from '@/components/auth/AuthHero';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Button } from '@/components/ui/Button';
 import { Text as AppText } from '@/components/ui/Text';
+import { tertiaryColors } from '@/theme/tokens';
 
 export default function ChurchStep({
   data,
@@ -531,11 +532,14 @@ export default function ChurchStep({
 
       <View style={styles.footer}>
         <View style={styles.footerSpacer} />
-        <AuthButton
+        <Button
           title="Next"
+          variant="primary"
           onPress={handleNext}
           loading={isLoading}
           disabled={!selectedChurchId || !selectedServiceId || isLoading}
+          fullWidth
+          style={styles.authButton}
         />
         <TouchableOpacity onPress={onBack} accessibilityRole="button">
           <AppText variant="body" color="secondary" align="center">
@@ -668,11 +672,11 @@ const styles = StyleSheet.create({
   churchName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 4,
   },
   churchNameSelected: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
   },
   churchAddress: {
     fontSize: 14,
@@ -688,7 +692,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '180deg' }],
   },
   expandIndicatorActive: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     transform: [{ rotate: '0deg' }],
   },
   serviceSection: {
@@ -699,7 +703,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   serviceLabel: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 16,
   },
   serviceCheckboxRow: {
@@ -721,8 +725,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   serviceCheckboxChecked: {
-    backgroundColor: '#2C2235',
-    borderColor: '#2C2235',
+    backgroundColor: tertiaryColors[500],
+    borderColor: tertiaryColors[500],
   },
   serviceCheckmark: {
     color: '#FFFFFF',
@@ -734,7 +738,7 @@ const styles = StyleSheet.create({
   },
   serviceCheckboxLabel: {
     fontSize: 12,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontWeight: '600',
     flex: 1,
     letterSpacing: -0.6,
@@ -776,11 +780,11 @@ const styles = StyleSheet.create({
   serviceEmptyRequestTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2C2235',
+    color: tertiaryColors[500],
   },
   serviceEmptyRequestSubtitle: {
     fontSize: 13,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     lineHeight: 18,
   },
   otherServiceCard: {
@@ -799,18 +803,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   otherServiceTitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 8,
   },
   otherServiceSubtitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     lineHeight: 20,
   },
   otherServiceIcon: {
     width: 37,
     height: 37,
     borderRadius: 18.5,
-    backgroundColor: '#2C2235',
+    backgroundColor: tertiaryColors[500],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -826,6 +830,9 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     height: 32,
+  },
+  authButton: {
+    marginBottom: 16,
   },
   pendingNotice: {
     marginTop: 12,
@@ -886,11 +893,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   missingServiceTitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 8,
   },
   missingServiceSubtitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     lineHeight: 20,
   },
   missingServiceIcon: {
@@ -925,11 +932,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   missingChurchTitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 8,
   },
   missingChurchSubtitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     lineHeight: 20,
   },
   missingChurchTextGroup: {

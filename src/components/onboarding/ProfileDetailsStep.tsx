@@ -17,12 +17,13 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { AuthHero } from '@/components/auth/AuthHero';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Button } from '@/components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { userService } from '@/services/users';
 import { getFullName } from '@/utils/name';
+import { tertiaryColors } from '@/theme/tokens';
 
 const BIO_MAX_LENGTH = 240;
 
@@ -239,7 +240,7 @@ export default function ProfileDetailsStep({
           >
             {uploading ? (
               <View style={styles.avatarLoading}>
-                <ActivityIndicator size="large" color="#2C2235" />
+                <ActivityIndicator size="large" color={tertiaryColors[500]} />
               </View>
             ) : avatarUrl ? (
               <View style={styles.avatarContainer}>
@@ -248,14 +249,14 @@ export default function ProfileDetailsStep({
                   style={styles.avatarImage}
                 />
                 <View style={styles.editIcon}>
-                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
+                  <Ionicons name="pencil-outline" size={14} color={tertiaryColors[500]} />
                 </View>
               </View>
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Ionicons name="add" size={48} color="#999999" />
                 <View style={styles.editIcon}>
-                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
+                  <Ionicons name="pencil-outline" size={14} color={tertiaryColors[500]} />
                 </View>
               </View>
             )}
@@ -301,11 +302,14 @@ export default function ProfileDetailsStep({
 
         <View style={styles.footer}>
         <View style={styles.footerSpacer} />
-        <AuthButton
+        <Button
           title="Done"
+          variant="primary"
           onPress={handleContinue}
           loading={uploading || isLoading}
           disabled={uploading || isLoading}
+          fullWidth
+          style={styles.authButton}
         />
         <TouchableOpacity onPress={onBack} accessibilityRole="button">
           <Text variant="body" color="secondary" align="center">
@@ -344,13 +348,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 12,
     letterSpacing: -1.5,
     fontWeight: '900',
   },
   subtitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     lineHeight: 24,
     letterSpacing: -0.2,
     maxWidth: 320,
@@ -429,5 +433,8 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     height: 32,
+  },
+  authButton: {
+    marginBottom: 16,
   },
 });

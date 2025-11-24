@@ -28,6 +28,7 @@ import { useNotificationBadge } from '@/hooks/useNotifications';
 import { Image } from 'react-native';
 import { CTACard } from '@/components/ui/CTACard';
 import { Button } from '@/components/ui/Button';
+import { tertiaryColors } from '@/theme/tokens';
 
 const formatNameList = (names: string[]): string => {
   const filtered = names.filter((name) => name && name.trim().length > 0);
@@ -234,7 +235,7 @@ export default function HomeScreen() {
               onPress={handleNotificationPress}
               unreadCount={unreadCount}
               size={24}
-              color="#2C2235"
+              color={tertiaryColors[500]}
               badgeColor={theme.colors.error[500]}
             />
           </View>
@@ -248,7 +249,7 @@ export default function HomeScreen() {
                 <Ionicons
                   name="location-outline"
                   size={25}
-                  color="#2C2235"
+                  color={tertiaryColors[500]}
                   style={styles.locationIcon}
                 />
                 <View style={styles.churchCardContent}>
@@ -283,7 +284,7 @@ export default function HomeScreen() {
               <Ionicons
                 name="location-outline"
                 size={25}
-                color="#2C2235"
+                color={tertiaryColors[500]}
                 style={styles.locationIcon}
               />
               <View style={styles.churchCardContent}>
@@ -554,7 +555,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   churchName: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontSize: 16,
     letterSpacing: -0.8,
     marginBottom: 4,
@@ -651,7 +652,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sectionTitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontSize: 27.5,
     letterSpacing: -1.375,
     fontWeight: '900',
@@ -684,7 +685,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyStateCard: {
-    backgroundColor: '#2C2235',
+    backgroundColor: tertiaryColors[500],
     borderRadius: 12,
     paddingHorizontal: 40,
     paddingVertical: 38,

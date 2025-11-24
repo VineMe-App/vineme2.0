@@ -15,6 +15,7 @@ import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { Card } from '../ui/Card';
+import { tertiaryColors } from '@/theme/tokens';
 
 interface GroupCardProps {
   group: GroupWithDetails | null | undefined;
@@ -116,7 +117,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       case 'church':
         return '#96115c'; // Blend of pink and dark (50% pink, 50% dark) - darker
       case 'outside':
-        return '#2C2235'; // Dark color
+        return tertiaryColors[500]; // Dark color
       default:
         return '#EDEDED';
     }
@@ -271,7 +272,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {/* Time */}
             {group.meeting_day && group.meeting_time && (
               <View style={styles.detailRow}>
-                <Ionicons name="time-outline" size={16} color="#2C2235" />
+                <Ionicons name="time-outline" size={16} color={tertiaryColors[500]} />
                 <Text
                   variant="bodySmall"
                   weight="medium"
@@ -286,7 +287,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {/* Distance (shown when sorting by distance) */}
             {typeof distanceKm === 'number' && (
               <View style={styles.detailRow}>
-                <Ionicons name="navigate-outline" size={16} color="#2C2235" />
+                <Ionicons name="navigate-outline" size={16} color={tertiaryColors[500]} />
                 <Text
                   variant="bodySmall"
                   weight="medium"
@@ -304,7 +305,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               styles.detailRow,
               variant === 'my-groups' && styles.detailRowNoWrap
             ]}>
-              <Ionicons name="location-outline" size={16} color="#2C2235" />
+              <Ionicons name="location-outline" size={16} color={tertiaryColors[500]} />
               <Text
                 variant="bodySmall"
                 weight="medium"
@@ -346,7 +347,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 styles.detailRow,
                 variant === 'my-groups' && styles.detailRowNoWrap
               ]}>
-                <Ionicons name="business-outline" size={16} color="#2C2235" />
+                <Ionicons name="business-outline" size={16} color={tertiaryColors[500]} />
                 <Text
                   variant="bodySmall"
                   weight="medium"
@@ -630,6 +631,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     overflow: 'hidden',
     minHeight: 300,
+    padding: 0,
     // Background color now set dynamically with theme
   },
   content: {
@@ -884,7 +886,7 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   ledByText: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
   },
   leaderTextAndAvatars: {
     flexDirection: 'row',

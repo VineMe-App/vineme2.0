@@ -12,12 +12,13 @@ import {
   StatusBar,
 } from 'react-native';
 import { AuthHero } from '@/components/auth/AuthHero';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
+import { tertiaryColors } from '@/theme/tokens';
 
 type AuthMethod = 'phone' | 'email' | null;
 type Step = 'enter-credentials' | 'enter-code';
@@ -215,11 +216,14 @@ export default function PhoneLoginScreen() {
 
       <View style={styles.footer}>
         <View style={styles.actions}>
-          <AuthButton
+          <Button
             title="Submit"
+            variant="primary"
             onPress={handleSubmit}
             disabled={!canSubmit}
             loading={isLoading}
+            fullWidth
+            style={styles.authButton}
           />
         </View>
         <TouchableOpacity
@@ -253,11 +257,14 @@ export default function PhoneLoginScreen() {
       </View>
       <View style={styles.footer}>
         <View style={styles.footerSpacer} />
-        <AuthButton
+        <Button
           title="Verify"
+          variant="primary"
           onPress={handleVerify}
           loading={isLoading}
           disabled={code.length !== 6}
+          fullWidth
+          style={styles.authButton}
         />
         <TouchableOpacity
           onPress={handleBackToCredentials}
@@ -368,7 +375,7 @@ const styles = StyleSheet.create({
   },
   countryCodeText: {
     fontSize: 18,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontWeight: '400',
   },
   phoneDivider: {
@@ -380,7 +387,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     fontSize: 18,
-    color: '#2C2235',
+    color: tertiaryColors[500],
   },
   orContainer: {
     alignItems: 'center',
@@ -388,7 +395,7 @@ const styles = StyleSheet.create({
   },
   orText: {
     fontSize: 14,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     letterSpacing: -0.14,
   },
   emailField: {
@@ -402,13 +409,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     fontSize: 14,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     letterSpacing: -0.28,
   },
   resendText: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginTop: 32,
     textAlign: 'center',
+  },
+  authButton: {
+    marginBottom: 16,
   },
   resendLink: {
     color: '#1082FF',
@@ -430,7 +440,7 @@ const styles = StyleSheet.create({
   },
   signUpText: {
     fontSize: 14,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     letterSpacing: -0.14,
     textAlign: 'center',
   },
@@ -438,4 +448,3 @@ const styles = StyleSheet.create({
     color: '#1082FF',
   },
 });
-

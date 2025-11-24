@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Image, StyleSheet, ImageSourcePropType, ViewStyle } from 'react-native';
 import { Text } from '@/components/ui/Text';
+import { tertiaryColors } from '@/theme/tokens';
 
 const defaultLogo = require('../../../assets/figma-105-1538/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png');
 
@@ -49,13 +50,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     marginBottom: 12,
     letterSpacing: -1.5,
     fontWeight: '900',
   },
   subtitle: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
     lineHeight: 24,
     letterSpacing: -0.2,
     maxWidth: 320,

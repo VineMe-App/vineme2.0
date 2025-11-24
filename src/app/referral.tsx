@@ -435,7 +435,7 @@ const SubmitControls: React.FC<{
     <View style={styles.actions}>
       <Button
         title="Send Referral"
-        variant="secondary"
+        variant="primary"
         size="large"
         fullWidth
         onPress={handlePress}

@@ -16,6 +16,7 @@ import {
   orangeColors,
   redColors,
   purpleColors,
+  tertiaryColors,
   defaultTypography,
   spacing,
   shadows,
@@ -31,6 +32,7 @@ export const lightTheme: ThemeConfig = {
     // Semantic color palettes
     primary: primaryColors,
     secondary: secondaryColors,
+    tertiary: tertiaryColors,
     success: successColors,
     warning: warningColors,
     error: errorColors,
@@ -49,12 +51,12 @@ export const lightTheme: ThemeConfig = {
       primary: '#ffffff', // White
       secondary: '#FFFBEE', // Updated to use light cream color
       tertiary: '#fff8e0', // Lighter cream variant
-      inverse: '#2C2235', // Updated to use dark color
+      inverse: tertiaryColors[500], // Updated to use dark color
     },
 
     // Text colors
     text: {
-      primary: '#2C2235', // Updated to use dark color
+      primary: tertiaryColors[500], // Updated to use dark color
       secondary: '#475569',
       tertiary: '#64748b',
       inverse: '#ffffff',

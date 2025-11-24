@@ -12,6 +12,7 @@ import {
 import Text from './Text';
 import { useTheme } from '../../theme/provider/useTheme';
 import { Spinner } from './Loading/Spinner';
+import { tertiaryColors } from '@/theme/tokens';
 
 export interface ButtonProps {
   /**
@@ -191,7 +192,7 @@ export const Button: React.FC<ButtonProps> = ({
           {Platform.OS === 'ios' && (
             <Text
               weight="medium"
-              style={[textStyles, styles.loadingText, textStyle]}
+              style={[textStyles, styles.loadingText, textStyle as TextStyle]}
             >
               {title}
             </Text>
@@ -202,19 +203,22 @@ export const Button: React.FC<ButtonProps> = ({
 
     return (
       <View
-        style={[styles.contentContainer, hasIcon && styles.contentWithIcon]}
+        style={[
+          styles.contentContainer,
+          hasIcon ? styles.contentWithIcon : undefined,
+        ]}
       >
         {icon && (
           <View style={[styles.iconContainer, styles.iconLeft]}>{icon}</View>
         )}
-        <Text 
-          weight="medium" 
-          align="center" 
+        <Text
+          weight="medium"
+          align="center"
           style={[
-            textStyles, 
-            !hasIcon && styles.textNoIcon,
-            textStyle
-          ]} 
+            textStyles,
+            (!hasIcon ? styles.textNoIcon : undefined) as TextStyle,
+            textStyle as TextStyle,
+          ]}
           numberOfLines={1}
         >
           {title}
@@ -242,7 +246,7 @@ export const Button: React.FC<ButtonProps> = ({
             borderColor: focusValue.interpolate({
               inputRange: [0, 1],
               outputRange: [
-                buttonStyles.borderColor || 'transparent',
+                (buttonStyles.borderColor as string) || 'transparent',
                 theme.colors.primary[500],
               ],
             }) as any,
@@ -327,8 +331,8 @@ const getButtonStyles = (
   // Variant styles
   const variantStyles: Record<string, ViewStyle> = {
     primary: {
-      backgroundColor: theme.colors.secondary[100], // Changed to use secondary color (light blue)
-      borderColor: theme.colors.secondary[100],
+      backgroundColor: tertiaryColors[500], // Dark color
+      borderColor: tertiaryColors[500],
     },
     secondary: {
       backgroundColor: theme.colors.primary[500], // Changed to use primary color (pink)
@@ -408,7 +412,7 @@ const getTextStyles = (
 
   // Variant text colors
   const variantTextColors: Record<string, string> = {
-    primary: theme.colors.primary[500], // Brand pink text
+    primary: theme.colors.text.inverse, // White text on dark button
     secondary: theme.colors.text.inverse, // Light green text for pink buttons
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,
@@ -430,7 +434,7 @@ const getTextStyles = (
  */
 const getLoadingColor = (theme: any, variant: string): string => {
   const colorMap: Record<string, string> = {
-    primary: theme.colors.primary[500], // Brand pink for loading spinner
+    primary: theme.colors.text.inverse, // White for loading spinner
     secondary: theme.colors.text.primary,
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,

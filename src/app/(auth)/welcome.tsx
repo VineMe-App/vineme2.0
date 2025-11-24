@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { AuthHero } from '@/components/auth/AuthHero';
-import { AuthButton } from '@/components/auth/AuthButton';
+import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 
@@ -20,16 +20,19 @@ export default function WelcomeScreen() {
         </View>
 
         <View style={styles.actions}>
-          <AuthButton
+          <Button
             title="Sign up"
+            variant="primary"
             onPress={() => router.push('/(auth)/phone-signup')}
             style={styles.primaryButton}
+            fullWidth
           />
-          <AuthButton
+          <Button
             title="Sign in"
             variant="secondary"
             onPress={() => router.push('/(auth)/phone-login')}
             style={styles.secondaryButton}
+            fullWidth
           />
         </View>
 

@@ -10,6 +10,7 @@ import { useGroupFiltersStore } from '../../stores/groupFilters';
 import { Modal } from '../ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/provider/useTheme';
+import { tertiaryColors } from '@/theme/tokens';
 
 interface FilterPanelProps {
   isVisible: boolean;
@@ -69,7 +70,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           onPress={onClose}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="close" size={24} color="#2C2235" />
+          <Ionicons name="close" size={24} color={tertiaryColors[500]} />
         </TouchableOpacity>
 
         {/* Title */}
@@ -193,7 +194,7 @@ const createStyles = (theme: any) =>
     title: {
       fontSize: 20,
       fontWeight: '800', // ExtraBold
-      color: '#2C2235',
+      color: tertiaryColors[500],
       letterSpacing: -0.4,
       lineHeight: 22,
       marginBottom: 32,
@@ -211,7 +212,7 @@ const createStyles = (theme: any) =>
     sectionTitle: {
       fontSize: 16,
       fontWeight: '500', // Medium
-      color: '#2C2235',
+      color: tertiaryColors[500],
       letterSpacing: -0.32,
       lineHeight: 16,
       marginBottom: 12,
@@ -233,12 +234,12 @@ const createStyles = (theme: any) =>
       height: 28,
     },
     filterButtonActive: {
-      backgroundColor: '#2C2235',
+      backgroundColor: tertiaryColors[500],
     },
     filterButtonText: {
       fontSize: 12,
       fontWeight: '500', // Medium from Figma
-      color: '#2C2235',
+      color: tertiaryColors[500],
       fontFamily: theme.typography.fontFamily.medium,
       lineHeight: 12,
       letterSpacing: 0,
@@ -257,19 +258,19 @@ const createStyles = (theme: any) =>
       justifyContent: 'center',
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: '#2C2235',
+      borderColor: tertiaryColors[500],
       backgroundColor: '#FFFFFF',
     },
     resetButtonText: {
       fontSize: 16,
       fontWeight: '700',
-      color: '#2C2235',
+      color: tertiaryColors[500],
       fontFamily: theme.typography.fontFamily.bold,
       textAlign: 'center',
     },
     applyButton: {
       flex: 2,
-      backgroundColor: '#2C2235',
+      backgroundColor: tertiaryColors[500],
       borderRadius: 100, // Pill shape from Figma
       height: 42,
       justifyContent: 'center',

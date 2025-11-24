@@ -22,7 +22,6 @@ import {
 import { useFriends } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
-import { AuthButton } from '@/components/auth/AuthButton';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
@@ -32,6 +31,7 @@ import { setDeletionFlowActive, isDeletionFlowActive } from '@/utils/errorSuppre
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
+import { tertiaryColors } from '@/theme/tokens';
 // Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
@@ -337,7 +337,7 @@ export default function ProfileScreen() {
                   accessibilityRole="button"
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
+                  <Ionicons name="pencil-outline" size={14} color={tertiaryColors[500]} />
                 </TouchableOpacity>
               </View>
 
@@ -414,17 +414,19 @@ export default function ProfileScreen() {
         )}
 
         <View style={styles.actionsSection}>
-          <AuthButton
+          <Button
             title="Sign Out"
             onPress={handleSignOut}
-            variant="secondary"
+            variant="primary"
             style={styles.signOutButton}
+            fullWidth
           />
-          <AuthButton
+          <Button
             title="Delete Account"
             onPress={handleDeleteAccount}
             variant="secondary"
             style={styles.deleteButton}
+            fullWidth
           />
         </View>
 
@@ -552,7 +554,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#2C2235',
+    color: tertiaryColors[500],
     letterSpacing: -0.48,
     lineHeight: 28,
     textAlign: 'center',
@@ -565,7 +567,7 @@ const styles = StyleSheet.create({
   profileInfoTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#2C2235',
+    color: tertiaryColors[500],
     letterSpacing: -0.32,
     lineHeight: 16,
     marginBottom: 16,
@@ -588,7 +590,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 14,
-    color: '#2C2235',
+    color: tertiaryColors[500],
     fontWeight: '600',
     letterSpacing: -0.28,
     lineHeight: 14,

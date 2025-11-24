@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Button, ButtonProps } from '@/components/ui/Button';
+import { tertiaryColors } from '@/theme/tokens';
 
 export type AuthButtonVariant = 'primary' | 'secondary';
 
@@ -61,8 +62,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButton: {
-    backgroundColor: '#2C2235',
-    borderColor: '#2C2235',
+    backgroundColor: tertiaryColors[500],
+    borderColor: tertiaryColors[500],
   },
   secondaryButton: {
     backgroundColor: '#EAEAEA',
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   secondaryLabel: {
-    color: '#2C2235',
+    color: tertiaryColors[500],
   },
   disabledLabel: {
     color: '#CCCCCC',

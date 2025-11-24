@@ -6,16 +6,17 @@ import { Text } from '../components/ui/Text';
 import { Header } from '../components/ui/Header';
 import { CTACard } from '../components/ui/CTACard';
 import {
-  ReferralFormModal,
   ReferralFormData,
 } from '../components/referrals/ReferralFormModal';
 import { referralService } from '../services/referrals';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../theme/provider/useTheme';
 
 export default function ReferralLandingPage() {
   const [showGeneralReferralModal, setShowGeneralReferralModal] =
     useState(false);
   const { userProfile } = useAuth();
+  const { theme } = useTheme();
 
   const handleGeneralReferral = useCallback(() => {
     if (!userProfile) {
@@ -75,7 +76,12 @@ export default function ReferralLandingPage() {
           header: () => <Header title="Connect Someone" />,
         }}
       />
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
         <View style={styles.content}>
           <View style={styles.questionSection}>
             <Text variant="h4" weight="semiBold" style={styles.questionTitle}>
@@ -114,7 +120,15 @@ export default function ReferralLandingPage() {
           </View>
 
           <View style={styles.infoSection}>
-            <View style={styles.infoCard}>
+            <View
+              style={[
+                styles.infoCard,
+                {
+                  backgroundColor: theme.colors.surface.secondary,
+                  borderColor: theme.colors.border.primary,
+                },
+              ]}
+            >
               <Ionicons
                 name="information-circle-outline"
                 size={20}
@@ -127,7 +141,15 @@ export default function ReferralLandingPage() {
             </View>
           </View>
 
-          <View style={styles.instructionsSection}>
+          <View
+            style={[
+              styles.instructionsSection,
+              {
+                backgroundColor: theme.colors.surface.primary,
+                borderColor: theme.colors.border.primary,
+              },
+            ]}
+          >
             <Text
               variant="h5"
               weight="semiBold"
@@ -205,7 +227,6 @@ export default function ReferralLandingPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   content: {
     padding: 20,
@@ -235,11 +256,9 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#f8fafc',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
   },
   infoText: {
     lineHeight: 20,
@@ -248,11 +267,9 @@ const styles = StyleSheet.create({
   },
   instructionsSection: {
     marginTop: 24,
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
   },
   instructionsTitle: {
     marginBottom: 16,
