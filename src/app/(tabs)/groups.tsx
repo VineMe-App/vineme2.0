@@ -483,7 +483,7 @@ export default function GroupsScreen() {
       >
         <View style={styles.headerLeft}>
           <Image
-            source={require('../../../assets/figma-128-1563/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
+            source={require('../../../assets/logos/vineme_png-02.png')}
             style={styles.logo}
             resizeMode="contain"
           />

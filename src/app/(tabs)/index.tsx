@@ -219,12 +219,12 @@ export default function HomeScreen() {
         <View style={styles.topBar}>
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../../assets/figma-135-2274/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
+              source={require('../../../assets/logos/vineme_png-02.png')}
               style={styles.logo1}
               resizeMode="contain"
             />
             <Image
-              source={require('../../../assets/figma-135-2274/3ea6b9bc459f568aa3641e994c1a3a137ba8db70.png')}
+              source={require('../../../assets/logos/vineme_png-08.png')}
               style={styles.logo2}
               resizeMode="contain"
             />
@@ -422,7 +422,7 @@ export default function HomeScreen() {
                 description="Insert copy for description"
                 onPress={() => router.push('/group/create')}
                 variant="default"
-                />
+              />
             </View>
           ) : (
             <View style={styles.emptyStateContainer}>
@@ -471,7 +471,7 @@ export default function HomeScreen() {
                   description="Insert copy for description"
                   onPress={() => router.push('/group/create')}
                   variant="default"
-                  />
+                />
               </View>
             </View>
           )}
@@ -509,18 +509,18 @@ const styles = StyleSheet.create({
     height: 121,
   },
   logo1: {
-    width: 67.5,
-    height: 67.5,
+    width: 50,
+    height: 50,
     position: 'absolute',
     left: 0,
-    top: 22.5,
+    top: 35,
     zIndex: 2,
   },
   logo2: {
     width: 121.25,
     height: 121.25,
     position: 'absolute',
-    left: 67.5,
+    left: 50,
     top: 0,
     zIndex: 1,
   },
