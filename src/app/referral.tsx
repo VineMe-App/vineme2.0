@@ -1,12 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -15,6 +8,8 @@ import {
   Input,
   Button,
   Card,
+  Text,
+  Header,
   useFormContext,
 } from '../components/ui';
 import { CountryCodePicker } from '../components/ui/CountryCodePicker';
@@ -154,184 +149,244 @@ export default function ReferralPage() {
   );
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {isGroupReferral ? 'Refer a Friend' : 'General Referral'}
-        </Text>
-      </View>
-
-      <View style={styles.content}>
-        {/* Context Card: Group selected vs no group */}
-        <Card style={styles.contextCard}>
-          <View style={styles.contextRow}>
-            <View style={styles.contextIconWrap}>
-              <Ionicons
-                name={
-                  isGroupReferral ? 'people-outline' : 'help-circle-outline'
-                }
-                size={22}
-                color={isGroupReferral ? '#2563eb' : '#ff0083'}
-              />
+    <>
+      <Header
+        title={isGroupReferral ? 'Refer a Friend' : 'General Referral'}
+        useSafeArea={false}
+      />
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.content}>
+          {/* Context Card: Group selected vs no group */}
+          <Card style={{ marginBottom: 20 }}>
+            <View style={styles.contextRow}>
+              <View style={styles.contextIconWrap}>
+                <Ionicons
+                  name={
+                    isGroupReferral ? 'people-outline' : 'help-circle-outline'
+                  }
+                  size={22}
+                  color={isGroupReferral ? '#2563eb' : '#ff0083'}
+                />
+              </View>
+              <View style={styles.contextTextWrap}>
+                <Text
+                  variant="bodyLarge"
+                  weight="bold"
+                  numberOfLines={1}
+                  style={{ marginBottom: 4 }}
+                >
+                  {isGroupReferral
+                    ? 'Referring to group'
+                    : 'No specific group selected'}
+                </Text>
+                <Text variant="bodySmall" color="secondary" numberOfLines={2}>
+                  {isGroupReferral
+                    ? groupName || groupId
+                    : 'We will help them find a fitting group after they sign up'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.contextTextWrap}>
-              <Text style={styles.contextTitle} numberOfLines={1}>
-                {isGroupReferral
-                  ? 'Referring to group'
-                  : 'No specific group selected'}
-              </Text>
-              <Text style={styles.contextSubtitle} numberOfLines={2}>
-                {isGroupReferral
-                  ? groupName || groupId
-                  : 'We will help them find a fitting group after they sign up'}
-              </Text>
-            </View>
-          </View>
-        </Card>
+          </Card>
 
-        <Text style={styles.description}>
-          {isGroupReferral
-            ? "Help someone join this group by providing their contact information. They'll receive an email to set up their account and can then join the group."
-            : "Help someone join the VineMe community. They'll receive an email to set up their account and our team will help match them to a group."}
-        </Text>
-
-        <View style={styles.privacyNotice}>
-          <View style={styles.privacyNoticeHeader}>
-            <Ionicons name="information-circle-outline" size={20} color="#856404" />
-            <Text style={styles.privacyNoticeTitle}>Privacy Notice</Text>
-          </View>
-          <Text style={styles.privacyNoticeText}>
+          <Text variant="body" color="secondary" style={{ marginBottom: 16 }}>
             {isGroupReferral
-              ? "Please inform the person you're referring that their contact details will be shared with church admins and the connect group leaders for this group."
-              : "Please inform the person you're referring that their contact details will be shared with church admins."}
+              ? "Help someone join this group by providing their contact information. They'll receive an email to set up their account and can then join the group."
+              : "Help someone join the VineMe community. They'll receive an email to set up their account and our team will help match them to a group."}
+          </Text>
+
+          <Card
+            variant="filled"
+            style={{
+              backgroundColor: '#fff8e5',
+              borderWidth: 1,
+              borderColor: '#ffd966',
+              marginBottom: 24,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 8,
+              }}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={20}
+                color="#856404"
+              />
+              <Text
+                variant="body"
+                weight="semiBold"
+                style={{ color: '#856404' }}
+              >
+                Privacy Notice
+              </Text>
+            </View>
+            <Text
+              variant="bodySmall"
+              style={{ color: '#856404', lineHeight: 20 }}
+            >
+              {isGroupReferral
+                ? "Please inform the person you're referring that their contact details will be shared with church admins and the connect group leaders for this group."
+                : "Please inform the person you're referring that their contact details will be shared with church admins."}
+            </Text>
+          </Card>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 16,
+              marginTop: 8,
+            }}
+          >
+            <Ionicons name="person-add-outline" size={18} color="#374151" />
+            <Text variant="h5" weight="bold">
+              Referral details
+            </Text>
+          </View>
+
+          <Form config={formConfig} onSubmit={handleSubmit}>
+            <View style={styles.row}>
+              <View style={styles.half}>
+                <FormField name="firstName">
+                  {({ value, error, onChange, onBlur }) => (
+                    <Input
+                      label="First Name"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      error={error}
+                      placeholder="Peter"
+                      autoCapitalize="words"
+                      size="small"
+                    />
+                  )}
+                </FormField>
+              </View>
+              <View style={styles.half}>
+                <FormField name="lastName">
+                  {({ value, error, onChange, onBlur }) => (
+                    <Input
+                      label="Last Name"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      error={error}
+                      placeholder="Fisher"
+                      autoCapitalize="words"
+                      size="small"
+                    />
+                  )}
+                </FormField>
+              </View>
+            </View>
+
+            <View style={styles.formFieldContainer}>
+              <FormField name="email">
+                {({ value, error, onChange, onBlur }) => (
+                  <Input
+                    label="Email Address"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={error}
+                    placeholder="their.email@example.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    required
+                    size="small"
+                  />
+                )}
+              </FormField>
+            </View>
+
+            <View style={styles.phoneFieldContainer}>
+              <FormField name="countryCode">
+                {({ value, onChange }) => (
+                  <CountryCodePicker
+                    value={value}
+                    onChange={onChange}
+                    label="Country"
+                  />
+                )}
+              </FormField>
+              <FormField name="localNumber">
+                {({ value, error, onChange, onBlur }) => (
+                  <Input
+                    label="Phone Number"
+                    value={value}
+                    onChangeText={(text) => onChange(text.replace(/\D/g, ''))}
+                    onBlur={onBlur}
+                    error={error}
+                    placeholder="7890123456"
+                    keyboardType="phone-pad"
+                    required
+                    size="small"
+                  />
+                )}
+              </FormField>
+            </View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                marginTop: 24,
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons name="create-outline" size={18} color="#374151" />
+              <Text variant="h5" weight="bold">
+                Context (optional)
+              </Text>
+            </View>
+
+            <View style={styles.formFieldContainer}>
+              <FormField name="note">
+                {({ value, error, onChange, onBlur }) => (
+                  <Input
+                    label="Note (Optional)"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={error}
+                    placeholder="Why do you think they'd be a good fit? Any context that would help..."
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    helperText={`${(value || '').length}/500 characters`}
+                    size="small"
+                  />
+                )}
+              </FormField>
+            </View>
+
+            <SubmitControls
+              onSubmit={handleSubmit}
+              onCancel={() => router.back()}
+            />
+          </Form>
+          <Text
+            variant="bodySmall"
+            color="secondary"
+            style={{
+              marginTop: 20,
+              textAlign: 'center',
+              paddingHorizontal: 16,
+            }}
+          >
+            By sending a referral, you confirm you have permission to share this
+            person's contact information.
           </Text>
         </View>
-
-        <View style={styles.sectionHeader}>
-          <Ionicons name="person-add-outline" size={18} color="#374151" />
-          <Text style={styles.sectionTitle}>Referral details</Text>
-        </View>
-
-        <Form config={formConfig} onSubmit={handleSubmit}>
-          <View style={styles.row}>
-            <View style={styles.half}>
-              <FormField name="firstName">
-                {({ value, error, onChange, onBlur }) => (
-                  <Input
-                    label="First Name"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    error={error}
-                    placeholder="Peter"
-                    autoCapitalize="words"
-                  />
-                )}
-              </FormField>
-            </View>
-            <View style={styles.half}>
-              <FormField name="lastName">
-                {({ value, error, onChange, onBlur }) => (
-                  <Input
-                    label="Last Name"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    error={error}
-                    placeholder="Fisher"
-                    autoCapitalize="words"
-                  />
-                )}
-              </FormField>
-            </View>
-          </View>
-
-          <View style={styles.formFieldContainer}>
-            <FormField name="email">
-              {({ value, error, onChange, onBlur }) => (
-                <Input
-                  label="Email Address"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  error={error}
-                  placeholder="their.email@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  required
-                />
-              )}
-            </FormField>
-          </View>
-
-          <View style={styles.phoneFieldContainer}>
-            <FormField name="countryCode">
-              {({ value, onChange }) => (
-                <CountryCodePicker
-                  value={value}
-                  onChange={onChange}
-                  label="Country"
-                />
-              )}
-            </FormField>
-            <FormField name="localNumber">
-              {({ value, error, onChange, onBlur }) => (
-                <Input
-                  label="Phone Number"
-                  value={value}
-                  onChangeText={(text) => onChange(text.replace(/\D/g, ''))}
-                  onBlur={onBlur}
-                  error={error}
-                  placeholder="7890123456"
-                  keyboardType="phone-pad"
-                  required
-                />
-              )}
-            </FormField>
-          </View>
-
-          <View style={styles.sectionHeaderAlt}>
-            <Ionicons name="create-outline" size={18} color="#374151" />
-            <Text style={styles.sectionTitle}>Context (optional)</Text>
-          </View>
-
-          <View style={styles.formFieldContainer}>
-            <FormField name="note">
-              {({ value, error, onChange, onBlur }) => (
-                <Input
-                  label="Note (Optional)"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  error={error}
-                  placeholder="Why do you think they'd be a good fit? Any context that would help..."
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  helperText={`${(value || '').length}/500 characters`}
-                />
-              )}
-            </FormField>
-          </View>
-
-          <SubmitControls
-            onSubmit={handleSubmit}
-            onCancel={() => router.back()}
-          />
-        </Form>
-        <Text style={styles.footerNote}>
-          By sending a referral, you confirm you have permission to share this
-          person's contact information.
-        </Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }
 
@@ -340,50 +395,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  backButton: {
-    marginRight: 12,
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    flex: 1,
-  },
   content: {
     padding: 20,
-  },
-  contextCard: {
-    marginBottom: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   contextRow: {
     flexDirection: 'row',
@@ -401,66 +414,6 @@ const styles = StyleSheet.create({
   contextTextWrap: {
     flex: 1,
   },
-  contextTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  contextSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
-  },
-  description: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  privacyNotice: {
-    backgroundColor: '#fff8e5',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#ffd966',
-  },
-  privacyNoticeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  privacyNoticeTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#856404',
-  },
-  privacyNoticeText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#856404',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  sectionHeaderAlt: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
   row: {
     flexDirection: 'row',
     gap: 16,
@@ -477,14 +430,6 @@ const styles = StyleSheet.create({
   actions: {
     alignItems: 'center',
     marginTop: 24,
-  },
-  footerNote: {
-    marginTop: 20,
-    fontSize: 13,
-    color: '#6b7280',
-    lineHeight: 18,
-    textAlign: 'center',
-    paddingHorizontal: 16,
   },
 });
 

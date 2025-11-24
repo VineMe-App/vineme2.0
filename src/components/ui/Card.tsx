@@ -217,6 +217,6 @@ function getVariantShadow(variant: string, theme: any): ViewStyle {
       return shadows.none;
     case 'default':
     default:
-      return shadows.sm;
+      return shadows.none;
   }
 }

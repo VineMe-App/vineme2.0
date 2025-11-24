@@ -379,12 +379,14 @@ const getInputContainerStyles = (
     backgroundColor: '#FFFFFF',
   };
 
-  // Size styles - matching onboarding style
+  // Size styles
+  // - small: compact padding for forms (referrals, create group, etc.)
+  // - medium/large: standard padding for onboarding
   const sizeStyles: Record<string, ViewStyle> = {
     small: {
       minHeight: 36,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
     },
     medium: {
       minHeight: 44,

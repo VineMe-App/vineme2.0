@@ -137,19 +137,19 @@ export function MissingServiceModal({
 
           <Input
             label="Church name"
-            value={churchName}
-            onChangeText={setChurchName}
-            placeholder="Church name"
+              value={churchName}
+              onChangeText={setChurchName}
+              placeholder="Church name"
             containerStyle={styles.inputContainer}
           />
 
           <Input
             label="Location (optional)"
-            value={churchLocation}
-            onChangeText={setChurchLocation}
-            placeholder="Location or postcode"
+              value={churchLocation}
+              onChangeText={setChurchLocation}
+              placeholder="Location or postcode"
             containerStyle={styles.inputContainer}
-          />
+            />
 
           {mode === 'church' && (
             <Text variant="h6" weight="semiBold" style={styles.sectionLabel}>
@@ -180,32 +180,32 @@ export function MissingServiceModal({
 
           <Input
             label="Best contact name"
-            value={contactName}
-            onChangeText={setContactName}
-            placeholder="Who should we follow up with?"
+              value={contactName}
+              onChangeText={setContactName}
+              placeholder="Who should we follow up with?"
             containerStyle={styles.inputContainer}
           />
 
           <Input
             label="Best contact email"
-            value={contactEmail}
-            onChangeText={setContactEmail}
-            placeholder="name@example.com"
-            autoCapitalize="none"
-            keyboardType="email-address"
+              value={contactEmail}
+              onChangeText={setContactEmail}
+              placeholder="name@example.com"
+              autoCapitalize="none"
+              keyboardType="email-address"
             containerStyle={styles.inputContainer}
           />
 
           <Input
             label="Anything else we should know? (optional)"
-            value={additionalInfo}
-            onChangeText={setAdditionalInfo}
-            placeholder="Add context or questions"
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
+              value={additionalInfo}
+              onChangeText={setAdditionalInfo}
+              placeholder="Add context or questions"
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
             containerStyle={styles.inputContainer}
-          />
+            />
 
           {showError ? (
             <Text variant="bodySmall" color="error" style={styles.errorText}>

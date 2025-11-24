@@ -119,26 +119,26 @@ export default function NameStep({
         ]}>
           <Input
             label="First name"
-            value={firstName}
-            onChangeText={handleFirstChange}
-            placeholder="First name"
-            autoCapitalize="words"
-            autoCorrect={false}
-            editable={!isLoading}
-            maxLength={50}
+              value={firstName}
+              onChangeText={handleFirstChange}
+              placeholder="First name"
+              autoCapitalize="words"
+              autoCorrect={false}
+              editable={!isLoading}
+              maxLength={50}
             error={firstNameError || undefined}
             containerStyle={styles.inputContainer}
           />
 
           <Input
             label="Last name"
-            value={lastName}
-            onChangeText={handleLastChange}
-            placeholder="Last name"
-            autoCapitalize="words"
-            autoCorrect={false}
-            editable={!isLoading}
-            maxLength={50}
+              value={lastName}
+              onChangeText={handleLastChange}
+              placeholder="Last name"
+              autoCapitalize="words"
+              autoCorrect={false}
+              editable={!isLoading}
+              maxLength={50}
             error={lastNameError || undefined}
             containerStyle={styles.inputContainer}
           />
