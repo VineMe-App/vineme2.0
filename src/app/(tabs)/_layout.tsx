@@ -60,9 +60,9 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   // Nudge bottom padding slightly to avoid marginal cutoff on Android
   const androidBottomPadding = Math.max(insets.bottom + 4, 12);
-  const tabBarHeight =
-    Platform.OS === 'ios' ? 85 : 56 + androidBottomPadding;
-  const headerHeight = Platform.OS === 'ios' ? 60 + insets.top : 56 + insets.top;
+  const tabBarHeight = Platform.OS === 'ios' ? 85 : 56 + androidBottomPadding;
+  const headerHeight =
+    Platform.OS === 'ios' ? 60 + insets.top : 56 + insets.top;
 
   return (
     <Tabs
@@ -77,28 +77,38 @@ export default function TabLayout() {
           height: tabBarHeight,
           justifyContent: 'space-around',
           position: 'absolute',
-          elevation: Platform.OS === 'android' ? 8 : 0,
-          shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
-          shadowOffset: {
-            width: 0,
-            height: -2,
-          },
-          shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
-          shadowRadius: 4,
+          // iOS shadow
+          ...(Platform.OS === 'ios' && {
+            shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
+            shadowOffset: {
+              width: 0,
+              height: -2,
+            },
+            shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
+            shadowRadius: 4,
+          }),
+          // Android elevation handled by tabBarBackground
+          elevation: Platform.OS === 'android' ? 0 : 0,
         },
         tabBarBackground: () => (
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 80 : 100}
-            tint={theme.name === 'dark' ? 'dark' : 'light'}
-            experimentalBlurMethod={
-              Platform.OS === 'android' ? 'dimezisBlurView' : undefined
-            }
+          <View
             style={{
               flex: 1,
-              backgroundColor:
-                theme.name === 'dark'
-                  ? 'rgba(30, 41, 59, 0.3)'
-                  : theme.colors.background.primary,
+              backgroundColor: theme.colors.background.secondary,
+              // iOS shadow
+              ...(Platform.OS === 'ios' && {
+                shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
+                shadowOffset: {
+                  width: 0,
+                  height: -2,
+                },
+                shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
+                shadowRadius: 4,
+              }),
+              // Android shadow - elevation is the only property that works on Android
+              ...(Platform.OS === 'android' && {
+                elevation: 16, // Higher elevation for a more pronounced shadow
+              }),
             }}
           />
         ),
