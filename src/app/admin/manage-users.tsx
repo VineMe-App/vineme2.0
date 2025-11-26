@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Alert,
   TouchableOpacity,
   Platform,
 } from 'react-native';
