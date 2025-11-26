@@ -653,11 +653,12 @@ export const triggerGroupRequestSubmittedNotification = async (
   data: NotificationTriggerData['groupRequestSubmitted']
 ): Promise<void> => {
   try {
-    // Get all church admins
+    // Get all church admins, for that service
     const { data: admins, error } = await supabase
       .from('users')
       .select('id, name')
       .eq('church_id', data.churchId)
+      .eq('service_id', data.serviceId)
       .contains('roles', ['church_admin']);
 
     if (error) {
