@@ -58,6 +58,7 @@ export interface NotificationTriggerData {
     creatorId: string;
     creatorName: string;
     churchId: string;
+    serviceId: string;
   };
 
   groupRequestApproved: {

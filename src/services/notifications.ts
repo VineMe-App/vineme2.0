@@ -14,7 +14,6 @@ import type {
 // Configure notification behavior
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
     shouldShowBanner: true,
@@ -115,7 +114,7 @@ export const getPushToken = async (): Promise<string | null> => {
     // Optional env-based override so you can enable only when configured
     const envPushEnabled = process.env.EXPO_PUBLIC_ENABLE_PUSH === 'true';
 
-    if (
+    /* if (
       Platform.OS === 'android' &&
       !googleServicesConfigured &&
       !envPushEnabled
@@ -124,7 +123,7 @@ export const getPushToken = async (): Promise<string | null> => {
         '[Notifications] Android push not configured (no google-services.json). Skipping token fetch.'
       );
       return null;
-    }
+    } */
 
     // On development builds, projectId must be provided explicitly
     const projectId =
@@ -653,11 +652,12 @@ export const triggerGroupRequestSubmittedNotification = async (
   data: NotificationTriggerData['groupRequestSubmitted']
 ): Promise<void> => {
   try {
-    // Get all church admins
+    // Get all church admins, for that service
     const { data: admins, error } = await supabase
       .from('users')
       .select('id, name')
       .eq('church_id', data.churchId)
+      .eq('service_id', data.serviceId)
       .contains('roles', ['church_admin']);
 
     if (error) {
