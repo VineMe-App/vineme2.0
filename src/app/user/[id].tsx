@@ -55,8 +55,15 @@ export default function OtherUserProfileScreen() {
   const visibleMemberships = useMemo(() => {
     if (!memberships || memberships.length === 0) return [];
 
-    // If viewing own profile, show all groups
-    if (isSelf) return memberships;
+    // Filter to only show active memberships in active groups
+    // (gm.status = 'active' AND g.status = 'approved')
+    const activeInActiveGroups = memberships.filter(
+      (m: any) =>
+        m.status === 'active' && m.group?.status === 'approved'
+    );
+
+    // If viewing own profile, show all active memberships in active groups
+    if (isSelf) return activeInActiveGroups;
 
     // Check if viewer is admin or clergy (church_admin or superadmin)
     const isViewerAdmin =
@@ -67,13 +74,13 @@ export default function OtherUserProfileScreen() {
     const isFriend =
       friendshipStatusQuery.data?.status === 'accepted';
 
-    // If viewer is admin/clergy or friend, show all groups
+    // If viewer is admin/clergy or friend, show all active memberships in active groups
     if (isViewerAdmin || isFriend) {
-      return memberships;
+      return activeInActiveGroups;
     }
 
     // Otherwise, only show groups where the profile owner is a leader
-    return memberships.filter(
+    return activeInActiveGroups.filter(
       (m: any) => m.role === 'leader' || m.role === 'admin'
     );
   }, [
@@ -282,9 +289,6 @@ export default function OtherUserProfileScreen() {
               <Text style={styles.sectionTitle}>Profile Information</Text>
               {profile.church?.name ? (
                 <InfoRow label="Church" value={profile.church.name} />
-              ) : null}
-              {profile.service?.name ? (
-                <InfoRow label="Service" value={profile.service.name} />
               ) : null}
               <InfoRow
                 label="Member Since"
