@@ -114,7 +114,7 @@ export const getPushToken = async (): Promise<string | null> => {
     // Optional env-based override so you can enable only when configured
     const envPushEnabled = process.env.EXPO_PUBLIC_ENABLE_PUSH === 'true';
 
-    /* if (
+    if (
       Platform.OS === 'android' &&
       !googleServicesConfigured &&
       !envPushEnabled
@@ -123,7 +123,7 @@ export const getPushToken = async (): Promise<string | null> => {
         '[Notifications] Android push not configured (no google-services.json). Skipping token fetch.'
       );
       return null;
-    } */
+    }
 
     // On development builds, projectId must be provided explicitly
     const projectId =
