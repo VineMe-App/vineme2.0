@@ -13,7 +13,7 @@ export default function EmailStep({
   canGoBack,
   isLoading,
 }: OnboardingStepProps) {
-  const { user, linkEmail } = useAuthStore();
+  const { user, linkEmail, updateUserProfile } = useAuthStore();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [newsletterOptIn, setNewsletterOptIn] = useState(true);
@@ -54,27 +54,56 @@ export default function EmailStep({
   };
 
   const handleNext = async () => {
-    // TEMPORARILY: Skip email validation and email linking - just proceed to next step
-    // This disables SendGrid email sending during onboarding
     const trimmedEmail = email.trim();
     
-    // Only proceed if email is provided (basic check, no format validation)
-    if (!trimmedEmail) {
-      setError('Email is required');
+    // Validate email format
+    const validationError = validateEmail(trimmedEmail);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    // TEMPORARILY: Skip all email linking/verification to prevent SendGrid emails
-    // Just proceed to the next step without calling linkEmail
     setError(null);
-    onNext({});
-    
-    // Note: Marketing preference and email linking will need to be handled later
-    // when this temporary bypass is removed
+
+    // Check if email matches the already linked user email
+    // If so, skip linkEmail and just update marketing preference
+    if (user?.email && trimmedEmail.toLowerCase() === user.email.toLowerCase()) {
+      // Email already matches, just update marketing preference if needed
+      const success = await updateUserProfile({
+        marketing_opt_in: newsletterOptIn,
+      });
+      
+      if (!success) {
+        // Get error from auth store if available
+        const { error: authError } = useAuthStore.getState();
+        setError(authError || 'Failed to update marketing preference. Please try again.');
+        return;
+      }
+      
+      // Marketing preference updated successfully, proceed to next step
+      onNext({});
+      return;
+    }
+
+    // Email is different or no email is linked, proceed with linking
+    try {
+      const result = await linkEmail(trimmedEmail, {
+        marketingOptIn: newsletterOptIn,
+      });
+
+      if (!result.success) {
+        setError(result.error || 'Failed to link email');
+        return;
+      }
+
+      // Email linking successful, proceed to next step
+      onNext({});
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to link email');
+    }
   };
 
-  // TEMPORARILY: Only check if email is empty, not validation
-  const disableContinue = isLoading || !email.trim();
+  const disableContinue = isLoading || !email.trim() || !!validateEmail(email.trim());
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
