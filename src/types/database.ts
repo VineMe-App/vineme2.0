@@ -15,6 +15,9 @@ export interface User {
   bio?: string;
   marketing_opt_in?: boolean;
   cannot_find_group?: boolean;
+  cannot_find_group_requested_at?: string;
+  cannot_find_group_contacted_at?: string;
+  cannot_find_group_resolved_at?: string;
   roles: string[];
   newcomer?: boolean;
   onboarding_complete?: boolean;
