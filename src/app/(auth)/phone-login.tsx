@@ -5,19 +5,17 @@ import {
   TextInput,
   Alert,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
+import { AuthHeroLogo } from '@/components/auth/AuthHeroLogo';
 
 type AuthMethod = 'phone' | 'email' | null;
 type Step = 'enter-credentials' | 'enter-code';
@@ -142,10 +140,12 @@ export default function PhoneLoginScreen() {
   const renderEnterCredentialsStep = () => (
     <View style={styles.screen}>
       <View style={styles.body}>
-        <AuthHero
+        <AuthHeroLogo
           title="Sign in"
           subtitle="Enter your phone number to get started"
-          containerStyle={styles.heroSpacing}
+          subtitleFontSize={18}
+          subtitleLetterSpacing={-0.36}
+          subtitleMaxWidth={313}
         />
 
         <View style={styles.inputSection}>
@@ -179,8 +179,7 @@ export default function PhoneLoginScreen() {
               placeholderTextColor="#939393"
               autoCapitalize="none"
               autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
+              blurOnSubmit={false}
               editable={!isLoading}
               accessibilityLabel="Phone number"
             />
@@ -188,7 +187,7 @@ export default function PhoneLoginScreen() {
 
           {/* Or Divider */}
           <View style={styles.orContainer}>
-            <Text variant="body" color="secondary" style={styles.orText}>
+            <Text style={styles.orText}>
               or
             </Text>
           </View>
@@ -204,8 +203,7 @@ export default function PhoneLoginScreen() {
               placeholderTextColor="#939393"
               autoCapitalize="none"
               autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
+              blurOnSubmit={false}
               editable={!isLoading}
               accessibilityLabel="Email address"
             />
@@ -216,10 +214,12 @@ export default function PhoneLoginScreen() {
       <View style={styles.footer}>
         <View style={styles.actions}>
           <AuthButton
-            title="Submit"
+            title="Sign in"
             onPress={handleSubmit}
             disabled={!canSubmit}
             loading={isLoading}
+            fullWidth={false}
+            style={styles.signInButton}
           />
         </View>
         <TouchableOpacity
@@ -227,7 +227,7 @@ export default function PhoneLoginScreen() {
           accessibilityRole="link"
           style={styles.signUpLink}
         >
-          <Text variant="body" style={styles.signUpText}>
+          <Text style={styles.signUpText}>
             Don't have an account? <Text style={styles.signUpLinkText}>Sign up</Text>
           </Text>
         </TouchableOpacity>
@@ -238,9 +238,10 @@ export default function PhoneLoginScreen() {
   const renderEnterCodeStep = () => (
     <View style={styles.screen}>
       <View style={styles.body}>
-        <AuthHero
+        <AuthHeroLogo
           subtitle={`Sent to ${emailOrPhone}`}
-          containerStyle={styles.heroSpacing}
+          subtitleMaxWidth={326}
+          subtitleStyle={{ marginTop: 32 }}
         />
 
         <View style={styles.otpSection}>
@@ -252,12 +253,13 @@ export default function PhoneLoginScreen() {
         </View>
       </View>
       <View style={styles.footer}>
-        <View style={styles.footerSpacer} />
         <AuthButton
           title="Verify"
           onPress={handleVerify}
           loading={isLoading}
           disabled={code.length !== 6}
+          fullWidth={false}
+          style={styles.signInButton}
         />
         <TouchableOpacity
           onPress={handleBackToCredentials}
@@ -273,7 +275,7 @@ export default function PhoneLoginScreen() {
           disabled={isLoading}
           accessibilityRole="button"
         >
-          <Text variant="body" weight="semiBold" style={styles.resendText}>
+          <Text style={styles.resendText}>
             Didn't receive a code? <Text style={styles.resendLink}>Resend</Text>
           </Text>
         </TouchableOpacity>
@@ -284,21 +286,16 @@ export default function PhoneLoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          step === 'enter-credentials' ? styles.primaryScroll : styles.secondaryScroll,
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            step === 'enter-credentials' ? styles.primaryScroll : styles.secondaryScroll,
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {step === 'enter-credentials' ? renderEnterCredentialsStep() : renderEnterCodeStep()}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {step === 'enter-credentials' ? renderEnterCredentialsStep() : renderEnterCodeStep()}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -308,14 +305,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  keyboardContainer: {
-    flex: 1,
-  },
   scrollContent: {
     flexGrow: 1,
   },
   primaryScroll: {
-    paddingHorizontal: 34,
+    paddingHorizontal: 32,
     paddingTop: 100,
     paddingBottom: 24,
   },
@@ -332,13 +326,10 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
-  heroSpacing: {
-    marginTop: 0,
-    marginBottom: 0,
-  },
   inputSection: {
     width: '100%',
     marginTop: 32,
+    alignItems: 'center',
   },
   otpSection: {
     width: '100%',
@@ -355,6 +346,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     height: 50,
+    width: 326,
+    alignSelf: 'center',
   },
   countryTrigger: {
     flexDirection: 'row',
@@ -368,7 +361,7 @@ const styles = StyleSheet.create({
   },
   countryCodeText: {
     fontSize: 18,
-    color: '#2C2235',
+    color: '#000000',
     fontWeight: '400',
   },
   phoneDivider: {
@@ -380,7 +373,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     fontSize: 18,
-    color: '#2C2235',
+    color: '#000000',
   },
   orContainer: {
     alignItems: 'center',
@@ -390,6 +383,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#2C2235',
     letterSpacing: -0.14,
+    lineHeight: 28,
   },
   emailField: {
     borderWidth: 2,
@@ -397,18 +391,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     height: 50,
+    width: 326,
+    alignSelf: 'center',
   },
   emailInput: {
     flex: 1,
     paddingHorizontal: 16,
-    fontSize: 14,
+    paddingVertical: 0,
+    fontSize: 16,
     color: '#2C2235',
-    letterSpacing: -0.28,
+    letterSpacing: -0.32,
+    fontWeight: '500', // Medium
   },
   resendText: {
+    fontSize: 14,
+    fontWeight: '400', // Regular
     color: '#2C2235',
-    marginTop: 32,
+    letterSpacing: -0.14,
+    lineHeight: 22,
     textAlign: 'center',
+    marginTop: 32,
+    includeFontPadding: false,
+    paddingVertical: 3,
   },
   resendLink: {
     color: '#1082FF',
@@ -419,20 +423,28 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     width: '100%',
-    paddingBottom: 12,
-    marginTop: 32,
+    paddingBottom: 90,
+    marginTop: -56,
   },
   actions: {
     width: '100%',
+    alignItems: 'center',
+  },
+  signInButton: {
+    width: 278,
   },
   signUpLink: {
     marginTop: 16,
   },
   signUpText: {
     fontSize: 14,
+    fontWeight: '400', // Regular
     color: '#2C2235',
     letterSpacing: -0.14,
+    lineHeight: 22,
     textAlign: 'center',
+    includeFontPadding: false,
+    paddingVertical: 3,
   },
   signUpLinkText: {
     color: '#1082FF',

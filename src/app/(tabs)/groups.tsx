@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Keyboard,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -56,8 +57,39 @@ export default function GroupsScreen() {
   const { filters, setSearchQuery } = useGroupFiltersStore();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Calculate tab bar height to position search bar correctly (no gap above tab bar)
+  const androidBottomPadding = Math.max(insets.bottom + 4, 12);
+  const tabBarHeight = Platform.OS === 'ios' ? 100 : 56 + androidBottomPadding;
+  const searchBarHeight = 50; // Search bar height
+  
+  // Keyboard listeners to adjust search bar position
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
+
+  // Position search bar: above keyboard when open, otherwise above tab bar
+  const searchBarBottom = keyboardHeight > 0 
+    ? keyboardHeight + 8 // 8px spacing above keyboard
+    : tabBarHeight; // Above tab bar when keyboard is closed
   const friendsQuery = useFriends(userProfile?.id);
-  const [showSearch, setShowSearch] = useState(false);
   const [isLocationSearchMode, setIsLocationSearchMode] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -88,21 +120,16 @@ export default function GroupsScreen() {
     setCurrentView(view);
     if (view === 'map') {
       setShowSortOptions(false);
-      // Keep search bar visible if sorting by distance and location is set
-      if (sortBy === 'distance' && distanceOrigin) {
-        setShowSearch(true);
-      }
     }
   };
 
-  // Close location search bar when switching away from distance sorting
+  // Reset location search mode when switching away from distance sorting
   useEffect(() => {
-    if (isLocationSearchMode && sortBy !== 'distance' && showSearch) {
-      setShowSearch(false);
+    if (isLocationSearchMode && sortBy !== 'distance') {
       setIsLocationSearchMode(false);
       setLocationSearchError(null);
     }
-  }, [sortBy, isLocationSearchMode, showSearch]);
+  }, [sortBy, isLocationSearchMode]);
 
   const isChurchAdmin = userProfile?.roles?.includes('church_admin') ?? false;
 
@@ -421,10 +448,6 @@ export default function GroupsScreen() {
           address: origin.address || 'Selected Location',
           coordinates: origin.coordinates,
         });
-        // Ensure search bar stays visible and shows the updated location
-        if (sortBy === 'distance') {
-          setShowSearch(true);
-        }
       }}
     />
   );
@@ -492,47 +515,6 @@ export default function GroupsScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.figmaIconButton}
-            onPress={() => {
-              if (showSearch) {
-                // If search bar is already open
-                if (isLocationSearchMode) {
-                  // If in location mode, switch to group search mode (don't close)
-                  setIsLocationSearchMode(false);
-                  setLocationSearchError(null);
-                } else {
-                  // If already in group search mode, close the search bar
-                  setShowSearch(false);
-                }
-              } else {
-                // If search bar is closed, open it in group search mode
-                setIsLocationSearchMode(false);
-                setLocationSearchError(null);
-                setShowSearch(true);
-              }
-            }}
-            accessibilityLabel="Search groups"
-          >
-            <View
-              style={[
-                styles.iconButtonInner,
-                (showSearch && !isLocationSearchMode) || filters.searchQuery.length > 0
-                  ? styles.iconButtonInnerActive
-                  : null,
-              ]}
-            >
-              <Ionicons
-                name="search-outline"
-                size={16}
-                color={
-                  (showSearch && !isLocationSearchMode) || filters.searchQuery.length > 0
-                    ? '#FFFFFF'
-                    : '#2C2235'
-                }
-              />
-            </View>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.figmaIconButton}
             onPress={() =>
@@ -610,23 +592,18 @@ export default function GroupsScreen() {
           <TouchableOpacity
             style={styles.figmaIconButton}
             onPress={() => {
-              if (showSearch && isLocationSearchMode) {
-                // If search bar is already open in location mode, close it and clear distance sorting
-                setShowSearch(false);
+              if (sortBy === 'distance') {
+                // If already sorting by distance, clear it and go back to alphabetical
+                setSortBy('alphabetical');
                 setIsLocationSearchMode(false);
                 setLocationSearchError(null);
-                // Clear distance sorting - go back to alphabetical
-                setSortBy('alphabetical');
-                // Clear distance origin
                 setDistanceOrigin(null);
               } else {
-                // If search bar is not shown, open it in location mode
+                // Switch to location search mode
                 setIsLocationSearchMode(true);
                 // Set sort to distance (makes arrow pink)
                 setSortBy('distance');
-                // Open search bar in location mode
-                setShowSearch(true);
-                // Clear location search errors when opening
+                // Clear location search errors
                 setLocationSearchError(null);
               }
             }}
@@ -659,58 +636,6 @@ export default function GroupsScreen() {
         </View>
       </View>
 
-      {showSearch && (!isLocationSearchMode || sortBy === 'distance') && (
-        <SearchBar
-          key={isLocationSearchMode ? 'location-search' : 'group-search'}
-          placeholder={
-            isLocationSearchMode ? 'Enter search location' : 'Search groups...'
-          }
-          value={isLocationSearchMode ? (distanceOrigin?.address || '') : undefined}
-          onLocationSearch={
-            isLocationSearchMode
-              ? async (query: string) => {
-                  try {
-                    // Clear any previous errors
-                    setLocationSearchError(null);
-                    // Geocode the search query to get coordinates
-                    const coordinates =
-                      await locationService.geocodeAddress(query);
-                    if (coordinates) {
-                      // Get reverse geocode to get a formatted address
-                      const address =
-                        await locationService.reverseGeocode(coordinates);
-                      setDistanceOrigin({
-                        address: address?.formattedAddress || query,
-                        coordinates,
-                      });
-                      // Don't clear search query - filters should remain when sorting by location
-                      // Clear error on success
-                      setLocationSearchError(null);
-                      // Keep search bar open so user can see/change the location
-                    } else {
-                      // Set error state instead of using global error handler
-                      setLocationSearchError('Location not found');
-                    }
-                  } catch (error) {
-                    // Set error state instead of using global error handler
-                    setLocationSearchError('Location not found');
-                  }
-                }
-              : undefined
-          }
-          onLocationClear={
-            isLocationSearchMode
-              ? () => {
-                  setDistanceOrigin(null);
-                  // Don't clear search query - filters should remain when clearing location
-                  setLocationSearchError(null);
-                }
-              : undefined
-          }
-          error={locationSearchError}
-          onErrorChange={setLocationSearchError}
-        />
-      )}
 
       {showSortOptions && (
         <View
@@ -727,15 +652,14 @@ export default function GroupsScreen() {
             onPress={() => {
               setSortBy('alphabetical');
               setShowSortOptions(false);
-              // Clear distance origin and close search bar when switching away from distance sorting
+              // Clear distance origin when switching away from distance sorting
               if (distanceOrigin) {
                 setDistanceOrigin(null);
               }
-              // Close search bar if it's open in location mode
+              // Reset location search mode
               if (isLocationSearchMode) {
                 setIsLocationSearchMode(false);
                 setLocationSearchError(null);
-                setShowSearch(false);
               }
             }}
           >
@@ -771,9 +695,8 @@ export default function GroupsScreen() {
               }
               setSortBy('distance');
               setShowSortOptions(false);
-              // Switch to location search mode and open search bar
+              // Switch to location search mode
               setIsLocationSearchMode(true);
-              setShowSearch(true);
               setLocationSearchError(null);
             }}
           >
@@ -804,15 +727,14 @@ export default function GroupsScreen() {
             onPress={() => {
               setSortBy('friends');
               setShowSortOptions(false);
-              // Clear distance origin and close search bar when switching away from distance sorting
+              // Clear distance origin when switching away from distance sorting
               if (distanceOrigin) {
                 setDistanceOrigin(null);
               }
-              // Close search bar if it's open in location mode
+              // Reset location search mode
               if (isLocationSearchMode) {
                 setIsLocationSearchMode(false);
                 setLocationSearchError(null);
-                setShowSearch(false);
               }
             }}
           >
@@ -838,6 +760,57 @@ export default function GroupsScreen() {
 
       <View style={styles.contentContainer}>
         {currentView === 'list' ? renderListView() : renderMapView()}
+      </View>
+
+      {/* Search Bar - Always visible at bottom */}
+      <View style={[styles.searchBarContainer, { bottom: searchBarBottom }]}>
+        <SearchBar
+          key={sortBy === 'distance' ? 'location-search' : 'group-search'}
+          placeholder={
+            sortBy === 'distance' ? 'Enter search location' : 'Search by keyword'
+          }
+          value={sortBy === 'distance' ? (distanceOrigin?.address || '') : undefined}
+          onLocationSearch={
+            sortBy === 'distance'
+              ? async (query: string) => {
+                  try {
+                    // Clear any previous errors
+                    setLocationSearchError(null);
+                    // Geocode the search query to get coordinates
+                    const coordinates =
+                      await locationService.geocodeAddress(query);
+                    if (coordinates) {
+                      // Get reverse geocode to get a formatted address
+                      const address =
+                        await locationService.reverseGeocode(coordinates);
+                      setDistanceOrigin({
+                        address: address?.formattedAddress || query,
+                        coordinates,
+                      });
+                      // Clear error on success
+                      setLocationSearchError(null);
+                    } else {
+                      // Set error state instead of using global error handler
+                      setLocationSearchError('Location not found');
+                    }
+                  } catch (error) {
+                    // Set error state instead of using global error handler
+                    setLocationSearchError('Location not found');
+                  }
+                }
+              : undefined
+          }
+          onLocationClear={
+            sortBy === 'distance'
+              ? () => {
+                  setDistanceOrigin(null);
+                  setLocationSearchError(null);
+                }
+              : undefined
+          }
+          error={locationSearchError}
+          onErrorChange={setLocationSearchError}
+        />
       </View>
 
       <Modal
@@ -1092,7 +1065,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    paddingBottom: 16,
+    paddingBottom: 90, // Space for bottom search bar
     paddingHorizontal: 0,
   },
   listViewContainer: {
@@ -1222,5 +1195,11 @@ const styles = StyleSheet.create({
   infoModalBullet: {
     color: '#374151',
     marginBottom: 8,
+  },
+  searchBarContainer: {
+    position: 'absolute',
+    left: 26,
+    right: 26,
+    zIndex: 10,
   },
 });

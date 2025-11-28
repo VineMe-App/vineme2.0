@@ -451,47 +451,6 @@ export default function ChurchStep({
 
           <View style={styles.listFooter}>
             <View style={styles.listFooter}>
-              <View style={styles.missingServiceContainer}>
-                <TouchableOpacity
-                  style={styles.missingServiceButton}
-                  onPress={() => handleOpenMissingServiceModal('service')}
-                  disabled={missingServiceSubmitting}
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.missingServiceTextGroup}>
-                    <AppText
-                      variant="body"
-                      weight="semiBold"
-                      style={styles.missingServiceTitle}
-                    >
-                      Can't find your service?
-                    </AppText>
-                    <AppText
-                      variant="bodySmall"
-                      color="secondary"
-                      style={styles.missingServiceSubtitle}
-                    >
-                      Tell us more about the service you attend so we can add it to VineMe.
-                    </AppText>
-                  </View>
-                  <View style={styles.missingServiceIcon}>
-                    <Text style={styles.missingServiceIconText}>+</Text>
-                  </View>
-                </TouchableOpacity>
-                {missingServiceSubmitted &&
-                  missingServiceLastMode === 'service' && (
-                    <Text style={styles.missingServiceNotice}>
-                      Thanks! We'll reach out soon about adding that service.
-                    </Text>
-                  )}
-                {missingServiceRequestError &&
-                  missingServiceLastMode === 'service' &&
-                  !showMissingServiceModal && (
-                    <Text style={styles.serviceInlineError}>
-                      {missingServiceRequestError}
-                    </Text>
-                  )}
-              </View>
               <TouchableOpacity
                 style={styles.missingChurchButton}
                 onPress={() => handleOpenMissingServiceModal('church')}
@@ -695,7 +654,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#edf2ff',
     paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingTop: 16,
     paddingBottom: 16,
   },
   serviceLabel: {
@@ -783,43 +742,6 @@ const styles = StyleSheet.create({
     color: '#2C2235',
     lineHeight: 18,
   },
-  otherServiceCard: {
-    marginTop: 16,
-    borderWidth: 2,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    gap: 12,
-  },
-  otherServiceTextGroup: {
-    flex: 1,
-  },
-  otherServiceTitle: {
-    color: '#2C2235',
-    marginBottom: 8,
-  },
-  otherServiceSubtitle: {
-    color: '#2C2235',
-    lineHeight: 20,
-  },
-  otherServiceIcon: {
-    width: 37,
-    height: 37,
-    borderRadius: 18.5,
-    backgroundColor: '#2C2235',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  otherServiceIconText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
-    lineHeight: 20,
-  },
   footer: {
     alignItems: 'center',
     width: '100%',
@@ -865,10 +787,6 @@ const styles = StyleSheet.create({
   listFooter: {
     marginTop: 12,
     gap: 16,
-  },
-  
-  missingServiceContainer: {
-    gap: 8,
   },
   missingServiceButton: {
     borderWidth: 1.5,
