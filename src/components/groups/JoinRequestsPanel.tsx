@@ -59,12 +59,9 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
     joinRequests?.filter((request) => request.status === 'pending') || [];
 
   const sortedNewcomers = [...pendingRequests].sort((a, b) => {
-    const statusA = a.journey_status ?? 0;
-    const statusB = b.journey_status ?? 0;
-    if (statusA !== statusB) return statusA - statusB;
-    const dateA = a.joined_at ? new Date(a.joined_at).getTime() : 0;
-    const dateB = b.joined_at ? new Date(b.joined_at).getTime() : 0;
-    return dateB - dateA;
+    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return dateB - dateA; // Newest first
   });
 
   return (
