@@ -256,6 +256,25 @@ export class AdminServiceWrapper {
     );
   }
 
+  async updateUserGroupHelpStatus(
+    userId: string,
+    updates: {
+      cannot_find_group?: boolean;
+      cannot_find_group_contacted_at?: string | null;
+      cannot_find_group_resolved_at?: string | null;
+    },
+    options: ServiceWrapperOptions = {}
+  ): Promise<AdminServiceResponse<boolean>> {
+    return this.executeWithErrorHandling(
+      () => userAdminService.updateUserGroupHelpStatus(userId, updates),
+      'updateUserGroupHelpStatus',
+      {
+        ...options,
+        context: { userId, ...options.context },
+      }
+    );
+  }
+
   /**
    * Batch approve multiple groups
    */

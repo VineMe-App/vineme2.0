@@ -67,6 +67,30 @@ export function AdminDashboardSummary({
   const { unreadNotifications = [], isLoading: isLoadingNotifications } =
     useEnhancedNotifications(user?.id);
 
+  const { data: needsHelpCount = 0 } = useQuery({
+    queryKey: ['admin', 'needs-help-count', userProfile?.service_id],
+    queryFn: async () => {
+      if (!userProfile?.service_id) {
+        return 0;
+      }
+
+      const { count, error } = await supabase
+        .from('users')
+        .select('id', { head: true, count: 'exact' })
+        .eq('service_id', userProfile.service_id)
+        .eq('cannot_find_group', true);
+
+      if (error) {
+        console.warn('Failed to fetch needs-help count:', error);
+        return 0;
+      }
+
+      return count || 0;
+    },
+    enabled: !!userProfile?.service_id,
+    refetchInterval: 60000,
+  });
+
   // Fetch stats with refetch functions
   const {
     data: newcomersStats,
@@ -85,8 +109,9 @@ export function AdminDashboardSummary({
   } = useRequestsStats();
 
   const notificationCounts = {
-    group_requests: groupsStats?.pending || 0, // Show actual count of groups pending approval
+    group_requests: groupsStats?.pending || 0,
     join_requests: requestsStats?.outstandingRequests || 0,
+    needs_help: needsHelpCount,
   };
 
   const isLoading =
@@ -220,6 +245,13 @@ export function AdminDashboardSummary({
             <Ionicons name="people-outline" size={20} color="#007AFF" />
             <Text style={styles.buttonText}>User Management</Text>
           </View>
+          {notificationCounts.needs_help > 0 && (
+            <NotificationBadge
+              count={notificationCounts.needs_help}
+              size="small"
+              color="#f97316"
+            />
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
