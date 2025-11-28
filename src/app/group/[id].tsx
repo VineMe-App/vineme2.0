@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GroupDetail } from '../../components/groups';
 import { useGroup, useGroupMembership } from '../../hooks/useGroups';
 import { useAuthStore } from '../../stores/auth';
+import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import { shareGroup } from '../../utils/deepLinking';
 
 export default function GroupDetailScreen() {
@@ -34,6 +35,8 @@ export default function GroupDetailScreen() {
 
   const { data: membershipData, refetch: refetchMembership } =
     useGroupMembership(id, userProfile?.id);
+
+  const { refetch: refetchUserJoinRequests } = useUserJoinRequests(userProfile?.id);
 
   // Check if user can manage the group (is a leader)
   const canManageGroup = React.useMemo(() => {
@@ -153,6 +156,7 @@ export default function GroupDetailScreen() {
     // Refetch both group data and membership status
     refetchGroup();
     refetchMembership();
+    refetchUserJoinRequests();
   };
 
   const handleShare = () => {
