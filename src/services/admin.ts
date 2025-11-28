@@ -1282,6 +1282,111 @@ export class UserAdminService {
       };
     }
   }
+
+  async updateUserGroupHelpStatus(
+    userId: string,
+    updates: {
+      cannot_find_group?: boolean;
+      cannot_find_group_contacted_at?: string | null;
+      cannot_find_group_resolved_at?: string | null;
+    }
+  ): Promise<AdminServiceResponse<boolean>> {
+    try {
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_users'
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church users'
+          ),
+        };
+      }
+
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !authUser) {
+        return {
+          data: null,
+          error: new Error('User not authenticated'),
+        };
+      }
+
+      const { data: adminProfile, error: adminProfileError } = await supabase
+        .from('users')
+        .select('church_id')
+        .eq('id', authUser.id)
+        .single();
+
+      if (adminProfileError || !adminProfile?.church_id) {
+        return {
+          data: null,
+          error: new Error('Unable to determine admin church'),
+        };
+      }
+
+      const { data: targetUser, error: targetUserError } = await supabase
+        .from('users')
+        .select('church_id')
+        .eq('id', userId)
+        .single();
+
+      if (targetUserError || !targetUser) {
+        return {
+          data: null,
+          error: new Error('Target user not found'),
+        };
+      }
+
+      if (targetUser.church_id !== adminProfile.church_id) {
+        return {
+          data: null,
+          error: new Error('Cannot modify users from other churches'),
+        };
+      }
+
+      const payload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (typeof updates.cannot_find_group === 'boolean') {
+        payload.cannot_find_group = updates.cannot_find_group;
+      }
+
+      if (updates.cannot_find_group_contacted_at) {
+        payload.cannot_find_group_contacted_at =
+          updates.cannot_find_group_contacted_at;
+      }
+
+      if (updates.cannot_find_group_resolved_at) {
+        payload.cannot_find_group_resolved_at =
+          updates.cannot_find_group_resolved_at;
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .update(payload)
+        .eq('id', userId);
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: true, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to update user status'),
+      };
+    }
+  }
 }
 
 // Export singleton instances

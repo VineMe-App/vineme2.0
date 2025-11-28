@@ -19,6 +19,8 @@ import { Badge } from '@/components/ui/Badge';
 import { getDisplayName, getFullName } from '@/utils/name';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { supabase } from '@/services/supabase';
+import { adminServiceWrapper } from '@/services/adminServiceWrapper';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UserManagementCardProps {
   user: UserWithGroupStatus;
@@ -26,6 +28,7 @@ interface UserManagementCardProps {
 }
 
 export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
+  const queryClient = useQueryClient();
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [contactInfo, setContactInfo] = useState<{
     email?: string;
@@ -93,15 +96,18 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
 
   const handleMarkContacted = async () => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
+      const result = await adminServiceWrapper.updateUserGroupHelpStatus(
+        user.id,
+        {
           cannot_find_group_contacted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
+        },
+        { context: { action: 'markContacted', userId: user.id } }
+      );
 
-      if (error) throw error;
+      if (result.error) throw result.error;
+
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-summary'] });
 
       Alert.alert('Success', 'User marked as contacted');
     } catch (error) {
@@ -112,16 +118,19 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
 
   const handleMarkResolved = async () => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
+      const result = await adminServiceWrapper.updateUserGroupHelpStatus(
+        user.id,
+        {
           cannot_find_group: false,
           cannot_find_group_resolved_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
+        },
+        { context: { action: 'markResolved', userId: user.id } }
+      );
 
-      if (error) throw error;
+      if (result.error) throw result.error;
+
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-summary'] });
 
       Alert.alert('Success', 'User marked as resolved');
     } catch (error) {
