@@ -141,7 +141,9 @@ export default function NotificationsScreen() {
     />
   );
 
-  const listEmpty = (
+  const shouldShowEmptyState = !isLoading && notifications.length === 0;
+
+  const listEmpty = shouldShowEmptyState ? (
     <View style={styles.emptyContainer}>
       <EmptyState
         title="No notifications yet"
@@ -149,7 +151,7 @@ export default function NotificationsScreen() {
         icon={null}
       />
     </View>
-  );
+  ) : null;
 
   const listFooter = useMemo(() => {
     if (isLoadingMore) {
@@ -201,7 +203,7 @@ export default function NotificationsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={
-            notifications.length === 0 ? styles.emptyContent : styles.listContent
+            shouldShowEmptyState ? styles.emptyContent : styles.listContent
           }
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
