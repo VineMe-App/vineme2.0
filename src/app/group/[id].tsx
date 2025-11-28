@@ -35,7 +35,7 @@ export default function GroupDetailScreen() {
   const { data: membershipData, refetch: refetchMembership } =
     useGroupMembership(id, userProfile?.id);
 
-  // Check if user can manage the group (is a leader or church admin for the service)
+  // Check if user can manage the group (is a leader)
   const canManageGroup = React.useMemo(() => {
     if (!group || !userProfile) return false;
 
@@ -43,14 +43,7 @@ export default function GroupDetailScreen() {
       membershipData?.membership?.role === 'leader' ||
       membershipData?.membership?.role === 'admin';
 
-    const isChurchAdminForService = Boolean(
-      userProfile.roles?.includes('church_admin') &&
-        userProfile.service_id &&
-        group.service_id &&
-        userProfile.service_id === group.service_id
-    );
-
-    return Boolean(isLeader || isChurchAdminForService);
+    return Boolean(isLeader);
   }, [group, userProfile, membershipData]);
 
   // Update the header title and add share action to header when available
