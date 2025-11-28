@@ -69,9 +69,18 @@ export default function EmailStep({
     // If so, skip linkEmail and just update marketing preference
     if (user?.email && trimmedEmail.toLowerCase() === user.email.toLowerCase()) {
       // Email already matches, just update marketing preference if needed
-      await updateUserProfile({
+      const success = await updateUserProfile({
         marketing_opt_in: newsletterOptIn,
       });
+      
+      if (!success) {
+        // Get error from auth store if available
+        const { error: authError } = useAuthStore.getState();
+        setError(authError || 'Failed to update marketing preference. Please try again.');
+        return;
+      }
+      
+      // Marketing preference updated successfully, proceed to next step
       onNext({});
       return;
     }
