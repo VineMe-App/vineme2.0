@@ -88,12 +88,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <View
         style={[styles.inputContainer, error && styles.inputContainerError]}
       >
-        <Ionicons
-          name="search-outline"
-          size={16}
-          color={error ? '#ff4444' : '#666'}
-          style={styles.leadingIcon}
-        />
         <TextInput
           style={styles.input}
           placeholder={placeholder}
@@ -101,9 +95,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onChangeText={handleTextChange}
           onSubmitEditing={handleSubmit}
           returnKeyType="search"
-          placeholderTextColor="#999"
+          placeholderTextColor="#939393"
         />
-        {localQuery.length > 0 && (
+        {localQuery.length > 0 ? (
           <TouchableOpacity
             style={styles.clearButton}
             onPress={handleClear}
@@ -112,9 +106,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <Ionicons
               name="close"
               size={16}
-              color={error ? '#ff4444' : '#999'}
+              color={error ? '#ff4444' : '#939393'}
             />
           </TouchableOpacity>
+        ) : (
+          <View style={styles.searchIconContainer}>
+            <Ionicons
+              name="search-outline"
+              size={24}
+              color="#1D1B20"
+            />
+          </View>
         )}
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -124,28 +126,48 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    width: '100%',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#F9F7F7',
+    paddingLeft: 20,
+    paddingRight: 12,
+    height: 50,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4, // Android shadow
   },
-  leadingIcon: { marginRight: 8 },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#1a1a1a',
-    paddingVertical: 4,
+    fontSize: 14,
+    color: '#2C2235',
+    paddingVertical: 0,
+    paddingRight: 8,
+    height: '100%',
+    fontFamily: 'Figtree-Regular',
+    lineHeight: 24,
   },
   clearButton: {
     padding: 4,
+    marginLeft: 8,
+  },
+  searchIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
   },
   inputContainerError: {
     borderColor: '#ff4444',

@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
-import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
+import { AuthHeroLogo } from '@/components/auth/AuthHeroLogo';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -13,9 +13,13 @@ export default function WelcomeScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={styles.content}>
         <View style={styles.body}>
-          <AuthHero
+          <AuthHeroLogo
+            logoSize={109}
             title="Welcome to VineMe"
             subtitle="Connect with your church community and grow together in faith."
+            titleMarginBottom={13}
+            subtitleMaxWidth={272}
+            subtitleLineHeight={26}
           />
         </View>
 
@@ -24,16 +28,18 @@ export default function WelcomeScreen() {
             title="Sign up"
             onPress={() => router.push('/(auth)/phone-signup')}
             style={styles.primaryButton}
+            fullWidth={false}
           />
           <AuthButton
             title="Sign in"
             variant="secondary"
             onPress={() => router.push('/(auth)/phone-login')}
             style={styles.secondaryButton}
+            fullWidth={false}
           />
         </View>
 
-        <Text variant="caption" color="secondary" align="center" style={styles.footerText}>
+        <Text style={styles.footerText}>
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
       </View>
@@ -49,27 +55,38 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 32,
-    paddingVertical: 24,
+    alignItems: 'center',
     justifyContent: 'space-between',
+    paddingBottom: 40,
+    paddingTop: 100,
   },
   body: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
   },
   actions: {
     width: '100%',
-    marginBottom: 32,
+    alignItems: 'center',
+    marginBottom: 56,
   },
   primaryButton: {
-    marginBottom: 16,
+    width: 278,
+    marginBottom: 8,
   },
   secondaryButton: {
+    width: 278,
     marginBottom: 0,
   },
   footerText: {
-    color: '#999',
-    marginBottom: 12,
-    lineHeight: 18,
+    fontSize: 14,
+    fontWeight: '400', // Regular
+    color: '#999999',
+    textAlign: 'center',
+    letterSpacing: -0.14,
+    lineHeight: 16,
+    maxWidth: 278,
+    includeFontPadding: false,
   },
 });

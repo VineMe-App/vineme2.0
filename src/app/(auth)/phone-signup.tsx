@@ -5,19 +5,16 @@ import {
   TextInput,
   Alert,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
-import { AuthSignInPrompt } from '@/components/auth/AuthSignInPrompt';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
+import { AuthHeroLogo } from '@/components/auth/AuthHeroLogo';
 
 export default function PhoneSignUpScreen() {
   const router = useRouter();
@@ -106,13 +103,14 @@ export default function PhoneSignUpScreen() {
 
   const displayPhone = fullPhone || `${countryCode}${sanitizedLocalNumber}`;
 
+
   const renderEnterPhoneStep = () => (
     <View style={styles.screen}>
       <View style={styles.body}>
-        <AuthHero
+        <AuthHeroLogo
           title="Create account"
           subtitle="Enter your phone number to get started"
-          containerStyle={styles.heroSpacing}
+          subtitleMaxWidth={326}
         />
 
         <View style={styles.inputSection}>
@@ -129,7 +127,7 @@ export default function PhoneSignUpScreen() {
                   accessibilityLabel="Select country code"
                 >
                   <Text style={styles.countryFlag}>{selected.flag}</Text>
-                  <Text weight="semiBold" style={styles.countryCodeText}>
+                  <Text style={styles.countryCodeText}>
                     {selected.code}
                   </Text>
                 </TouchableOpacity>
@@ -145,8 +143,7 @@ export default function PhoneSignUpScreen() {
               placeholderTextColor="#B4B4B4"
               autoCapitalize="none"
               autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleSendCode}
+              blurOnSubmit={false}
               editable={!isLoading}
               accessibilityLabel="Phone number"
             />
@@ -161,9 +158,18 @@ export default function PhoneSignUpScreen() {
             onPress={handleSendCode}
             disabled={!isPhoneValid}
             loading={isLoading}
+            fullWidth={false}
+            style={styles.signUpButton}
           />
         </View>
-        <AuthSignInPrompt />
+        <View style={styles.signInPrompt}>
+          <Text style={styles.signInPromptText}>
+            Already have an account?{' '}
+            <Text style={styles.signInLink} onPress={() => router.push('/(auth)/phone-login')}>
+              Sign in
+            </Text>
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -171,7 +177,11 @@ export default function PhoneSignUpScreen() {
   const renderEnterCodeStep = () => (
     <View style={styles.screen}>
       <View style={styles.body}>
-        <AuthHero subtitle={`Sent to ${displayPhone}`} containerStyle={styles.heroSpacing} />
+        <AuthHeroLogo
+          subtitle={`Sent to ${displayPhone}`}
+          subtitleMaxWidth={326}
+          subtitleStyle={{ marginTop: 32 }}
+        />
 
         <View style={styles.otpSection}>
           <TextInput
@@ -189,7 +199,7 @@ export default function PhoneSignUpScreen() {
             autoComplete="sms-otp"
             importantForAutofill="yes"
             inputMode="numeric"
-            returnKeyType="done"
+            blurOnSubmit={false}
           />
         </View>
       </View>
@@ -237,10 +247,6 @@ export default function PhoneSignUpScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
@@ -251,7 +257,6 @@ export default function PhoneSignUpScreen() {
         >
           {renderStep()}
         </ScrollView>
-      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -260,9 +265,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  keyboardContainer: {
-    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
@@ -291,6 +293,7 @@ const styles = StyleSheet.create({
   inputSection: {
     width: '100%',
     marginTop: 32,
+    alignItems: 'center',
   },
   otpSection: {
     width: '100%',
@@ -302,11 +305,13 @@ const styles = StyleSheet.create({
   phoneField: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#EAEAEA',
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     height: 50,
+    width: 326,
+    alignSelf: 'center',
   },
   countryTrigger: {
     flexDirection: 'row',
@@ -319,8 +324,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   countryCodeText: {
-    fontSize: 16,
-    color: '#2C2235',
+    fontSize: 18,
+    color: '#000000',
+    fontWeight: '400',
   },
   phoneDivider: {
     width: 1,
@@ -330,8 +336,8 @@ const styles = StyleSheet.create({
   phoneInput: {
     flex: 1,
     paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#2C2235',
+    fontSize: 18,
+    color: '#000000',
   },
   otpInput: {
     width: '100%',
@@ -368,7 +374,31 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     width: '100%',
-    paddingBottom: 12,
-    marginTop: 32,
+    paddingBottom: 90,
+    marginTop: -56,
+  },
+  actions: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  signUpButton: {
+    width: 278,
+  },
+  signInPrompt: {
+    marginTop: 28,
+    alignItems: 'center',
+  },
+  signInPromptText: {
+    fontSize: 14,
+    fontWeight: '400', // Regular
+    color: '#2C2235',
+    textAlign: 'center',
+    letterSpacing: -0.14,
+    lineHeight: 22,
+    includeFontPadding: false,
+    paddingVertical: 3,
+  },
+  signInLink: {
+    color: '#1082ff',
   },
 });
