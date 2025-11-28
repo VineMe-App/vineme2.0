@@ -149,13 +149,15 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
     color: '#2C2235',
     paddingVertical: 0,
     paddingRight: 8,
     height: '100%',
     fontFamily: 'Figtree-Regular',
-    lineHeight: 24,
+    lineHeight: 20,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   clearButton: {
     padding: 4,
