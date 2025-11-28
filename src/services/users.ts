@@ -23,6 +23,9 @@ export interface UpdateUserProfileData {
   church_id?: string;
   service_id?: string;
   cannot_find_group?: boolean;
+  cannot_find_group_requested_at?: string;
+  cannot_find_group_contacted_at?: string;
+  cannot_find_group_resolved_at?: string;
 }
 
 export interface UserServiceResponse<T = any> {
@@ -216,6 +219,15 @@ export class UserService {
         ...updates,
         updated_at: new Date().toISOString(),
       };
+
+      // Handle group help request timestamps
+      if (updates.cannot_find_group === true && payload.cannot_find_group !== false) {
+        // Setting cannot_find_group to true - set the requested timestamp
+        payload.cannot_find_group_requested_at = new Date().toISOString();
+      } else if (updates.cannot_find_group === false) {
+        // Clearing cannot_find_group - set resolved timestamp
+        payload.cannot_find_group_resolved_at = new Date().toISOString();
+      }
 
       const { data, error } = await supabase
         .from('users')

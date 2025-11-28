@@ -190,6 +190,7 @@ export class GroupCreationService {
           creatorId: creatorId,
           creatorName: getFullName(creator),
           churchId: groupData.church_id,
+          serviceId: groupData.service_id,
         });
       }
 

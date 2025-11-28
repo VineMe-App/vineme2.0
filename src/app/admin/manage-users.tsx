@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Alert,
   TouchableOpacity,
   Platform,
 } from 'react-native';
@@ -26,7 +25,7 @@ import { AdminPageLayout } from '@/components/admin/AdminHeader';
 
 export default function ManageUsersScreen() {
   const { userProfile } = useAuthStore();
-  const [filter, setFilter] = useState<'all' | 'connected' | 'unconnected'>(
+  const [filter, setFilter] = useState<'all' | 'connected' | 'unconnected' | 'needs_group_help'>(
     'all'
   );
 
@@ -101,6 +100,8 @@ export default function ManageUsersScreen() {
         return users.filter((u: any) => u.is_connected);
       case 'unconnected':
         return users.filter((u: any) => !u.is_connected);
+      case 'needs_group_help':
+        return users.filter((u: any) => u.cannot_find_group === true);
       default:
         return users;
     }
@@ -109,17 +110,14 @@ export default function ManageUsersScreen() {
   const allCount = users?.length || 0;
   const connectedCount = users?.filter((u: any) => u.is_connected).length || 0;
   const unconnectedCount = Math.max(0, allCount - connectedCount);
+  const needsGroupHelpCount = users?.filter((u: any) => u.cannot_find_group === true).length || 0;
 
   const handleRefresh = async () => {
     await Promise.all([refetch(), refetchSummary()]);
   };
 
   const handleUserPress = (userId: string) => {
-    console.log(`User profile view attempted for user ID: ${userId}`);
-    Alert.alert(
-      'Profile unavailable',
-      'Viewing user profiles from this screen is not available right now.'
-    );
+    router.push(`/user/${userId}`);
   };
 
   if (error) {
@@ -208,13 +206,32 @@ export default function ManageUsersScreen() {
                 Unconnected
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filter === 'needs_group_help' && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilter('needs_group_help')}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: filter === 'needs_group_help' }}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filter === 'needs_group_help' && styles.filterButtonTextActive,
+                ]}
+              >
+                Needs Help
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Counts indicator */}
           <View style={styles.countsRow}>
             <Text style={styles.countsText}>
               All: {allCount} • Connected: {connectedCount} • Unconnected:{' '}
-              {unconnectedCount}
+              {unconnectedCount} • Needs Help: {needsGroupHelpCount}
             </Text>
           </View>
 
@@ -250,12 +267,16 @@ export default function ManageUsersScreen() {
                       ? 'No users found'
                       : filter === 'connected'
                         ? 'No connected users found'
-                        : 'No unconnected users found'}
+                        : filter === 'unconnected'
+                          ? 'No unconnected users found'
+                          : 'No users needing group help found'}
                   </Text>
                   <Text style={styles.emptySubtext}>
                     {filter === 'unconnected'
                       ? 'All users are connected to groups!'
-                      : 'Users will appear here as they join your church.'}
+                      : filter === 'needs_group_help'
+                        ? 'All users have found suitable groups!'
+                        : 'Users will appear here as they join your church.'}
                   </Text>
                 </View>
               ) : (
