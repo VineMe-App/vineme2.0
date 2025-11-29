@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { OnboardingStepProps } from '@/types/app';
 import { Text } from '@/components/ui/Text';
-import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
 
 export default function GroupStatusStep({
@@ -34,22 +34,32 @@ export default function GroupStatusStep({
       id: 'existing' as const,
       title: 'I am already in a group',
       subtitle: 'I want to connect with my existing group on VineMe',
+      icon: 'people-outline' as const,
     },
     {
       id: 'looking' as const,
       title: 'I am looking for a group',
       subtitle: 'Help me find a suitable group to join and get plugged in.',
+      icon: 'search-outline' as const,
     },
   ];
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <AuthHero
-          title="Group status"
-          subtitle="Are you already part of a small group or are you looking to join one?"
-          containerStyle={styles.heroSpacing}
-        />
+        <View style={styles.header}>
+          <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+            Group status
+          </Text>
+          <Text
+            variant="bodyLarge"
+            color="primary"
+            align="center"
+            style={styles.subtitle}
+          >
+            Are you already part of a small group or are you looking to join one?
+          </Text>
+        </View>
 
         <View style={styles.optionsContainer}>
           {statusOptions.map((option) => {
@@ -74,7 +84,11 @@ export default function GroupStatusStep({
                         isSelected && styles.radioSelected,
                       ]}
                     >
-                      {isSelected && <View style={styles.radioInner} />}
+                      <Ionicons
+                        name={option.icon}
+                        size={24}
+                        color={isSelected ? '#F54099' : '#999999'}
+                      />
                     </View>
                   </View>
                   <View style={styles.optionText}>
@@ -105,15 +119,14 @@ export default function GroupStatusStep({
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.footerSpacer} />
         <AuthButton
           title="Next"
           onPress={handleNext}
           loading={isLoading}
           disabled={!selectedStatus || isLoading}
         />
-        <TouchableOpacity onPress={onBack} accessibilityRole="button">
-          <Text variant="body" color="secondary" align="center">
+        <TouchableOpacity onPress={onBack} accessibilityRole="button" style={styles.backButton}>
+          <Text variant="body" align="center" style={styles.backText}>
             Back
           </Text>
         </TouchableOpacity>
@@ -126,7 +139,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: 32,
+    paddingHorizontal: 53, // Match other pages
     paddingTop: 16,
     paddingBottom: 32,
   },
@@ -134,8 +147,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  heroSpacing: {
+  header: {
+    alignItems: 'center',
     marginBottom: 32,
+    marginTop: 50, // Match other pages title marginTop
+  },
+  title: {
+    color: '#2C2235',
+    fontSize: 26, // Figma: 26px
+    lineHeight: 40, // Figma: 40px
+    letterSpacing: -0.52, // Figma: -0.52px
+    marginBottom: 20, // Spacing to subtitle
+  },
+  subtitle: {
+    color: '#2C2235',
+    fontSize: 16, // Figma: 16px
+    lineHeight: 22, // Figma: 22px
+    letterSpacing: -0.32, // Figma: -0.32px
+    maxWidth: 293, // Figma: 293px
+    marginTop: 0,
   },
   optionsContainer: {
     gap: 12,
@@ -208,8 +238,14 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     width: '100%',
+    marginBottom: 100, // Match other pages footer spacing
   },
-  footerSpacer: {
-    height: 32,
+  backButton: {
+    marginTop: 16,
+  },
+  backText: {
+    color: '#999999', // Match other pages
+    fontSize: 16,
+    letterSpacing: -0.8,
   },
 });

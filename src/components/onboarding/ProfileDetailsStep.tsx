@@ -16,7 +16,6 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
-import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Ionicons } from '@expo/vector-icons';
 import type { OnboardingStepProps } from '@/types/app';
@@ -213,23 +212,19 @@ export default function ProfileDetailsStep({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {!isKeyboardVisible && (
-              <AuthHero
-                title="Add a friendly face"
-                subtitle="Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later."
-                containerStyle={styles.heroSpacing}
-              />
-            )}
-            {isKeyboardVisible && (
-              <View style={styles.keyboardHeader}>
-                <Text variant="h4" weight="black" align="center" style={styles.title}>
-                  Add a friendly face
-                </Text>
-                <Text variant="bodyLarge" color="secondary" align="center" style={styles.subtitle}>
-                  Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later.
-                </Text>
-              </View>
-            )}
+            <View style={styles.header}>
+              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+                Add a friendly face
+              </Text>
+              <Text
+                variant="bodyLarge"
+                color="primary"
+                align="center"
+                style={styles.subtitle}
+              >
+                Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later.
+              </Text>
+            </View>
 
             <View style={styles.avatarSection}>
           <TouchableOpacity
@@ -302,19 +297,18 @@ export default function ProfileDetailsStep({
         </View>
 
         <View style={styles.footer}>
-        <View style={styles.footerSpacer} />
-        <AuthButton
-          title="Done"
-          onPress={handleContinue}
-          loading={uploading || isLoading}
-          disabled={uploading || isLoading}
-        />
-        <TouchableOpacity onPress={onBack} accessibilityRole="button">
-          <Text variant="body" color="secondary" align="center">
-            Back
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <AuthButton
+            title="Done"
+            onPress={handleContinue}
+            loading={uploading || isLoading}
+            disabled={uploading || isLoading}
+          />
+          <TouchableOpacity onPress={onBack} accessibilityRole="button" style={styles.backButton}>
+            <Text variant="body" align="center" style={styles.backText}>
+              Back
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -324,7 +318,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: 32,
+    paddingHorizontal: 53, // Match other pages
     paddingTop: 16,
     paddingBottom: 32,
   },
@@ -336,31 +330,30 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingVertical: 16,
   },
-  heroSpacing: {
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  keyboardHeader: {
+  header: {
+    alignItems: 'center',
     marginBottom: 32,
+    marginTop: 75, // Match other pages title marginTop
   },
   title: {
     color: '#2C2235',
-    marginBottom: 12,
-    letterSpacing: -1.5,
-    fontWeight: '900',
+    fontSize: 26, // Figma: 26px
+    lineHeight: 40, // Figma: 40px
+    letterSpacing: -0.52, // Figma: -0.52px
+    marginBottom: 20, // Spacing to subtitle
   },
   subtitle: {
     color: '#2C2235',
-    lineHeight: 24,
-    letterSpacing: -0.2,
-    maxWidth: 320,
-    marginTop: 4,
+    fontSize: 16, // Figma: 16px
+    lineHeight: 22, // Figma: 22px
+    letterSpacing: -0.32, // Figma: -0.32px
+    maxWidth: 325, // Figma: 325px
+    marginTop: 0,
   },
   avatarSection: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 27, // Spacing from avatar (315px) to bio label (444px) = 129px - 121px avatar - spacing
   },
   avatarContainer: {
     width: 121,
@@ -411,22 +404,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bioSection: {
-    gap: 8,
+    gap: 8, // Spacing between label and input
+    marginBottom: 32,
   },
   label: {
     color: '#2C2235',
+    fontSize: 16, // Figma: 16px
+    fontWeight: '700', // Bold
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 22, // Figma: 22px
   },
   bioInput: {
     borderWidth: 2,
     borderColor: '#EAEAEA',
     borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    fontSize: 16,
+    paddingVertical: 17, // Figma: 488px - 471px = 17px top padding
+    paddingHorizontal: 14, // Figma: 62px - 48px = 14px left padding
+    fontSize: 16, // Figma: 16px
     backgroundColor: '#FFFFFF',
     color: '#2C2235',
-    minHeight: 165,
+    height: 126, // Figma: 126px
+    width: '100%', // Full width within container (container has 53px padding)
     textAlignVertical: 'top',
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 22, // Figma: 22px
   },
   errorText: {
     marginTop: 16,
@@ -435,8 +436,15 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     width: '100%',
+    marginBottom: 100, // Match other pages footer spacing
+    paddingTop: 16,
   },
-  footerSpacer: {
-    height: 32,
+  backButton: {
+    marginTop: 16,
+  },
+  backText: {
+    color: '#999999', // Match other pages
+    fontSize: 16,
+    letterSpacing: -0.8,
   },
 });
