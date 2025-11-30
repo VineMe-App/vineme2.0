@@ -34,10 +34,10 @@ import { useErrorHandler, useLoadingState } from '../../hooks';
 import {
   ErrorMessage,
   EmptyState,
-  LoadingSpinner,
   Modal,
   Button,
 } from '../../components/ui';
+import { AuthLoadingAnimation } from '../../components/auth/AuthLoadingAnimation';
 import { useUpdateUserProfile } from '../../hooks/useUsers';
 import {
   applyGroupFilters,
@@ -469,7 +469,7 @@ export default function GroupsScreen() {
         ]}
       >
         <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" />
+          <AuthLoadingAnimation />
           <Text variant="body" color="secondary" style={styles.loadingText}>
             Loading groups...
           </Text>

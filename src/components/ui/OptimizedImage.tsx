@@ -210,7 +210,11 @@ export function OptimizedImage({
 
   return (
     <View ref={containerRef} style={containerStyle}>
-      {isLoading && renderPlaceholder()}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <LoadingSpinner size="small" />
+        </View>
+      )}
       <Image
         ref={imageRef}
         source={optimizedSource()}
@@ -277,7 +281,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 100,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    zIndex: 1,
   },
   error: {
     backgroundColor: '#f8f8f8',

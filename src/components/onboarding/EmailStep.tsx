@@ -53,56 +53,12 @@ export default function EmailStep({
   };
 
   const handleNext = async () => {
-    const trimmedEmail = email.trim();
-    
-    // Validate email format
-    const validationError = validateEmail(trimmedEmail);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
+    // Temporarily disabled email validation - just proceed to next step
     setError(null);
-
-    // Check if email matches the already linked user email
-    // If so, skip linkEmail and just update marketing preference
-    if (user?.email && trimmedEmail.toLowerCase() === user.email.toLowerCase()) {
-      // Email already matches, just update marketing preference if needed
-      const success = await updateUserProfile({
-        marketing_opt_in: newsletterOptIn,
-      });
-      
-      if (!success) {
-        // Get error from auth store if available
-        const { error: authError } = useAuthStore.getState();
-        setError(authError || 'Failed to update marketing preference. Please try again.');
-        return;
-      }
-      
-      // Marketing preference updated successfully, proceed to next step
-      onNext({});
-      return;
-    }
-
-    // Email is different or no email is linked, proceed with linking
-    try {
-      const result = await linkEmail(trimmedEmail, {
-        marketingOptIn: newsletterOptIn,
-      });
-
-      if (!result.success) {
-        setError(result.error || 'Failed to link email');
-        return;
-      }
-
-      // Email linking successful, proceed to next step
-      onNext({});
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to link email');
-    }
+    onNext({});
   };
 
-  const disableContinue = isLoading || !email.trim() || !!validateEmail(email.trim());
+  const disableContinue = isLoading; // Removed email validation check
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

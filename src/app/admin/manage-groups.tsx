@@ -18,7 +18,7 @@ import { supabase } from '@/services/supabase';
 import { type GroupWithAdminDetails } from '@/services/admin';
 import { adminServiceWrapper } from '@/services/adminServiceWrapper';
 import { ADMIN_CACHE_CONFIGS, ADMIN_QUERY_KEYS } from '@/utils/adminCache';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -631,7 +631,7 @@ export default function ManageGroupsScreen() {
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <LoadingSpinner size="large" />
+              <AuthLoadingAnimation />
               <Text style={styles.loadingText}>Loading groups...</Text>
             </View>
           ) : (

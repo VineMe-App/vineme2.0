@@ -121,6 +121,8 @@ function RootLayoutNav() {
       segments[0] === 'referral' ||
       // Allow referral landing screen outside of tabs
       segments[0] === 'referral-landing' ||
+      // Allow friends page outside of tabs
+      segments[0] === 'friends' ||
       // Allow styling system pages (for development/debugging)
       segments[0] === 'styling-system-example' ||
       segments[0] === 'styling-system-example-simple' ||

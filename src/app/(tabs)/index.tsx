@@ -18,7 +18,7 @@ import { useFriends } from '../../hooks/useFriendships';
 import { GroupCard } from '../../components/groups/GroupCard';
 import { useGroupMembers } from '../../hooks/useGroups';
 import type { GroupWithDetails } from '../../types/database';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '../../components/auth/AuthLoadingAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { useTheme } from '@/theme/provider/useTheme';
@@ -187,7 +187,9 @@ export default function HomeScreen() {
   if (isLoading && !userGroupMemberships) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <LoadingSpinner message="Loading your dashboard..." />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <AuthLoadingAnimation />
+        </View>
       </SafeAreaView>
     );
   }
@@ -233,11 +235,10 @@ export default function HomeScreen() {
           <ChurchAdminOnly
             fallback={
               <View style={styles.churchCard}>
-                <Ionicons
-                  name="location-outline"
-                  size={25}
-                  color="#2C2235"
+                <Image
+                  source={require('../../../assets/01e701d86580946700145dd8be461b7d683806db.png')}
                   style={styles.locationIcon}
+                  resizeMode="contain"
                 />
                 <View style={styles.churchCardContent}>
                   {userProfile?.church?.name && (
@@ -267,12 +268,12 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.churchCard}
               onPress={() => router.push('/admin')}
+              activeOpacity={0.8}
             >
-              <Ionicons
-                name="location-outline"
-                size={25}
-                color="#2C2235"
+              <Image
+                source={require('../../../assets/01e701d86580946700145dd8be461b7d683806db.png')}
                 style={styles.locationIcon}
+                resizeMode="contain"
               />
               <View style={styles.churchCardContent}>
                 {userProfile?.church?.name && (
@@ -295,17 +296,6 @@ export default function HomeScreen() {
                     {formatServiceTime(userProfile.service)}
                   </Text>
                 )}
-              </View>
-              <View style={styles.orgRight}>
-                <Ionicons name="settings-outline" size={16} color="#111827" />
-                <Text variant="label" weight="semiBold" style={styles.orgCta}>
-                  Manage Church
-                </Text>
-                <Ionicons
-                  name="chevron-forward-outline"
-                  size={16}
-                  color="#6b7280"
-                />
               </View>
             </TouchableOpacity>
           </ChurchAdminOnly>
@@ -414,7 +404,7 @@ export default function HomeScreen() {
                     weight="normal"
                     style={styles.actionCardDescription}
                   >
-                    Help someone join our community
+                    Help someone get plugged in
                   </Text>
                 </View>
                 <Ionicons
@@ -443,7 +433,7 @@ export default function HomeScreen() {
                     weight="normal"
                     style={styles.actionCardDescription}
                   >
-                    Insert copy for description
+                    Initiate a Kingdom community
                   </Text>
                 </View>
                 <Ionicons
@@ -466,7 +456,7 @@ export default function HomeScreen() {
                 </Text>
                 <Text
                   variant="body"
-                  weight="light"
+                  weight="normal"
                   style={styles.emptyStateSubtitle}
                 >
                   Join a Bible study group now and get connected with your
@@ -514,7 +504,7 @@ export default function HomeScreen() {
                       weight="normal"
                       style={styles.actionCardDescription}
                     >
-                      Help someone join our community
+                      Help someone get plugged in
                     </Text>
                   </View>
                   <Ionicons
@@ -543,7 +533,7 @@ export default function HomeScreen() {
                       weight="normal"
                       style={styles.actionCardDescription}
                     >
-                      Insert copy for description
+                      Initiate a Kingdom community
                     </Text>
                   </View>
                   <Ionicons
@@ -575,38 +565,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingTop: 10,
-    paddingLeft: 17,
+    paddingTop: 16, // Figma: logos at y=16 within the nav
+    paddingLeft: 19, // Figma: first logo starts at x=19
     paddingRight: 20,
     paddingBottom: 0,
-    minHeight: 121,
+    minHeight: 80, // Figma: top nav height is 80px
+    marginTop: 36, // Figma: top nav at top-[36px]
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     position: 'relative',
-    width: 189,
-    height: 121,
+    width: 188, // Adjusted for larger logos: logo1 (64px) + spacing + logo2 (140px)
+    height: 72, // Adjusted for larger logo height
   },
   logo1: {
-    width: 67.5,
-    height: 67.5,
+    width: 64, // Increased from 56px
+    height: 65, // Increased from 57px proportionally
     position: 'absolute',
     left: 0,
-    top: 22.5,
+    top: 0,
     zIndex: 2,
   },
   logo2: {
-    width: 121.25,
-    height: 121.25,
+    width: 140, // Increased from 120px to make text even larger
+    height: 80, // Increased from 68px proportionally
     position: 'absolute',
-    left: 67.5,
-    top: 0,
+    left: 30, // Adjusted for larger logo1
+    top: 0, // Aligned at top
     zIndex: 1,
   },
   notificationContainer: {
     justifyContent: 'center',
-    height: 121,
+    height: 80, // Match top bar height
+    paddingRight: 0, // Figma: notification icon positioned from right edge
   },
   header: {
     paddingTop: 0,
@@ -628,6 +620,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   locationIcon: {
+    width: 25, // Match Figma location icon size
+    height: 25,
     marginRight: 16,
   },
   churchCardContent: {
@@ -643,42 +637,6 @@ const styles = StyleSheet.create({
     color: '#8B8A8C',
     fontSize: 12,
     letterSpacing: -0.6,
-  },
-  orgCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 8,
-  },
-  orgCardClickable: {
-    // Background color will be set inline with theme
-  },
-  orgLeft: {
-    flex: 1,
-  },
-  orgRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 2,
-  },
-  orgText: {
-    color: '#374151',
-    flexShrink: 1,
-  },
-  orgRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginLeft: 12,
-  },
-  orgCta: {
-    color: '#111827',
   },
   statsSection: {
     flexDirection: 'row',
@@ -732,9 +690,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#2C2235',
-    fontSize: 27.5,
-    letterSpacing: -1.375,
-    fontWeight: '900',
+    fontSize: 22, // Figma: 22px
+    letterSpacing: -0.44, // Figma: -0.44px
+    fontWeight: '800', // ExtraBold
+    lineHeight: 22, // Figma: 22px
   },
   seeAllText: {
     // Typography handled by Text component variant
@@ -764,30 +723,31 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyStateCard: {
-    backgroundColor: '#2C2235',
+    backgroundColor: '#2C2235', // Figma: dark purple/black
     borderRadius: 12,
-    paddingHorizontal: 40,
-    paddingVertical: 38,
-    minHeight: 216,
+    paddingHorizontal: 40, // Figma: approximately 40px
+    paddingVertical: 38, // Figma: approximately 38px
+    minHeight: 216, // Figma: approximately 216px height
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyStateTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
-    letterSpacing: -0.48,
+    fontSize: 20, // Figma: 20px
+    letterSpacing: -0.4, // Figma: -0.4px
     textAlign: 'center',
     marginBottom: 12,
-    fontWeight: '700',
+    fontWeight: '700', // Bold
+    lineHeight: 22, // Figma: 22px
   },
   emptyStateSubtitle: {
     color: '#FFFFFF',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    lineHeight: 20,
+    fontSize: 16, // Figma: 16px
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 20, // Figma: 20px
     textAlign: 'center',
     marginBottom: 24,
-    fontWeight: '300',
+    fontWeight: '400', // Regular
   },
   findGroupButton: {
     flexDirection: 'row',
@@ -820,11 +780,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F9FAFC', // Figma: #f9fafc
     borderRadius: 12,
-    paddingHorizontal: 32,
-    paddingVertical: 24,
-    minHeight: 96,
+    paddingHorizontal: 32, // Figma: approximately 32px
+    paddingVertical: 24, // Figma: approximately 24px
+    minHeight: 96, // Figma: approximately 96px
     position: 'relative',
   },
   actionCardSelected: {
@@ -841,9 +801,10 @@ const styles = StyleSheet.create({
   },
   actionCardTitle: {
     color: '#2C2235',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    fontWeight: '700',
+    fontSize: 18, // Figma: 18px
+    letterSpacing: -0.36, // Figma: -0.36px
+    fontWeight: '700', // Bold
+    lineHeight: 22, // Figma: 22px
   },
   actionCardTitleSelected: {
     color: '#FFFFFF',
@@ -853,9 +814,10 @@ const styles = StyleSheet.create({
   },
   actionCardDescription: {
     color: '#2C2235',
-    fontSize: 16,
-    letterSpacing: -0.48,
-    lineHeight: 20,
+    fontSize: 16, // Figma: 16px
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 20, // Figma: 20px
+    fontWeight: '400', // Regular
   },
   actionCardDescriptionSelected: {
     color: '#FFFFFF',
