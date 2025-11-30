@@ -63,8 +63,11 @@ export default function EmailStep({
     }
 
     try {
-      // Link email if user doesn't have one, or update if different
-      if (!user?.email || user.email !== email.trim()) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedExistingEmail = user?.email?.toLowerCase().trim();
+
+      // Link email if user doesn't have one, or update if different (case-insensitive comparison)
+      if (!user?.email || normalizedExistingEmail !== normalizedEmail) {
         const result = await linkEmail(email.trim(), {
           marketingOptIn: newsletterOptIn,
         });
@@ -74,7 +77,7 @@ export default function EmailStep({
           return;
         }
       } else if (user) {
-        // Email already linked, just update newsletter preference
+        // Email already linked (same email, case-insensitive), just update newsletter preference
         const updateSuccess = await updateUserProfile({
           marketing_opt_in: newsletterOptIn,
         });
