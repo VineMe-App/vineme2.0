@@ -146,8 +146,8 @@ export default function NotificationsScreen() {
   const listEmpty = shouldShowEmptyState ? (
     <View style={styles.emptyContainer}>
       <EmptyState
-        title="No notifications yet"
-        message="When you receive notifications, they will show up here."
+        title="No notifications!"
+        message="You're all caught up!"
         icon={null}
       />
     </View>
