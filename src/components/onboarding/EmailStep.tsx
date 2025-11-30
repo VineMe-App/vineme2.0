@@ -68,16 +68,23 @@ export default function EmailStep({
         const result = await linkEmail(email.trim(), {
           marketingOptIn: newsletterOptIn,
         });
-        
-        if (!result.success && result.error) {
-          setError(result.error);
+
+        if (!result.success) {
+          setError(result.error || 'Failed to link email. Please try again.');
           return;
         }
       } else if (user) {
         // Email already linked, just update newsletter preference
-        await updateUserProfile({
+        const updateSuccess = await updateUserProfile({
           marketing_opt_in: newsletterOptIn,
         });
+
+        if (!updateSuccess) {
+          const latestError =
+            useAuthStore.getState().error || 'Failed to update preferences. Please try again.';
+          setError(latestError);
+          return;
+        }
       }
 
       onNext({});
