@@ -3,6 +3,7 @@ import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Text } from '@/components/ui/Text';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { NotificationItem } from '@/components/ui/NotificationItem';
@@ -81,7 +82,7 @@ export default function NotificationsScreen() {
 
       {isLoading && notifications.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" color={theme.colors.primary[500]} />
+          <AuthLoadingAnimation />
         </View>
       ) : (
         <>

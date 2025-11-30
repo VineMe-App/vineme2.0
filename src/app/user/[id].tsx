@@ -9,6 +9,7 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router, useNavigation } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
@@ -24,10 +25,13 @@ import {
 } from '@/hooks/useFriendships';
 import { getDisplayName, getFullName } from '@/utils/name';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
+import { GroupPlaceholderImage } from '@/components/ui/GroupPlaceholderImage';
 
 export default function OtherUserProfileScreen() {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id?: string }>();
   const targetUserId = useMemo(
     () => (Array.isArray(params.id) ? params.id[0] : params.id),
@@ -145,24 +149,25 @@ export default function OtherUserProfileScreen() {
 
   useEffect(() => {
     navigation.setOptions({
-      headerShown: true,
-      headerTitle: '',
-      headerBackVisible: false,
-      headerStyle: {
-        backgroundColor: '#fff',
-      },
-      headerLeft: () => (
-        <TouchableOpacity
-          style={styles.headerBackButton}
-          onPress={handleBackPress}
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color="#111827" />
-          <Text style={styles.headerBackText}>Back</Text>
-        </TouchableOpacity>
-      ),
+      headerShown: false, // Remove header completely
     });
-  }, [navigation, handleBackPress]);
+  }, [navigation]);
+
+  const formatMemberSince = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  };
+
+  const formatJoinDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleDateString('en-US', { month: 'long' });
+    const year = date.getFullYear();
+    return `Joined in ${month} ${year}`;
+  };
 
   const ActionButton = () => {
     if (isSelf) return null;
@@ -177,41 +182,57 @@ export default function OtherUserProfileScreen() {
       removeFriend.isPending ||
       acceptRejected.isPending;
     const pendingFriendshipId = friendshipStatusQuery.data?.friendshipId;
+    
     if (loading) {
-      return <Button title="Loading..." variant="secondary" disabled onPress={() => {}} />;
+      return (
+        <View style={styles.addFriendButton}>
+          <Ionicons name="person-add-outline" size={24} color="#FF0083" />
+          <Text style={styles.addFriendText}>Loading...</Text>
+        </View>
+      );
     }
 
     switch (status) {
       case 'accepted':
         return (
-          <Button
-            title="Remove Friend"
-            variant="secondary"
-            size="small"
+          <TouchableOpacity
+            style={styles.addFriendButton}
             onPress={handleRemoveFriend}
-            style={styles.actionButton}
-          />
+            activeOpacity={0.7}
+          >
+            <Ionicons name="person-remove-outline" size={24} color="#FF0083" />
+            <Text style={styles.addFriendText}>Remove friend</Text>
+          </TouchableOpacity>
         );
       case 'pending':
         if (isIncoming && pendingFriendshipId) {
           return (
-            <Button
-              title="Accept Friend Request"
+            <TouchableOpacity
+              style={styles.addFriendButton}
               onPress={() =>
                 acceptFriendRequest.mutate(pendingFriendshipId, {
                   onSuccess: () => friendshipStatusQuery.refetch(),
                   onError: (e) => Alert.alert('Error', e.message),
                 })
               }
-            />
+              activeOpacity={0.7}
+            >
+              <Ionicons name="person-add-outline" size={24} color="#FF0083" />
+              <Text style={styles.addFriendText}>Accept friend request</Text>
+            </TouchableOpacity>
           );
         }
-        return <Button title="Request Pending" variant="secondary" disabled onPress={() => {}} />;
+        return (
+          <View style={styles.addFriendButton}>
+            <Ionicons name="person-add-outline" size={24} color="#999999" />
+            <Text style={[styles.addFriendText, { color: '#999999' }]}>Request pending</Text>
+          </View>
+        );
       case 'rejected':
         if (isIncoming) {
           return (
-            <Button
-              title="Add Friend"
+            <TouchableOpacity
+              style={styles.addFriendButton}
               onPress={() =>
                 targetUserId &&
                 acceptRejected.mutate(targetUserId, {
@@ -219,19 +240,29 @@ export default function OtherUserProfileScreen() {
                   onError: (e) => Alert.alert('Error', e.message),
                 })
               }
-            />
+              activeOpacity={0.7}
+            >
+              <Ionicons name="person-add-outline" size={24} color="#FF0083" />
+              <Text style={styles.addFriendText}>Add friend</Text>
+            </TouchableOpacity>
           );
         }
-        return <Button title="Request Pending" variant="secondary" disabled onPress={() => {}} />;
+        return (
+          <View style={styles.addFriendButton}>
+            <Ionicons name="person-add-outline" size={24} color="#999999" />
+            <Text style={[styles.addFriendText, { color: '#999999' }]}>Request pending</Text>
+          </View>
+        );
       default:
         return (
-          <Button
-            title="Add Friend"
-            variant="secondary"
-            size="small"
+          <TouchableOpacity
+            style={styles.addFriendButton}
             onPress={handleAddFriend}
-            style={styles.actionButton}
-          />
+            activeOpacity={0.7}
+          >
+            <Ionicons name="person-add-outline" size={24} color="#FF0083" />
+            <Text style={styles.addFriendText}>Add friend</Text>
+          </TouchableOpacity>
         );
     }
   };
@@ -257,14 +288,37 @@ export default function OtherUserProfileScreen() {
     );
   }
 
+  if (!profile && profileLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centered}>
+          <AuthLoadingAnimation />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      {/* Manual Back Button */}
+      <TouchableOpacity
+        style={[styles.backButton, { top: insets.top + 16 }]}
+        onPress={handleBackPress}
+        accessibilityLabel="Go back"
+      >
+        <Ionicons name="chevron-back" size={20} color="#2C2235" />
+      </TouchableOpacity>
+      
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {profile && (
           <>
-            <View style={styles.headerSection}>
+            <View style={[styles.headerSection, { paddingTop: insets.top + 50 }]}>
               <Avatar
-                size={100}
+                size={121}
                 imageUrl={profile.avatar_url}
                 name={profileFullName}
                 onPress={handleAvatarPress}
@@ -272,61 +326,71 @@ export default function OtherUserProfileScreen() {
               <Text style={styles.name}>
                 {profileFullName || profileShortName || 'User'}
               </Text>
-              {profile.email ? (
-                <Text style={styles.email}>{profile.email}</Text>
-              ) : null}
               <ActionButton />
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Bio</Text>
+            {/* Bio Section */}
+            <View style={styles.bioSection}>
+              <Text style={styles.bioTitle}>Bio</Text>
               <Text style={styles.bioText}>
                 {(profile as any).bio || 'This user has not added a bio yet.'}
               </Text>
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Profile Information</Text>
-              {profile.church?.name ? (
+            {/* Profile Info Section */}
+            <View style={styles.profileInfoSection}>
+              <Text style={styles.profileInfoTitle}>Profile Info</Text>
+              {profile.church?.name && (
                 <InfoRow label="Church" value={profile.church.name} />
-              ) : null}
+              )}
               <InfoRow
-                label="Member Since"
-                value={new Date(profile.created_at).toLocaleDateString()}
+                label="Member since"
+                value={formatMemberSince(profile.created_at)}
               />
             </View>
 
+            {/* Groups Section */}
             {visibleMemberships && visibleMemberships.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Groups</Text>
+              <View style={styles.groupsSection}>
+                <Text style={styles.groupsTitle}>Groups</Text>
                 {visibleMemberships.map((m: any) => (
                   <TouchableOpacity
                     key={m.id}
-                    style={styles.groupItem}
+                    style={styles.groupCardWrapper}
                     onPress={() =>
                       m.group?.id && router.push(`/group/${m.group.id}`)
                     }
+                    activeOpacity={0.7}
                   >
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.groupTitle}>
+                    <View style={styles.groupCard}>
+                      <View style={styles.groupCardImageContainer}>
+                        {m.group?.image_url ? (
+                          <OptimizedImage
+                            source={{ uri: m.group.image_url }}
+                            style={styles.groupCardImage}
+                            containerStyle={styles.groupCardImageContainer}
+                            quality="medium"
+                            lazy={true}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <GroupPlaceholderImage style={styles.groupCardImage} />
+                        )}
+                      </View>
+                      <View style={styles.groupCardContent}>
+                        <Text style={styles.groupCardTitle} numberOfLines={2}>
                         {m.group?.title || 'Unknown Group'}
                       </Text>
-                      <Text style={styles.groupRole}>{m.role}</Text>
+                        <Text style={styles.groupJoinDate}>
+                          {formatJoinDate(m.joined_at)}
+                        </Text>
+                      </View>
                     </View>
-                    <Text style={styles.groupDate}>
-                      Joined {new Date(m.joined_at).toLocaleDateString()}
-                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             )}
           </>
-        )}
-
-        {!profile && profileLoading && (
-          <View style={styles.centered}>
-            <Text>Loading profile...</Text>
-          </View>
         )}
       </ScrollView>
 
@@ -384,10 +448,13 @@ export default function OtherUserProfileScreen() {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
+    <>
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
       <Text style={styles.infoValue}>{value}</Text>
     </View>
+      <View style={styles.divider} />
+    </>
   );
 }
 
@@ -396,21 +463,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  headerBackButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  headerBackText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+  backButton: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 1000,
+    padding: 8,
   },
   content: {
     flex: 1,
-    padding: 24,
+  },
+  contentContainer: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 100, // Space for bottom tab bar
   },
   centered: {
     flex: 1,
@@ -420,83 +485,150 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#dc2626',
+    fontSize: 16,
   },
   headerSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    paddingBottom: 48, // Space to bio section
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginTop: 16,
+    fontSize: 24, // Figma: 24px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.48, // Figma: -0.48px
+    lineHeight: 24,
+    marginTop: 24, // Space from avatar
+    textAlign: 'center',
   },
-  email: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 4,
-    marginBottom: 12,
+  addFriendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20, // Space from name
+    gap: 8,
   },
-  section: {
-    marginBottom: 24,
+  addFriendText: {
+    fontSize: 16, // Figma: 16px
+    fontWeight: '500', // Medium
+    color: '#FF0083', // Figma: #ff0083
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 12,
+  bioSection: {
+    paddingHorizontal: 16, // Figma: 16px from left
+    marginBottom: 28, // Space to profile info
+  },
+  bioTitle: {
+    fontSize: 16, // Figma: 16px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
+    marginBottom: 21, // Space to bio text
   },
   bioText: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 22,
+    fontSize: 16, // Figma: 16px
+    fontWeight: '500', // Medium
+    color: '#999999', // Figma: #999999
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
+  },
+  profileInfoSection: {
+    paddingHorizontal: 16, // Figma: 16px from left
+    marginBottom: 28, // Space to groups
+  },
+  profileInfoTitle: {
+    fontSize: 16, // Figma: 16px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
+    marginBottom: 20, // Space to first row
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    paddingVertical: 14, // Figma: spacing between items
+    paddingHorizontal: 4,
   },
   infoLabel: {
-    color: '#6b7280',
-    fontSize: 16,
+    fontSize: 16, // Figma: 16px
+    fontWeight: '500', // Medium
+    color: '#999999', // Figma: #999999
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
   },
   infoValue: {
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 16, // Figma: 16px
+    fontWeight: '600', // SemiBold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
+    textAlign: 'right',
+    flex: 1,
+    marginLeft: 16,
   },
-  groupItem: {
+  divider: {
+    height: 1,
+    backgroundColor: '#EAEAEA', // Figma: divider color
+    marginLeft: 4,
+  },
+  groupsSection: {
+    paddingHorizontal: 16, // Figma: 16px from left
+    marginBottom: 24,
+  },
+  groupsTitle: {
+    fontSize: 16, // Figma: 16px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
+    marginBottom: 16, // Space to first group
+  },
+  groupCardWrapper: {
+    marginBottom: 16,
+  },
+  groupCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    overflow: 'hidden',
+    height: 92, // Figma: 92px height
   },
-  groupTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+  groupCardImageContainer: {
+    width: 92, // Figma: image takes left portion
+    height: 92,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    overflow: 'hidden',
   },
-  groupRole: {
-    fontSize: 14,
-    color: '#6b7280',
+  groupCardImage: {
+    width: '100%',
+    height: '100%',
   },
-  groupDate: {
-    fontSize: 12,
-    color: '#6b7280',
+  groupCardContent: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
+  groupCardTitle: {
+    fontSize: 14, // Figma: 14px
+    fontWeight: '700', // Bold
+    color: '#271D30', // Figma: #271d30
+    letterSpacing: -0.28, // Figma: -0.28px
+    lineHeight: 14,
+    marginBottom: 8, // Space to join date
   },
-  actionButton: {
-    marginTop: 8,
+  groupJoinDate: {
+    fontSize: 12, // Figma: 12px
+    fontWeight: '400', // Regular
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.24, // Figma: -0.24px
+    lineHeight: 16,
   },
   modalOverlay: {
     flex: 1,

@@ -68,23 +68,21 @@ export function FriendCard({
       accessibilityRole="button"
       accessibilityLabel={`View ${fullName || 'user'}'s profile`}
     >
-      <View style={styles.userInfo}>
-        <Avatar imageUrl={friend.avatar_url} name={fullName} size={50} />
-        <View style={styles.textContainer}>
-          <Text style={styles.name}>{shortName || fullName || 'Friend'}</Text>
-          <Text style={styles.email}>{friend.email}</Text>
-        </View>
+      <Avatar imageUrl={friend.avatar_url} name={fullName} size={48} />
+      <View style={styles.textContainer}>
+        <Text style={styles.name} numberOfLines={1}>
+          {shortName || fullName || 'Friend'}
+        </Text>
       </View>
 
       {showActions && (
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.removeButton]}
-            onPress={handleActionPress}
-          >
-            <Text style={styles.removeButtonText}>Remove</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={handleActionPress}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.removeButtonText}>Remove</Text>
+        </TouchableOpacity>
       )}
     </TouchableOpacity>
   );
@@ -94,58 +92,40 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    backgroundColor: '#F9FAFC', // Figma: #f9fafc
+    borderWidth: 1,
+    borderColor: '#EAEAEA', // Figma: #eaeaea
+    borderRadius: 12, // Figma: 12px
+    height: 66, // Figma: 66px height
+    paddingLeft: 20, // Figma: 20px from container left (avatar at 36px from screen: 16px margin + 20px padding)
+    paddingRight: 20,
+    marginBottom: 8, // Figma: spacing between cards (card top 258 - previous card bottom 250 = 8px gap)
+    marginHorizontal: 16, // Figma: 16px from screen left edge
   },
   textContainer: {
-    marginLeft: 12,
     flex: 1,
+    marginLeft: 14, // Figma: spacing between avatar and name (98px - 36px - 48px = 14px)
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 2,
-  },
-  email: {
-    fontSize: 14,
-    color: '#666',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 9, // Updated to pill shape (half of paddingVertical: 6 * 2 + text height)
-    minWidth: 60,
-    alignItems: 'center',
+    fontSize: 16, // Figma: 16px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 18,
   },
   removeButton: {
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
+    backgroundColor: '#2C2235', // Figma: #2c2235
+    height: 16, // Figma: 16px height
+    width: 51, // Figma: 51px width
+    borderRadius: 4, // Figma: 4px border radius
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   removeButtonText: {
-    color: '#374151',
-    fontSize: 12,
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontSize: 9, // Figma: 9px
+    fontWeight: '500', // Medium
+    letterSpacing: -0.27, // Figma: -0.27px
+    lineHeight: 9,
   },
 });

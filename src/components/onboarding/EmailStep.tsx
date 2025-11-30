@@ -53,56 +53,50 @@ export default function EmailStep({
   };
 
   const handleNext = async () => {
-    const trimmedEmail = email.trim();
-    
+    setError(null);
+
     // Validate email format
-    const validationError = validateEmail(trimmedEmail);
+    const validationError = validateEmail(email);
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    setError(null);
-
-    // Check if email matches the already linked user email
-    // If so, skip linkEmail and just update marketing preference
-    if (user?.email && trimmedEmail.toLowerCase() === user.email.toLowerCase()) {
-      // Email already matches, just update marketing preference if needed
-      const success = await updateUserProfile({
-        marketing_opt_in: newsletterOptIn,
-      });
-      
-      if (!success) {
-        // Get error from auth store if available
-        const { error: authError } = useAuthStore.getState();
-        setError(authError || 'Failed to update marketing preference. Please try again.');
-        return;
-      }
-      
-      // Marketing preference updated successfully, proceed to next step
-      onNext({});
-      return;
-    }
-
-    // Email is different or no email is linked, proceed with linking
     try {
-      const result = await linkEmail(trimmedEmail, {
-        marketingOptIn: newsletterOptIn,
-      });
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedExistingEmail = user?.email?.toLowerCase().trim();
 
-      if (!result.success) {
-        setError(result.error || 'Failed to link email');
-        return;
+      // Link email if user doesn't have one, or update if different (case-insensitive comparison)
+      if (!user?.email || normalizedExistingEmail !== normalizedEmail) {
+        const result = await linkEmail(email.trim(), {
+          marketingOptIn: newsletterOptIn,
+        });
+
+        if (!result.success) {
+          setError(result.error || 'Failed to link email. Please try again.');
+          return;
+        }
+      } else if (user) {
+        // Email already linked (same email, case-insensitive), just update newsletter preference
+        const updateSuccess = await updateUserProfile({
+          marketing_opt_in: newsletterOptIn,
+        });
+
+        if (!updateSuccess) {
+          const latestError =
+            useAuthStore.getState().error || 'Failed to update preferences. Please try again.';
+          setError(latestError);
+          return;
+        }
       }
 
-      // Email linking successful, proceed to next step
       onNext({});
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to link email');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save email. Please try again.');
     }
   };
 
-  const disableContinue = isLoading || !email.trim() || !!validateEmail(email.trim());
+  const disableContinue = isLoading || !email.trim() || !!validateEmail(email);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

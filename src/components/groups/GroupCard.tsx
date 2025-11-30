@@ -263,7 +263,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           <Text
             variant="h6"
             weight="bold"
-            style={styles.groupName}
+            style={[
+              styles.groupName,
+              variant === 'my-groups' && styles.groupNameMyGroups
+            ]}
             numberOfLines={variant === 'my-groups' ? 1 : 2}
             ellipsizeMode="tail"
           >
@@ -282,7 +285,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 <Text
                   variant="bodySmall"
                   weight="medium"
-                  style={styles.detailText}
+                  style={[
+                    styles.detailText,
+                    variant === 'my-groups' && styles.detailTextMyGroups
+                  ]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
@@ -315,7 +321,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               <Text
                 variant="bodySmall"
                 weight="medium"
-                style={styles.detailText}
+                style={[
+                  styles.detailText,
+                  variant === 'my-groups' && styles.detailTextMyGroups
+                ]}
                 numberOfLines={variant === 'my-groups' ? 1 : 2}
                 ellipsizeMode="tail"
               >
@@ -366,6 +375,17 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               </View>
             )}
           </View>
+          
+          {/* Description for my-groups variant */}
+          {variant === 'my-groups' && (
+            <Text 
+              style={styles.descriptionText}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {group.description || 'Insert important group info or description here'}
+            </Text>
+          )}
         </View>
 
         {/* Member Count Badge - Over Image */}
@@ -702,8 +722,9 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   infoMyGroups: {
+    paddingHorizontal: 18, // Figma: padding from left edge matches card design
     paddingRight: 10, // Match padding to prevent text from being covered by profile pictures - applies to ALL cards on my-groups page
-    paddingBottom: 20, // Keep bottom padding for my groups page
+    paddingBottom: 16, // Adjusted bottom padding for description text
   },
   infoAllGroups: {
     paddingRight: 100, // Restored original padding for profile pictures
@@ -716,6 +737,12 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     marginBottom: 8,
     fontWeight: '700',
+  },
+  groupNameMyGroups: {
+    fontSize: 16, // Figma: 16px
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 18, // Adjusted for 16px font
+    color: '#2C2235', // Figma: #2c2235
   },
   header: {
     flexDirection: 'row',
@@ -873,6 +900,13 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     includeFontPadding: false,
   },
+  detailTextMyGroups: {
+    fontSize: 14, // Figma: 14px
+    letterSpacing: -0.28, // Figma: -0.28px
+    lineHeight: 18, // Adjusted for 14px font
+    color: '#2C2235', // Figma: #2c2235
+    fontWeight: '400', // Regular weight
+  },
   ledByText: {
     color: '#2C2235',
   },
@@ -960,5 +994,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 11,
     letterSpacing: 0.5,
+  },
+  descriptionText: {
+    color: '#2C2235', // Figma: #2c2235
+    fontSize: 9, // Figma: 9px
+    letterSpacing: -0.18, // Figma: -0.18px
+    lineHeight: 9, // Figma: 9px
+    fontStyle: 'italic',
+    fontWeight: '300', // Light weight
+    marginTop: 8,
   },
 });

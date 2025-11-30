@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '../../components/auth/AuthLoadingAnimation';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
   useEvent,
@@ -181,7 +181,7 @@ export default function EventDetailScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" />
+          <AuthLoadingAnimation />
           <Text style={styles.loadingText}>Loading event details...</Text>
         </View>
       </View>

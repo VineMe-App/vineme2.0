@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { Button } from '@/components/ui/Button';
 import { GroupLeaderPanel } from '@/components/groups/GroupLeaderPanel';
 import { useGroup } from '@/hooks/useGroups';
@@ -51,7 +51,7 @@ export default function GroupManagementScreen() {
 
       {isLoading && (
         <View style={styles.centerContent}>
-          <LoadingSpinner />
+          <AuthLoadingAnimation />
           <Text style={styles.centerText}>Loading group details…</Text>
         </View>
       )}

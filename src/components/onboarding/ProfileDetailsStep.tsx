@@ -242,16 +242,10 @@ export default function ProfileDetailsStep({
                   source={{ uri: avatarUrl }}
                   style={styles.avatarImage}
                 />
-                <View style={styles.editIcon}>
-                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
-                </View>
               </View>
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Ionicons name="add" size={48} color="#999999" />
-                <View style={styles.editIcon}>
-                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
-                </View>
               </View>
             )}
           </TouchableOpacity>
@@ -296,7 +290,7 @@ export default function ProfileDetailsStep({
           </ScrollView>
         </View>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, isKeyboardVisible && styles.footerKeyboardVisible]}>
           <AuthButton
             title="Done"
             onPress={handleContinue}
@@ -376,25 +370,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  editIcon: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-  },
   avatarLoading: {
     width: 121,
     height: 121,
@@ -438,6 +413,9 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 100, // Match other pages footer spacing
     paddingTop: 16,
+  },
+  footerKeyboardVisible: {
+    marginBottom: -70, // Reduced margin when keyboard is visible
   },
   backButton: {
     marginTop: 16,

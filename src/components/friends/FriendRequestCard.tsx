@@ -82,15 +82,17 @@ export function FriendRequestCard({
       accessibilityRole="button"
       accessibilityLabel={`View ${fullName || 'user'}'s profile`}
     >
-      <View style={styles.userInfo}>
-        <Avatar imageUrl={displayUser.avatar_url} name={fullName} size={50} />
-        <View style={styles.textContainer}>
-          <Text style={styles.name}>{shortName || fullName || 'User'}</Text>
-          <Text style={styles.email}>{displayUser.email}</Text>
-          <Text style={styles.status}>
-            {type === 'received' ? 'Wants to be friends' : 'Request sent'}
-          </Text>
-        </View>
+      <Avatar imageUrl={displayUser.avatar_url} name={fullName} size={48} />
+      <View style={styles.textContainer}>
+        <Text style={styles.name} numberOfLines={1}>
+          {shortName || fullName || 'User'}
+        </Text>
+        {type === 'sent' && (
+          <Text style={styles.statusText}>Request sent</Text>
+        )}
+        {type === 'received' && (
+          <Text style={styles.statusText}>Wants to be friends</Text>
+        )}
       </View>
 
       <View style={styles.actions}>
@@ -114,7 +116,7 @@ export function FriendRequestCard({
         ) : (
           showCancel && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.cancelButton]}
+              style={styles.cancelButton}
               onPress={wrapAction(handleCancel)}
               disabled={isLoading}
             >
@@ -131,44 +133,33 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    backgroundColor: '#F9FAFC', // Match FriendCard
+    borderWidth: 1,
+    borderColor: '#EAEAEA', // Match FriendCard
+    borderRadius: 12, // Match FriendCard
+    height: 66, // Match FriendCard
+    paddingLeft: 20, // Match FriendCard
+    paddingRight: 20,
+    marginBottom: 8, // Match FriendCard
+    marginHorizontal: 16, // Match FriendCard
   },
   textContainer: {
-    marginLeft: 12,
     flex: 1,
+    marginLeft: 14, // Match FriendCard spacing
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 2,
+    fontSize: 16, // Match FriendCard
+    fontWeight: '700', // Bold - Match FriendCard
+    color: '#2C2235', // Match FriendCard
+    letterSpacing: -0.32, // Match FriendCard
+    lineHeight: 18,
   },
-  email: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
-  },
-  status: {
-    fontSize: 12,
-    color: '#8b5cf6',
-    fontWeight: '500',
+  statusText: {
+    fontSize: 14, // Status text size
+    fontWeight: '500', // Medium
+    color: '#999999', // Grey color for status
+    letterSpacing: -0.28,
+    marginTop: 2,
   },
   actions: {
     flexDirection: 'row',
@@ -177,7 +168,7 @@ const styles = StyleSheet.create({
   actionButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 9, // Updated to pill shape (half of paddingVertical: 6 * 2 + text height)
+    borderRadius: 9,
     minWidth: 60,
     alignItems: 'center',
   },
@@ -202,13 +193,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   cancelButton: {
-    backgroundColor: '#fee2e2',
-    borderWidth: 1,
-    borderColor: '#fca5a5',
+    backgroundColor: '#FF0083', // Red/pink color
+    height: 16, // Match remove button size
+    width: 51, // Match remove button width
+    borderRadius: 4, // Match remove button
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButtonText: {
-    color: '#dc2626',
-    fontSize: 12,
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontSize: 9, // Match remove button text size
+    fontWeight: '500', // Medium
+    letterSpacing: -0.27, // Match remove button
+    lineHeight: 9,
   },
 });

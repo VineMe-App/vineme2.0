@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Text,
 } from 'react-native';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '../../components/auth/AuthLoadingAnimation';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -164,7 +164,7 @@ export default function GroupDetailScreen() {
   if (groupLoading && !group) {
     return (
       <View style={styles.loadingContainer}>
-        <LoadingSpinner size="large" />
+        <AuthLoadingAnimation />
       </View>
     );
   }

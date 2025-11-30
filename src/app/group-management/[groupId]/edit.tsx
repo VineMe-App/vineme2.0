@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, View, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { Button } from '@/components/ui/Button';
 import { useGroup } from '@/hooks/useGroups';
 import { useAuthStore } from '@/stores/auth';
@@ -148,7 +148,7 @@ export default function EditGroupScreen() {
 
       {isLoading && (
         <View style={styles.centerContent}>
-          <LoadingSpinner />
+          <AuthLoadingAnimation />
           <Text style={styles.centerText}>Loading group details…</Text>
         </View>
       )}
