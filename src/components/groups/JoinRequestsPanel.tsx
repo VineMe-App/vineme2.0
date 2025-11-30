@@ -33,10 +33,10 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Newcomers</Text>
+        <Text style={styles.title}>Requests</Text>
         <View style={styles.loadingContainer}>
           <LoadingSpinner size="small" />
-          <Text style={styles.loadingText}>Loading newcomers...</Text>
+          <Text style={styles.loadingText}>Loading requests...</Text>
         </View>
       </View>
     );
@@ -45,10 +45,10 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Newcomers</Text>
+        <Text style={styles.title}>Requests</Text>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            Failed to load newcomers. Please try again.
+            Failed to load requests. Please try again.
           </Text>
         </View>
       </View>
@@ -67,7 +67,7 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Newcomers</Text>
+        <Text style={styles.title}>Requests</Text>
         {sortedNewcomers.length > 0 && (
           <View style={styles.countBadge}>
             <Text style={styles.countText}>{sortedNewcomers.length}</Text>
@@ -75,14 +75,9 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
         )}
       </View>
 
-      <Text style={styles.subtitle}>
-        Track referrals and join requests that still need follow up before you
-        add them to the group.
-      </Text>
-
       {sortedNewcomers.length === 0 ? (
         <EmptyState
-          title="No newcomers"
+          title="No requests"
           message="Great job! Everyone has been followed up with."
           icon={null}
         />
