@@ -20,31 +20,6 @@ const ARCHIVE_REASONS = [
   'Not suitable for group',
 ];
 
-const FooterButtons: React.FC<{
-  onCancel: () => void;
-  onArchive: () => void;
-  loading: boolean;
-  disabled: boolean;
-}> = ({ onCancel, onArchive, loading, disabled }) => (
-  <View style={styles.footer}>
-    <Button
-      title="Cancel"
-      onPress={onCancel}
-      variant="secondary"
-      disabled={loading}
-      style={styles.cancelButton}
-    />
-    <Button
-      title="Archive"
-      onPress={onArchive}
-      variant="danger"
-      loading={loading}
-      disabled={disabled}
-      style={styles.archiveButton}
-    />
-  </View>
-);
-
 export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
   visible,
   requesterName,
@@ -158,12 +133,16 @@ export const ArchiveRequestModal: React.FC<ArchiveRequestModalProps> = ({
         </View>
       </View>
 
-      <FooterButtons
-        onCancel={handleClose}
-        onArchive={handleArchive}
-        loading={loading}
-        disabled={!selectedReason || loading}
-      />
+      <View style={styles.footer}>
+        <Button
+          title="Archive"
+          onPress={handleArchive}
+          variant="danger"
+          loading={loading}
+          disabled={!selectedReason || loading}
+          style={styles.archiveButton}
+        />
+      </View>
     </Modal>
   );
 };
@@ -256,14 +235,10 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     padding: 16,
-    gap: 12,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     backgroundColor: '#fff',
     marginTop: 8,
-  },
-  cancelButton: {
-    flex: 1,
   },
   archiveButton: {
     flex: 1,
