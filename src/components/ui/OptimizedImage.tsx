@@ -212,7 +212,7 @@ export function OptimizedImage({
     <View ref={containerRef} style={containerStyle}>
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <LoadingSpinner size="small" />
+          {renderPlaceholder()}
         </View>
       )}
       <Image
