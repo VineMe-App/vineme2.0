@@ -296,7 +296,7 @@ export default function ChurchStep({
             ) : services.length > 0 ? (
               <>
                 <AppText variant="labelSmall" color="secondary" style={styles.serviceLabel}>
-                  Which service you attend regularly? Select all that applies:
+                  Which service do you attend regularly?
                 </AppText>
                 {services.map((svc) => {
                   const isServiceSelected = selectedServiceId === svc.id;
