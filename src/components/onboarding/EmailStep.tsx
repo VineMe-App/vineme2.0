@@ -99,11 +99,15 @@ export default function EmailStep({
     });
 
     if (result.success) {
-      // Email successfully linked, proceed to next step
       onNext({});
     } else {
-      // Show error from linkEmail
-      setError(result.error || 'Failed to link email. Please try again.');
+      const fallback = 'Error sending email\nContact connect@vineme.app for support';
+      const message = result.error || fallback;
+      if (message.toLowerCase().includes('error sending email')) {
+        setError(fallback);
+      } else {
+        setError(message);
+      }
     }
   };
 
@@ -297,4 +301,3 @@ const styles = StyleSheet.create({
     height: 32,
   },
 });
-
