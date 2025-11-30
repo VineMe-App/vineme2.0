@@ -53,12 +53,40 @@ export default function EmailStep({
   };
 
   const handleNext = async () => {
-    // Temporarily disabled email validation - just proceed to next step
     setError(null);
-    onNext({});
+
+    // Validate email format
+    const validationError = validateEmail(email);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      // Link email if user doesn't have one, or update if different
+      if (!user?.email || user.email !== email.trim()) {
+        const result = await linkEmail(email.trim(), {
+          marketingOptIn: newsletterOptIn,
+        });
+        
+        if (!result.success && result.error) {
+          setError(result.error);
+          return;
+        }
+      } else if (user) {
+        // Email already linked, just update newsletter preference
+        await updateUserProfile({
+          marketing_opt_in: newsletterOptIn,
+        });
+      }
+
+      onNext({});
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save email. Please try again.');
+    }
   };
 
-  const disableContinue = isLoading; // Removed email validation check
+  const disableContinue = isLoading || !email.trim() || !!validateEmail(email);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
