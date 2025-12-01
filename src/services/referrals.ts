@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { authService } from './auth';
+import { triggerReferralAcceptedNotification } from './notifications';
 import type {
   GroupReferralWithDetails,
   GeneralReferralWithDetails,
@@ -245,9 +246,6 @@ export class ReferralService {
           .select('id, first_name, last_name')
           .eq('id', userId)
           .single();
-        const { triggerReferralAcceptedNotification } = await import(
-          './notifications'
-        );
         await triggerReferralAcceptedNotification({
           referrerId: data.referrerId,
           referredUserId: userId,
@@ -316,9 +314,6 @@ export class ReferralService {
           .select('id, first_name, last_name')
           .eq('id', userId)
           .single();
-        const { triggerReferralAcceptedNotification } = await import(
-          './notifications'
-        );
         await triggerReferralAcceptedNotification({
           referrerId: data.referrerId,
           referredUserId: userId,

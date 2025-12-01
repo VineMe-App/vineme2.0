@@ -4,6 +4,7 @@ import {
   triggerGroupRequestSubmittedNotification,
   triggerJoinRequestReceivedNotification,
 } from './notifications';
+import { groupMembershipNotesService } from './groupMembershipNotes';
 import type { Group, GroupMembership } from '../types/database';
 import type {
   CreateGroupData,
@@ -379,9 +380,6 @@ export class GroupCreationService {
 
       // Create note for the role change
       try {
-        const { groupMembershipNotesService } = await import(
-          './groupMembershipNotes'
-        );
         await groupMembershipNotesService.createRoleChangeNote(
           {
             membership_id: targetMembership.id,
@@ -518,9 +516,6 @@ export class GroupCreationService {
 
       // Create note for the role change
       try {
-        const { groupMembershipNotesService } = await import(
-          './groupMembershipNotes'
-        );
         await groupMembershipNotesService.createRoleChangeNote(
           {
             membership_id: targetMembership.id,
@@ -659,9 +654,6 @@ export class GroupCreationService {
 
       // Create note for the member removal
       try {
-        const { groupMembershipNotesService } = await import(
-          './groupMembershipNotes'
-        );
         await groupMembershipNotesService.createStatusChangeNote(
           {
             membership_id: membershipRecord.id,
@@ -777,10 +769,6 @@ export class GroupCreationService {
           // Create note for the status change (rejoin request)
           if (!error && data) {
             try {
-              const { groupMembershipNotesService } = await import(
-                './groupMembershipNotes'
-              );
-
               // Use appropriate note_type based on previous status
               const noteType: 'request_archived' | 'member_left' =
                 existingMembership.status === 'inactive'

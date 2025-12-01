@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import NetInfo from '@react-native-community/netinfo';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { useTheme } from '../../theme/provider/useTheme';
 
@@ -112,8 +113,7 @@ export function OfflineBanner() {
   const handleRetry = async () => {
     // Force a network check - NetInfo will automatically update our state
     try {
-      const NetInfo = await import('@react-native-community/netinfo');
-      await NetInfo.default.refresh();
+      await NetInfo.refresh();
     } catch (error) {
       console.warn('Failed to refresh network status:', error);
     }

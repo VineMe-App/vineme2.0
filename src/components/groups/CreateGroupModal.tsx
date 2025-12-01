@@ -14,6 +14,7 @@ import { groupCreationService } from '../../services/groupCreation';
 import { useAuthStore } from '../../stores/auth';
 import { useErrorHandler } from '../../hooks';
 import { locationService, type Coordinates } from '../../services/location';
+import { supabase } from '../../services/supabase';
 import type { CreateGroupData } from '../../services/admin';
 import type { SelectOption } from '../ui/Select';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -167,9 +168,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
     try {
       // Ensure Supabase session is present so RLS sees auth.uid()
-      const { data: session } = await import('../../services/supabase').then(
-        (m) => m.supabase.auth.getSession()
-      );
+      const { data: session } = await supabase.auth.getSession();
       const uid = session?.session?.user?.id;
       if (!uid || uid !== userProfile.id) {
         throw new Error('You are not authenticated. Please sign in again.');
