@@ -32,6 +32,27 @@ const MEETING_DAYS = [
   { label: 'Saturday', value: 'Saturday' },
 ];
 
+/**
+ * Normalize meeting day to capitalized format matching MEETING_DAYS options
+ * Handles various input formats (lowercase, uppercase, mixed case)
+ */
+const normalizeMeetingDay = (day: string | undefined | null): string => {
+  if (!day) return '';
+  
+  const dayLower = day.toLowerCase().trim();
+  const dayMap: Record<string, string> = {
+    'sunday': 'Sunday',
+    'monday': 'Monday',
+    'tuesday': 'Tuesday',
+    'wednesday': 'Wednesday',
+    'thursday': 'Thursday',
+    'friday': 'Friday',
+    'saturday': 'Saturday',
+  };
+  
+  return dayMap[dayLower] || day; // Return original if not found (shouldn't happen)
+};
+
 export interface GroupEditorLocation {
   address?: string;
   coordinates?: { latitude: number; longitude: number } | null;
@@ -167,7 +188,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
       : '';
     return {
       ...base,
-      meeting_day: base.meeting_day ? base.meeting_day.toLowerCase() : '',
+      meeting_day: normalizeMeetingDay(base.meeting_day),
       meeting_time: parsedTime,
       whatsapp_link: base.whatsapp_link ?? '',
     } as GroupEditorValues;
@@ -361,7 +382,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
     const payload: GroupEditorValues = {
       title: String(values.title).trim(),
       description: String(values.description).trim(),
-      meeting_day: String(values.meeting_day),
+      meeting_day: normalizeMeetingDay(String(values.meeting_day)),
       meeting_time: formatTimeForDatabase(String(values.meeting_time)),
       location: locationValue,
       whatsapp_link: values.whatsapp_link
