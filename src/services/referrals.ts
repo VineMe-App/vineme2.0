@@ -21,7 +21,7 @@ import { getFullName } from '../utils/name';
 
 export interface CreateReferralData {
   email: string;
-  phone: string;
+  phone?: string;
   note: string;
   firstName?: string;
   lastName?: string;

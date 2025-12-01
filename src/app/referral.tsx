@@ -154,7 +154,7 @@ export default function ReferralPage() {
 
         const payload: ReferralFormData = {
           email: String(values.email || '').trim(),
-          phone: localNumber ? `${countryCode}${localNumber}` : '',
+          phone: localNumber ? `${countryCode}${localNumber}` : undefined,
           note: String(values.note || '').trim(),
           firstName: values.firstName
             ? String(values.firstName).trim()
