@@ -1454,9 +1454,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           style={[
             styles.recenterButton,
             {
-              top: locationPermissionDenied
-                ? 88 + insets.top
-                : -50 + insets.top, // Same level as no group fits button
+              bottom: 12 + insets.bottom,
             },
           ]}
           onPress={handleRecenter}
