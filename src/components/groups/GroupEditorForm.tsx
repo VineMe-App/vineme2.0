@@ -527,10 +527,15 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
               // Extract digits and format them
               const digitsOnly = value.replace(/[^\d]/g, '');
               if (digitsOnly.length > 0) {
-                // Format: first 2 digits, then colon, then next 2 digits
-                if (digitsOnly.length <= 2) {
+                // Format based on digit count
+                if (digitsOnly.length === 3) {
+                  // 3 digits: first digit is hour, last 2 are minutes
+                  timeValue = digitsOnly.substring(0, 1) + ':' + digitsOnly.substring(1, 3);
+                } else if (digitsOnly.length <= 2) {
+                  // 1-2 digits: show as-is
                   timeValue = digitsOnly;
                 } else {
+                  // 4+ digits: first 2 are hours, next 2 are minutes
                   timeValue = digitsOnly.substring(0, 2) + ':' + digitsOnly.substring(2, 4);
                 }
               }
@@ -545,12 +550,17 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
               
               let formatted = '';
               if (digitsOnly.length > 0) {
-                // Take first 2 digits for hours
-                formatted = digitsOnly.substring(0, 2);
-                
-                // If we have more digits, add colon and minutes
-                if (digitsOnly.length > 2) {
-                  formatted += ':' + digitsOnly.substring(2, 4);
+                // Handle different digit lengths
+                if (digitsOnly.length === 3) {
+                  // Special case: 3 digits = first digit is hour, last 2 are minutes
+                  // e.g., "730" becomes "7:30"
+                  formatted = digitsOnly.substring(0, 1) + ':' + digitsOnly.substring(1, 3);
+                } else if (digitsOnly.length <= 2) {
+                  // 1-2 digits: just show as-is (partial input)
+                  formatted = digitsOnly;
+                } else {
+                  // 4+ digits: first 2 are hours, next 2 are minutes
+                  formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly.substring(2, 4);
                 }
               }
               
