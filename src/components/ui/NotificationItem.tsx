@@ -255,7 +255,11 @@ function getNotificationTitleAndBody(notification: Notification): {
   title: string;
   body: string;
 } {
-  const { type, data } = notification;
+  const { type } = notification;
+  const data: Record<string, any> =
+    notification.data && typeof notification.data === 'object'
+      ? notification.data
+      : {};
 
   switch (type) {
     case 'friend_request_accepted':
