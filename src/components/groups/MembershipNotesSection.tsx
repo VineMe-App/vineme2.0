@@ -112,7 +112,10 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
       case 'member_left':
         return `Left the group${note.reason ? `: ${note.reason}` : ''}`;
       case 'journey_status_change':
-        return `Journey progress: ${note.previous_journey_status || 'New'} → ${note.new_journey_status}`;
+        return (
+          note.note_text ||
+          `Journey progress: ${note.previous_journey_status || 'New'} → ${note.new_journey_status}`
+        );
       case 'role_change':
         return `Role changed: ${note.previous_role} → ${note.new_role}`;
       case 'manual':

@@ -36,7 +36,7 @@ export interface CreateJourneyChangeNoteData {
   group_id: string;
   user_id: string;
   previous_journey_status: MembershipJourneyStatus | null;
-  new_journey_status: MembershipJourneyStatus;
+  new_journey_status: MembershipJourneyStatus | null;
   note_text?: string;
 }
 
