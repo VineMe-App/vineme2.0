@@ -19,6 +19,8 @@ import { Badge } from '@/components/ui/Badge';
 import { getDisplayName, getFullName } from '@/utils/name';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { supabase } from '@/services/supabase';
+import { adminServiceWrapper } from '@/services/adminServiceWrapper';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UserManagementCardProps {
   user: UserWithGroupStatus;
@@ -26,6 +28,7 @@ interface UserManagementCardProps {
 }
 
 export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
+  const queryClient = useQueryClient();
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [contactInfo, setContactInfo] = useState<{
     email?: string;
@@ -91,6 +94,51 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
     }
   };
 
+  const handleMarkContacted = async () => {
+    try {
+      const result = await adminServiceWrapper.updateUserGroupHelpStatus(
+        user.id,
+        {
+          cannot_find_group_contacted_at: new Date().toISOString(),
+        },
+        { context: { action: 'markContacted', userId: user.id } }
+      );
+
+      if (result.error) throw result.error;
+
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-summary'] });
+
+      Alert.alert('Success', 'User marked as contacted');
+    } catch (error) {
+      console.error('Failed to mark user as contacted:', error);
+      Alert.alert('Error', 'Failed to update user status');
+    }
+  };
+
+  const handleMarkResolved = async () => {
+    try {
+      const result = await adminServiceWrapper.updateUserGroupHelpStatus(
+        user.id,
+        {
+          cannot_find_group: false,
+          cannot_find_group_resolved_at: new Date().toISOString(),
+        },
+        { context: { action: 'markResolved', userId: user.id } }
+      );
+
+      if (result.error) throw result.error;
+
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-summary'] });
+
+      Alert.alert('Success', 'User marked as resolved');
+    } catch (error) {
+      console.error('Failed to mark user as resolved:', error);
+      Alert.alert('Error', 'Failed to update user status');
+    }
+  };
+
   const getConnectionStatusText = () => {
     return user.is_connected ? 'Connected' : 'Unconnected';
   };
@@ -138,6 +186,16 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
                 Newcomer
               </Badge>
             )}
+            {user.cannot_find_group && (
+              <Badge
+                variant="error"
+                size="small"
+                style={styles.needsHelpBadge}
+                accessibilityLabel="Needs group help"
+              >
+                Needs Help
+              </Badge>
+            )}
             <Text
               style={styles.userEmail}
               accessibilityLabel={`Email: ${user.email}`}
@@ -170,6 +228,24 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           </View>
         </View>
 
+        {/* Admin Actions for Group Help */}
+        {user.cannot_find_group && (
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.contactButton]}
+              onPress={handleMarkContacted}
+            >
+              <Text style={styles.actionButtonText}>Mark Contacted</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.resolveButton]}
+              onPress={handleMarkResolved}
+            >
+              <Text style={styles.actionButtonText}>Mark Resolved</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.details}>
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Member Since:</Text>
@@ -183,6 +259,24 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
               <Text style={styles.detailLabel}>Last Active:</Text>
               <Text style={styles.detailValue}>
                 {new Date(user.last_activity).toLocaleDateString()}
+              </Text>
+            </View>
+          )}
+
+          {user.cannot_find_group && user.cannot_find_group_requested_at && (
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Help Requested:</Text>
+              <Text style={styles.detailValue}>
+                {new Date(user.cannot_find_group_requested_at).toLocaleDateString()}
+              </Text>
+            </View>
+          )}
+
+          {user.cannot_find_group_contacted_at && (
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Contacted:</Text>
+              <Text style={styles.detailValue}>
+                {new Date(user.cannot_find_group_contacted_at).toLocaleDateString()}
               </Text>
             </View>
           )}
@@ -333,6 +427,36 @@ const styles = StyleSheet.create({
   newcomerBadge: {
     alignSelf: 'flex-start',
     marginBottom: 4,
+  },
+  needsHelpBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactButton: {
+    backgroundColor: '#3b82f6',
+  },
+  resolveButton: {
+    backgroundColor: '#10b981',
+  },
+  actionButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   groupCount: {
     fontSize: 12,
