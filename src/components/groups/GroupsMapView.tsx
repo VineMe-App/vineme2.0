@@ -37,6 +37,7 @@ import type { GroupWithDetails } from '../../types/database';
 import { useGroupMembership, useGroupMembers } from '../../hooks/useGroups';
 import { useFriends } from '../../hooks/useFriendships';
 import { useAuthStore } from '../../stores/auth';
+import { MAP_STYLE } from '../../utils/mapStyles';
 
 // Dynamically import MapView - not available in Expo Go
 // Using try-catch to gracefully handle when the module isn't available
