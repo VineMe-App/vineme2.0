@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
   Keyboard,
+  TextInput,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -196,6 +197,7 @@ export default function GroupsScreen() {
     address: string;
     coordinates: { latitude: number; longitude: number };
   } | null>(null);
+  const searchInputRef = useRef<TextInput | null>(null);
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   // Create flow now navigates to dedicated page
@@ -208,16 +210,30 @@ export default function GroupsScreen() {
     setCurrentView(view);
     if (view === 'map') {
       setShowSortOptions(false);
+      setIsLocationSearchMode(true);
+    } else if (view === 'list' && sortBy !== 'distance' && !distanceOrigin) {
+      setIsLocationSearchMode(false);
     }
   };
 
+  useEffect(() => {
+    if (currentView === 'list') {
+      searchInputRef.current?.blur();
+      Keyboard.dismiss();
+    }
+  }, [currentView]);
+
   // Reset location search mode when switching away from distance sorting
   useEffect(() => {
+    if (currentView === 'map') {
+      setIsLocationSearchMode(true);
+      return;
+    }
     if (isLocationSearchMode && sortBy !== 'distance') {
       setIsLocationSearchMode(false);
       setLocationSearchError(null);
     }
-  }, [sortBy, isLocationSearchMode]);
+  }, [sortBy, isLocationSearchMode, currentView]);
 
   const isChurchAdmin = userProfile?.roles?.includes('church_admin') ?? false;
 
@@ -814,43 +830,54 @@ export default function GroupsScreen() {
       {/* Search Bar - Always visible at bottom */}
       <View style={[styles.searchBarContainer, { bottom: searchBarBottom }]}>
         <SearchBar
-          key={sortBy === 'distance' ? 'location-search' : 'group-search'}
-          placeholder={
-            sortBy === 'distance' ? 'Enter search location' : 'Search by keyword'
+          ref={searchInputRef}
+          key={
+            currentView === 'map' || sortBy === 'distance'
+              ? 'location-search'
+              : 'group-search'
           }
-          value={sortBy === 'distance' ? (distanceOrigin?.address || '') : undefined}
+          placeholder={
+            currentView === 'map' || sortBy === 'distance'
+              ? 'Enter search location'
+              : 'Search by keyword'
+          }
+          value={
+            currentView === 'map' || sortBy === 'distance'
+              ? distanceOrigin?.address || ''
+              : undefined
+          }
           onLocationSearch={
-            sortBy === 'distance'
+            currentView === 'map' || sortBy === 'distance'
               ? async (query: string) => {
                   try {
-                    // Clear any previous errors
                     setLocationSearchError(null);
-                    // Geocode the search query to get coordinates
+                    if (sortBy !== 'distance') {
+                      setSortBy('distance');
+                    }
+                    if (!isLocationSearchMode) {
+                      setIsLocationSearchMode(true);
+                    }
                     const coordinates =
                       await locationService.geocodeAddress(query);
                     if (coordinates) {
-                      // Get reverse geocode to get a formatted address
                       const address =
                         await locationService.reverseGeocode(coordinates);
                       setDistanceOrigin({
                         address: address?.formattedAddress || query,
                         coordinates,
                       });
-                      // Clear error on success
                       setLocationSearchError(null);
                     } else {
-                      // Set error state instead of using global error handler
                       setLocationSearchError('Location not found');
                     }
                   } catch (error) {
-                    // Set error state instead of using global error handler
                     setLocationSearchError('Location not found');
                   }
                 }
               : undefined
           }
           onLocationClear={
-            sortBy === 'distance'
+            currentView === 'map' || sortBy === 'distance'
               ? () => {
                   setDistanceOrigin(null);
                   setLocationSearchError(null);
