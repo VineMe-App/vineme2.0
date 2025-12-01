@@ -1,7 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -9,19 +8,13 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import {
-  ReferralFormModal,
-  ReferralFormData,
-} from '../components/referrals/ReferralFormModal';
-import { referralService } from '../services/referrals';
+import { Text } from '../components/ui/Text';
 import { useAuth } from '../hooks/useAuth';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ReferralLandingPage() {
-  const [showGeneralReferralModal, setShowGeneralReferralModal] =
-    useState(false);
   const { userProfile } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const handleGeneralReferral = useCallback(() => {
     if (!userProfile) {
@@ -41,312 +34,189 @@ export default function ReferralLandingPage() {
     router.push('/(tabs)/groups');
   }, []);
 
-  const handleGeneralReferralSubmit = useCallback(
-    async (data: ReferralFormData) => {
-      if (!userProfile) {
-        throw new Error('User profile not found');
-      }
-
-      const result = await referralService.createGeneralReferral({
-        email: data.email,
-        phone: data.phone,
-        note: data.note,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        referrerId: userProfile.id,
-      });
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create referral');
-      }
-
-      // Show success message
-      Alert.alert(
-        'Referral Sent!',
-        "We've created an account for the person you referred and sent them an email to complete their setup. They'll be marked as a newcomer so our team can help them find the right group.",
-        [{ text: 'OK' }]
-      );
-    },
-    [userProfile]
-  );
-
-  const handleCloseGeneralReferralModal = useCallback(() => {
-    setShowGeneralReferralModal(false);
-  }, []);
-
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
+          activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
+          <Ionicons name="chevron-back" size={20} color="#2C2235" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Connect Someone</Text>
+        <Text
+          variant="h3"
+          weight="bold"
+          style={styles.headerTitle}
+        >
+          Connect a friend
+        </Text>
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.questionSection}>
-          <Text style={styles.questionTitle}>
-            Do you want to connect/refer someone else to a group?
-          </Text>
-          <Text style={styles.questionSubtitle}>
-            Choose the option that best fits their situation
-          </Text>
-        </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Description */}
+        <Text
+          variant="body"
+          weight="normal"
+          style={styles.description}
+        >
+          Choose the option that fits best. Both options will create an account
+          for the person you refer and email them to finish setup.
+        </Text>
 
+        {/* Option Cards */}
         <View style={styles.optionsContainer}>
-          <TouchableOpacity onPress={handleGroupReferral} activeOpacity={0.8}>
-            <Card style={styles.optionCard}>
-              <View style={styles.optionContent}>
-                <View style={styles.optionIconContainer}>
-                  <Ionicons name="people-outline" size={32} color="#007AFF" />
-                </View>
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>
-                    Yes, I know a group that fits
-                  </Text>
-                  <Text style={styles.optionDescription}>
-                    Browse groups to find the right fit, then use the "Refer a
-                    friend" button on the group page to connect them directly
-                  </Text>
-                </View>
-                <View style={styles.chevronContainer}>
-                  <Ionicons
-                    name="chevron-forward-outline"
-                    size={20}
-                    color="#6b7280"
-                  />
-                </View>
+          {/* Option 1: Yes, I know a group that fits */}
+          <TouchableOpacity
+            onPress={handleGroupReferral}
+            activeOpacity={0.8}
+            style={styles.optionCard}
+          >
+            <View style={styles.optionContent}>
+              <View style={styles.optionTextContainer}>
+                <Text
+                  variant="body"
+                  weight="bold"
+                  style={styles.optionTitle}
+                >
+                  Yes, I know a group that fits
+                </Text>
+                <Text
+                  variant="bodySmall"
+                  weight="normal"
+                  style={styles.optionDescription}
+                >
+                  Browse and search groups, then use "Refer a friend" to
+                  connect them.
+                </Text>
               </View>
-            </Card>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={20}
+                color="#2C2235"
+                style={styles.chevronIcon}
+              />
+            </View>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleGeneralReferral} activeOpacity={0.8}>
-            <Card style={styles.optionCard}>
-              <View style={styles.optionContent}>
-                <View style={styles.optionIconContainer}>
-                  <Ionicons
-                    name="help-circle-outline"
-                    size={32}
-                    color="#ff0083"
-                  />
-                </View>
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>No specific group fits</Text>
-                  <Text style={styles.optionDescription}>
-                    Connect them to the community and our team will help match
-                    them with groups that fit their interests
-                  </Text>
-                </View>
-                <View style={styles.chevronContainer}>
-                  <Ionicons
-                    name="chevron-forward-outline"
-                    size={20}
-                    color="#6b7280"
-                  />
-                </View>
+          {/* Option 2: No specific group fits */}
+          <TouchableOpacity
+            onPress={handleGeneralReferral}
+            activeOpacity={0.8}
+            style={styles.optionCard}
+          >
+            <View style={styles.optionContent}>
+              <View style={styles.optionTextContainer}>
+                <Text
+                  variant="body"
+                  weight="bold"
+                  style={styles.optionTitle}
+                >
+                  No specific group fits
+                </Text>
+                <Text
+                  variant="bodySmall"
+                  weight="normal"
+                  style={styles.optionDescription}
+                >
+                  Connect them to the community, and our team will match them
+                  with suitable groups.
+                </Text>
               </View>
-            </Card>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={20}
+                color="#2C2235"
+                style={styles.chevronIcon}
+              />
+            </View>
           </TouchableOpacity>
         </View>
-
-        <View style={styles.infoSection}>
-          <View style={styles.infoCard}>
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color="#6b7280"
-            />
-            <Text style={styles.infoText}>
-              Both options will create an account for the person you're
-              referring and send them an email to complete their setup.
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.instructionsSection}>
-          <Text style={styles.instructionsTitle}>How it works:</Text>
-          <View style={styles.instructionsList}>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text style={styles.instructionNumberText}>1</Text>
-              </View>
-              <Text style={styles.instructionText}>
-                Choose whether you know a specific group that fits or want a
-                general referral
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text style={styles.instructionNumberText}>2</Text>
-              </View>
-              <Text style={styles.instructionText}>
-                Provide their contact information and any helpful context
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text style={styles.instructionNumberText}>3</Text>
-              </View>
-              <Text style={styles.instructionText}>
-                They'll receive an email to verify their account and complete
-                setup
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* General referral now handled via dedicated page */}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#FEFEFE',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingHorizontal: 16,
     paddingBottom: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    backgroundColor: '#FEFEFE',
   },
   backButton: {
     marginRight: 16,
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontSize: 22,
+    letterSpacing: -0.44,
+    lineHeight: 22,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Bold',
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 21,
+    paddingTop: 24,
+    paddingBottom: 40,
   },
-  questionSection: {
-    marginBottom: 32,
-    alignItems: 'center',
-  },
-  questionTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 8,
-    lineHeight: 32,
-  },
-  questionSubtitle: {
+  description: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    letterSpacing: -0.32,
+    lineHeight: 20,
+    color: '#2C2235',
+    marginBottom: 25,
+    fontFamily: 'Figtree-Regular',
   },
   optionsContainer: {
-    gap: 16,
-    marginBottom: 32,
+    gap: 10,
   },
   optionCard: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    backgroundColor: '#F9FAFC',
+    borderRadius: 12,
+    paddingHorizontal: 33,
+    paddingVertical: 31,
+    minHeight: 120,
+    justifyContent: 'center',
   },
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-  },
-  optionIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#f0f8ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
+    justifyContent: 'space-between',
   },
   optionTextContainer: {
     flex: 1,
+    marginRight: 16,
   },
   optionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 4,
+    fontSize: 16,
+    letterSpacing: -0.32,
+    lineHeight: 16,
+    color: '#271D30',
+    marginBottom: 12,
+    fontFamily: 'Figtree-Bold',
   },
   optionDescription: {
     fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
+    letterSpacing: -0.28,
+    lineHeight: 18,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Regular',
   },
-  chevronContainer: {
-    marginLeft: 12,
-  },
-  infoSection: {
-    marginTop: 20,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#374151',
-    lineHeight: 20,
-    marginLeft: 12,
-    flex: 1,
-  },
-  instructionsSection: {
-    marginTop: 24,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  instructionsTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 16,
-  },
-  instructionsList: {
-    gap: 16,
-  },
-  instructionItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  instructionNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#007AFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 2,
-  },
-  instructionNumberText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  instructionText: {
-    fontSize: 14,
-    color: '#374151',
-    lineHeight: 20,
-    flex: 1,
+  chevronIcon: {
+    marginLeft: 'auto',
   },
 });

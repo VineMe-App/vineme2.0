@@ -8,10 +8,12 @@ export interface ReferralValidationResult {
 
 export interface ReferralFormData {
   email: string;
-  phone: string;
+  phone?: string;
   note: string;
   firstName?: string;
   lastName?: string;
+  groupId?: string;
+  referrerId?: string;
 }
 
 export interface ReferralRateLimitInfo {
@@ -84,10 +86,8 @@ export function validateReferralForm(
     }
   }
 
-  // Validate phone number
-  if (!data.phone || !data.phone.trim()) {
-    errors.phone = 'Phone number is required';
-  } else {
+  // Validate phone number (optional)
+  if (data.phone && data.phone.trim()) {
     const phone = data.phone.trim();
 
     // Remove formatting for validation
@@ -388,7 +388,7 @@ export function sanitizeReferralInput(
 ): ReferralFormData {
   return {
     email: data.email.trim().toLowerCase(),
-    phone: data.phone.trim(),
+    phone: data.phone?.trim(),
     note: data.note.trim().substring(0, 500), // Enforce max length
     firstName: data.firstName?.trim().substring(0, 50),
     lastName: data.lastName?.trim().substring(0, 50),

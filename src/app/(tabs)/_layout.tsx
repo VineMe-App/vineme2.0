@@ -17,7 +17,7 @@ const HomeHeader = () => {
   const { theme } = useTheme();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { count: unreadCount } = useNotificationBadge(user?.id);
+  const { count: unreadCount = 0 } = useNotificationBadge(user?.id);
 
   const handleNotificationPress = () => {
     // Navigate to the notifications page

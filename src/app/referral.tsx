@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,24 +6,39 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  TextInput,
+  Image,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Form,
   FormField,
   Input,
   Button,
-  Card,
   useFormContext,
 } from '../components/ui';
-import { CountryCodePicker } from '../components/ui/CountryCodePicker';
+import { CountryCodePicker, type Country } from '../components/ui/CountryCodePicker';
 import { referralService } from '../services/referrals';
 import { useAuthStore } from '../stores/auth';
 import {
   validateReferralForm,
   type ReferralFormData,
 } from '../utils/referralValidation';
+import { useGroup } from '../hooks/useGroups';
+import { locationService } from '../services/location';
+import { OptimizedImage } from '../components/ui/OptimizedImage';
+import { GroupPlaceholderImage } from '../components/ui/GroupPlaceholderImage';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+
+const COUNTRIES: Country[] = [
+  { name: 'United Kingdom', code: '+44', flag: '🇬🇧' },
+  { name: 'United States', code: '+1', flag: '🇺🇸' },
+  { name: 'Canada', code: '+1', flag: '🇨🇦' },
+  { name: 'Australia', code: '+61', flag: '🇦🇺' },
+  { name: 'New Zealand', code: '+64', flag: '🇳🇿' },
+];
 
 export default function ReferralPage() {
   const params = useLocalSearchParams<{
@@ -38,18 +53,46 @@ export default function ReferralPage() {
     : params.groupName;
   const isGroupReferral = Boolean(groupId);
   const router = useRouter();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { userProfile } = useAuthStore();
+
+  // Hide the navigation header
+  useEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
+
+  // Fetch group data if groupId is provided
+  const { data: group, isLoading: groupLoading } = useGroup(groupId);
 
   const formConfig = useMemo(
     () =>
       ({
         firstName: {
           initialValue: '',
-          rules: { maxLength: 50 },
+          rules: {
+            required: true,
+            maxLength: 50,
+            custom: (value: string) => {
+              const trimmed = value?.trim() || '';
+              if (!trimmed) return 'First name is required';
+              return undefined;
+            },
+          },
         },
         lastName: {
           initialValue: '',
-          rules: { maxLength: 50 },
+          rules: {
+            required: true,
+            maxLength: 50,
+            custom: (value: string) => {
+              const trimmed = value?.trim() || '';
+              if (!trimmed) return 'Last name is required';
+              return undefined;
+            },
+          },
         },
         email: {
           initialValue: '',
@@ -74,18 +117,15 @@ export default function ReferralPage() {
         localNumber: {
           initialValue: '',
           rules: {
-            required: true,
+            required: false, // Phone is optional in Figma
             custom: (value: string) => {
-              if (!value) return 'Phone number is required';
-
-              // Basic validation - just check if it's a reasonable length
+              if (!value) return undefined; // Optional
               const digitsOnly = value.replace(/\D/g, '');
               if (digitsOnly.length < 7) {
                 return 'Phone number must be at least 7 digits';
               } else if (digitsOnly.length > 15) {
                 return 'Phone number must be no more than 15 digits';
               }
-
               return undefined;
             },
           },
@@ -109,12 +149,12 @@ export default function ReferralPage() {
           return;
         }
 
-        // Extract the actual country code from the value
         const countryCode = String(values.countryCode || '+44');
+        const localNumber = String(values.localNumber || '').replace(/\D/g, '');
 
         const payload: ReferralFormData = {
           email: String(values.email || '').trim(),
-          phone: `${countryCode}${String(values.localNumber || '').replace(/\D/g, '')}`,
+          phone: localNumber ? `${countryCode}${localNumber}` : undefined,
           note: String(values.note || '').trim(),
           firstName: values.firstName
             ? String(values.firstName).trim()
@@ -153,346 +193,346 @@ export default function ReferralPage() {
     [userProfile?.id, groupId, isGroupReferral, router]
   );
 
+  const formatMeetingTime = (day: string, time: string) => {
+    try {
+      // Parse time string (could be "12:00 PM" or "12:00" or "12:00:00")
+      const timeStr = time.split(' ')[0]; // Get "12:00" from "12:00 PM"
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const isPM = time.toLowerCase().includes('pm');
+      const hour24 = isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours;
+      
+      const date = new Date();
+      date.setHours(hour24, minutes || 0, 0, 0);
+      
+      const formattedTime = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+      const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+      const timeStrFormatted = formattedTime.toLowerCase().replace(/\s/g, '');
+      return `${dayName}s ${timeStrFormatted}`;
+    } catch {
+      return `${day} ${time}`;
+    }
+  };
+
+  const formatLocation = (location: any) => {
+    const parsed = locationService.parseGroupLocation(location);
+    if (parsed.address && parsed.address.trim().length > 0)
+      return parsed.address;
+    if (typeof location === 'string' && location.trim().length > 0)
+      return location;
+    if (location?.room) return `Room ${location.room}`;
+    return 'Location TBD';
+  };
+
+  const getMemberCount = () => {
+    if (!group?.memberships) return 0;
+    return group.memberships.filter((m: any) => m.status === 'active').length;
+  };
+
+  // Determine category for placeholder image
+  const category = useMemo(() => {
+    const userChurchId = userProfile?.church_id;
+    const userServiceId = userProfile?.service_id;
+    if (group?.service_id && userServiceId && group.service_id === userServiceId) {
+      return 'service';
+    }
+    if (group?.church_id && userChurchId && group.church_id === userChurchId) {
+      return 'church';
+    }
+    return 'outside';
+  }, [group, userProfile]);
+
+  if (isGroupReferral && groupLoading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <LoadingSpinner />
+      </View>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
+          activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
+          <Ionicons name="chevron-back" size={20} color="#2C2235" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {isGroupReferral ? 'Refer a Friend' : 'General Referral'}
+        <Text style={styles.headerTitle}>
+          {isGroupReferral ? 'Referral form' : 'General referral'}
         </Text>
       </View>
 
-      <View style={styles.content}>
-        {/* Context Card: Group selected vs no group */}
-        <Card style={styles.contextCard}>
-          <View style={styles.contextRow}>
-            <View style={styles.contextIconWrap}>
-              <Ionicons
-                name={
-                  isGroupReferral ? 'people-outline' : 'help-circle-outline'
-                }
-                size={22}
-                color={isGroupReferral ? '#2563eb' : '#ff0083'}
-              />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Group Card - Only show if group is selected */}
+        {isGroupReferral && group && (
+          <View style={styles.groupCard}>
+            {/* Group Image */}
+            <View style={styles.groupImageContainer}>
+              {group.image_url ? (
+                <OptimizedImage
+                  source={{ uri: group.image_url }}
+                  style={styles.groupImage}
+                  quality="medium"
+                  resizeMode="cover"
+                />
+              ) : (
+                <GroupPlaceholderImage style={styles.groupImage} category={category} />
+              )}
             </View>
-            <View style={styles.contextTextWrap}>
-              <Text style={styles.contextTitle} numberOfLines={1}>
-                {isGroupReferral
-                  ? 'Referring to group'
-                  : 'No specific group selected'}
+
+            {/* Group Info */}
+            <View style={styles.groupInfo}>
+              <Text style={styles.groupTitle} numberOfLines={1}>
+                {group.title}
               </Text>
-              <Text style={styles.contextSubtitle} numberOfLines={2}>
-                {isGroupReferral
-                  ? groupName || groupId
-                  : 'We will help them find a fitting group after they sign up'}
-              </Text>
+
+              {/* Meeting Time */}
+              {group.meeting_day && group.meeting_time && (
+                <View style={styles.groupDetailRow}>
+                  <Ionicons name="time-outline" size={12} color="#2C2235" />
+                  <Text style={styles.groupDetailText}>
+                    {formatMeetingTime(group.meeting_day, group.meeting_time)}
+                  </Text>
+                </View>
+              )}
+
+              {/* Location */}
+              {group.location && (
+                <View style={styles.groupDetailRow}>
+                  <Ionicons name="location-outline" size={12} color="#2C2235" />
+                  <Text style={styles.groupDetailText} numberOfLines={1}>
+                    {formatLocation(group.location)}
+                  </Text>
+                </View>
+              )}
+
+              {/* Member Count Badge */}
+              <View style={styles.memberBadge}>
+                <Ionicons name="person" size={12} color="#2C2235" />
+                <Text style={styles.memberCount}>{getMemberCount()}</Text>
+              </View>
             </View>
           </View>
-        </Card>
+        )}
 
+        {/* General Referral Card - Show when no group is selected */}
+        {!isGroupReferral && (
+          <View style={styles.generalReferralCard}>
+            <Text style={styles.generalReferralTitle}>
+              No specific group selected
+            </Text>
+            <Text style={styles.generalReferralSubtitle}>
+              We'll help them find a suitable group after they sign up.
+            </Text>
+          </View>
+        )}
+
+        {/* Description */}
         <Text style={styles.description}>
           {isGroupReferral
-            ? "Help someone join this group by providing their contact information. They'll receive an email to set up their account and can then join the group."
-            : "Help someone join the VineMe community. They'll receive an email to set up their account and our team will help match them to a group."}
+            ? "Invite someone to join this group by adding their contact information. They'll get an email to set up their account and join the group."
+            : "Help someone join the VineMe community. They'll receive an email to set up their account, and we'll help match them to a group."}
         </Text>
 
+        {/* Privacy Notice */}
         <View style={styles.privacyNotice}>
           <View style={styles.privacyNoticeHeader}>
-            <Ionicons name="information-circle-outline" size={20} color="#856404" />
-            <Text style={styles.privacyNoticeTitle}>Privacy Notice</Text>
+            <Ionicons name="alert-circle" size={20} color="#2C2235" />
+            <Text style={styles.privacyNoticeTitle}>Privacy notice</Text>
           </View>
           <Text style={styles.privacyNoticeText}>
-            {isGroupReferral
-              ? "Please inform the person you're referring that their contact details will be shared with church admins and the connect group leaders for this group."
-              : "Please inform the person you're referring that their contact details will be shared with church admins."}
+            Please let the person you're referring know that their contact
+            details will be shared with the church admins and the group leaders.
           </Text>
         </View>
 
-        <View style={styles.sectionHeader}>
-          <Ionicons name="person-add-outline" size={18} color="#374151" />
-          <Text style={styles.sectionTitle}>Referral details</Text>
-        </View>
-
+        {/* Form */}
         <Form config={formConfig} onSubmit={handleSubmit}>
-          <View style={styles.row}>
-            <View style={styles.half}>
-              <FormField name="firstName">
-                {({ value, error, onChange, onBlur }) => (
-                  <Input
-                    label="First Name"
+          {/* First Name */}
+          <FormField name="firstName">
+            {({ value, error, onChange, onBlur }) => (
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>
+                  First name<Text style={styles.required}>*</Text>
+                </Text>
+                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
+                  <TextInput
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
-                    error={error}
                     placeholder="Peter"
+                    placeholderTextColor="#999999"
+                    style={styles.textInput}
                     autoCapitalize="words"
                   />
-                )}
-              </FormField>
-            </View>
-            <View style={styles.half}>
-              <FormField name="lastName">
-                {({ value, error, onChange, onBlur }) => (
-                  <Input
-                    label="Last Name"
+                </View>
+                {error && <Text style={styles.errorText}>{error}</Text>}
+              </View>
+            )}
+          </FormField>
+
+          {/* Last Name */}
+          <FormField name="lastName">
+            {({ value, error, onChange, onBlur }) => (
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>
+                  Last name<Text style={styles.required}>*</Text>
+                </Text>
+                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
+                  <TextInput
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
-                    error={error}
                     placeholder="Fisher"
+                    placeholderTextColor="#999999"
+                    style={styles.textInput}
                     autoCapitalize="words"
                   />
-                )}
-              </FormField>
-            </View>
-          </View>
+                </View>
+                {error && <Text style={styles.errorText}>{error}</Text>}
+              </View>
+            )}
+          </FormField>
 
-          <View style={styles.formFieldContainer}>
-            <FormField name="email">
-              {({ value, error, onChange, onBlur }) => (
-                <Input
-                  label="Email Address"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  error={error}
-                  placeholder="their.email@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  required
-                />
-              )}
-            </FormField>
-          </View>
+          {/* Email */}
+          <FormField name="email">
+            {({ value, error, onChange, onBlur }) => (
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>
+                  Email<Text style={styles.required}>*</Text>
+                </Text>
+                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
+                  <TextInput
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="name@email.com"
+                    placeholderTextColor="#999999"
+                    style={styles.textInput}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+                {error && <Text style={styles.errorText}>{error}</Text>}
+              </View>
+            )}
+          </FormField>
 
-          <View style={styles.phoneFieldContainer}>
-            <FormField name="countryCode">
-              {({ value, onChange }) => (
-                <CountryCodePicker
-                  value={value}
-                  onChange={onChange}
-                  label="Country"
-                />
-              )}
-            </FormField>
-            <FormField name="localNumber">
-              {({ value, error, onChange, onBlur }) => (
-                <Input
-                  label="Phone Number"
-                  value={value}
-                  onChangeText={(text) => onChange(text.replace(/\D/g, ''))}
-                  onBlur={onBlur}
-                  error={error}
-                  placeholder="7890123456"
-                  keyboardType="phone-pad"
-                  required
-                />
-              )}
-            </FormField>
-          </View>
+          {/* Phone Number */}
+          <PhoneNumberField />
 
-          <View style={styles.sectionHeaderAlt}>
-            <Ionicons name="create-outline" size={18} color="#374151" />
-            <Text style={styles.sectionTitle}>Context (optional)</Text>
-          </View>
+          {/* Note */}
+          <FormField name="note">
+            {({ value, error, onChange, onBlur }) => (
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Note</Text>
+                <View style={[styles.textAreaWrapper, error && styles.inputWrapperError]}>
+                  <TextInput
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="Why do you think they'd be a good fit? Any context that would help..."
+                    placeholderTextColor="#999999"
+                    style={styles.textArea}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+                <Text style={styles.characterCount}>
+                  {value?.length || 0}/500 characters
+                </Text>
+                {error && <Text style={styles.errorText}>{error}</Text>}
+              </View>
+            )}
+          </FormField>
 
-          <View style={styles.formFieldContainer}>
-            <FormField name="note">
-              {({ value, error, onChange, onBlur }) => (
-                <Input
-                  label="Note (Optional)"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  error={error}
-                  placeholder="Why do you think they'd be a good fit? Any context that would help..."
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  helperText={`${(value || '').length}/500 characters`}
-                />
-              )}
-            </FormField>
-          </View>
+          {/* Footer Note */}
+          <Text style={styles.footerNote}>
+            By submitting a referral, you confirm that you have permission to
+            share this person's contact information.
+          </Text>
 
-          <SubmitControls
-            onSubmit={handleSubmit}
-            onCancel={() => router.back()}
-          />
+          {/* Submit Button */}
+          <SubmitButton onSubmit={handleSubmit} />
         </Form>
-        <Text style={styles.footerNote}>
-          By sending a referral, you confirm you have permission to share this
-          person's contact information.
-        </Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  backButton: {
-    marginRight: 12,
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-  },
-  contextCard: {
-    marginBottom: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  contextRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  contextIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#eff6ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contextTextWrap: {
-    flex: 1,
-  },
-  contextTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  contextSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
-  },
-  description: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  privacyNotice: {
-    backgroundColor: '#fff8e5',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#ffd966',
-  },
-  privacyNoticeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  privacyNoticeTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#856404',
-  },
-  privacyNoticeText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#856404',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  sectionHeaderAlt: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  half: {
-    flex: 1,
-  },
-  formFieldContainer: {
-    marginBottom: 20,
-  },
-  phoneFieldContainer: {
-    marginBottom: 20,
-  },
-  actions: {
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  footerNote: {
-    marginTop: 20,
-    fontSize: 13,
-    color: '#6b7280',
-    lineHeight: 18,
-    textAlign: 'center',
-    paddingHorizontal: 16,
-  },
-});
+// Phone Number Field Component
+const PhoneNumberField: React.FC = () => {
+  const { values, errors, setValue, setTouched } = useFormContext();
+  const countryCode = values.countryCode || '+44';
+  const localNumber = values.localNumber || '';
+  const error = errors.localNumber;
 
-// Internal submit controls that use the form context to validate and submit
-const SubmitControls: React.FC<{
+  const selectedCountry = COUNTRIES.find((c) => c.code === countryCode) || COUNTRIES[0];
+
+  return (
+    <View style={styles.fieldContainer}>
+      <Text style={styles.fieldLabel}>Phone number</Text>
+      <View style={[styles.phoneInputWrapper, error && styles.inputWrapperError]}>
+        {/* Country Code with Flag - Clickable */}
+        <CountryCodePicker
+          value={countryCode}
+          onChange={(code) => {
+            setValue('countryCode', code);
+          }}
+          hideLabel={true}
+          renderTrigger={({ selected, open }) => (
+            <TouchableOpacity
+              style={styles.countryCodeContainer}
+              onPress={open}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.flagEmoji}>{selected.flag}</Text>
+              <Text style={styles.countryCodeText}>{selected.code}</Text>
+            </TouchableOpacity>
+          )}
+        />
+        
+        {/* Divider */}
+        <View style={styles.phoneDivider} />
+        
+        {/* Phone Number Input */}
+        <TextInput
+          value={localNumber}
+          onChangeText={(text) => {
+            setValue('localNumber', text.replace(/\D/g, ''));
+          }}
+          onBlur={() => {
+            setTouched('localNumber', true);
+          }}
+          placeholder=""
+          placeholderTextColor="#999999"
+          style={styles.phoneInput}
+          keyboardType="phone-pad"
+        />
+      </View>
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
+};
+
+// Submit Button Component
+const SubmitButton: React.FC<{
   onSubmit: (values: Record<string, any>) => void | Promise<void>;
-  onCancel: () => void;
-}> = ({ onSubmit, onCancel }) => {
+}> = ({ onSubmit }) => {
   const { validateForm, values, isSubmitting } = useFormContext();
   const handlePress = useCallback(() => {
     const ok = validateForm();
@@ -501,15 +541,336 @@ const SubmitControls: React.FC<{
   }, [validateForm, values, onSubmit]);
 
   return (
-    <View style={styles.actions}>
-      <Button
-        title="Send Referral"
-        variant="secondary"
-        size="small"
-        fullWidth
-        onPress={handlePress}
-        loading={isSubmitting}
-      />
-    </View>
+    <TouchableOpacity
+      style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+      onPress={handlePress}
+      disabled={isSubmitting}
+      activeOpacity={0.8}
+    >
+      <Text style={styles.submitButtonText}>
+        {isSubmitting ? 'Submitting...' : 'Submit request'}
+      </Text>
+    </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FEFEFE',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
+    backgroundColor: '#FEFEFE',
+  },
+  backButton: {
+    marginRight: 16,
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 22,
+    letterSpacing: -0.44,
+    lineHeight: 22,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Bold',
+    fontWeight: 'bold',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 21,
+    paddingTop: 24,
+    paddingBottom: 40,
+  },
+  // General Referral Card Styles
+  generalReferralCard: {
+    backgroundColor: '#2C2235',
+    borderRadius: 12,
+    height: 92,
+    marginBottom: 15,
+    paddingHorizontal: 30,
+    paddingTop: 18,
+    paddingBottom: 18,
+    justifyContent: 'center',
+  },
+  generalReferralTitle: {
+    fontSize: 16,
+    letterSpacing: -0.32,
+    lineHeight: 14,
+    color: '#FFFFFF',
+    fontFamily: 'Figtree-Bold',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  generalReferralSubtitle: {
+    fontSize: 14,
+    letterSpacing: -0.28,
+    lineHeight: 18,
+    color: '#FFFFFF',
+    fontFamily: 'Figtree-Regular',
+  },
+  // Group Card Styles
+  groupCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    height: 92,
+    marginBottom: 15,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  groupImageContainer: {
+    width: 92,
+    height: 92,
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+    overflow: 'hidden',
+  },
+  groupImage: {
+    width: '100%',
+    height: '100%',
+  },
+  groupInfo: {
+    flex: 1,
+    paddingLeft: 12,
+    paddingTop: 15,
+    paddingRight: 12,
+    paddingBottom: 15,
+    position: 'relative',
+  },
+  groupTitle: {
+    fontSize: 14,
+    letterSpacing: -0.28,
+    lineHeight: 14,
+    color: '#271D30',
+    fontFamily: 'Figtree-Bold',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  groupDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  groupDetailText: {
+    fontSize: 9,
+    letterSpacing: -0.18,
+    lineHeight: 11,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Regular',
+    marginLeft: 4,
+  },
+  memberBadge: {
+    position: 'absolute',
+    right: 12,
+    bottom: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(217, 217, 217, 0.8)',
+    borderRadius: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  memberCount: {
+    fontSize: 14,
+    letterSpacing: -0.42,
+    lineHeight: 18,
+    color: '#2C2235',
+    fontFamily: 'Avenir-Medium',
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  // Description
+  description: {
+    fontSize: 16,
+    letterSpacing: -0.32,
+    lineHeight: 22,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Regular',
+    marginBottom: 24,
+  },
+  // Privacy Notice
+  privacyNotice: {
+    backgroundColor: 'rgba(255, 0, 131, 0.08)',
+    borderRadius: 16,
+    padding: 23,
+    marginBottom: 24,
+  },
+  privacyNoticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  privacyNoticeTitle: {
+    fontSize: 16,
+    letterSpacing: -0.32,
+    lineHeight: 16,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Bold',
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  privacyNoticeText: {
+    fontSize: 16,
+    letterSpacing: -0.32,
+    lineHeight: 20,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Regular',
+  },
+  // Form Field Styles
+  fieldContainer: {
+    marginBottom: 18,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    letterSpacing: -0.28,
+    lineHeight: 16,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Medium',
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  required: {
+    color: '#FF0083',
+  },
+  inputWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    height: 50,
+    paddingHorizontal: 17,
+    justifyContent: 'center',
+  },
+  inputWrapperError: {
+    borderColor: '#FF0083',
+  },
+  textInput: {
+    fontSize: 16,
+    letterSpacing: -0.32,
+    lineHeight: 24,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Medium',
+    fontWeight: '500',
+    padding: 0,
+  },
+  // Phone Input Styles
+  phoneInputWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 17,
+  },
+  countryCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 17,
+    paddingRight: 12,
+  },
+  flagEmoji: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  countryCodeText: {
+    fontSize: 18,
+    letterSpacing: 0,
+    lineHeight: 24,
+    color: '#000000',
+    fontFamily: 'Figtree-Regular',
+  },
+  phoneDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#EAEAEA',
+    marginHorizontal: 12,
+  },
+  phoneInput: {
+    flex: 1,
+    fontSize: 16,
+    letterSpacing: -0.32,
+    lineHeight: 24,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Regular',
+    padding: 0,
+  },
+  // Text Area Styles
+  textAreaWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    minHeight: 158,
+    paddingHorizontal: 17,
+    paddingTop: 19,
+    paddingBottom: 12,
+  },
+  textArea: {
+    fontSize: 16,
+    letterSpacing: -0.32,
+    lineHeight: 22,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Medium',
+    fontWeight: '500',
+    padding: 0,
+    minHeight: 100,
+  },
+  characterCount: {
+    fontSize: 14,
+    letterSpacing: -0.28,
+    lineHeight: 16,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Medium',
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF0083',
+    marginTop: 4,
+    fontFamily: 'Figtree-Regular',
+  },
+  // Footer Note
+  footerNote: {
+    fontSize: 14,
+    letterSpacing: -0.28,
+    lineHeight: 18,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Regular',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  // Submit Button
+  submitButton: {
+    backgroundColor: '#2C2235',
+    borderRadius: 100,
+    height: 42,
+    width: 278,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 0,
+    marginBottom: 20,
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    fontSize: 16,
+    letterSpacing: 0,
+    lineHeight: 16,
+    color: '#FFFFFF',
+    fontFamily: 'Figtree-Bold',
+    fontWeight: 'bold',
+  },
+});

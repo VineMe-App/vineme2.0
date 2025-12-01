@@ -1,19 +1,31 @@
-import React, { useMemo } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Stack } from 'expo-router';
-import { useTheme } from '@/theme/provider/useTheme';
+import React, { useMemo, useEffect } from 'react';
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
+import { useRouter, useNavigation } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
 import { Text } from '@/components/ui/Text';
 import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { NotificationItem } from '@/components/ui/NotificationItem';
-import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth';
 import { useEnhancedNotifications } from '@/hooks/useNotifications';
+import { supabase } from '@/services/supabase';
+import type { Notification } from '@/types/notifications';
 
 export default function NotificationsScreen() {
-  const { theme } = useTheme();
+  const router = useRouter();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
+
+  // Hide the navigation header
+  useEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
 
   const {
     notifications,
@@ -24,10 +36,99 @@ export default function NotificationsScreen() {
     fetchNextPage,
     markAsRead,
     deleteNotification,
-    markAllAsRead,
     refreshNotifications,
     error,
   } = useEnhancedNotifications(user?.id);
+
+  // Extract all user IDs from notifications
+  const userIds = useMemo(() => {
+    const ids = new Set<string>();
+    notifications.forEach((notification: Notification) => {
+      const { type, data } = notification;
+      if (data && typeof data === 'object') {
+        switch (type) {
+          case 'friend_request_received':
+            if (data.fromUserId && typeof data.fromUserId === 'string') {
+              ids.add(data.fromUserId);
+            }
+            break;
+          case 'friend_request_accepted':
+            if (data.acceptedByUserId && typeof data.acceptedByUserId === 'string') {
+              ids.add(data.acceptedByUserId);
+            }
+            break;
+          case 'group_request_submitted':
+            if (data.creatorId && typeof data.creatorId === 'string') {
+              ids.add(data.creatorId);
+            }
+            break;
+          case 'group_request_approved':
+          case 'group_request_denied':
+            // For group request approved/denied, show the requester's (current user's) avatar
+            // The notification.user_id is the requester
+            if (notification.user_id && typeof notification.user_id === 'string') {
+              ids.add(notification.user_id);
+            }
+            break;
+          case 'join_request_received':
+            if (data.requesterId && typeof data.requesterId === 'string') {
+              ids.add(data.requesterId);
+            }
+            break;
+          case 'join_request_approved':
+          case 'join_request_denied':
+            // These don't have user IDs in data
+            break;
+          case 'referral_accepted':
+          case 'referral_joined_group':
+            if (data.referredUserId && typeof data.referredUserId === 'string') {
+              ids.add(data.referredUserId);
+            }
+            break;
+        }
+      }
+    });
+    const result = Array.from(ids);
+    return result;
+  }, [notifications]);
+
+  // Batch fetch user avatars
+  const { data: userAvatars } = useQuery<Record<string, { avatar_url: string | null; name?: string }>>({
+    queryKey: ['user-avatars', userIds.sort().join(',')], // Sort to ensure stable key
+    queryFn: async () => {
+      if (userIds.length === 0) return {};
+      
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, avatar_url, first_name, last_name')
+          .in('id', userIds);
+        
+        if (error) {
+          console.error('Error fetching user avatars:', error);
+          return {};
+        }
+        
+        const avatarMap: Record<string, { avatar_url: string | null; name?: string }> = {};
+        data?.forEach((user) => {
+          const fullName = user.first_name && user.last_name 
+            ? `${user.first_name} ${user.last_name}`.trim()
+            : (user.first_name || user.last_name || undefined);
+          avatarMap[user.id] = {
+            avatar_url: user.avatar_url && user.avatar_url.trim() ? user.avatar_url : null,
+            name: fullName,
+          };
+        });
+        
+        return avatarMap;
+      } catch (err) {
+        console.error('Exception fetching user avatars:', err);
+        return {};
+      }
+    },
+    enabled: userIds.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   const renderItem = ({ item, index }: any) => (
     <NotificationItem
@@ -35,6 +136,8 @@ export default function NotificationsScreen() {
       onMarkAsRead={markAsRead}
       onDelete={deleteNotification}
       isLast={index === notifications.length - 1}
+      userAvatars={userAvatars || {}}
+      currentUserId={user?.id}
     />
   );
 
@@ -52,7 +155,7 @@ export default function NotificationsScreen() {
     if (isLoadingMore) {
       return (
         <View style={styles.footerLoading}>
-          <LoadingSpinner size="small" color={theme.colors.primary[500]} />
+          <LoadingSpinner size="small" />
           <Text variant="caption" color="secondary" style={styles.footerText}>
             Loading more...
           </Text>
@@ -69,54 +172,51 @@ export default function NotificationsScreen() {
       );
     }
     return null;
-  }, [isLoadingMore, hasNextPage, notifications.length, theme.colors]);
+  }, [isLoadingMore, hasNextPage, notifications.length]);
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: theme.colors.background.primary },
-      ]}
-    >
-      <Stack.Screen options={{ title: 'Notifications' }} />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={20} color="#2C2235" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Notifications</Text>
+        <View style={styles.bellIconContainer}>
+          <Ionicons name="notifications" size={20} color="#FF0083" />
+        </View>
+      </View>
 
       {isLoading && notifications.length === 0 ? (
         <View style={styles.loadingContainer}>
           <AuthLoadingAnimation />
         </View>
       ) : (
-        <>
-          {unreadCount > 0 && (
-            <View style={styles.actions}>
-              <Button
-                title={`Mark all as read (${unreadCount})`}
-                variant="secondary"
-                onPress={() => markAllAsRead()}
-              />
-            </View>
-          )}
-
-          <FlatList
-            data={notifications}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={
-              notifications.length === 0 ? styles.emptyContent : undefined
-            }
-            ListEmptyComponent={listEmpty}
-            ListFooterComponent={listFooter}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoading}
-                onRefresh={refreshNotifications}
-              />
-            }
-            onEndReached={() => {
-              if (hasNextPage && !isLoadingMore) fetchNextPage();
-            }}
-            onEndReachedThreshold={0.5}
-          />
-        </>
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={
+            notifications.length === 0 ? styles.emptyContent : styles.listContent
+          }
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={refreshNotifications}
+            />
+          }
+          onEndReached={() => {
+            if (hasNextPage && !isLoadingMore) fetchNextPage();
+          }}
+          onEndReachedThreshold={0.5}
+          showsVerticalScrollIndicator={false}
+        />
       )}
     </View>
   );
@@ -125,15 +225,42 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FEFEFE',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
+    backgroundColor: '#FEFEFE',
+  },
+  backButton: {
+    marginRight: 16,
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 22,
+    letterSpacing: -0.44,
+    lineHeight: 22,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Bold',
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  bellIconContainer: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actions: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  listContent: {
+    paddingTop: 0,
   },
   emptyContainer: {
     flex: 1,
