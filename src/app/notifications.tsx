@@ -45,23 +45,35 @@ export default function NotificationsScreen() {
     const ids = new Set<string>();
     notifications.forEach((notification: Notification) => {
       const { type, data } = notification;
-      if (data) {
+      if (data && typeof data === 'object') {
         switch (type) {
           case 'friend_request_received':
-            if (data.fromUserId) ids.add(data.fromUserId);
+            if (data.fromUserId && typeof data.fromUserId === 'string') {
+              ids.add(data.fromUserId);
+            }
             break;
           case 'friend_request_accepted':
-            if (data.acceptedByUserId) ids.add(data.acceptedByUserId);
+            if (data.acceptedByUserId && typeof data.acceptedByUserId === 'string') {
+              ids.add(data.acceptedByUserId);
+            }
             break;
           case 'group_request_submitted':
-            if (data.creatorId) ids.add(data.creatorId);
+            if (data.creatorId && typeof data.creatorId === 'string') {
+              ids.add(data.creatorId);
+            }
             break;
           case 'group_request_approved':
           case 'group_request_denied':
-            // These don't have user IDs in data
+            // For group request approved/denied, show the requester's (current user's) avatar
+            // The notification.user_id is the requester
+            if (notification.user_id && typeof notification.user_id === 'string') {
+              ids.add(notification.user_id);
+            }
             break;
           case 'join_request_received':
-            if (data.requesterId) ids.add(data.requesterId);
+            if (data.requesterId && typeof data.requesterId === 'string') {
+              ids.add(data.requesterId);
+            }
             break;
           case 'join_request_approved':
           case 'join_request_denied':
@@ -69,34 +81,50 @@ export default function NotificationsScreen() {
             break;
           case 'referral_accepted':
           case 'referral_joined_group':
-            if (data.referredUserId) ids.add(data.referredUserId);
+            if (data.referredUserId && typeof data.referredUserId === 'string') {
+              ids.add(data.referredUserId);
+            }
             break;
         }
       }
     });
-    return Array.from(ids);
+    const result = Array.from(ids);
+    return result;
   }, [notifications]);
 
   // Batch fetch user avatars
-  const { data: userAvatars } = useQuery({
-    queryKey: ['user-avatars', userIds],
+  const { data: userAvatars } = useQuery<Record<string, { avatar_url: string | null; name?: string }>>({
+    queryKey: ['user-avatars', userIds.sort().join(',')], // Sort to ensure stable key
     queryFn: async () => {
       if (userIds.length === 0) return {};
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, avatar_url')
-        .in('id', userIds);
       
-      if (error) {
-        console.error('Error fetching user avatars:', error);
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, avatar_url, first_name, last_name')
+          .in('id', userIds);
+        
+        if (error) {
+          console.error('Error fetching user avatars:', error);
+          return {};
+        }
+        
+        const avatarMap: Record<string, { avatar_url: string | null; name?: string }> = {};
+        data?.forEach((user) => {
+          const fullName = user.first_name && user.last_name 
+            ? `${user.first_name} ${user.last_name}`.trim()
+            : (user.first_name || user.last_name || undefined);
+          avatarMap[user.id] = {
+            avatar_url: user.avatar_url && user.avatar_url.trim() ? user.avatar_url : null,
+            name: fullName,
+          };
+        });
+        
+        return avatarMap;
+      } catch (err) {
+        console.error('Exception fetching user avatars:', err);
         return {};
       }
-      
-      const avatarMap: Record<string, string | null> = {};
-      data?.forEach((user) => {
-        avatarMap[user.id] = user.avatar_url || null;
-      });
-      return avatarMap;
     },
     enabled: userIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -109,6 +137,7 @@ export default function NotificationsScreen() {
       onDelete={deleteNotification}
       isLast={index === notifications.length - 1}
       userAvatars={userAvatars || {}}
+      currentUserId={user?.id}
     />
   );
 

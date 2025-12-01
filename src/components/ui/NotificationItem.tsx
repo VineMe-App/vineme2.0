@@ -21,7 +21,8 @@ interface NotificationItemProps {
   onDelete?: (notificationId: string) => void;
   isLast?: boolean;
   testID?: string;
-  userAvatars?: Record<string, string | null>;
+  userAvatars?: Record<string, { avatar_url: string | null; name?: string }>;
+  currentUserId?: string;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -36,6 +37,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   isLast = false,
   testID = 'notification-item',
   userAvatars = {},
+  currentUserId,
 }) => {
   const { theme } = useTheme();
   const { handleNotificationPress } = useNotificationNavigation();
@@ -45,7 +47,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
   const isUnread = !notification.read;
   const timestamp = formatTimestamp(notification.created_at);
-  const { avatarData } = getNotificationMetadata(notification, theme, userAvatars);
+  const { avatarData } = getNotificationMetadata(notification, theme, userAvatars, currentUserId);
 
   const handlePress = useCallback(() => {
     if (isUnread && onMarkAsRead) {
@@ -211,7 +213,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
               {avatarData ? (
                 <Avatar
                   size={34}
-                  imageUrl={avatarData.imageUrl}
+                  imageUrl={avatarData.imageUrl || undefined}
                   name={avatarData.name}
                 />
               ) : (
@@ -349,59 +351,88 @@ function formatTimestamp(timestamp: string): string {
 function getNotificationMetadata(
   notification: Notification,
   theme: any,
-  userAvatars: Record<string, string | null> = {}
+  userAvatars: Record<string, { avatar_url: string | null; name?: string }> = {},
+  currentUserId?: string
 ) {
   const { type, data } = notification;
   let avatarData: { imageUrl?: string; name: string } | null = null;
 
+  if (!data || typeof data !== 'object') {
+    return { avatarData: null };
+  }
+
   switch (type) {
     case 'friend_request_received':
       if (data.fromUserName) {
-        const userId = data.fromUserId;
+        const userId = data.fromUserId as string | undefined;
+        const avatarUrl = data.fromUserAvatar as string | undefined;
+        const userData = userId ? userAvatars[userId] : null;
+        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
         avatarData = {
-          name: data.fromUserName,
-          imageUrl: data.fromUserAvatar || (userId ? userAvatars[userId] || undefined : undefined),
+          name: String(data.fromUserName),
+          imageUrl: finalAvatarUrl || undefined,
         };
       }
       break;
 
     case 'friend_request_accepted':
       if (data.acceptedByUserName) {
-        const userId = data.acceptedByUserId;
+        const userId = data.acceptedByUserId as string | undefined;
+        const avatarUrl = data.acceptedByUserAvatar as string | undefined;
+        const userData = userId ? userAvatars[userId] : null;
+        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
         avatarData = {
-          name: data.acceptedByUserName,
-          imageUrl: data.acceptedByUserAvatar || (userId ? userAvatars[userId] || undefined : undefined),
+          name: String(data.acceptedByUserName),
+          imageUrl: finalAvatarUrl || undefined,
         };
       }
       break;
 
     case 'group_request_submitted':
       if (data.creatorName) {
-        const userId = data.creatorId;
+        const userId = data.creatorId as string | undefined;
+        const avatarUrl = data.creatorAvatar as string | undefined;
+        const userData = userId ? userAvatars[userId] : null;
+        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
         avatarData = {
-          name: data.creatorName,
-          imageUrl: data.creatorAvatar || (userId ? userAvatars[userId] || undefined : undefined),
+          name: String(data.creatorName),
+          imageUrl: finalAvatarUrl || undefined,
         };
       }
       break;
 
     case 'group_request_approved':
     case 'group_request_denied':
-      // These don't have user IDs in data, so we can't fetch avatars
-      if (data.approvedByName || data.deniedByName) {
+      // For group request approved/denied, show the requester's (current user's) avatar
+      // The notification.user_id is the requester who created the group
+      if (notification.user_id) {
+        const requesterId = notification.user_id;
+        const userData = userAvatars[requesterId];
+        const finalAvatarUrl = userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined;
+        // Use the requester's name from user profile or fallback
+        const requesterName = userData?.name || (currentUserId === requesterId ? 'You' : undefined) || String(data.approvedByName || data.deniedByName || 'You');
         avatarData = {
-          name: data.approvedByName || data.deniedByName,
-          imageUrl: data.approvedByAvatar || data.deniedByAvatar,
+          name: requesterName,
+          imageUrl: finalAvatarUrl || undefined,
+        };
+      } else if (data.approvedByName || data.deniedByName) {
+        // Fallback if user_id is not available
+        avatarData = {
+          name: String(data.approvedByName || data.deniedByName),
+          imageUrl: (data.approvedByAvatar || data.deniedByAvatar) as string | undefined,
         };
       }
       break;
 
     case 'join_request_received':
       if (data.requesterName) {
-        const userId = data.requesterId;
+        const userId = data.requesterId as string | undefined;
+        const avatarUrl = data.requesterAvatar as string | undefined;
+        const userData = userId ? userAvatars[userId] : null;
+        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
         avatarData = {
-          name: data.requesterName,
-          imageUrl: data.requesterAvatar || (userId ? userAvatars[userId] || undefined : undefined),
+          name: String(data.requesterName),
+          imageUrl: finalAvatarUrl || undefined,
         };
       }
       break;
@@ -415,14 +446,14 @@ function getNotificationMetadata(
         data.addedByName
       ) {
         avatarData = {
-          name:
+          name: String(
             data.approvedByName ||
             data.deniedByName ||
-            data.addedByName,
-          imageUrl:
-            data.approvedByAvatar ||
+            data.addedByName
+          ),
+          imageUrl: (data.approvedByAvatar ||
             data.deniedByAvatar ||
-            data.addedByAvatar,
+            data.addedByAvatar) as string | undefined,
         };
       }
       break;
@@ -430,10 +461,13 @@ function getNotificationMetadata(
     case 'referral_accepted':
     case 'referral_joined_group':
       if (data.referredUserName) {
-        const userId = data.referredUserId;
+        const userId = data.referredUserId as string | undefined;
+        const avatarUrl = data.referredUserAvatar as string | undefined;
+        const userData = userId ? userAvatars[userId] : null;
+        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
         avatarData = {
-          name: data.referredUserName,
-          imageUrl: data.referredUserAvatar || (userId ? userAvatars[userId] || undefined : undefined),
+          name: String(data.referredUserName),
+          imageUrl: finalAvatarUrl || undefined,
         };
       }
       break;

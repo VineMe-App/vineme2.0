@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { Modal, Form, FormField, Input, Select, Button, Card } from '../ui';
-import { useFormContext } from '../ui/Form';
+import { useFormContext, type FormValues } from '../ui/Form';
 import { groupCreationService } from '../../services/groupCreation';
 import { useAuthStore } from '../../stores/auth';
 import { useErrorHandler } from '../../hooks';
@@ -155,7 +155,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     });
   };
 
-  const handleSubmit = async (values: GroupFormData) => {
+  const handleSubmit = async (values: FormValues) => {
     if (!userProfile?.id || !userProfile?.church_id) {
       Alert.alert(
         'Error',
@@ -404,7 +404,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               }}
               onChange={(locationData) => {
                 onChange(locationData.address || '');
-                setLocationCoordinates(locationData.coordinates);
+                setLocationCoordinates(locationData.coordinates ?? null);
               }}
             />
             {error && <Text style={styles.errorText}>{error}</Text>}
