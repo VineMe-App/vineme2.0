@@ -251,10 +251,14 @@ export default function TabLayout() {
             backgroundColor: '#FFFFFF',
             borderBottomWidth: 0,
             elevation: 0,
-            height: 60 + insets.top,
-            paddingTop: insets.top, // Explicit top padding for status bar
+            height: Platform.OS === 'ios' ? 60 + insets.top : 60,
+            paddingTop: Platform.OS === 'ios' ? insets.top : 0,
+            paddingHorizontal: 19, // Match Groups page padding
             paddingBottom: 0, // No bottom padding in header
             shadowOpacity: 0,
+          },
+          headerTitleContainerStyle: {
+            paddingLeft: 0, // Remove default left padding to match Groups page
           },
           tabBarIcon: ({ color, size }) => (
             <ProfileTabIcon color={color} size={size} />

@@ -393,7 +393,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           <View style={styles.memberCountBadge}>
             <View style={styles.memberCountInner}>
               <Text style={styles.memberCountText}>{group.member_count}</Text>
-              <Ionicons name="person-outline" size={16} color="rgba(255, 255, 255, 0.8)" />
+              <Ionicons name="person-outline" size={16} color="#2C2235" />
             </View>
           </View>
         )}
@@ -420,15 +420,15 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 />
               </View>
             ) : leaders.length === 2 ? (
-              // Two leaders - side by side, 55px each
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              // Two leaders - side by side positioning
+              <View style={styles.sideBySideContainer}>
                 <View
                   style={[
                     styles.profilePicture,
                     {
-                      width: 59,
-                      height: 59,
-                      borderRadius: 29.5,
+                      width: 54,
+                      height: 54,
+                      borderRadius: 27,
                       marginRight: -8,
                     },
                   ]}
@@ -436,23 +436,23 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   <Avatar
                     imageUrl={leaders[0].avatar_url}
                     name={leaders[0].name || undefined}
-                    size={55}
+                    size={50}
                   />
                 </View>
                 <View
                   style={[
                     styles.profilePicture,
                     {
-                      width: 59,
-                      height: 59,
-                      borderRadius: 29.5,
+                      width: 54,
+                      height: 54,
+                      borderRadius: 27,
                     },
                   ]}
                 >
                   <Avatar
                     imageUrl={leaders[1].avatar_url}
                     name={leaders[1].name || undefined}
-                    size={55}
+                    size={50}
                   />
                 </View>
               </View>
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: '#ff0083', // Primary pink color
+    backgroundColor: '#FF0083', // Pink color for friends badge
     borderRadius: 16,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -678,6 +678,11 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  friendsCount: {
+    color: '#FFFFFF', // White text on pink background
+    fontSize: 12,
+    fontWeight: '500',
+  },
   friendAvatars: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -687,11 +692,6 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     borderRadius: 12,
     overflow: 'hidden',
-  },
-  friendsCount: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
   },
   pendingWash: {
     ...StyleSheet.absoluteFillObject,
@@ -788,7 +788,7 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   memberCountInner: {
-    backgroundColor: 'rgba(44, 34, 53, 0.75)', // Dark purple, slightly greyed out (matching no group fits button style)
+    backgroundColor: 'rgba(217, 217, 217, 0.9)', // Light gray background
     borderRadius: 16, // Match button border radius
     paddingHorizontal: 10, // Match button padding
     paddingVertical: 6,
@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   memberCountText: {
-    color: 'rgba(255, 255, 255, 0.9)', // White text, slightly greyed out
+    color: '#2C2235', // Dark text on light gray background
     fontSize: 12, // Match button text size
     fontWeight: '500',
   },
@@ -818,6 +818,32 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     zIndex: 1,
     overflow: 'visible',
+  },
+  sideBySideContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0,
+  },
+  diagonalContainer: {
+    position: 'relative',
+    width: 108, // Container width to position avatars diagonally
+    height: 108,
+    overflow: 'visible',
+  },
+  diagonalLeaderFirst: {
+    position: 'absolute',
+    // First leader: top-left position (from Figma: 20.02% from top, 4.44% from left relative to card)
+    top: 0,
+    left: 0,
+    zIndex: 2,
+  },
+  diagonalLeaderSecond: {
+    position: 'absolute',
+    // Second leader: slightly down and right (from Figma: 23.7% from top, 17.22% from left relative to card)
+    top: 11, // 23.7% - 20.02% ≈ 4px offset, scaled appropriately
+    left: 15, // 17.22% - 4.44% ≈ 13px offset
+    zIndex: 1,
   },
   pyramidContainer: {
     alignItems: 'center',

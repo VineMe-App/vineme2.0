@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { Alert } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { Alert, View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Stack, useRouter, useNavigation } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '../../stores';
 import { useErrorHandler } from '../../hooks';
 import { groupCreationService } from '../../services/groupCreation';
@@ -12,9 +15,72 @@ import { groupMediaService } from '../../services/groupMedia';
 
 export default function CreateGroupPage() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { userProfile } = useAuthStore();
   const { handleError } = useErrorHandler();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Set custom header
+  useEffect(() => {
+    navigation.setOptions({
+      header: () => (
+        <View
+          style={{
+            height: 60 + insets.top,
+            backgroundColor: '#FFFFFF',
+            paddingTop: insets.top,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 16,
+              paddingTop: 4,
+              paddingBottom: 4,
+              height: 60,
+              position: 'relative',
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={{
+                width: 20,
+                height: 20,
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 10,
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="chevron-back" size={20} color="#2C2235" />
+            </TouchableOpacity>
+            
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: 22,
+                fontWeight: '700',
+                fontFamily: 'Figtree-Bold',
+                color: '#2C2235',
+                letterSpacing: -0.44,
+                flex: 1,
+                marginLeft: 12,
+                lineHeight: 22,
+                zIndex: 1,
+              }}
+            >
+              Create new group
+            </Text>
+          </View>
+        </View>
+      ),
+    });
+  }, [navigation, insets.top, router]);
 
   const handleSubmit = async (values: GroupEditorValues) => {
     if (
@@ -97,15 +163,12 @@ export default function CreateGroupPage() {
   };
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Create New Group' }} />
-      <GroupEditorForm
-        mode="create"
-        subTitle="Share your group details and set your group location by using the map below."
-        onSubmit={handleSubmit}
-        onUploadImage={handleUploadImage}
-        isSubmitting={isSubmitting}
-      />
-    </>
+    <GroupEditorForm
+      mode="create"
+      subTitle="Share your group details and set your group location by using the map below."
+      onSubmit={handleSubmit}
+      onUploadImage={handleUploadImage}
+      isSubmitting={isSubmitting}
+    />
   );
 }

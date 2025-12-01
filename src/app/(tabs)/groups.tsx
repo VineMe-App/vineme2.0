@@ -50,6 +50,94 @@ import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Image } from 'react-native';
+import Svg, { Path, G } from 'react-native-svg';
+
+// Figma icon components for Filter and Sort
+const FilterIcon = ({ color, size = 16 }: { color: string; size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <G id="filter">
+      <Path
+        id="Vector"
+        d="M3.6 1.4H12.4C13.1333 1.4 13.7333 2 13.7333 2.73333V4.2C13.7333 4.73333 13.4 5.4 13.0667 5.73333L10.2 8.26667C9.8 8.6 9.53333 9.26667 9.53333 9.8V12.6667C9.53333 13.0667 9.26667 13.6 8.93333 13.8L8 14.4C7.13333 14.9333 5.93333 14.3333 5.93333 13.2667V9.73333C5.93333 9.26667 5.66667 8.66667 5.4 8.33333L2.86667 5.66667C2.53333 5.33333 2.26667 4.73333 2.26667 4.33333V2.8C2.26667 2 2.86667 1.4 3.6 1.4Z"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_2"
+        d="M7.28667 1.4L4 6.66667"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </G>
+  </Svg>
+);
+
+const SortIcon = ({ color, size = 20 }: { color: string; size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <G id="candle">
+      <Path
+        id="Vector"
+        d="M6.5 22V15"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_2"
+        d="M6.5 5V2"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_3"
+        d="M17.5 22V19"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_4"
+        d="M17.5 9V2"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_5"
+        d="M9.5 7V13C9.5 14.1 9 15 7.5 15H5.5C4 15 3.5 14.1 3.5 13V7C3.5 5.9 4 5 5.5 5H7.5C9 5 9.5 5.9 9.5 7Z"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_6"
+        d="M20.5 11V17C20.5 18.1 20 19 18.5 19H16.5C15 19 14.5 18.1 14.5 17V11C14.5 9.9 15 9 16.5 9H18.5C20 9 20.5 9.9 20.5 11Z"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </G>
+  </Svg>
+);
 
 export default function GroupsScreen() {
   const router = useRouter();
@@ -408,14 +496,20 @@ export default function GroupsScreen() {
         ]}
       >
         <View style={styles.noGroupFitsButtonContainer}>
-          <Button
-            title="No group fits?"
+          <TouchableOpacity
             onPress={handleNoGroupFits}
-            variant="secondary"
-            size="small"
             style={styles.noGroupFitsButton}
-            textStyle={styles.noGroupFitsButtonText}
-          />
+            activeOpacity={0.8}
+          >
+            <Text
+              style={styles.noGroupFitsButtonText}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+              numberOfLines={1}
+            >
+              No group fits?
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
       <FlatList
@@ -505,11 +599,6 @@ export default function GroupsScreen() {
         ]}
       >
         <View style={styles.headerLeft}>
-          <Image
-            source={require('../../../assets/figma-128-1563/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
           <Text variant="h4" weight="black" style={styles.title}>
             Groups
           </Text>
@@ -517,10 +606,8 @@ export default function GroupsScreen() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.figmaIconButton}
-            onPress={() =>
-              handleViewChange(currentView === 'list' ? 'map' : 'list')
-            }
-            accessibilityLabel={`Switch to ${currentView === 'list' ? 'map' : 'list'} view`}
+            onPress={() => handleViewChange(currentView === 'map' ? 'list' : 'map')}
+            accessibilityLabel={currentView === 'map' ? 'Switch to list view' : 'Switch to map view'}
           >
             <View
               style={[
@@ -529,17 +616,14 @@ export default function GroupsScreen() {
               ]}
             >
               <Ionicons
-                name={currentView === 'list' ? 'map-outline' : 'list-outline'}
+                name="map-outline"
                 size={16}
                 color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
               />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
+            style={styles.figmaIconButton}
             onPress={() => setShowFilterPanel(true)}
             accessibilityLabel="Filter groups"
           >
@@ -550,12 +634,11 @@ export default function GroupsScreen() {
                   styles.iconButtonInnerActive,
               ]}
             >
-              <Ionicons
-                name="funnel-outline"
-                size={16}
+              <FilterIcon
                 color={
                   getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'
                 }
+                size={16}
               />
             </View>
           </TouchableOpacity>
@@ -576,9 +659,7 @@ export default function GroupsScreen() {
                   styles.iconButtonInnerActive,
               ]}
             >
-              <Ionicons
-                name="swap-vertical-outline"
-                size={20}
+              <SortIcon
                 color={
                   currentView === 'map'
                     ? '#8B8A8C'
@@ -586,39 +667,7 @@ export default function GroupsScreen() {
                       ? '#FFFFFF'
                       : '#2C2235'
                 }
-              />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.figmaIconButton}
-            onPress={() => {
-              if (sortBy === 'distance') {
-                // If already sorting by distance, clear it and go back to alphabetical
-                setSortBy('alphabetical');
-                setIsLocationSearchMode(false);
-                setLocationSearchError(null);
-                setDistanceOrigin(null);
-              } else {
-                // Switch to location search mode
-                setIsLocationSearchMode(true);
-                // Set sort to distance (makes arrow pink)
-                setSortBy('distance');
-                // Clear location search errors
-                setLocationSearchError(null);
-              }
-            }}
-            accessibilityLabel="Choose location to measure distance from"
-          >
-            <View
-              style={[
-                styles.iconButtonInner,
-                sortBy === 'distance' && styles.iconButtonInnerActive, // Pink when distance is selected
-              ]}
-            >
-              <Ionicons
-                name="navigate-outline"
-                size={16}
-                color={sortBy === 'distance' ? '#FFFFFF' : '#2C2235'}
+                size={20}
               />
             </View>
           </TouchableOpacity>
@@ -989,10 +1038,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  logo: {
-    width: 27,
-    height: 27,
-  },
   title: {
     color: '#2C2235',
     fontSize: 22,
@@ -1016,7 +1061,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F9FAFC', // Light background for inactive buttons
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1024,7 +1069,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF0083',
   },
   iconButtonInnerActive: {
-    backgroundColor: '#FF0083',
+    backgroundColor: '#2C2235', // Dark purple instead of pink
   },
   iconButtonDisabled: {
     opacity: 0.5,
@@ -1089,12 +1134,19 @@ const styles = StyleSheet.create({
   },
   noGroupFitsButton: {
     paddingHorizontal: 14,
+    paddingVertical: 8,
     maxWidth: 120, // Compact width to match the drawn outline
     backgroundColor: '#2C2235', // Match friends badge color
-    borderColor: '#2C2235',
+    borderRadius: 16, // Rounded corners
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 32,
   },
   noGroupFitsButtonText: {
     color: '#FFFFFF', // Ensure white text on dark purple background
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   noGroupFitsModalContent: {
     padding: 20,

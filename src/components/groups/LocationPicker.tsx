@@ -440,43 +440,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <Input
-          key={`search-input-${inputKey}`}
-          value={search}
-          onChangeText={handleSearchChange}
-          placeholder="Search for a location..."
-          containerStyle={styles.searchInputContainer}
-          inputStyle={styles.searchInput}
-          accessibilityLabel="Search for a location"
-          accessibilityHint="Enter an address, place name, or postcode, then press Enter to search"
-          returnKeyType="search"
-          onSubmitEditing={handleSearchPress}
-        />
-        {isGeocoding && (
-          <Text variant="bodySmall" style={styles.searchHelper}>Finding location…</Text>
-        )}
-        {isLoadingLocation && (
-          <Text variant="bodySmall" style={styles.searchHelper}>Getting your location…</Text>
-        )}
-        {search.length > 0 && search.length < 3 && (
-          <Text variant="bodySmall" style={styles.searchHelper}>
-            Type at least 3 characters, then press Enter to search
-          </Text>
-        )}
-        {search.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => {
-              setSearch('');
-            }}
-            accessibilityLabel="Clear search"
-          >
-            <Text style={styles.clearButtonText}>✕</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       <View style={styles.mapContainer}>
         <View style={styles.mapInner}>
         <MapView
@@ -667,9 +630,50 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             <Ionicons name="locate-outline" size={18} color="#2C2235" />
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Buttons removed - search is triggered by keyboard search button */}
+        {/* Search Bar Overlay */}
+        <View style={styles.searchBarOverlay}>
+          <View style={styles.searchBarContainer}>
+            <View style={styles.searchInputWrapper}>
+              <Input
+                key={`search-input-${inputKey}`}
+                value={search}
+                onChangeText={handleSearchChange}
+                placeholder="Search for a location"
+                placeholderTextColor="#939393"
+                containerStyle={styles.searchInputContainer}
+                inputStyle={styles.searchInputOverlay}
+                accessibilityLabel="Search for a location"
+                accessibilityHint="Enter an address, place name, or postcode, then press Enter to search"
+                returnKeyType="search"
+                onSubmitEditing={handleSearchPress}
+                variant="outlined"
+                rightIcon={
+                  search ? (
+                    <TouchableOpacity
+                      style={styles.searchIconContainer}
+                      onPress={() => {
+                        setSearch('');
+                        forceInputRecreation();
+                      }}
+                      accessibilityLabel="Clear search"
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="close" size={24} color="#2C2235" />
+                    </TouchableOpacity>
+                  ) : null
+                }
+              />
+            </View>
+          </View>
+          {isGeocoding && (
+            <Text variant="bodySmall" style={styles.searchHelperOverlay}>Finding location…</Text>
+          )}
+          {isLoadingLocation && (
+            <Text variant="bodySmall" style={styles.searchHelperOverlay}>Getting your location…</Text>
+          )}
+        </View>
+      </View>
     </View>
   );
 };
@@ -683,19 +687,19 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   mapContainer: {
-    height: 200,
+    height: 354,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#F9FAFC',
-    borderWidth: 1,
-    borderColor: '#EDEDED',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
     position: 'relative',
-    marginHorizontal: 20,
-    padding: 8, // ensures the map doesn't touch borders
+    marginHorizontal: 0,
   },
   mapInner: {
-    flex: 1,
-    borderRadius: 8,
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
     overflow: 'hidden',
   },
   map: {
@@ -726,9 +730,15 @@ const styles = StyleSheet.create({
   actionSpacer: {
     marginBottom: 0,
   },
+  searchInputWrapper: {
+    flex: 1,
+    borderRadius: 25,
+    overflow: 'hidden',
+  },
   searchInputContainer: {
     marginBottom: 0,
     paddingVertical: 0,
+    borderWidth: 0,
   },
   searchInput: {
     // Use default input styling to match other inputs
@@ -757,5 +767,46 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  searchBarOverlay: {
+    position: 'absolute',
+    top: 17,
+    left: 17,
+    width: 317,
+    zIndex: 10,
+  },
+  searchBarContainer: {
+    height: 50,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#F9F7F7',
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+    justifyContent: 'center',
+  },
+  searchInputOverlay: {
+    paddingHorizontal: 20,
+    fontSize: 16,
+    fontFamily: 'Figtree-Medium',
+    fontWeight: '500',
+    color: '#939393',
+    letterSpacing: -0.32,
+    lineHeight: 24,
+  },
+  searchHelperOverlay: {
+    marginTop: 8,
+    marginLeft: 20,
+    fontSize: 12,
+    color: '#666',
+  },
+  searchIconContainer: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

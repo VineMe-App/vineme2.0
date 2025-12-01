@@ -60,12 +60,12 @@ export default function GroupDetailScreen() {
         header: () => (
           <View
             style={{
-              height: 125,
-              backgroundColor: 'white',
+              height: 60 + insets.top,
+              backgroundColor: '#FFFFFF',
               paddingTop: insets.top,
             }}
           >
-            {/* Top row: small back + text on left, cog/share on right */}
+            {/* Header row: back arrow, title, share icon */}
             <View
               style={{
                 flexDirection: 'row',
@@ -73,6 +73,9 @@ export default function GroupDetailScreen() {
                 justifyContent: 'space-between',
                 paddingHorizontal: 16,
                 paddingTop: 4,
+                paddingBottom: 4,
+                height: 60,
+                position: 'relative',
               }}
             >
               <TouchableOpacity
@@ -80,17 +83,35 @@ export default function GroupDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
                 style={{
-                  flexDirection: 'row',
+                  width: 20,
+                  height: 20,
+                  justifyContent: 'center',
                   alignItems: 'center',
-                  paddingVertical: 6,
+                  zIndex: 10, // Ensure it's above other elements
                 }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="chevron-back" size={18} color="#000" />
-                <Text style={{ fontSize: 14, marginLeft: 2, color: '#000' }}>
-                  Back
-                </Text>
+                <Ionicons name="chevron-back" size={20} color="#2C2235" />
               </TouchableOpacity>
+              
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontSize: 22,
+                  fontWeight: '700',
+                  fontFamily: 'Figtree-Bold',
+                  color: '#2C2235',
+                  letterSpacing: -0.44,
+                  flex: 1,
+                  marginLeft: 12, // 16px (arrow left) + 20px (arrow width) + 12px gap = 48px from left (matches Figma)
+                  marginRight: 8,
+                  lineHeight: 22,
+                  zIndex: 1, // Lower z-index than button
+                }}
+              >
+                {group.title}
+              </Text>
+
               <View
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
               >
@@ -110,34 +131,20 @@ export default function GroupDetailScreen() {
                 )}
                 <TouchableOpacity
                   onPress={handleShare}
-                  style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+                  style={{ 
+                    paddingVertical: 6, 
+                    paddingHorizontal: 8,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 17,
+                    backgroundColor: '#F9FAFC',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
                 >
-                  <Ionicons name="share-outline" size={20} color="#374151" />
+                  <Ionicons name="share-outline" size={16} color="#FF0083" />
                 </TouchableOpacity>
               </View>
-            </View>
-
-            {/* Centered title area (description removed per request) */}
-            <View
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: 24,
-              }}
-            >
-              <Text
-                numberOfLines={1}
-                style={{
-                  fontSize: 22,
-                  fontWeight: '700',
-                  fontFamily: 'Figtree-Bold',
-                  textAlign: 'center',
-                  marginTop: -15,
-                }}
-              >
-                {group.title}
-              </Text>
             </View>
           </View>
         ),
