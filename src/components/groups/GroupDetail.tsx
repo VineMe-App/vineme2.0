@@ -84,7 +84,10 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       minute: '2-digit',
       hour12: true,
     });
-    return `${day}s at ${formattedTime}`;
+    // Format as "Mondays 7pm" (remove "s at" and format time)
+    const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+    const timeOnly = formattedTime.replace(/:00 /, '').toLowerCase();
+    return `${dayName}s ${timeOnly}`;
   };
 
   const formatLocation = (location: any) => {
@@ -319,38 +322,12 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
         ) : (
           <GroupPlaceholderImage style={styles.headerImage} category={category} />
         )}
-
-        {/* Badge positioned at top right of image */}
-        {membershipStatus && (
-          <View
-            style={[
-              styles.statusBadge,
-              styles[`${membershipStatus}Badge`],
-              styles.imageBadge,
-            ]}
-          >
-            <Text
-              style={[styles.statusText, styles[`${membershipStatus}Text`]]}
-            >
-              {membershipStatus === 'member'
-                ? 'Member'
-                : membershipStatus === 'leader'
-                  ? 'Leader'
-                  : 'Admin'}
-            </Text>
-          </View>
-        )}
-
-        {group.status === 'pending' && isGroupLeader && (
-          <View style={styles.imageBadge}>
-            <Ionicons name="time-outline" size={16} color="#b45309" />
-            <Text>Pending admin approval</Text>
-          </View>
-        )}
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.description}>{group.description}</Text>
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.description}>{group.description}</Text>
+        </View>
 
         {/* Full Badge */}
         {group.at_capacity && (
@@ -367,88 +344,293 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
         )}
 
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Meeting Details</Text>
-          <View style={styles.infoRowAlt}>
-            <Ionicons name="calendar-outline" size={18} color="#6b7280" />
-            <Text style={styles.infoValueAlt} numberOfLines={1}>
-              {formatMeetingTime(group.meeting_day, group.meeting_time)}
-            </Text>
-          </View>
-          <View style={styles.infoRowAlt}>
-            <Ionicons name="location-outline" size={18} color="#6b7280" />
-            <Text style={styles.infoValueAlt} numberOfLines={1}>
-              {formatLocation(group.location)}
-            </Text>
-          </View>
-          {!!group.member_count && (
-            <View style={styles.infoRowAlt}>
-              <Ionicons name="people-outline" size={18} color="#6b7280" />
-              <Text style={styles.infoValueAlt} numberOfLines={1}>
-                {group.member_count} member{group.member_count !== 1 ? 's' : ''}
-              </Text>
+          <Text style={styles.sectionTitle}>Meeting details</Text>
+          <View style={styles.meetingDetailsContainer}>
+            <View style={styles.meetingDetailsLeft}>
+              {group.meeting_day && group.meeting_time && (
+                <View style={styles.infoRowAlt}>
+                  <Ionicons name="time-outline" size={16} color="#2C2235" />
+                  <Text style={styles.infoValueAlt} numberOfLines={1}>
+                    {formatMeetingTime(group.meeting_day, group.meeting_time)}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.infoRowAlt}>
+                <Ionicons name="location-outline" size={16} color="#2C2235" />
+                <Text style={styles.infoValueAlt}>
+                  {formatLocation(group.location)}
+                </Text>
+              </View>
+              {!!group.member_count && (
+                <View style={styles.infoRowAlt}>
+                  <Ionicons name="person-outline" size={16} color="#2C2235" />
+                  <Text style={styles.infoValueAlt} numberOfLines={1}>
+                    {group.member_count} members
+                  </Text>
+                </View>
+              )}
+              {friendsInGroup.length > 0 && (
+                <TouchableOpacity
+                  style={styles.infoRowAlt}
+                  onPress={() => setShowFriendsModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="people-outline" size={16} color="#2C2235" />
+                  <Text style={styles.infoValueAlt} numberOfLines={1}>
+                    {friendsInGroup.length} {friendsInGroup.length === 1 ? 'friend' : 'friends'} in this group
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {leaders.length > 0 && (
+                <View style={styles.infoRowAlt}>
+                  <View style={styles.leaderIconContainer}>
+                    <Ionicons name="person-outline" size={16} color="#2C2235" />
+                  </View>
+                  <Text style={styles.infoValueAlt}>
+                    {(() => {
+                      const leaderNames = leaders.map(l => l.user?.name || 'Unknown');
+                      if (leaderNames.length === 1) {
+                        return `Led by ${leaderNames[0]}`;
+                      } else if (leaderNames.length === 2) {
+                        return `Led by ${leaderNames[0]} and ${leaderNames[1]}`;
+                      } else {
+                        return `Led by ${leaderNames.slice(0, -1).join(', ')}, and ${leaderNames[leaderNames.length - 1]}`;
+                      }
+                    })()}
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
-          {friendsInGroup.length > 0 && (
-            <TouchableOpacity
-              style={[styles.infoRowAlt, styles.friendsRow]}
-              onPress={() => setShowFriendsModal(true)}
-            >
-              <Ionicons
-                name="person-circle-outline"
-                size={18}
-                color="#2563eb"
-              />
-              <Text
-                style={[styles.infoValueAlt, styles.friendsText]}
-                numberOfLines={1}
-              >
-                {friendsInGroup.length} friend
-                {friendsInGroup.length !== 1 ? 's' : ''} in this group
-              </Text>
-              <Ionicons
-                name="chevron-forward-outline"
-                size={18}
-                color="#2563eb"
-              />
-            </TouchableOpacity>
-          )}
+            
+            {/* Leader avatars on the right */}
+            {leaders.length > 0 && (
+              <View style={styles.leaderAvatarsContainer}>
+                {(() => {
+                  // Extract user objects from leaders (same structure as GroupCard)
+                  const leaderUsers = leaders.map((leader) => leader.user).filter(Boolean);
+                  
+                  if (leaderUsers.length === 1) {
+                    // Single leader - 60px
+                    return (
+                      <View
+                        style={[
+                          styles.leaderProfilePicture,
+                          {
+                            width: 64,
+                            height: 64,
+                            borderRadius: 32,
+                          },
+                        ]}
+                      >
+                        <Avatar
+                          imageUrl={leaderUsers[0]?.avatar_url}
+                          name={leaderUsers[0]?.name || undefined}
+                          size={60}
+                        />
+                      </View>
+                    );
+                  } else if (leaderUsers.length === 2) {
+                    // Two leaders - side by side positioning
+                    return (
+                      <View style={styles.sideBySideContainer}>
+                        <View
+                          style={[
+                            styles.leaderProfilePicture,
+                            {
+                              width: 54,
+                              height: 54,
+                              borderRadius: 27,
+                              marginRight: -8,
+                            },
+                          ]}
+                        >
+                          <Avatar
+                            imageUrl={leaderUsers[0]?.avatar_url}
+                            name={leaderUsers[0]?.name || undefined}
+                            size={50}
+                          />
+                        </View>
+                        <View
+                          style={[
+                            styles.leaderProfilePicture,
+                            {
+                              width: 54,
+                              height: 54,
+                              borderRadius: 27,
+                            },
+                          ]}
+                        >
+                          <Avatar
+                            imageUrl={leaderUsers[1]?.avatar_url}
+                            name={leaderUsers[1]?.name || undefined}
+                            size={50}
+                          />
+                        </View>
+                      </View>
+                    );
+                  } else if (leaderUsers.length === 3) {
+                    // Three leaders - pyramid formation (2 on top, 1 below), 50px each
+                    return (
+                      <View style={styles.pyramidContainer}>
+                        <View style={styles.pyramidRow}>
+                          <View
+                            style={[
+                              styles.leaderProfilePicture,
+                              {
+                                width: 54,
+                                height: 54,
+                                borderRadius: 27,
+                                marginRight: -8,
+                              },
+                            ]}
+                          >
+                            <Avatar
+                              imageUrl={leaderUsers[0]?.avatar_url}
+                              name={leaderUsers[0]?.name || undefined}
+                              size={50}
+                            />
+                          </View>
+                          <View
+                            style={[
+                              styles.leaderProfilePicture,
+                              {
+                                width: 54,
+                                height: 54,
+                                borderRadius: 27,
+                              },
+                            ]}
+                          >
+                            <Avatar
+                              imageUrl={leaderUsers[1]?.avatar_url}
+                              name={leaderUsers[1]?.name || undefined}
+                              size={50}
+                            />
+                          </View>
+                        </View>
+                        <View style={[styles.pyramidRow, { marginTop: -8 }]}>
+                          <View
+                            style={[
+                              styles.leaderProfilePicture,
+                              {
+                                width: 54,
+                                height: 54,
+                                borderRadius: 27,
+                                marginLeft: 23, // Center the bottom avatar under the gap between top two
+                              },
+                            ]}
+                          >
+                            <Avatar
+                              imageUrl={leaderUsers[2]?.avatar_url}
+                              name={leaderUsers[2]?.name || undefined}
+                              size={50}
+                            />
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  } else {
+                    // Four or more leaders - square/2x2 grid formation, 50px each
+                    return (
+                      <View style={styles.squareContainer}>
+                        {/* Top row: first 2 leaders */}
+                        <View style={[styles.squareRow, { marginTop: 0 }]}>
+                          {leaderUsers.slice(0, 2).map((leader, index) => (
+                            <View
+                              key={leader?.id || `leader-${index}`}
+                              style={[
+                                styles.leaderProfilePicture,
+                                styles.squareAvatarItem,
+                                {
+                                  width: 54,
+                                  height: 54,
+                                  borderRadius: 27,
+                                  marginRight: index === 0 ? -8 : 0,
+                                },
+                              ]}
+                            >
+                              <Avatar
+                                imageUrl={leader?.avatar_url}
+                                name={leader?.name || undefined}
+                                size={50}
+                              />
+                            </View>
+                          ))}
+                        </View>
+                        {/* Bottom row: next 2 leaders (or "+N" indicator) */}
+                        <View style={[styles.squareRow, { marginTop: -8 }]}>
+                          {leaderUsers.length === 4 ? (
+                            // Show both leaders if exactly 4
+                            leaderUsers.slice(2, 4).map((leader, index) => (
+                              <View
+                                key={leader?.id || `leader-${index + 2}`}
+                                style={[
+                                  styles.leaderProfilePicture,
+                                  styles.squareAvatarItem,
+                                  {
+                                    width: 54,
+                                    height: 54,
+                                    borderRadius: 27,
+                                    marginRight: index === 0 ? -8 : 0,
+                                  },
+                                ]}
+                              >
+                                <Avatar
+                                  imageUrl={leader?.avatar_url}
+                                  name={leader?.name || undefined}
+                                  size={50}
+                                />
+                              </View>
+                            ))
+                          ) : (
+                            // Show 3rd leader and "+N" indicator if more than 4
+                            <>
+                              <View
+                                style={[
+                                  styles.leaderProfilePicture,
+                                  styles.squareAvatarItem,
+                                  {
+                                    width: 54,
+                                    height: 54,
+                                    borderRadius: 27,
+                                    marginRight: -8,
+                                  },
+                                ]}
+                              >
+                                <Avatar
+                                  imageUrl={leaderUsers[2]?.avatar_url}
+                                  name={leaderUsers[2]?.name || undefined}
+                                  size={50}
+                                />
+                              </View>
+                              <View
+                                style={[
+                                  styles.leaderProfilePicture,
+                                  {
+                                    width: 54,
+                                    height: 54,
+                                    borderRadius: 27,
+                                    backgroundColor: 'rgba(44, 34, 53, 0.9)',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  },
+                                ]}
+                              >
+                                <Text style={styles.moreLeadersIndicatorText}>
+                                  +{leaderUsers.length - 3}
+                                </Text>
+                              </View>
+                            </>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  }
+                })()}
+              </View>
+            )}
+          </View>
         </View>
 
-        {/* Leaders Section - always shown when leaders exist */}
-        {leaders.length > 0 && (
-          <View style={styles.membersSection}>
-            <Text style={styles.sectionTitle}>
-              Leader{leaders.length > 1 ? 's' : ''}
-            </Text>
-            <View style={styles.membersList}>
-              {leaders.map((member) => (
-                <TouchableOpacity
-                  key={member.id}
-                  style={styles.memberItem}
-                  onPress={() =>
-                    member.user?.id && router.push(`/user/${member.user.id}`)
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel={`View ${member.user?.name || 'user'} profile`}
-                >
-                  <Avatar
-                    size={40}
-                    imageUrl={member.user?.avatar_url}
-                    name={member.user?.name || 'Unknown'}
-                  />
-                  <View style={styles.memberInfo}>
-                    <Text style={styles.memberName}>
-                      {member.user?.name || 'Unknown'}
-                    </Text>
-                    <Text style={styles.memberRole}>
-                      {member.role === 'admin' ? 'Admin' : 'Leader'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
 
         {/* Members Section - visible to members/leaders/admins or service-level church admins */}
         {(membershipStatus || isChurchAdminForService) &&
@@ -568,27 +750,31 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                     params: { groupId: group.id, groupName: group.title },
                   });
                 }}
-                variant="secondary"
+                variant="primary"
                 style={styles.referButtonOutsidePending}
+                textStyle={styles.referButtonText}
               />
             </View>
           ) : (
             <View style={styles.actionButtons}>
               <Button
-                title="Request to Join"
-                onPress={handleJoinGroup}
-                loading={isLoading}
-                disabled={isLoading}
-              />
-              <Button
-                title="Refer a Friend"
+                title="Refer a friend"
                 onPress={() =>
                   router.push({
                     pathname: '/referral',
                     params: { groupId: group.id, groupName: group.title },
                   })
                 }
-                variant="secondary"
+                variant="primary"
+                style={styles.referFriendButton}
+                textStyle={styles.referButtonText}
+              />
+              <Button
+                title="Request to join"
+                onPress={handleJoinGroup}
+                loading={isLoading}
+                disabled={isLoading}
+                style={styles.requestJoinButton}
               />
             </View>
           )}
@@ -600,9 +786,10 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
         <Modal
           isVisible={showFriendsModal}
           onClose={() => setShowFriendsModal(false)}
-          title={`Friends in this Group (${friendsInGroup.length})`}
+          title="Friends in this Group"
           size="large"
           scrollable
+          headerStyle={styles.friendsModalHeader}
         >
           {friendsInGroup.length > 0 ? (
             <View style={styles.friendsModalContainer}>
@@ -665,10 +852,10 @@ const styles = StyleSheet.create({
   },
   headerImage: {
     width: '100%',
-    height: 200,
+    height: 195, // Figma height
     backgroundColor: '#f0f0f0',
     marginTop: 0,
-    marginBottom: 16,
+    marginBottom: 0,
   },
   imageBadge: {
     position: 'absolute',
@@ -691,7 +878,7 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: 0,
     paddingBottom: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0, // No horizontal padding - items positioned individually
   },
   header: {
     display: 'none',
@@ -752,11 +939,21 @@ const styles = StyleSheet.create({
     color: '#c2185b',
     opacity: 0.9,
   },
+  descriptionContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 0,
+    paddingHorizontal: 0,
+  },
   description: {
     fontSize: 16,
-    color: '#333',
-    lineHeight: 24,
-    marginBottom: 24,
+    color: '#2C2235',
+    lineHeight: 22,
+    letterSpacing: -0.32,
+    width: 342, // Figma: 342px width
+    fontFamily: 'Figtree-Regular',
+    textAlign: 'left',
   },
   capacityBanner: {
     flexDirection: 'row',
@@ -786,23 +983,104 @@ const styles = StyleSheet.create({
   },
   infoSection: {
     marginBottom: 24,
+    paddingLeft: 23, // Figma: 23px from left
+    marginTop: 30, // Positioned after description
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 12,
+    fontWeight: '700',
+    color: '#2C2235',
+    letterSpacing: -0.36,
+    marginBottom: 17, // Figma spacing
+    fontFamily: 'Figtree-Bold',
+    lineHeight: 16,
+  },
+  meetingDetailsContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    position: 'relative',
+  },
+  meetingDetailsLeft: {
+    flex: 1,
+    marginRight: 16,
+    paddingRight: 140, // Buffer space for leader avatars (108px max width + 20px padding + extra for overlap)
+  },
+  leaderAvatarsContainer: {
+    position: 'absolute',
+    right: 20,
+    top: 0,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    zIndex: 1,
+    overflow: 'visible',
+  },
+  leaderProfilePicture: {
+    borderWidth: 2,
+    borderColor: '#FF0083', // Pink border to match GroupCard
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  sideBySideContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0,
+  },
+  pyramidContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pyramidRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  squareContainer: {
+    width: 108, // 2 avatars × 54px (with -8px overlap)
+    height: 108, // 2 rows × 54px (with -8px overlap)
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  squareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  squareAvatarItem: {
+    // Ensure each square avatar item has proper positioning
+    position: 'relative',
+  },
+  moreLeadersIndicatorText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   infoRowAlt: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    alignItems: 'flex-start',
+    gap: 10, // Gap between icon and text (23px icon position + 16px icon + gap = 49px text start)
+    marginBottom: 12,
+    minHeight: 16, // Minimum height for icon
   },
   infoValueAlt: {
     fontSize: 16,
-    color: '#333',
+    color: '#2C2235',
+    letterSpacing: -0.32,
     flex: 1,
+    fontFamily: 'Figtree-Regular',
+    lineHeight: 20, // Figma: line height for multi-line
+  },
+  leaderIconContainer: {
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   friendsRow: {
     backgroundColor: '#eff6ff',
@@ -860,15 +1138,35 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   actionSection: {
-    marginTop: 8,
+    marginTop: 20,
     marginBottom: 32,
+    paddingHorizontal: 51, // Figma: buttons positioned at 51px from left
   },
   actionButtons: {
-    gap: 12,
+    gap: 10, // Gap between buttons
+  },
+  referFriendButton: {
+    backgroundColor: '#EAEAEA',
+    borderColor: '#EAEAEA',
+    height: 42,
+    borderRadius: 21,
+    width: 278, // Figma: 278px width
+    alignSelf: 'center',
+  },
+  requestJoinButton: {
+    backgroundColor: '#2C2235',
+    borderColor: '#2C2235',
+    height: 42,
+    borderRadius: 21,
+    width: 278, // Figma: 278px width
+    alignSelf: 'center',
   },
   whatsappButton: {
     backgroundColor: '#25D366',
     borderColor: '#25D366',
+  },
+  friendsModalHeader: {
+    borderBottomWidth: 0,
   },
   friendsModalContainer: {
     flex: 1,
@@ -948,5 +1246,14 @@ const styles = StyleSheet.create({
   },
   referButtonOutsidePending: {
     marginTop: 0,
+    backgroundColor: '#EAEAEA',
+    borderColor: '#EAEAEA',
+    height: 42,
+    borderRadius: 21,
+    width: 278,
+    alignSelf: 'center',
+  },
+  referButtonText: {
+    color: '#2C2235', // Dark text for grey buttons
   },
 });

@@ -846,6 +846,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       const { data: group, latitude, longitude, category } = point;
       const isActive = activeGroupId === group.id;
       const isGreyedOut = Boolean((group as any).__isGreyedOut);
+      // Check if group has friends - friends query data isn't available per marker,
+      // so we'll check based on the group's member count or use a default approach
+      // For now, all markers use the standard color - friends indicator is shown on cards
       // Pass isGreyedOut to getMarkerColor so it can return appropriate color
       const markerColor = getMarkerColor(category, isGreyedOut);
       
@@ -1282,7 +1285,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             pinColor="#ff0083"
             tracksViewChanges={false}
             draggable={true}
-            onDragEnd={async (e) => {
+            onDragEnd={async (e: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
               const newCoordinates = e.nativeEvent.coordinate;
               try {
                 // Reverse geocode to get the address for the new location
@@ -1427,14 +1430,20 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           ]}
         >
           <View style={styles.noGroupFitsButtonContainer}>
-            <Button
-              title="No group fits?"
+            <TouchableOpacity
               onPress={onNoGroupFits}
-              variant="secondary"
-              size="small"
               style={styles.noGroupFitsButton}
-              textStyle={styles.noGroupFitsButtonText}
-            />
+              activeOpacity={0.8}
+            >
+              <Text
+                style={styles.noGroupFitsButtonText}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
+                numberOfLines={1}
+              >
+                No group fits?
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -1442,7 +1451,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       {/* Custom Recenter Button - Always visible on iOS, Android uses native button */}
       {Platform.OS === 'ios' && (
         <TouchableOpacity
-          style={styles.recenterButton}
+          style={[
+            styles.recenterButton,
+            {
+              top: -50 + insets.top,
+            },
+          ]}
           onPress={handleRecenter}
           accessibilityLabel="Recenter map on current location"
           accessibilityRole="button"
@@ -1613,10 +1627,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
+    bottom: 110, // Position above search bar (50px height + 20px spacing)
     paddingVertical: 8,
-    paddingBottom: 66, // Same as horizontal card margins
+    paddingBottom: 8,
     backgroundColor: 'transparent',
+    zIndex: 20, // Higher than search bar (zIndex: 10) to appear above it
   },
   cardPanelHeader: {
     flexDirection: 'row',
@@ -1677,13 +1692,20 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   noGroupFitsButton: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     maxWidth: 120, // Compact width to match the drawn outline
     backgroundColor: '#2C2235', // Match friends badge color
-    borderColor: '#2C2235',
+    borderRadius: 16, // Rounded corners
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 32,
   },
   noGroupFitsButtonText: {
     color: '#FFFFFF', // Ensure white text on dark purple background
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   dotsOverlay: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -1716,8 +1738,7 @@ const styles = StyleSheet.create({
   },
   recenterButton: {
     position: 'absolute',
-    right: 12,
-    bottom: 12,
+    right: 26,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -1729,6 +1750,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+    zIndex: 15, // Above map, below buttons
   },
   accessibilityAlternative: {
     // removed
