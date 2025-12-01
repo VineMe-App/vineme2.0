@@ -1454,7 +1454,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           style={[
             styles.recenterButton,
             {
-              bottom: 12 + insets.bottom,
+              top: -50 + insets.top,
             },
           ]}
           onPress={handleRecenter}

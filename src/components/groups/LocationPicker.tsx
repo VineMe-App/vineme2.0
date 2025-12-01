@@ -11,6 +11,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../ui/Text';
 import { GOOGLE_MAPS_MAP_ID } from '@/utils/constants';
 import { Input, Button } from '../ui';
@@ -71,6 +72,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 }) => {
   // Check if MapView is available BEFORE any hooks
   const inExpoGo = !MapView;
+  const insets = useSafeAreaInsets();
 
   const [search, setSearch] = useState<string>(value?.address || '');
   const [region, setRegion] = useState<{
@@ -621,7 +623,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           />
         </MapView>
           <TouchableOpacity
-            style={styles.recenterButton}
+            style={[styles.recenterButton, { top: 12 + insets.top }]}
             onPress={handleRecenter}
             accessibilityLabel="Recenter map on current location"
             accessibilityRole="button"
@@ -709,7 +711,6 @@ const styles = StyleSheet.create({
   recenterButton: {
     position: 'absolute',
     right: 12,
-    bottom: 12,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -721,6 +722,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+    zIndex: 1000, // Ensure button stays on top
   },
   actionContainer: {
     marginTop: 12,
