@@ -769,7 +769,7 @@ export const triggerGroupRequestDeniedNotification = async (
         deniedByName: data.deniedByName,
         reason: data.reason,
       },
-      action_url: `/group/${data.groupId}`,
+      action_url: '/(tabs)',
     });
   } catch (error) {
     console.error('Error triggering group request denied notification:', error);
