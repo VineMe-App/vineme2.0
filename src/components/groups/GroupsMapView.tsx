@@ -1305,6 +1305,8 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             pinColor="#ff0083"
             tracksViewChanges={false}
             draggable={true}
+            zIndex={1000}
+            anchor={{ x: 0.5, y: 1 }}
             onDragEnd={async (e: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
               const newCoordinates = e.nativeEvent.coordinate;
               try {

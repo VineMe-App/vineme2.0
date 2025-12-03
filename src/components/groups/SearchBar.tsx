@@ -101,6 +101,7 @@ export const SearchBar = forwardRef<TextInput, SearchBarProps>(
             onSubmitEditing={handleSubmit}
             returnKeyType="search"
             placeholderTextColor="#939393"
+            multiline={false}
           />
           {localQuery.length > 0 ? (
             <TouchableOpacity
@@ -166,6 +167,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlignVertical: 'center',
     includeFontPadding: false,
+    overflow: 'hidden',
   },
   clearButton: {
     padding: 4,
