@@ -22,6 +22,7 @@ import { Button } from '../../components/ui/Button';
 import { formatDateTime, isToday } from '../../utils/helpers';
 import { shareEvent } from '../../utils/deepLinking';
 import { OptimizedImage } from '../../components/ui/OptimizedImage';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -199,7 +200,7 @@ export default function EventDetailScreen() {
           </Text>
           <Button
             title="Go Back"
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             style={styles.backButton}
           />
         </View>

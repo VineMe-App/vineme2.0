@@ -14,6 +14,7 @@ import {
 import { Text } from '../components/ui/Text';
 import { FriendsList } from '../components/friends/FriendsList';
 import { useAuth } from '@/hooks/useAuth';
+import { safeGoBack } from '@/utils/navigation';
 
 type FilterType = 'friends' | 'received' | 'sent';
 
@@ -47,8 +48,7 @@ export default function FriendsScreen() {
   }, []);
 
   const handleBack = useCallback(() => {
-    // Always go back to profile, regardless of search state
-    router.back();
+    safeGoBack(router);
   }, []);
 
   const handleFilterChange = useCallback((filter: FilterType) => {

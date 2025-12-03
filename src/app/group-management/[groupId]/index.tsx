@@ -7,16 +7,25 @@ import { Button } from '@/components/ui/Button';
 import { GroupLeaderPanel } from '@/components/groups/GroupLeaderPanel';
 import { useGroup } from '@/hooks/useGroups';
 import { useAuthStore } from '@/stores/auth';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function GroupManagementScreen() {
   const router = useRouter();
-  const { groupId } = useLocalSearchParams<{ groupId?: string | string[] }>();
+  const { groupId, tab } = useLocalSearchParams<{
+    groupId?: string | string[];
+    tab?: string | string[];
+  }>();
   const { userProfile } = useAuthStore();
 
   const resolvedGroupId = useMemo(() => {
     if (!groupId) return undefined;
     return Array.isArray(groupId) ? groupId[0] : groupId;
   }, [groupId]);
+
+  const resolvedTab = useMemo<'members' | 'requests'>(() => {
+    const value = Array.isArray(tab) ? tab[0] : tab;
+    return value === 'requests' ? 'requests' : 'members';
+  }, [tab]);
 
   const { data: group, isLoading, error, refetch } = useGroup(resolvedGroupId);
 
@@ -56,7 +65,7 @@ export default function GroupManagementScreen() {
           </Text>
           <Button
             title="Go Back"
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             style={styles.backButton}
           />
         </View>
@@ -69,7 +78,7 @@ export default function GroupManagementScreen() {
           </Text>
           <Button
             title="Go Back"
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             style={styles.backButton}
           />
         </View>
@@ -81,7 +90,11 @@ export default function GroupManagementScreen() {
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >
-          <GroupLeaderPanel group={group} onGroupUpdated={refetch} />
+          <GroupLeaderPanel
+            group={group}
+            onGroupUpdated={refetch}
+            initialTab={resolvedTab}
+          />
         </ScrollView>
       )}
     </View>

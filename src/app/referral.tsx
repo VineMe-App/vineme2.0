@@ -31,6 +31,7 @@ import { locationService } from '../services/location';
 import { OptimizedImage } from '../components/ui/OptimizedImage';
 import { GroupPlaceholderImage } from '../components/ui/GroupPlaceholderImage';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { safeGoBack } from '@/utils/navigation';
 
 const COUNTRIES: Country[] = [
   { name: 'United Kingdom', code: '+44', flag: '🇬🇧' },
@@ -179,7 +180,7 @@ export default function ReferralPage() {
           isGroupReferral
             ? "We've created an account for the person you referred and sent them an email to complete setup."
             : "We've created an account for the person you referred and sent them an email to complete setup. Our team will help them find the right group.",
-          [{ text: 'OK', onPress: () => router.back() }]
+          [{ text: 'OK', onPress: () => safeGoBack(router) }]
         );
       } catch (error) {
         Alert.alert(
@@ -259,7 +260,7 @@ export default function ReferralPage() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={() => safeGoBack(router)}
           activeOpacity={0.7}
         >
           <Ionicons name="chevron-back" size={20} color="#2C2235" />

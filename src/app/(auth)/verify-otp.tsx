@@ -17,6 +17,7 @@ import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
 import { AuthHeroLogo } from '@/components/auth/AuthHeroLogo';
 import { useAuthStore } from '@/stores/auth';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function VerifyOtpScreen() {
   const router = useRouter();
@@ -162,7 +163,7 @@ export default function VerifyOtpScreen() {
                   style={styles.verifyButton}
                 />
                 <TouchableOpacity
-                  onPress={() => router.back()}
+                  onPress={() => safeGoBack(router)}
                   accessibilityRole="button"
                   style={styles.backButton}
                 >
@@ -304,4 +305,3 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
-

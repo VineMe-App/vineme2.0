@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../components/ui/Text';
 import { useAuth } from '../hooks/useAuth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function ReferralLandingPage() {
   const { userProfile } = useAuth();
@@ -40,7 +41,7 @@ export default function ReferralLandingPage() {
       <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={() => safeGoBack(router)}
           activeOpacity={0.7}
         >
           <Ionicons name="chevron-back" size={20} color="#2C2235" />

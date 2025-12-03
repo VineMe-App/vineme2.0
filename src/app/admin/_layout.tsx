@@ -5,6 +5,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { router } from 'expo-router';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function AdminLayout() {
   return (
@@ -15,7 +16,7 @@ export default function AdminLayout() {
             <Text style={styles.errorTitle}>Access Denied</Text>
             <ErrorMessage
               error="You do not have permission to access admin features. Church admin role required."
-              onRetry={() => router.back()}
+              onRetry={() => safeGoBack(router)}
             />
           </View>
         </View>

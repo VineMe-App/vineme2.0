@@ -22,6 +22,7 @@ import {
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { router } from 'expo-router';
 import { AdminPageLayout } from '@/components/admin/AdminHeader';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function ManageUsersScreen() {
   const { userProfile } = useAuthStore();
@@ -140,7 +141,7 @@ export default function ManageUsersScreen() {
           <View style={styles.errorContainer}>
             <ErrorMessage
               message="You do not have permission to access this page. Church admin role required."
-              onRetry={() => router.back()}
+              onRetry={() => safeGoBack(router)}
             />
           </View>
         </AdminPageLayout>
