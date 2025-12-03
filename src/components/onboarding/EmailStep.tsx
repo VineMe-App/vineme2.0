@@ -353,4 +353,3 @@ const styles = StyleSheet.create({
     letterSpacing: -0.8, // Figma: -0.8px
   },
 });
-
