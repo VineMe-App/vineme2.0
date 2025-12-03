@@ -202,7 +202,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           ]}
         >
           <TouchableOpacity
-            style={styles.touchableContent}
+            style={[
+              styles.touchableContent,
+              isUnread && styles.touchableContentUnread,
+            ]}
             onPress={handlePress}
             accessibilityRole="button"
             accessibilityLabel={`Notification: ${title}. ${body}`}
@@ -520,6 +523,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 17,
     minHeight: 68,
+  },
+  touchableContentUnread: {
+    backgroundColor: 'rgba(255, 0, 131, 0.1)', // Light pink - same as selected filters
   },
   avatarContainer: {
     marginRight: 12,

@@ -1,10 +1,11 @@
-import React, { useMemo, useEffect } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
+import React, { useMemo, useEffect, useState } from 'react';
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Platform, Keyboard } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { Text } from '@/components/ui/Text';
+import { Button } from '@/components/ui';
 import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -19,6 +20,7 @@ export default function NotificationsScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Hide the navigation header
   useEffect(() => {
@@ -26,6 +28,37 @@ export default function NotificationsScreen() {
       headerShown: false,
     });
   }, [navigation]);
+
+  // Calculate tab bar height to position button correctly
+  const androidBottomPadding = Math.max(insets.bottom + 4, 12);
+  const tabBarHeight = Platform.OS === 'ios' ? 100 : 56 + androidBottomPadding;
+  const buttonHeight = 50; // Approximate button height
+
+  // Keyboard listeners to adjust button position
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
+
+  // Position button: above keyboard when open, otherwise above tab bar
+  const buttonBottom = keyboardHeight > 0 
+    ? keyboardHeight + 8 // 8px spacing above keyboard
+    : tabBarHeight - 40; // Closer to bottom of screen (20px above tab bar)
 
   const {
     notifications,
@@ -35,6 +68,7 @@ export default function NotificationsScreen() {
     hasNextPage,
     fetchNextPage,
     markAsRead,
+    markAllAsRead,
     deleteNotification,
     refreshNotifications,
     error,
@@ -141,15 +175,17 @@ export default function NotificationsScreen() {
     />
   );
 
-  const listEmpty = (
+  const shouldShowEmptyState = !isLoading && notifications.length === 0;
+
+  const listEmpty = shouldShowEmptyState ? (
     <View style={styles.emptyContainer}>
       <EmptyState
-        title="No notifications yet"
-        message="When you receive notifications, they will show up here."
+        title="No notifications!"
+        message="You're all caught up!"
         icon={null}
       />
     </View>
-  );
+  ) : null;
 
   const listFooter = useMemo(() => {
     if (isLoadingMore) {
@@ -200,9 +236,10 @@ export default function NotificationsScreen() {
           data={notifications}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={
-            notifications.length === 0 ? styles.emptyContent : styles.listContent
-          }
+          contentContainerStyle={[
+            shouldShowEmptyState ? styles.emptyContent : styles.listContent,
+            { paddingBottom: buttonBottom + buttonHeight + 16 }, // Add padding so content isn't hidden behind button
+          ]}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           refreshControl={
@@ -218,6 +255,17 @@ export default function NotificationsScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* Mark all as read button - Always visible at bottom */}
+      <View style={[styles.markAllContainer, { bottom: buttonBottom }]}>
+        <Button
+          title={unreadCount > 0 ? `Mark all as read (${unreadCount})` : 'Mark all as read'}
+          variant="secondary"
+          onPress={() => markAllAsRead()}
+          style={styles.markAllButton}
+          disabled={unreadCount === 0}
+        />
+      </View>
     </View>
   );
 }
@@ -253,6 +301,15 @@ const styles = StyleSheet.create({
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  markAllContainer: {
+    position: 'absolute',
+    left: 26,
+    right: 26,
+    zIndex: 10,
+  },
+  markAllButton: {
+    width: '100%',
   },
   loadingContainer: {
     flex: 1,

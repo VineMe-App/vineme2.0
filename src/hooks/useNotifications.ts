@@ -215,14 +215,18 @@ export const useEnhancedNotifications = (userId?: string) => {
     const subscription = subscribeToUserNotifications({
       userId,
       onNotificationReceived: (notification) => {
-        // Invalidate count query to refetch with proper settings filtering
+        // Invalidate and refetch count query to refetch with proper settings filtering
         // This ensures the count respects notification settings
         queryClient.invalidateQueries({
           queryKey: ['notifications', 'count', userId, { read: false }],
         });
 
-        // Invalidate notification lists to refresh them
+        // Invalidate and refetch notification lists to refresh them
         queryClient.invalidateQueries({
+          queryKey: ['notifications', 'list', userId],
+        });
+        // Explicitly refetch to ensure new notifications appear immediately
+        queryClient.refetchQueries({
           queryKey: ['notifications', 'list', userId],
         });
 
@@ -272,6 +276,8 @@ export const useEnhancedNotifications = (userId?: string) => {
       return lastPage.hasMore ? allPages.length : undefined;
     },
     enabled: !!userId,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Get unread notifications
