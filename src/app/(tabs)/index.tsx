@@ -6,6 +6,8 @@ import {
   ScrollView,
   RefreshControl,
   SafeAreaView,
+  Platform,
+  Image,
 } from 'react-native';
 import { Text } from '../../components/ui/Text';
 import { useAuthStore } from '../../stores/auth';
@@ -25,7 +27,6 @@ import { useTheme } from '@/theme/provider/useTheme';
 import { formatServiceTime } from '@/utils/helpers';
 import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithBadge';
 import { useNotificationBadge } from '@/hooks/useNotifications';
-import { Image } from 'react-native';
 
 const formatNameList = (names: string[]): string => {
   const filtered = names.filter((name) => name && name.trim().length > 0);
@@ -565,12 +566,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingTop: 0, // Figma: logos at y=16 within the nav
-    paddingLeft: 19, // Figma: first logo starts at x=19
-    paddingRight: 20,
     paddingBottom: 0,
     minHeight: 80, // Figma: top nav height is 80px
-    marginTop: 10, // Figma: top nav at top-[36px]
+    ...Platform.select({
+      ios: {
+        paddingTop: 0, // Figma: logos at y=16 within the nav
+        paddingLeft: 19, // Figma: first logo starts at x=19
+        paddingRight: 20,
+        marginTop: 10, // Figma: top nav at top-[36px]
+      },
+      android: {
+        paddingTop: 32,
+        paddingLeft: 24,
+        paddingRight: 24,
+        marginTop: 0,
+      },
+      default: {
+        paddingTop: 0,
+        paddingLeft: 19,
+        paddingRight: 20,
+        marginTop: 10,
+      },
+    }),
   },
   logoContainer: {
     flexDirection: 'row',
@@ -672,6 +689,7 @@ const styles = StyleSheet.create({
     paddingLeft: 34,
     paddingRight: 20,
     marginBottom: 16,
+    paddingTop: 0,
   },
   manageButton: {
     alignSelf: 'flex-start',
