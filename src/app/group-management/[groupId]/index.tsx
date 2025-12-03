@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
 import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
@@ -8,6 +8,7 @@ import { GroupLeaderPanel } from '@/components/groups/GroupLeaderPanel';
 import { useGroup } from '@/hooks/useGroups';
 import { useAuthStore } from '@/stores/auth';
 import { safeGoBack } from '@/utils/navigation';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function GroupManagementScreen() {
   const router = useRouter();
@@ -48,6 +49,17 @@ export default function GroupManagementScreen() {
           title: group?.title
             ? `${group.title} Management`
             : 'Group Management',
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => safeGoBack(router)}
+              style={styles.headerBackButton}
+            >
+              <Ionicons name="chevron-back" size={20} color="#007AFF" />
+              <Text variant="body" color="primary" style={styles.headerBackText}>
+                Back
+              </Text>
+            </TouchableOpacity>
+          ),
         }}
       />
 
@@ -117,6 +129,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+  },
+  headerBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  headerBackText: {
+    marginLeft: 4,
   },
   centerText: {
     marginTop: 16,
