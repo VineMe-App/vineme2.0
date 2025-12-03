@@ -605,7 +605,7 @@ export const triggerFriendRequestNotification = async (
         fromUserId: data.fromUserId,
         fromUserName: data.fromUserName,
       },
-      action_url: `/user/${data.fromUserId}`,
+      action_url: `/user/${data.fromUserId}?fromNotification=1`,
     });
   } catch (error) {
     console.error('Error triggering friend request notification:', error);
@@ -636,7 +636,7 @@ export const triggerFriendRequestAcceptedNotification = async (
         acceptedByUserId: data.acceptedByUserId,
         acceptedByUserName: data.acceptedByUserName,
       },
-      action_url: `/user/${data.acceptedByUserId}`,
+      action_url: `/user/${data.acceptedByUserId}?fromNotification=1`,
     });
   } catch (error) {
     console.error(
