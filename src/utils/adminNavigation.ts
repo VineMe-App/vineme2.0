@@ -89,7 +89,7 @@ export class AdminNavigation {
    * Navigate back with optional fallback
    */
   static goBack(fallbackRoute?: string) {
-    const fallback = fallbackRoute || '/(tabs)/profile';
+    const fallback = fallbackRoute || '/(tabs)';
     safeGoBack(router, fallback);
   }
 
