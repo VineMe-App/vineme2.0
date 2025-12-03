@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
@@ -266,6 +267,25 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     const safeIndex = Math.min(selectedIndex, selectedItems.length - 1);
     return selectedItems[safeIndex]?.id ?? null;
   }, [selectedItems, selectedIndex]);
+
+  // Close group card panel when keyboard opens
+  useEffect(() => {
+    const keyboardWillShow = Platform.OS === 'ios' 
+      ? Keyboard.addListener('keyboardWillShow', () => {
+          if (selectedItems) {
+            setSelectedItems(null);
+          }
+        })
+      : Keyboard.addListener('keyboardDidShow', () => {
+          if (selectedItems) {
+            setSelectedItems(null);
+          }
+        });
+
+    return () => {
+      keyboardWillShow.remove();
+    };
+  }, [selectedItems]);
 
   // Create clusterer instance only if we have MapView
   const clusterer = useMemo(
@@ -1255,6 +1275,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={() => {
+          // Dismiss keyboard when tapping on map
+          Keyboard.dismiss();
+          
           // On iOS, MapView onPress can fire alongside Marker onPress,
           // which immediately clears the selected card panel.
           // Preserve background-tap-to-dismiss on Android only.
