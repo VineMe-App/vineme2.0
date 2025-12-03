@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
-import { Modal } from '../ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/provider/useTheme';
 
@@ -31,6 +31,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onClose,
 }) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const {
     filters,
     setMeetingDays,
@@ -39,30 +40,66 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     clearFilters,
   } = useGroupFiltersStore();
 
-  const styles = createStyles(theme);
+  // Temporary state that only applies when "Apply" is clicked
+  const [tempFilters, setTempFilters] = React.useState(filters);
+
+  // Sync temporary state when modal opens
+  React.useEffect(() => {
+    if (isVisible) {
+      setTempFilters(filters);
+    }
+  }, [isVisible, filters]);
+
+  // Calculate header height: safe area top + header height (60px) + margin (8px)
+  const headerHeight = insets.top + 60 + 8;
+
+  const styles = createStyles(theme, headerHeight);
 
   const handleMeetingDayToggle = (day: string) => {
-    const newDays = filters.meetingDays.includes(day)
-      ? filters.meetingDays.filter((d) => d !== day)
-      : [...filters.meetingDays, day];
-    setMeetingDays(newDays);
+    const newDays = tempFilters.meetingDays.includes(day)
+      ? tempFilters.meetingDays.filter((d) => d !== day)
+      : [...tempFilters.meetingDays, day];
+    setTempFilters({ ...tempFilters, meetingDays: newDays });
+  };
+
+  const handleOnlyWithFriendsToggle = () => {
+    setTempFilters({ ...tempFilters, onlyWithFriends: !tempFilters.onlyWithFriends });
+  };
+
+  const handleHideFullGroupsToggle = () => {
+    setTempFilters({ ...tempFilters, hideFullGroups: !tempFilters.hideFullGroups });
   };
 
   const handleReset = () => {
+    setTempFilters({
+      meetingDays: [],
+      searchQuery: '',
+      onlyWithFriends: false,
+      hideFullGroups: false,
+    });
     clearFilters();
   };
 
+  const handleApply = () => {
+    // Apply temporary filters to actual store
+    setMeetingDays(tempFilters.meetingDays);
+    setOnlyWithFriends(tempFilters.onlyWithFriends);
+    setHideFullGroups(tempFilters.hideFullGroups);
+    onClose();
+  };
+
+  if (!isVisible) return null;
+
   return (
-    <Modal
-      isVisible={isVisible}
-      onClose={onClose}
-      variant="centered"
-      scrollable={false}
-      closeOnOverlayPress={true}
-      showCloseButton={false}
-      size="medium"
-    >
-      <View style={styles.modalContent}>
+    <>
+      {/* Backdrop */}
+      <TouchableOpacity
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={onClose}
+      />
+      <View style={styles.container}>
+        <View style={styles.panelContent}>
         {/* Close Button */}
         <TouchableOpacity
           style={styles.closeButton}
@@ -85,7 +122,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             <Text style={styles.sectionTitle}>Meeting days</Text>
             <View style={styles.buttonGrid}>
               {MEETING_DAYS.map((day) => {
-                const isActive = filters.meetingDays.includes(day.value);
+                const isActive = tempFilters.meetingDays.includes(day.value);
                 return (
                   <TouchableOpacity
                     key={day.value}
@@ -116,14 +153,14 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               <TouchableOpacity
                 style={[
                   styles.filterButton,
-                  filters.onlyWithFriends && styles.filterButtonActive,
+                  tempFilters.onlyWithFriends && styles.filterButtonActive,
                 ]}
-                onPress={() => setOnlyWithFriends(!filters.onlyWithFriends)}
+                onPress={handleOnlyWithFriendsToggle}
               >
                 <Text
                   style={[
                     styles.filterButtonText,
-                    filters.onlyWithFriends && styles.filterButtonTextActive,
+                    tempFilters.onlyWithFriends && styles.filterButtonTextActive,
                   ]}
                 >
                   Only groups with my friends
@@ -139,14 +176,14 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               <TouchableOpacity
                 style={[
                   styles.filterButton,
-                  filters.hideFullGroups && styles.filterButtonActive,
+                  tempFilters.hideFullGroups && styles.filterButtonActive,
                 ]}
-                onPress={() => setHideFullGroups(!filters.hideFullGroups)}
+                onPress={handleHideFullGroupsToggle}
               >
                 <Text
                   style={[
                     styles.filterButtonText,
-                    filters.hideFullGroups && styles.filterButtonTextActive,
+                    tempFilters.hideFullGroups && styles.filterButtonTextActive,
                   ]}
                 >
                   Show only available groups
@@ -162,28 +199,58 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             <Text style={styles.resetButtonText}>Reset</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.applyButton} onPress={onClose}>
-            <Text style={styles.applyButtonText}>Apply filters</Text>
+          <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+            <Text style={styles.applyButtonText}>Apply</Text>
           </TouchableOpacity>
         </View>
+        </View>
       </View>
-    </Modal>
+    </>
   );
 };
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: any, headerHeight: number) =>
   StyleSheet.create({
-    modalContent: {
-      width: '100%',
-      paddingHorizontal: 30,
-      paddingTop: 28,
+    backdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 999,
+    },
+    container: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1000,
+      pointerEvents: 'box-none',
+    },
+    panelContent: {
+      marginHorizontal: 16, // Same as sort dropdown
+      marginTop: headerHeight, // Position below header at same height as sort dropdown
+      marginBottom: 8,
+      paddingHorizontal: 25, // Figma: 25px
+      paddingTop: 21, // Figma: 21px
       paddingBottom: 20,
-      position: 'relative',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: '#EAEAEA',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 4,
+      maxHeight: '80%',
     },
     closeButton: {
       position: 'absolute',
-      top: 16,
-      right: 12,
+      top: 17, // Figma: 17px
+      right: 17, // Figma: 17px
       width: 24,
       height: 24,
       zIndex: 10,
@@ -191,12 +258,12 @@ const createStyles = (theme: any) =>
       alignItems: 'center',
     },
     title: {
-      fontSize: 20,
-      fontWeight: '800', // ExtraBold
+      fontSize: 20, // Figma: 20px
+      fontWeight: '800', // ExtraBold from Figma
       color: '#2C2235',
-      letterSpacing: -0.4,
+      letterSpacing: -0.4, // Figma: -0.4px
       lineHeight: 22,
-      marginBottom: 32,
+      marginBottom: 29, // Figma spacing
       fontFamily: theme.typography.fontFamily.bold,
     },
     scrollView: {
@@ -206,16 +273,16 @@ const createStyles = (theme: any) =>
       paddingBottom: 16,
     },
     section: {
-      marginBottom: 24,
+      marginBottom: 20, // Figma spacing
     },
     sectionTitle: {
-      fontSize: 16,
-      fontWeight: '500', // Medium
+      fontSize: 14, // Figma: 14px
+      fontWeight: '700', // Bold from Figma
       color: '#2C2235',
-      letterSpacing: -0.32,
+      letterSpacing: -0.28, // Figma: -0.28px
       lineHeight: 16,
-      marginBottom: 12,
-      fontFamily: theme.typography.fontFamily.medium,
+      marginBottom: 8, // Figma spacing
+      fontFamily: theme.typography.fontFamily.bold,
     },
     buttonGrid: {
       flexDirection: 'row',
@@ -226,57 +293,57 @@ const createStyles = (theme: any) =>
       paddingHorizontal: 8,
       paddingVertical: 8,
       borderRadius: 8,
-      backgroundColor: '#F5F3F5', // Exact color from Figma
+      backgroundColor: '#F5F3F5', // Unselected from Figma
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 28,
-      height: 28,
     },
     filterButtonActive: {
-      backgroundColor: '#2C2235',
+      backgroundColor: 'rgba(255, 0, 131, 0.1)', // Light pink from Figma
     },
     filterButtonText: {
-      fontSize: 12,
+      fontSize: 14, // Figma: 14px
       fontWeight: '500', // Medium from Figma
       color: '#2C2235',
       fontFamily: theme.typography.fontFamily.medium,
-      lineHeight: 12,
+      lineHeight: 14,
       letterSpacing: 0,
     },
     filterButtonTextActive: {
-      color: '#F5F5F5', // Exact color from Figma variable
+      fontWeight: '700', // Bold when active (from Figma)
+      fontFamily: theme.typography.fontFamily.bold,
     },
     footerActions: {
       flexDirection: 'row',
-      gap: 12,
+      gap: 4, // 8px gap between buttons
+      justifyContent: 'space-between', // Space buttons apart
+      alignItems: 'center',
     },
     resetButton: {
-      flex: 1,
-      borderRadius: 100,
-      height: 42,
+      width: 120, // Figma: 120px
+      borderRadius: 21, // Figma: 21px (100px rounded)
+      height: 42, // Figma: 42px
       justifyContent: 'center',
       alignItems: 'center',
-      borderWidth: 1,
-      borderColor: '#2C2235',
-      backgroundColor: '#FFFFFF',
+      backgroundColor: '#EAEAEA', // Figma: #eaeaea
     },
     resetButtonText: {
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: 16, // Figma: 16px
+      fontWeight: '700', // Bold from Figma
       color: '#2C2235',
       fontFamily: theme.typography.fontFamily.bold,
       textAlign: 'center',
     },
     applyButton: {
-      flex: 2,
-      backgroundColor: '#2C2235',
-      borderRadius: 100, // Pill shape from Figma
-      height: 42,
+      width: 120, // Figma: 120px
+      backgroundColor: '#2C2235', // Dark purple from Figma
+      borderRadius: 21, // Figma: 21px (100px rounded)
+      height: 42, // Figma: 42px
       justifyContent: 'center',
       alignItems: 'center',
     },
     applyButtonText: {
-      fontSize: 16,
+      fontSize: 16, // Figma: 16px
       fontWeight: '700', // Bold from Figma
       color: '#FFFFFF',
       fontFamily: theme.typography.fontFamily.bold,

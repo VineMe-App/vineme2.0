@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, View, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { Button } from '@/components/ui/Button';
 import { useGroup } from '@/hooks/useGroups';
 import { useAuthStore } from '@/stores/auth';
@@ -54,13 +54,7 @@ export default function EditGroupScreen() {
         membership.user_id === userProfile.id &&
         (membership.role === 'leader' || membership.role === 'admin')
     );
-    const isChurchAdminForService = Boolean(
-      userProfile.roles?.includes('church_admin') &&
-        userProfile.service_id &&
-        group.service_id &&
-        userProfile.service_id === group.service_id
-    );
-    return Boolean(isLeader || isChurchAdminForService);
+    return Boolean(isLeader);
   }, [group, userProfile]);
 
   const initialValues = useMemo(() => {
@@ -148,7 +142,7 @@ export default function EditGroupScreen() {
 
       {isLoading && (
         <View style={styles.centerContent}>
-          <LoadingSpinner />
+          <AuthLoadingAnimation />
           <Text style={styles.centerText}>Loading group details…</Text>
         </View>
       )}
@@ -165,7 +159,7 @@ export default function EditGroupScreen() {
       {!isLoading && group && !canManage && (
         <View style={styles.centerContent}>
           <Text style={styles.centerText}>
-            You need to be a group leader or church admin to edit this group.
+            You need to be a group leader to edit this group.
           </Text>
           <Button title="Go Back" onPress={() => router.back()} />
         </View>

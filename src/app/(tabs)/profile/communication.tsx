@@ -1,17 +1,16 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   Text as RNText,
   TextInput,
   Alert,
   Platform,
-  Image,
   TouchableOpacity,
   Linking,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -29,12 +28,30 @@ import {
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
 import { Ionicons } from '@expo/vector-icons';
+import { router, useNavigation } from 'expo-router';
 
 export default function CommunicationAndSecurityScreen() {
   const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
     useAuthStore();
   const userId = user?.id || authUserProfile?.id;
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+
+  // Remove header
+  useEffect(() => {
+    navigation.setOptions({
+      headerShown: false,
+    });
+  }, [navigation]);
+
+  const handleBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      router.push('/(tabs)/profile');
+    }
+  }, [navigation]);
   
   // Get user profile from query hook to allow refetching
   const { data: userProfile, refetch: refetchUserProfile } = useUserProfile(userId);
@@ -275,30 +292,24 @@ export default function CommunicationAndSecurityScreen() {
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: theme.colors.background.primary },
+        { backgroundColor: '#FFFFFF' },
       ]}
+      edges={['left', 'right', 'bottom']}
     >
-      <View
-        style={[
-          styles.compactHeader,
-          { backgroundColor: theme.colors.surface.primary },
-        ]}
-      >
-        <View style={styles.headerLeft}>
-          <Image
-            source={require('../../../../assets/figma-128-1563/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text variant="h4" weight="black" style={styles.headerTitle}>
-            Communication and Security
-          </Text>
-        </View>
+      <View style={[styles.header, { paddingTop: insets.top + 5 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBack}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={20} color="#2C2235" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Communication & Security</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Notifications Section */}
-        <Card style={styles.card}>
+        <Card style={styles.card} shadow="none">
           <Text style={styles.cardTitle}>Notification Preferences</Text>
           {settingsLoading && !settings ? (
             <RNText>Loading...</RNText>
@@ -451,17 +462,21 @@ export default function CommunicationAndSecurityScreen() {
         </Card>
 
         {/* Security Section */}
-        <Card style={styles.card}>
+        <Card style={styles.card} shadow="none">
           <Text style={styles.cardTitle}>Email & Phone Connections</Text>
 
           {/* Email */}
           <View style={styles.credBlock}>
-            <Text style={styles.label}>Email</Text>
-            {currentEmail ? (
-              <Text style={styles.currentValue}>{currentEmail}</Text>
-            ) : (
-              <Text style={styles.noCredential}>No email linked</Text>
-            )}
+            <View style={styles.labelValueRow}>
+              <Text style={styles.label}>Email</Text>
+              {currentEmail ? (
+                <Text style={styles.currentValue} numberOfLines={1} ellipsizeMode="tail">
+                  {currentEmail}
+                </Text>
+              ) : (
+                <Text style={styles.noCredential}>No email linked</Text>
+              )}
+            </View>
             {emailStep === 'idle' ? (
               <Button
                 title={currentEmail ? 'Update Email' : 'Link Email'}
@@ -506,12 +521,16 @@ export default function CommunicationAndSecurityScreen() {
 
           {/* Phone */}
           <View style={[styles.credBlock, { marginTop: 16 }]}>
-            <Text style={styles.label}>Contact Details</Text>
-            {currentPhone ? (
-              <Text style={styles.currentValue}>{currentPhone}</Text>
-            ) : (
-              <Text style={styles.noCredential}>No phone linked</Text>
-            )}
+            <View style={styles.labelValueRow}>
+              <Text style={styles.label}>Contact Details</Text>
+              {currentPhone ? (
+                <Text style={styles.currentValue} numberOfLines={1} ellipsizeMode="tail">
+                  {currentPhone}
+                </Text>
+              ) : (
+                <Text style={styles.noCredential}>No phone linked</Text>
+              )}
+            </View>
             {phoneStep === 'idle' && (
               <Button
                 title={currentPhone ? 'Update Phone' : 'Link Phone'}
@@ -597,7 +616,7 @@ export default function CommunicationAndSecurityScreen() {
         </Card>
 
         {/* Policies Section */}
-        <Card style={styles.card}>
+        <Card style={styles.card} shadow="none">
           <Text style={styles.cardTitle}>Policies</Text>
           <TouchableOpacity
             style={styles.policyLink}
@@ -626,42 +645,57 @@ export default function CommunicationAndSecurityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  compactHeader: {
-    paddingHorizontal: 19,
-    paddingVertical: 8,
+  container: { 
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  backButton: {
+    padding: 8,
+    marginLeft: -8,
   },
-  logo: {
-    width: 27,
-    height: 27,
-  },
-  headerTitle: {
-    color: '#2C2235',
-    fontSize: 22,
-    letterSpacing: -1.1,
-    fontWeight: '900',
+  title: {
+    fontSize: 22, // Figma: 22px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.44, // Figma: -0.44px
+    lineHeight: 22,
+    marginLeft: 12,
   },
   content: { padding: 16 },
-  card: { marginBottom: 16, padding: 20 },
+  card: { 
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6E7EA',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: 16, // Match profile page font size
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Match profile page
+    letterSpacing: -0.32, // Match profile page
+    lineHeight: 16,
     marginBottom: 12,
   },
   sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 16, // Match profile page font size
+    fontWeight: '600', // SemiBold
+    color: '#2C2235', // Match profile page
+    letterSpacing: -0.32, // Match profile page
+    lineHeight: 16,
     marginTop: 12,
     marginBottom: 8,
   },
@@ -697,11 +731,12 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   checkboxLabel: {
-    fontSize: 12,
+    fontSize: 14, // Match profile page font size
     color: '#2C2235',
-    fontWeight: '600',
+    fontWeight: '600', // SemiBold
     flex: 1,
-    letterSpacing: -0.6,
+    letterSpacing: -0.32, // Match profile page
+    lineHeight: 16,
   },
   actionsRow: { 
     flexDirection: 'row', 
@@ -712,13 +747,38 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
   },
-  label: { fontSize: 12, fontWeight: '600', color: '#2C2235', marginBottom: 6, letterSpacing: -0.6 },
-  currentValue: { fontSize: 12, fontWeight: '600', color: '#2C2235', marginBottom: 6, letterSpacing: -0.6 },
-  noCredential: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontStyle: 'italic',
+  labelValueRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 6,
+  },
+  label: { 
+    fontSize: 14, // Match profile page font size
+    fontWeight: '600', // SemiBold
+    color: '#2C2235', 
+    letterSpacing: -0.32, // Match profile page
+    lineHeight: 16,
+  },
+  currentValue: { 
+    fontSize: 14, // Match profile page font size
+    fontWeight: '600', // SemiBold
+    color: '#2C2235', 
+    letterSpacing: -0.32, // Match profile page
+    lineHeight: 16,
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 16,
+  },
+  noCredential: {
+    fontSize: 14, // Match profile page font size
+    color: '#999999', // Match profile page secondary color
+    fontWeight: '500', // Medium
+    letterSpacing: -0.32,
+    lineHeight: 16,
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 16,
   },
   inlineBtn: { marginTop: 4 },
   inputSection: { marginTop: 8 },
@@ -731,8 +791,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   helperText: {
-    fontSize: 12,
-    color: '#6b7280',
+    fontSize: 16, // Match profile page font size
+    color: '#999999', // Match profile page secondary color
+    fontWeight: '500', // Medium
+    letterSpacing: -0.32,
+    lineHeight: 16,
     marginVertical: 8,
     textAlign: 'center',
   },
@@ -744,9 +807,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   policyLinkText: {
-    fontSize: 12,
+    fontSize: 16, // Match profile page font size
     color: '#2C2235',
-    fontWeight: '600',
-    letterSpacing: -0.6,
+    fontWeight: '600', // SemiBold
+    letterSpacing: -0.32, // Match profile page
+    lineHeight: 16,
   },
 });

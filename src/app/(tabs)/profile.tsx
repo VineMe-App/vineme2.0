@@ -25,7 +25,6 @@ import { Avatar } from '@/components/ui/Avatar';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { FriendManagementModal } from '@/components/friends/FriendManagementModal';
 import { useTheme } from '@/theme/provider/useTheme';
 import { getDisplayName, getFullName } from '@/utils/name';
 import { setDeletionFlowActive, isDeletionFlowActive } from '@/utils/errorSuppression';
@@ -37,7 +36,6 @@ import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 export default function ProfileScreen() {
   const { user, signOut, loadUserProfile } = useAuthStore();
   const { theme } = useTheme();
-  const [showFriendsModal, setShowFriendsModal] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false);
 
   const deleteAccountMutation = useDeleteAccount();
@@ -310,11 +308,13 @@ export default function ProfileScreen() {
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: theme.colors.background.primary },
+        { backgroundColor: '#FFFFFF' }, // White background
       ]}
+      edges={['left', 'right', 'bottom']} // Exclude 'top' to prevent extra padding under header
     >
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -346,9 +346,16 @@ export default function ProfileScreen() {
               </Text>
             </View>
 
-            <View style={styles.infoSection}>
-              <Text style={styles.profileInfoTitle}>Profile Info</Text>
+            {/* Bio Section */}
+            <View style={styles.bioSection}>
+              <Text style={styles.bioTitle}>Bio</Text>
+              <Text style={styles.bioText}>
+                {userProfile.bio || 'This user has not added a bio yet.'}
+              </Text>
+            </View>
 
+            {/* Profile Info Section */}
+            <View style={styles.infoSection}>
               {userProfile.church && (
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Church</Text>
@@ -377,32 +384,26 @@ export default function ProfileScreen() {
                   })}
                 </Text>
               </View>
-            </View>
 
-            {/* Friends Section */}
-            <View style={styles.infoSection}>
+              {/* Friends Section */}
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Friends</Text>
-                <TouchableOpacity onPress={() => setShowFriendsModal(true)}>
+                <TouchableOpacity onPress={() => router.push('/friends')}>
                   <Text style={styles.infoLink}>Manage</Text>
                 </TouchableOpacity>
               </View>
-            </View>
 
-            {/* Admin Section */}
-            <ChurchAdminOnly>
-              <View style={styles.infoSection}>
+              {/* Admin Section */}
+              <ChurchAdminOnly>
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Admin</Text>
                   <TouchableOpacity onPress={() => router.push('/admin')}>
                     <Text style={styles.infoLink}>Open admin dashboard</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
-            </ChurchAdminOnly>
+              </ChurchAdminOnly>
 
-            {/* Communication & Security Section */}
-            <View style={styles.infoSection}>
+              {/* Communication & Security Section */}
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Communication & Security</Text>
                 <TouchableOpacity onPress={() => router.push('/profile/communication')}>
@@ -481,11 +482,6 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </Modal>
 
-      <FriendManagementModal
-        visible={showFriendsModal}
-        onClose={() => setShowFriendsModal(false)}
-        userId={user?.id}
-      />
 
       {/* Privacy settings now live in Communication & Security screen */}
 
@@ -500,8 +496,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 38,
-    paddingTop: 37,
+  },
+  contentContainer: {
+    paddingHorizontal: 36, // Figma: 36px from left edge
+    paddingTop: 0, // No top padding - header handles spacing
   },
   loadingContainer: {
     flex: 1,
@@ -522,11 +520,12 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: 'center',
-    marginBottom: 36,
+    marginBottom: 16, // Reduced spacing to match Figma
+    marginTop: 0, // Spacing from header to avatar - adjust this value if needed
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 24,
+    marginBottom: 13, // Figma: spacing between avatar and name
     width: 121,
     height: 121,
   },
@@ -550,57 +549,67 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   name: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2C2235',
-    letterSpacing: -0.48,
-    lineHeight: 28,
+    fontSize: 24, // Figma: 24px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.48, // Figma: -0.48px
+    lineHeight: 28, // Adjusted for 24px font
     textAlign: 'center',
-    marginTop: 8,
     includeFontPadding: false,
+  },
+  bioSection: {
+    marginBottom: 28, // Figma: spacing between bio and profile info
+    marginTop: 0,
+  },
+  bioTitle: {
+    fontSize: 16, // Figma: 16px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
+    marginBottom: 21, // Figma: spacing between title and bio text
+  },
+  bioText: {
+    fontSize: 16, // Figma: 16px
+    fontWeight: '500', // Medium
+    color: '#999999', // Figma: #999999
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
   },
   infoSection: {
     marginBottom: 0,
-  },
-  profileInfoTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2C2235',
-    letterSpacing: -0.32,
-    lineHeight: 16,
-    marginBottom: 16,
   },
   infoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14, // Figma: spacing between items
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#EAEAEA', // Figma: divider color
     minHeight: 14,
   },
   infoLabel: {
-    fontSize: 14,
-    color: '#999999',
-    fontWeight: '500',
-    letterSpacing: -0.28,
-    lineHeight: 14,
+    fontSize: 16, // Figma: 16px
+    color: '#999999', // Figma: #999999
+    fontWeight: '500', // Medium
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
   },
   infoValue: {
-    fontSize: 14,
-    color: '#2C2235',
-    fontWeight: '600',
-    letterSpacing: -0.28,
-    lineHeight: 14,
+    fontSize: 16, // Figma: 16px
+    color: '#2C2235', // Figma: #2c2235
+    fontWeight: '600', // SemiBold
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 16,
     textAlign: 'right',
     flex: 1,
     marginLeft: 16,
   },
   infoLink: {
-    fontSize: 16,
-    color: '#FF0083',
-    fontWeight: '500',
-    letterSpacing: -0.32,
+    fontSize: 16, // Figma: 16px
+    color: '#FF0083', // Figma: #ff0083
+    fontWeight: '500', // Medium
+    letterSpacing: -0.32, // Figma: -0.32px
     lineHeight: 16,
     textDecorationLine: 'underline',
     textAlign: 'right',
@@ -614,6 +623,9 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     marginBottom: 0,
+  },
+  bottomSpacing: {
+    height: 80,
   },
   modalOverlay: {
     flex: 1,

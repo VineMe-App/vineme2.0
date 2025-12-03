@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { router } from 'expo-router';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { NotificationBadge } from '@/components/ui/NotificationBadge';
 import { SimplePieChart } from '@/components/ui/SimplePieChart';
 import { useEnhancedNotifications } from '@/hooks/useNotifications';
@@ -140,7 +140,7 @@ export function AdminDashboardSummary({
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <LoadingSpinner size="small" />
+        <AuthLoadingAnimation />
         <Text style={styles.loadingText}>Loading dashboard...</Text>
       </View>
     );
@@ -325,13 +325,14 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   loadingContainer: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 40,
+    flex: 1,
   },
   loadingText: {
-    marginLeft: 8,
+    marginTop: 16,
     fontSize: 14,
     color: '#6b7280',
   },

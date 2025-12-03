@@ -487,9 +487,9 @@ export const useReferralValidation = () => {
     return null;
   }, []);
 
-  const validatePhone = useCallback((phone: string): string | null => {
+  const validatePhone = useCallback((phone?: string): string | null => {
     if (!phone || !phone.trim()) {
-      return 'Phone number is required';
+      return null; // Phone is optional
     }
 
     const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,}$/;

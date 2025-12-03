@@ -391,6 +391,17 @@ serve(async (req) => {
       }
     }
 
+    // If no specific group was selected, mark the user as needing help
+    if (!payload.groupId) {
+      await supabase
+        .from('users')
+        .update({
+          cannot_find_group: true,
+          cannot_find_group_requested_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,

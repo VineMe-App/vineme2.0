@@ -361,7 +361,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
               activeTab === 'requests' && styles.activeTabText,
             ]}
           >
-            Newcomers
+            Requests
           </Text>
           {pendingRequestsCount > 0 && (
             <View style={styles.requestsBadge}>

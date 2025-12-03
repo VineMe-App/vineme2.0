@@ -593,15 +593,17 @@ export class AuthService {
       });
 
       if (error) {
-        // Check if user not found
+        const lowerError = error.message.toLowerCase();
+        // Check if user not found or signups disabled (which also indicates user doesn't exist)
         if (
-          error.message.toLowerCase().includes('user not found') ||
-          error.message.toLowerCase().includes('invalid login credentials')
+          lowerError.includes('user not found') ||
+          lowerError.includes('invalid login credentials') ||
+          lowerError.includes('signups not allowed')
         ) {
           return {
             success: false,
             error:
-              "This phone isn't linked yet. Please log in with your email, then link your phone in Profile → Security.",
+              "There is no account linked to this phone number, please sign up to create an account.",
             userNotFound: true,
           };
         }

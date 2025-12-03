@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,17 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from 'react-native';
-import { Input } from '../ui/Input';
 import { Avatar } from '../ui/Avatar';
-import { Button } from '../ui/Button';
 import { useSearchUsers } from '../../hooks/useUsers';
 import {
   useFriendshipStatus,
   useSendFriendRequest,
   useAcceptRejectedFriendRequest,
+  useFriends,
+  useSentFriendRequests,
+  useReceivedFriendRequests,
 } from '../../hooks/useFriendships';
 import { useAuth } from '../../hooks/useAuth';
 import { router } from 'expo-router';
@@ -24,14 +26,40 @@ import { getDisplayName, getFullName } from '@/utils/name';
 
 interface FriendSearchProps {
   onClose?: () => void;
+  onViewProfile?: (userId: string) => void;
+  userId?: string;
+  activeFilter?: 'friends' | 'received' | 'sent';
 }
 
-export function FriendSearch({ onClose }: FriendSearchProps) {
+export function FriendSearch({ onClose, onViewProfile, userId, activeFilter = 'friends' }: FriendSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<TextInput>(null);
   const { user } = useAuth();
+
+  // Get counts for tabs
+  const friendsQuery = useFriends(userId);
+  const sentRequestsQuery = useSentFriendRequests(userId);
+  const receivedRequestsQuery = useReceivedFriendRequests(userId);
 
   const searchUsersQuery = useSearchUsers(searchQuery, searchQuery.length >= 2);
   const sendFriendRequestMutation = useSendFriendRequest();
+
+  const getFilterCount = (filter: 'friends' | 'received' | 'sent') => {
+    switch (filter) {
+      case 'friends':
+        return friendsQuery.data?.length || 0;
+      case 'received':
+        return receivedRequestsQuery.data?.length || 0;
+      case 'sent':
+        return sentRequestsQuery.data?.length || 0;
+      default:
+        return 0;
+    }
+  };
+
+  const handleSearchBarPress = () => {
+    searchInputRef.current?.focus();
+  };
 
   const handleSendFriendRequest = (friendId: string, friendName: string) => {
     Alert.alert(
@@ -67,6 +95,7 @@ export function FriendSearch({ onClose }: FriendSearchProps) {
         user={item}
         onSendFriendRequest={handleSendFriendRequest}
         isLoading={sendFriendRequestMutation.isPending}
+        onViewProfile={onViewProfile}
       />
     );
   };
@@ -76,24 +105,54 @@ export function FriendSearch({ onClose }: FriendSearchProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Find Friends</Text>
-        {onClose && (
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={18} color="#6b7280" />
-          </TouchableOpacity>
-        )}
+      {/* Tabs - Inactive when searching */}
+      <View style={styles.filterContainer}>
+        <View style={styles.tabsRow}>
+          <View style={[styles.filterButton, { backgroundColor: activeFilter === 'friends' ? '#FFFFFF' : 'rgba(238, 238, 238, 0)' }]}>
+            <Text style={styles.filterButtonText}>Friends</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{getFilterCount('friends')}</Text>
+            </View>
+          </View>
+          <View style={[styles.filterButton, { backgroundColor: activeFilter === 'received' ? '#FFFFFF' : 'rgba(238, 238, 238, 0)' }]}>
+            <Text style={styles.filterButtonText}>Requests</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{getFilterCount('received')}</Text>
+            </View>
+          </View>
+          <View style={[styles.filterButton, { backgroundColor: activeFilter === 'sent' ? '#FFFFFF' : 'rgba(238, 238, 238, 0)' }]}>
+            <Text style={styles.filterButtonText}>Sent</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{getFilterCount('sent')}</Text>
+            </View>
+          </View>
+        </View>
       </View>
 
-      <Input
-        placeholder="Search by name or email..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={styles.searchInput}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+      {/* Search Bar - Figma design - Fully tappable */}
+      <View style={styles.searchBarContainer}>
+        <TouchableOpacity 
+          style={styles.searchBar}
+          onPress={handleSearchBarPress}
+          activeOpacity={1}
+        >
+          <TextInput
+            ref={searchInputRef}
+            style={styles.searchInput}
+            placeholder="Search name"
+            placeholderTextColor="#939393"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.searchIconContainer}>
+            <Ionicons name="search" size={24} color="#2C2235" />
+          </View>
+        </TouchableOpacity>
+      </View>
 
+      {/* Search Results */}
       {searchQuery.length < 2 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
@@ -126,12 +185,14 @@ interface UserSearchItemProps {
   user: Partial<DatabaseUser>;
   onSendFriendRequest: (friendId: string, friendName: string) => void;
   isLoading: boolean;
+  onViewProfile?: (userId: string) => void;
 }
 
 function UserSearchItem({
   user,
   onSendFriendRequest,
   isLoading,
+  onViewProfile,
 }: UserSearchItemProps) {
   const { user: currentUser } = useAuth();
   const shortName = getDisplayName(user, {
@@ -167,115 +228,138 @@ function UserSearchItem({
     onSendFriendRequest(user.id, fullName || shortName || 'this person');
   };
 
-  const getButtonState = () => {
-    if (friendshipStatusQuery.isLoading) {
-      return {
-        text: 'Loading...',
-        disabled: true,
-        variant: 'secondary' as const,
-      };
-    }
-
-    switch (status) {
-      case 'accepted':
-        return {
-          text: 'Friends',
-          disabled: true,
-          variant: 'secondary' as const,
-        };
-      case 'pending':
-        return {
-          text: 'Request Sent',
-          disabled: true,
-          variant: 'secondary' as const,
-        };
-      case 'rejected':
-        if (isIncoming) {
-          return {
-            text: 'Add Friend',
-            disabled: acceptRejected.isPending,
-            variant: 'primary' as const,
-          };
-        }
-        return {
-          text: 'Request Sent',
-          disabled: true,
-          variant: 'secondary' as const,
-        };
-      // 'blocked' status removed
-      default:
-        return {
-          text: 'Add Friend',
-          disabled: false,
-          variant: 'primary' as const,
-        };
+  const handleCardPress = () => {
+    if (user?.id) {
+      if (onViewProfile) {
+        onViewProfile(user.id);
+      } else {
+        router.push(`/user/${user.id}`);
+      }
     }
   };
 
-  const buttonState = getButtonState();
+  // Only show "Add" button if not already friends or pending
+  const showAddButton = status !== 'accepted' && status !== 'pending';
 
   return (
-    <View style={styles.userItem}>
-      <TouchableOpacity
-        style={styles.userInfo}
-        onPress={() => user.id && router.push(`/user/${user.id}`)}
-        accessibilityRole="button"
-        accessibilityLabel={`View ${fullName || 'user'}'s profile`}
-      >
-        <Avatar imageUrl={user.avatar_url} name={fullName} size={50} />
-        <View style={styles.userDetails}>
-          <Text style={styles.userName}>{shortName || fullName || 'User'}</Text>
-          <Text style={styles.userEmail}>{user.email}</Text>
-        </View>
-      </TouchableOpacity>
-
-      <Button
-        title={buttonState.text}
-        onPress={handleSendRequest}
-        disabled={
-          buttonState.disabled ||
-          isLoading ||
-          acceptRejected.isPending ||
-          friendshipStatusQuery.isLoading
-        }
-        variant={buttonState.variant}
-        size="small"
-      />
-    </View>
+    <TouchableOpacity
+      style={styles.userCard}
+      onPress={handleCardPress}
+      activeOpacity={0.9}
+    >
+      <Avatar imageUrl={user.avatar_url} name={fullName} size={48} />
+      <View style={styles.textContainer}>
+        <Text style={styles.userName} numberOfLines={1}>
+          {shortName || fullName || 'User'}
+        </Text>
+      </View>
+      {showAddButton && (
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleSendRequest();
+          }}
+          activeOpacity={0.7}
+          disabled={isLoading || acceptRejected.isPending || friendshipStatusQuery.isLoading}
+        >
+          <Text style={styles.addButtonText}>Add</Text>
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
   },
-  header: {
+  filterContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 19,
+    paddingVertical: 18,
+    backgroundColor: '#FFFFFF',
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 7,
+    height: 36,
+    minWidth: 71,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: -0.32,
+    lineHeight: 14,
+    color: '#2C2235',
+  },
+  badge: {
+    marginLeft: 5,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2C2235',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    lineHeight: 11,
+    letterSpacing: -0.27,
+  },
+  searchBarContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    paddingTop: 16,
+    paddingBottom: 16,
+    alignItems: 'center',
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#6b7280',
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderWidth: 2,
+    borderColor: '#F9F7F7',
+    borderRadius: 25,
+    height: 50,
+    width: 342,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
   searchInput: {
-    margin: 16,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#2C2235',
+    letterSpacing: -0.32,
+    lineHeight: 16,
+    paddingVertical: 0,
+  },
+  searchIconContainer: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 17,
+    paddingTop: 0,
+    paddingBottom: 100,
   },
   emptyContainer: {
     flex: 1,
@@ -294,41 +378,43 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     textAlign: 'center',
   },
-  userItem: {
+  userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: '#F9FAFC',
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    height: 66,
+    paddingLeft: 20,
+    paddingRight: 20,
+    marginBottom: 8,
+    width: 360,
   },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  textContainer: {
     flex: 1,
-  },
-  userDetails: {
-    marginLeft: 12,
-    flex: 1,
+    marginLeft: 14,
   },
   userName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 2,
+    fontWeight: '700',
+    color: '#2C2235',
+    letterSpacing: -0.32,
+    lineHeight: 18,
   },
-  userEmail: {
-    fontSize: 14,
-    color: '#6b7280',
+  addButton: {
+    backgroundColor: '#2C2235',
+    height: 16,
+    width: 51,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '500',
+    letterSpacing: -0.27,
+    lineHeight: 9,
   },
 });

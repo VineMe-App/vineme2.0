@@ -1,33 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   TextInput,
   Alert,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   SafeAreaView,
   StatusBar,
+  Keyboard,
+  Platform,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
-import { AuthSignInPrompt } from '@/components/auth/AuthSignInPrompt';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
+import { AuthHeroLogo } from '@/components/auth/AuthHeroLogo';
 
 export default function PhoneSignUpScreen() {
   const router = useRouter();
-  const { signUpWithPhone, verifyOtp, isLoading } = useAuthStore();
+  const { signUpWithPhone, isLoading } = useAuthStore();
 
-  const [step, setStep] = useState<'enter-phone' | 'enter-code'>('enter-phone');
   const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
-  const [code, setCode] = useState('');
-  const [fullPhone, setFullPhone] = useState('');
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const sanitizedLocalNumber = localNumber.replace(/\D/g, '');
   // Validate UK numbers as 10–11 digits (allow leading 0 in local part), otherwise use a general E.164-style length check (6–15 digits)
@@ -55,12 +73,18 @@ export default function PhoneSignUpScreen() {
       }
       
       const phone = `${countryCode}${processedNumber}`;
-      setFullPhone(phone);
 
       const result = await signUpWithPhone(phone);
-
       if (result.success) {
-        setStep('enter-code');
+        router.push({
+          pathname: '/(auth)/verify-otp',
+          params: {
+            phoneOrEmail: phone,
+            type: 'sms',
+            onSuccessRoute: '/(auth)/onboarding-loader',
+            resendFunction: 'signUpWithPhone',
+          },
+        });
       } else {
         Alert.alert('Error', result.error || 'Failed to send verification code.');
       }
@@ -73,185 +97,106 @@ export default function PhoneSignUpScreen() {
     }
   };
 
-  const handleVerify = async () => {
-    if (code.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete 6-digit code');
-      return;
-    }
 
-    const result = await verifyOtp(fullPhone, code, 'sms');
-
-    if (result.success) {
-      router.replace('/(auth)/onboarding-loader');
-    } else {
-      Alert.alert('Verification Failed', result.error || 'Invalid code');
-    }
-  };
-
-  const handleResendCode = async () => {
-    const result = await signUpWithPhone(fullPhone);
-    if (!result.success) {
-      Alert.alert('Error', result.error || 'Failed to resend code');
-    }
-  };
-
-  const handleBackToPhone = () => {
-    setStep('enter-phone');
-    setCode('');
-  };
-
-  const handleSignInWithEmail = () => {
-    router.push('/(auth)/phone-login');
-  };
-
-  const displayPhone = fullPhone || `${countryCode}${sanitizedLocalNumber}`;
-
-  const renderEnterPhoneStep = () => (
-    <View style={styles.screen}>
-      <View style={styles.body}>
-        <AuthHero
-          title="Create account"
-          subtitle="Enter your phone number to get started"
-          containerStyle={styles.heroSpacing}
-        />
-
-        <View style={styles.inputSection}>
-          <View style={styles.phoneField}>
-            <CountryCodePicker
-              value={countryCode}
-              onChange={setCountryCode}
-              hideLabel
-              renderTrigger={({ selected, open }) => (
-                <TouchableOpacity
-                  style={styles.countryTrigger}
-                  onPress={open}
-                  accessibilityRole="button"
-                  accessibilityLabel="Select country code"
-                >
-                  <Text style={styles.countryFlag}>{selected.flag}</Text>
-                  <Text weight="semiBold" style={styles.countryCodeText}>
-                    {selected.code}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
-            <View style={styles.phoneDivider} />
-            <TextInput
-              value={localNumber}
-              onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
-              style={styles.phoneInput}
-              keyboardType="phone-pad"
-              placeholder="7123456789"
-              placeholderTextColor="#B4B4B4"
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleSendCode}
-              editable={!isLoading}
-              accessibilityLabel="Phone number"
-            />
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.actions}>
-          <AuthButton
-            title="Sign up"
-            onPress={handleSendCode}
-            disabled={!isPhoneValid}
-            loading={isLoading}
-          />
-        </View>
-        <AuthSignInPrompt />
-      </View>
-    </View>
-  );
-
-  const renderEnterCodeStep = () => (
-    <View style={styles.screen}>
-      <View style={styles.body}>
-        <AuthHero subtitle={`Sent to ${displayPhone}`} containerStyle={styles.heroSpacing} />
-
-        <View style={styles.otpSection}>
-          <TextInput
-            value={code}
-            onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
-            style={styles.otpInput}
-            keyboardType="number-pad"
-            placeholder="123456"
-            placeholderTextColor="#C0C0C3"
-            maxLength={6}
-            textAlign="center"
-            autoFocus
-            accessibilityLabel="Verification code"
-            textContentType="oneTimeCode"
-            autoComplete="sms-otp"
-            importantForAutofill="yes"
-            inputMode="numeric"
-            returnKeyType="done"
-          />
-        </View>
-      </View>
-      <View style={styles.footer}>
-        <View style={styles.footerSpacer} />
-        <AuthButton
-          title="Verify"
-          onPress={handleVerify}
-          loading={isLoading}
-          disabled={code.length !== 6}
-        />
-        <TouchableOpacity
-          onPress={handleBackToPhone}
-          accessibilityRole="button"
-          style={styles.backButton}
-        >
-          <Text variant="body" color="secondary" align="center">
-            Back
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleResendCode}
-          disabled={isLoading}
-          accessibilityRole="button"
-        >
-          <Text variant="body" weight="semiBold" style={styles.resendText}>
-            Didn't receive a code? <Text style={styles.resendLink}>Resend</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderStep = () => {
-    switch (step) {
-      case 'enter-phone':
-        return renderEnterPhoneStep();
-      case 'enter-code':
-        return renderEnterCodeStep();
-      default:
-        return renderEnterPhoneStep();
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <ScrollView
+        contentContainerStyle={styles.primaryScroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
       >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            step === 'enter-phone' ? styles.primaryScroll : styles.secondaryScroll,
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {renderStep()}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.screen}>
+            <View style={[
+              styles.body,
+              isKeyboardVisible && styles.bodyKeyboardVisible
+            ]}>
+              {!isKeyboardVisible && (
+                <AuthHeroLogo
+                  logoSize={109}
+                  title="Create account"
+                  subtitle="Enter your phone number to get started"
+                  subtitleMaxWidth={326}
+                />
+              )}
+              {isKeyboardVisible && (
+                <View style={styles.keyboardHeader}>
+                  <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+                    Create account
+                  </Text>
+                  <Text
+                    variant="bodyLarge"
+                    color="primary"
+                    align="center"
+                    style={styles.subtitle}
+                  >
+                    Enter your phone number to get started
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.inputSection}>
+              <View style={styles.phoneField}>
+                <CountryCodePicker
+                  value={countryCode}
+                  onChange={setCountryCode}
+                  hideLabel
+                  renderTrigger={({ selected, open }) => (
+                    <TouchableOpacity
+                      style={styles.countryTrigger}
+                      onPress={open}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select country code"
+                    >
+                      <Text style={styles.countryFlag}>{selected.flag}</Text>
+                      <Text style={styles.countryCodeText}>
+                        {selected.code}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+                <View style={styles.phoneDivider} />
+                <TextInput
+                  value={localNumber}
+                  onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
+                  style={styles.phoneInput}
+                  keyboardType="phone-pad"
+                  placeholder="7123456789"
+                  placeholderTextColor="#B4B4B4"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  blurOnSubmit={false}
+                  editable={!isLoading}
+                  accessibilityLabel="Phone number"
+                />
+              </View>
+            </View>
+
+              <View style={styles.actionsSection}>
+                <AuthButton
+                  title="Sign up"
+                  onPress={handleSendCode}
+                  disabled={!isPhoneValid}
+                  loading={isLoading}
+                  fullWidth={false}
+                  style={styles.signUpButton}
+                />
+                <View style={styles.signInPrompt}>
+                  <Text style={styles.signInPromptText}>
+                    Already have an account?{' '}
+                    <Text style={styles.signInLink} onPress={() => router.push('/(auth)/phone-login')}>
+                      Sign in
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -261,29 +206,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
   primaryScroll: {
+    flexGrow: 1,
     paddingHorizontal: 32,
     paddingTop: 100,
-    paddingBottom: 24,
-  },
-  secondaryScroll: {
-    paddingHorizontal: 32,
-    paddingTop: 100,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   screen: {
-    flex: 1,
-    justifyContent: 'space-between',
+    width: '100%',
+    minHeight: '100%',
   },
   body: {
-    flex: 1,
     width: '100%',
+    justifyContent: 'flex-start',
+  },
+  bodyKeyboardVisible: {
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+  },
+  keyboardHeader: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  title: {
+    color: '#2C2235',
+    fontSize: 30,
+    letterSpacing: -0.6,
+    lineHeight: 40,
+    marginBottom: 15,
+  },
+  subtitle: {
+    color: '#2C2235',
+    fontSize: 16,
+    lineHeight: 28,
+    letterSpacing: -0.32,
+    maxWidth: 326,
   },
   heroSpacing: {
     marginTop: 0,
@@ -291,22 +248,25 @@ const styles = StyleSheet.create({
   inputSection: {
     width: '100%',
     marginTop: 32,
+    alignItems: 'center',
+    marginBottom: 130,
   },
-  otpSection: {
+  actionsSection: {
     width: '100%',
-    marginTop: 32,
-  },
-  footerSpacer: {
-    height: 32,
+    alignItems: 'center',
+    marginTop: 0,
+    marginBottom: 56,
   },
   phoneField: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#EAEAEA',
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     height: 50,
+    width: 326,
+    alignSelf: 'center',
   },
   countryTrigger: {
     flexDirection: 'row',
@@ -319,8 +279,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   countryCodeText: {
-    fontSize: 16,
-    color: '#2C2235',
+    fontSize: 18,
+    color: '#000000',
+    fontWeight: '400',
   },
   phoneDivider: {
     width: 1,
@@ -330,45 +291,27 @@ const styles = StyleSheet.create({
   phoneInput: {
     flex: 1,
     paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#2C2235',
+    fontSize: 18,
+    color: '#000000',
   },
-  otpInput: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    paddingVertical: 16,
-    height: 70,
-    fontSize: 30,
-    color: '#2C2235',
-    backgroundColor: '#FFFFFF',
-    marginBottom: 16,
-    textAlign: 'center',
-    letterSpacing: 12,
-    fontWeight: '700',
+  signUpButton: {
+    width: 278,
   },
-  resendText: {
-    color: '#2C2235',
-    marginTop: 32,
-    textAlign: 'center',
-  },
-  resendLink: {
-    color: '#1082FF',
-  },
-  signInEmail: {
-    color: '#1082FF',
+  signInPrompt: {
     marginTop: 16,
-    textAlign: 'center',
-    textDecorationLine: 'underline',
-  },
-  backButton: {
-    marginTop: 16,
-  },
-  footer: {
     alignItems: 'center',
-    width: '100%',
-    paddingBottom: 12,
-    marginTop: 32,
+  },
+  signInPromptText: {
+    fontSize: 14,
+    fontWeight: '400', // Regular
+    color: '#2C2235',
+    textAlign: 'center',
+    letterSpacing: -0.14,
+    lineHeight: 22,
+    includeFontPadding: false,
+    paddingVertical: 3,
+  },
+  signInLink: {
+    color: '#1082ff',
   },
 });

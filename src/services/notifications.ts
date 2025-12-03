@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -106,7 +107,6 @@ export const getPushToken = async (): Promise<string | null> => {
     if (!hasPermission) return null;
 
     // On Android, FCM must be configured or Firebase will not initialize
-    const { default: Constants } = await import('expo-constants');
     const googleServicesConfigured = Boolean(
       (Constants as any)?.expoConfig?.android?.googleServicesFile ||
         (Constants as any)?.android?.googleServicesFile

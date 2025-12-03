@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Keyboard,
+  TextInput,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -33,10 +35,10 @@ import { useErrorHandler, useLoadingState } from '../../hooks';
 import {
   ErrorMessage,
   EmptyState,
-  LoadingSpinner,
   Modal,
   Button,
 } from '../../components/ui';
+import { AuthLoadingAnimation } from '../../components/auth/AuthLoadingAnimation';
 import { useUpdateUserProfile } from '../../hooks/useUsers';
 import {
   applyGroupFilters,
@@ -49,6 +51,94 @@ import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Image } from 'react-native';
+import Svg, { Path, G } from 'react-native-svg';
+
+// Figma icon components for Filter and Sort
+const FilterIcon = ({ color, size = 16 }: { color: string; size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <G id="filter">
+      <Path
+        id="Vector"
+        d="M3.6 1.4H12.4C13.1333 1.4 13.7333 2 13.7333 2.73333V4.2C13.7333 4.73333 13.4 5.4 13.0667 5.73333L10.2 8.26667C9.8 8.6 9.53333 9.26667 9.53333 9.8V12.6667C9.53333 13.0667 9.26667 13.6 8.93333 13.8L8 14.4C7.13333 14.9333 5.93333 14.3333 5.93333 13.2667V9.73333C5.93333 9.26667 5.66667 8.66667 5.4 8.33333L2.86667 5.66667C2.53333 5.33333 2.26667 4.73333 2.26667 4.33333V2.8C2.26667 2 2.86667 1.4 3.6 1.4Z"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_2"
+        d="M7.28667 1.4L4 6.66667"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </G>
+  </Svg>
+);
+
+const SortIcon = ({ color, size = 20 }: { color: string; size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <G id="candle">
+      <Path
+        id="Vector"
+        d="M6.5 22V15"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_2"
+        d="M6.5 5V2"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_3"
+        d="M17.5 22V19"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_4"
+        d="M17.5 9V2"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_5"
+        d="M9.5 7V13C9.5 14.1 9 15 7.5 15H5.5C4 15 3.5 14.1 3.5 13V7C3.5 5.9 4 5 5.5 5H7.5C9 5 9.5 5.9 9.5 7Z"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        id="Vector_6"
+        d="M20.5 11V17C20.5 18.1 20 19 18.5 19H16.5C15 19 14.5 18.1 14.5 17V11C14.5 9.9 15 9 16.5 9H18.5C20 9 20.5 9.9 20.5 11Z"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </G>
+  </Svg>
+);
 
 export default function GroupsScreen() {
   const router = useRouter();
@@ -56,8 +146,39 @@ export default function GroupsScreen() {
   const { filters, setSearchQuery } = useGroupFiltersStore();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Calculate tab bar height to position search bar correctly (no gap above tab bar)
+  const androidBottomPadding = Math.max(insets.bottom + 4, 12);
+  const tabBarHeight = Platform.OS === 'ios' ? 100 : 56 + androidBottomPadding;
+  const searchBarHeight = 50; // Search bar height
+  
+  // Keyboard listeners to adjust search bar position
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
+
+  // Position search bar: above keyboard when open, otherwise above tab bar
+  const searchBarBottom = keyboardHeight > 0 
+    ? keyboardHeight + 8 // 8px spacing above keyboard
+    : tabBarHeight; // Above tab bar when keyboard is closed
   const friendsQuery = useFriends(userProfile?.id);
-  const [showSearch, setShowSearch] = useState(false);
   const [isLocationSearchMode, setIsLocationSearchMode] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -76,6 +197,7 @@ export default function GroupsScreen() {
     address: string;
     coordinates: { latitude: number; longitude: number };
   } | null>(null);
+  const searchInputRef = useRef<TextInput | null>(null);
   const { handleError } = useErrorHandler();
   const { isLoading: isLoadingFn, withLoading } = useLoadingState();
   // Create flow now navigates to dedicated page
@@ -88,21 +210,30 @@ export default function GroupsScreen() {
     setCurrentView(view);
     if (view === 'map') {
       setShowSortOptions(false);
-      // Keep search bar visible if sorting by distance and location is set
-      if (sortBy === 'distance' && distanceOrigin) {
-        setShowSearch(true);
-      }
+      setIsLocationSearchMode(true);
+    } else if (view === 'list' && sortBy !== 'distance' && !distanceOrigin) {
+      setIsLocationSearchMode(false);
     }
   };
 
-  // Close location search bar when switching away from distance sorting
   useEffect(() => {
-    if (isLocationSearchMode && sortBy !== 'distance' && showSearch) {
-      setShowSearch(false);
+    if (currentView === 'list') {
+      searchInputRef.current?.blur();
+      Keyboard.dismiss();
+    }
+  }, [currentView]);
+
+  // Reset location search mode when switching away from distance sorting
+  useEffect(() => {
+    if (currentView === 'map') {
+      setIsLocationSearchMode(true);
+      return;
+    }
+    if (isLocationSearchMode && sortBy !== 'distance') {
       setIsLocationSearchMode(false);
       setLocationSearchError(null);
     }
-  }, [sortBy, isLocationSearchMode, showSearch]);
+  }, [sortBy, isLocationSearchMode, currentView]);
 
   const isChurchAdmin = userProfile?.roles?.includes('church_admin') ?? false;
 
@@ -381,14 +512,20 @@ export default function GroupsScreen() {
         ]}
       >
         <View style={styles.noGroupFitsButtonContainer}>
-          <Button
-            title="No group fits?"
+          <TouchableOpacity
             onPress={handleNoGroupFits}
-            variant="secondary"
-            size="small"
             style={styles.noGroupFitsButton}
-            textStyle={styles.noGroupFitsButtonText}
-          />
+            activeOpacity={0.8}
+          >
+            <Text
+              style={styles.noGroupFitsButtonText}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+              numberOfLines={1}
+            >
+              No group fits?
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
       <FlatList
@@ -421,10 +558,6 @@ export default function GroupsScreen() {
           address: origin.address || 'Selected Location',
           coordinates: origin.coordinates,
         });
-        // Ensure search bar stays visible and shows the updated location
-        if (sortBy === 'distance') {
-          setShowSearch(true);
-        }
       }}
     />
   );
@@ -446,7 +579,7 @@ export default function GroupsScreen() {
         ]}
       >
         <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" />
+          <AuthLoadingAnimation />
           <Text variant="body" color="secondary" style={styles.loadingText}>
             Loading groups...
           </Text>
@@ -482,11 +615,6 @@ export default function GroupsScreen() {
         ]}
       >
         <View style={styles.headerLeft}>
-          <Image
-            source={require('../../../assets/figma-128-1563/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
           <Text variant="h4" weight="black" style={styles.title}>
             Groups
           </Text>
@@ -494,51 +622,8 @@ export default function GroupsScreen() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.figmaIconButton}
-            onPress={() => {
-              if (showSearch) {
-                // If search bar is already open
-                if (isLocationSearchMode) {
-                  // If in location mode, switch to group search mode (don't close)
-                  setIsLocationSearchMode(false);
-                  setLocationSearchError(null);
-                } else {
-                  // If already in group search mode, close the search bar
-                  setShowSearch(false);
-                }
-              } else {
-                // If search bar is closed, open it in group search mode
-                setIsLocationSearchMode(false);
-                setLocationSearchError(null);
-                setShowSearch(true);
-              }
-            }}
-            accessibilityLabel="Search groups"
-          >
-            <View
-              style={[
-                styles.iconButtonInner,
-                (showSearch && !isLocationSearchMode) || filters.searchQuery.length > 0
-                  ? styles.iconButtonInnerActive
-                  : null,
-              ]}
-            >
-              <Ionicons
-                name="search-outline"
-                size={16}
-                color={
-                  (showSearch && !isLocationSearchMode) || filters.searchQuery.length > 0
-                    ? '#FFFFFF'
-                    : '#2C2235'
-                }
-              />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.figmaIconButton}
-            onPress={() =>
-              handleViewChange(currentView === 'list' ? 'map' : 'list')
-            }
-            accessibilityLabel={`Switch to ${currentView === 'list' ? 'map' : 'list'} view`}
+            onPress={() => handleViewChange(currentView === 'map' ? 'list' : 'map')}
+            accessibilityLabel={currentView === 'map' ? 'Switch to list view' : 'Switch to map view'}
           >
             <View
               style={[
@@ -547,17 +632,14 @@ export default function GroupsScreen() {
               ]}
             >
               <Ionicons
-                name={currentView === 'list' ? 'map-outline' : 'list-outline'}
+                name="map-outline"
                 size={16}
                 color={currentView === 'map' ? '#FFFFFF' : '#2C2235'}
               />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.iconButton,
-              { backgroundColor: theme.colors.secondary[100] },
-            ]}
+            style={styles.figmaIconButton}
             onPress={() => setShowFilterPanel(true)}
             accessibilityLabel="Filter groups"
           >
@@ -568,12 +650,11 @@ export default function GroupsScreen() {
                   styles.iconButtonInnerActive,
               ]}
             >
-              <Ionicons
-                name="funnel-outline"
-                size={16}
+              <FilterIcon
                 color={
                   getActiveFiltersCount(filters) > 0 ? '#FFFFFF' : '#2C2235'
                 }
+                size={16}
               />
             </View>
           </TouchableOpacity>
@@ -594,9 +675,7 @@ export default function GroupsScreen() {
                   styles.iconButtonInnerActive,
               ]}
             >
-              <Ionicons
-                name="swap-vertical-outline"
-                size={20}
+              <SortIcon
                 color={
                   currentView === 'map'
                     ? '#8B8A8C'
@@ -604,44 +683,7 @@ export default function GroupsScreen() {
                       ? '#FFFFFF'
                       : '#2C2235'
                 }
-              />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.figmaIconButton}
-            onPress={() => {
-              if (showSearch && isLocationSearchMode) {
-                // If search bar is already open in location mode, close it and clear distance sorting
-                setShowSearch(false);
-                setIsLocationSearchMode(false);
-                setLocationSearchError(null);
-                // Clear distance sorting - go back to alphabetical
-                setSortBy('alphabetical');
-                // Clear distance origin
-                setDistanceOrigin(null);
-              } else {
-                // If search bar is not shown, open it in location mode
-                setIsLocationSearchMode(true);
-                // Set sort to distance (makes arrow pink)
-                setSortBy('distance');
-                // Open search bar in location mode
-                setShowSearch(true);
-                // Clear location search errors when opening
-                setLocationSearchError(null);
-              }
-            }}
-            accessibilityLabel="Choose location to measure distance from"
-          >
-            <View
-              style={[
-                styles.iconButtonInner,
-                sortBy === 'distance' && styles.iconButtonInnerActive, // Pink when distance is selected
-              ]}
-            >
-              <Ionicons
-                name="navigate-outline"
-                size={16}
-                color={sortBy === 'distance' ? '#FFFFFF' : '#2C2235'}
+                size={20}
               />
             </View>
           </TouchableOpacity>
@@ -659,58 +701,6 @@ export default function GroupsScreen() {
         </View>
       </View>
 
-      {showSearch && (!isLocationSearchMode || sortBy === 'distance') && (
-        <SearchBar
-          key={isLocationSearchMode ? 'location-search' : 'group-search'}
-          placeholder={
-            isLocationSearchMode ? 'Enter search location' : 'Search groups...'
-          }
-          value={isLocationSearchMode ? (distanceOrigin?.address || '') : undefined}
-          onLocationSearch={
-            isLocationSearchMode
-              ? async (query: string) => {
-                  try {
-                    // Clear any previous errors
-                    setLocationSearchError(null);
-                    // Geocode the search query to get coordinates
-                    const coordinates =
-                      await locationService.geocodeAddress(query);
-                    if (coordinates) {
-                      // Get reverse geocode to get a formatted address
-                      const address =
-                        await locationService.reverseGeocode(coordinates);
-                      setDistanceOrigin({
-                        address: address?.formattedAddress || query,
-                        coordinates,
-                      });
-                      // Don't clear search query - filters should remain when sorting by location
-                      // Clear error on success
-                      setLocationSearchError(null);
-                      // Keep search bar open so user can see/change the location
-                    } else {
-                      // Set error state instead of using global error handler
-                      setLocationSearchError('Location not found');
-                    }
-                  } catch (error) {
-                    // Set error state instead of using global error handler
-                    setLocationSearchError('Location not found');
-                  }
-                }
-              : undefined
-          }
-          onLocationClear={
-            isLocationSearchMode
-              ? () => {
-                  setDistanceOrigin(null);
-                  // Don't clear search query - filters should remain when clearing location
-                  setLocationSearchError(null);
-                }
-              : undefined
-          }
-          error={locationSearchError}
-          onErrorChange={setLocationSearchError}
-        />
-      )}
 
       {showSortOptions && (
         <View
@@ -727,15 +717,14 @@ export default function GroupsScreen() {
             onPress={() => {
               setSortBy('alphabetical');
               setShowSortOptions(false);
-              // Clear distance origin and close search bar when switching away from distance sorting
+              // Clear distance origin when switching away from distance sorting
               if (distanceOrigin) {
                 setDistanceOrigin(null);
               }
-              // Close search bar if it's open in location mode
+              // Reset location search mode
               if (isLocationSearchMode) {
                 setIsLocationSearchMode(false);
                 setLocationSearchError(null);
-                setShowSearch(false);
               }
             }}
           >
@@ -771,9 +760,8 @@ export default function GroupsScreen() {
               }
               setSortBy('distance');
               setShowSortOptions(false);
-              // Switch to location search mode and open search bar
+              // Switch to location search mode
               setIsLocationSearchMode(true);
-              setShowSearch(true);
               setLocationSearchError(null);
             }}
           >
@@ -804,15 +792,14 @@ export default function GroupsScreen() {
             onPress={() => {
               setSortBy('friends');
               setShowSortOptions(false);
-              // Clear distance origin and close search bar when switching away from distance sorting
+              // Clear distance origin when switching away from distance sorting
               if (distanceOrigin) {
                 setDistanceOrigin(null);
               }
-              // Close search bar if it's open in location mode
+              // Reset location search mode
               if (isLocationSearchMode) {
                 setIsLocationSearchMode(false);
                 setLocationSearchError(null);
-                setShowSearch(false);
               }
             }}
           >
@@ -838,6 +825,68 @@ export default function GroupsScreen() {
 
       <View style={styles.contentContainer}>
         {currentView === 'list' ? renderListView() : renderMapView()}
+      </View>
+
+      {/* Search Bar - Always visible at bottom */}
+      <View style={[styles.searchBarContainer, { bottom: searchBarBottom }]}>
+        <SearchBar
+          ref={searchInputRef}
+          key={
+            currentView === 'map' || sortBy === 'distance'
+              ? 'location-search'
+              : 'group-search'
+          }
+          placeholder={
+            currentView === 'map' || sortBy === 'distance'
+              ? 'Enter search location'
+              : 'Search by keyword'
+          }
+          value={
+            currentView === 'map' || sortBy === 'distance'
+              ? distanceOrigin?.address || ''
+              : undefined
+          }
+          onLocationSearch={
+            currentView === 'map' || sortBy === 'distance'
+              ? async (query: string) => {
+                  try {
+                    setLocationSearchError(null);
+                    if (sortBy !== 'distance') {
+                      setSortBy('distance');
+                    }
+                    if (!isLocationSearchMode) {
+                      setIsLocationSearchMode(true);
+                    }
+                    const coordinates =
+                      await locationService.geocodeAddress(query);
+                    if (coordinates) {
+                      const address =
+                        await locationService.reverseGeocode(coordinates);
+                      setDistanceOrigin({
+                        address: address?.formattedAddress || query,
+                        coordinates,
+                      });
+                      setLocationSearchError(null);
+                    } else {
+                      setLocationSearchError('Location not found');
+                    }
+                  } catch (error) {
+                    setLocationSearchError('Location not found');
+                  }
+                }
+              : undefined
+          }
+          onLocationClear={
+            currentView === 'map' || sortBy === 'distance'
+              ? () => {
+                  setDistanceOrigin(null);
+                  setLocationSearchError(null);
+                }
+              : undefined
+          }
+          error={locationSearchError}
+          onErrorChange={setLocationSearchError}
+        />
       </View>
 
       <Modal
@@ -1016,10 +1065,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  logo: {
-    width: 27,
-    height: 27,
-  },
   title: {
     color: '#2C2235',
     fontSize: 22,
@@ -1043,7 +1088,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F9FAFC', // Light background for inactive buttons
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1051,7 +1096,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF0083',
   },
   iconButtonInnerActive: {
-    backgroundColor: '#FF0083',
+    backgroundColor: '#2C2235', // Dark purple instead of pink
   },
   iconButtonDisabled: {
     opacity: 0.5,
@@ -1092,7 +1137,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    paddingBottom: 16,
+    paddingBottom: 90, // Space for bottom search bar
     paddingHorizontal: 0,
   },
   listViewContainer: {
@@ -1116,12 +1161,19 @@ const styles = StyleSheet.create({
   },
   noGroupFitsButton: {
     paddingHorizontal: 14,
+    paddingVertical: 8,
     maxWidth: 120, // Compact width to match the drawn outline
     backgroundColor: '#2C2235', // Match friends badge color
-    borderColor: '#2C2235',
+    borderRadius: 16, // Rounded corners
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 32,
   },
   noGroupFitsButtonText: {
     color: '#FFFFFF', // Ensure white text on dark purple background
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   noGroupFitsModalContent: {
     padding: 20,
@@ -1222,5 +1274,11 @@ const styles = StyleSheet.create({
   infoModalBullet: {
     color: '#374151',
     marginBottom: 8,
+  },
+  searchBarContainer: {
+    position: 'absolute',
+    left: 26,
+    right: 26,
+    zIndex: 10,
   },
 });

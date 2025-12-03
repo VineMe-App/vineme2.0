@@ -32,7 +32,7 @@ const getClipboard = (): typeof import('expo-clipboard') | null => {
   }
 };
 import { Text } from '@/components/ui/Text';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
@@ -241,7 +241,7 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
         {showContactInfo && (
           <View style={styles.contactInfoContainer}>
             {isLoadingContactInfo ? (
-              <LoadingSpinner />
+              <AuthLoadingAnimation />
             ) : (
               <>
                 {contactInfo?.email && (
@@ -459,7 +459,7 @@ export default function JoinRequestsScreen() {
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <LoadingSpinner size="large" />
+            <AuthLoadingAnimation />
             <Text style={styles.loadingText}>Loading join requests...</Text>
           </View>
         ) : (

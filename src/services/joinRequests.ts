@@ -542,16 +542,23 @@ export class JoinRequestService {
         return { data: null, error: new Error(error.message) };
       }
 
-      // Create note for the journey status change
-      if (journeyStatus !== null) {
+      const previousJourneyStatus =
+        membershipRecord.journey_status as MembershipJourneyStatus | null;
+      const noteText = getJourneyStatusNoteText(
+        previousJourneyStatus,
+        journeyStatus
+      );
+
+      if (previousJourneyStatus !== journeyStatus) {
         try {
           await groupMembershipNotesService.createJourneyChangeNote(
             {
               membership_id: membershipId,
               group_id: membershipRecord.group_id,
               user_id: membershipRecord.user_id || data.user_id,
-              previous_journey_status: membershipRecord.journey_status,
+              previous_journey_status: previousJourneyStatus,
               new_journey_status: journeyStatus,
+              note_text: noteText || undefined,
             },
             leaderId
           );
@@ -913,6 +920,41 @@ export class JoinRequestService {
       };
     }
   }
+}
+
+const journeyUpgradeLabels: Record<MembershipJourneyStatus, string> = {
+  1: 'Reached out',
+  2: 'Spoken to',
+  3: 'Attended Group',
+};
+
+const journeyResetLabels: Record<MembershipJourneyStatus, string> = {
+  1: 'Reset to reached out',
+  2: 'Reset to spoken to',
+  3: 'Reset to attended group',
+};
+
+function getJourneyStatusNoteText(
+  previous: MembershipJourneyStatus | null,
+  next: MembershipJourneyStatus | null
+): string | null {
+  if (previous === next) {
+    return null;
+  }
+
+  if (next === null) {
+    return previous === null ? null : 'Reset to not contacted';
+  }
+
+  if (previous === null || next > (previous || 0)) {
+    return journeyUpgradeLabels[next];
+  }
+
+  if (previous !== null && next < previous) {
+    return journeyResetLabels[next];
+  }
+
+  return null;
 }
 
 // Export singleton instance

@@ -263,7 +263,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           <Text
             variant="h6"
             weight="bold"
-            style={styles.groupName}
+            style={[
+              styles.groupName,
+              variant === 'my-groups' && styles.groupNameMyGroups
+            ]}
             numberOfLines={variant === 'my-groups' ? 1 : 2}
             ellipsizeMode="tail"
           >
@@ -282,7 +285,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 <Text
                   variant="bodySmall"
                   weight="medium"
-                  style={styles.detailText}
+                  style={[
+                    styles.detailText,
+                    variant === 'my-groups' && styles.detailTextMyGroups
+                  ]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
@@ -315,7 +321,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               <Text
                 variant="bodySmall"
                 weight="medium"
-                style={styles.detailText}
+                style={[
+                  styles.detailText,
+                  variant === 'my-groups' && styles.detailTextMyGroups
+                ]}
                 numberOfLines={variant === 'my-groups' ? 1 : 2}
                 ellipsizeMode="tail"
               >
@@ -366,6 +375,17 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               </View>
             )}
           </View>
+          
+          {/* Description for my-groups variant */}
+          {variant === 'my-groups' && (
+            <Text 
+              style={styles.descriptionText}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {group.description || 'Insert important group info or description here'}
+            </Text>
+          )}
         </View>
 
         {/* Member Count Badge - Over Image */}
@@ -373,7 +393,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           <View style={styles.memberCountBadge}>
             <View style={styles.memberCountInner}>
               <Text style={styles.memberCountText}>{group.member_count}</Text>
-              <Ionicons name="person-outline" size={16} color="rgba(255, 255, 255, 0.8)" />
+              <Ionicons name="person-outline" size={16} color="#2C2235" />
             </View>
           </View>
         )}
@@ -400,15 +420,15 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 />
               </View>
             ) : leaders.length === 2 ? (
-              // Two leaders - side by side, 55px each
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              // Two leaders - side by side positioning
+              <View style={styles.sideBySideContainer}>
                 <View
                   style={[
                     styles.profilePicture,
                     {
-                      width: 59,
-                      height: 59,
-                      borderRadius: 29.5,
+                      width: 54,
+                      height: 54,
+                      borderRadius: 27,
                       marginRight: -8,
                     },
                   ]}
@@ -416,23 +436,23 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   <Avatar
                     imageUrl={leaders[0].avatar_url}
                     name={leaders[0].name || undefined}
-                    size={55}
+                    size={50}
                   />
                 </View>
                 <View
                   style={[
                     styles.profilePicture,
                     {
-                      width: 59,
-                      height: 59,
-                      borderRadius: 29.5,
+                      width: 54,
+                      height: 54,
+                      borderRadius: 27,
                     },
                   ]}
                 >
                   <Avatar
                     imageUrl={leaders[1].avatar_url}
                     name={leaders[1].name || undefined}
-                    size={55}
+                    size={50}
                   />
                 </View>
               </View>
@@ -642,7 +662,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: '#ff0083', // Primary pink color
+    backgroundColor: '#FF0083', // Pink color for friends badge
     borderRadius: 16,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -658,6 +678,11 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  friendsCount: {
+    color: '#FFFFFF', // White text on pink background
+    fontSize: 12,
+    fontWeight: '500',
+  },
   friendAvatars: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -667,11 +692,6 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     borderRadius: 12,
     overflow: 'hidden',
-  },
-  friendsCount: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
   },
   pendingWash: {
     ...StyleSheet.absoluteFillObject,
@@ -702,8 +722,9 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   infoMyGroups: {
+    paddingHorizontal: 18, // Figma: padding from left edge matches card design
     paddingRight: 10, // Match padding to prevent text from being covered by profile pictures - applies to ALL cards on my-groups page
-    paddingBottom: 20, // Keep bottom padding for my groups page
+    paddingBottom: 16, // Adjusted bottom padding for description text
   },
   infoAllGroups: {
     paddingRight: 100, // Restored original padding for profile pictures
@@ -716,6 +737,12 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     marginBottom: 8,
     fontWeight: '700',
+  },
+  groupNameMyGroups: {
+    fontSize: 16, // Figma: 16px
+    letterSpacing: -0.32, // Figma: -0.32px
+    lineHeight: 18, // Adjusted for 16px font
+    color: '#2C2235', // Figma: #2c2235
   },
   header: {
     flexDirection: 'row',
@@ -761,7 +788,7 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   memberCountInner: {
-    backgroundColor: 'rgba(44, 34, 53, 0.75)', // Dark purple, slightly greyed out (matching no group fits button style)
+    backgroundColor: 'rgba(217, 217, 217, 0.9)', // Light gray background
     borderRadius: 16, // Match button border radius
     paddingHorizontal: 10, // Match button padding
     paddingVertical: 6,
@@ -779,7 +806,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   memberCountText: {
-    color: 'rgba(255, 255, 255, 0.9)', // White text, slightly greyed out
+    color: '#2C2235', // Dark text on light gray background
     fontSize: 12, // Match button text size
     fontWeight: '500',
   },
@@ -791,6 +818,32 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     zIndex: 1,
     overflow: 'visible',
+  },
+  sideBySideContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0,
+  },
+  diagonalContainer: {
+    position: 'relative',
+    width: 108, // Container width to position avatars diagonally
+    height: 108,
+    overflow: 'visible',
+  },
+  diagonalLeaderFirst: {
+    position: 'absolute',
+    // First leader: top-left position (from Figma: 20.02% from top, 4.44% from left relative to card)
+    top: 0,
+    left: 0,
+    zIndex: 2,
+  },
+  diagonalLeaderSecond: {
+    position: 'absolute',
+    // Second leader: slightly down and right (from Figma: 23.7% from top, 17.22% from left relative to card)
+    top: 11, // 23.7% - 20.02% ≈ 4px offset, scaled appropriately
+    left: 15, // 17.22% - 4.44% ≈ 13px offset
+    zIndex: 1,
   },
   pyramidContainer: {
     alignItems: 'center',
@@ -872,6 +925,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flexShrink: 1,
     includeFontPadding: false,
+  },
+  detailTextMyGroups: {
+    fontSize: 14, // Figma: 14px
+    letterSpacing: -0.28, // Figma: -0.28px
+    lineHeight: 18, // Adjusted for 14px font
+    color: '#2C2235', // Figma: #2c2235
+    fontWeight: '400', // Regular weight
   },
   ledByText: {
     color: '#2C2235',
@@ -960,5 +1020,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 11,
     letterSpacing: 0.5,
+  },
+  descriptionText: {
+    color: '#2C2235', // Figma: #2c2235
+    fontSize: 9, // Figma: 9px
+    letterSpacing: -0.18, // Figma: -0.18px
+    lineHeight: 9, // Figma: 9px
+    fontStyle: 'italic',
+    fontWeight: '300', // Light weight
+    marginTop: 8,
   },
 });

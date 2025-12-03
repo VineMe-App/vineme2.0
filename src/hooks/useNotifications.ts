@@ -215,14 +215,18 @@ export const useEnhancedNotifications = (userId?: string) => {
     const subscription = subscribeToUserNotifications({
       userId,
       onNotificationReceived: (notification) => {
-        // Update notification queries when new notifications arrive
-        queryClient.setQueryData(
-          ['notifications', 'count', userId, { read: false }],
-          (oldCount: number = 0) => oldCount + 1
-        );
-
-        // Invalidate notification lists to refresh them
+        // Invalidate and refetch count query to refetch with proper settings filtering
+        // This ensures the count respects notification settings
         queryClient.invalidateQueries({
+          queryKey: ['notifications', 'count', userId, { read: false }],
+        });
+
+        // Invalidate and refetch notification lists to refresh them
+        queryClient.invalidateQueries({
+          queryKey: ['notifications', 'list', userId],
+        });
+        // Explicitly refetch to ensure new notifications appear immediately
+        queryClient.refetchQueries({
           queryKey: ['notifications', 'list', userId],
         });
 
@@ -272,6 +276,8 @@ export const useEnhancedNotifications = (userId?: string) => {
       return lastPage.hasMore ? allPages.length : undefined;
     },
     enabled: !!userId,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Get unread notifications
@@ -786,18 +792,21 @@ export const useNotificationPanel = (userId?: string) => {
 export const useNotificationBadge = (userId?: string) => {
   const { unreadCount, isLoading, error } = useEnhancedNotifications(userId);
 
+  // Ensure unreadCount is always a number (default to 0 if undefined or null)
+  const count = typeof unreadCount === 'number' ? unreadCount : 0;
+
   // Format badge count for display (e.g., 99+ for counts over 99)
   const formattedCount = useMemo(() => {
-    if (unreadCount === 0) return '';
-    if (unreadCount > 99) return '99+';
-    return unreadCount.toString();
-  }, [unreadCount]);
+    if (count === 0) return '';
+    if (count > 99) return '99+';
+    return count.toString();
+  }, [count]);
 
   // Determine if badge should be visible
-  const shouldShowBadge = unreadCount > 0;
+  const shouldShowBadge = count > 0;
 
   return {
-    count: unreadCount,
+    count,
     formattedCount,
     shouldShowBadge,
     isLoading,

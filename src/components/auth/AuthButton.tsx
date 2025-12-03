@@ -75,6 +75,7 @@ const styles = StyleSheet.create({
   },
   baseLabel: {
     fontSize: 16,
+    fontWeight: '700', // Bold
     textAlign: 'center',
     includeFontPadding: false,
     flexShrink: 0,

@@ -9,11 +9,12 @@ import {
   Platform,
 } from 'react-native';
 import { Modal, Form, FormField, Input, Select, Button, Card } from '../ui';
-import { useFormContext } from '../ui/Form';
+import { useFormContext, type FormValues } from '../ui/Form';
 import { groupCreationService } from '../../services/groupCreation';
 import { useAuthStore } from '../../stores/auth';
 import { useErrorHandler } from '../../hooks';
 import { locationService, type Coordinates } from '../../services/location';
+import { supabase } from '../../services/supabase';
 import type { CreateGroupData } from '../../services/admin';
 import type { SelectOption } from '../ui/Select';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -154,7 +155,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     });
   };
 
-  const handleSubmit = async (values: GroupFormData) => {
+  const handleSubmit = async (values: FormValues) => {
     if (!userProfile?.id || !userProfile?.church_id) {
       Alert.alert(
         'Error',
@@ -167,9 +168,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
     try {
       // Ensure Supabase session is present so RLS sees auth.uid()
-      const { data: session } = await import('../../services/supabase').then(
-        (m) => m.supabase.auth.getSession()
-      );
+      const { data: session } = await supabase.auth.getSession();
       const uid = session?.session?.user?.id;
       if (!uid || uid !== userProfile.id) {
         throw new Error('You are not authenticated. Please sign in again.');
@@ -405,7 +404,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               }}
               onChange={(locationData) => {
                 onChange(locationData.address || '');
-                setLocationCoordinates(locationData.coordinates);
+                setLocationCoordinates(locationData.coordinates ?? null);
               }}
             />
             {error && <Text style={styles.errorText}>{error}</Text>}

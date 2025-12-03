@@ -1,39 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   TextInput,
   Alert,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   SafeAreaView,
   StatusBar,
+  Keyboard,
+  Platform,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import { AuthHero } from '@/components/auth/AuthHero';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
-import { OtpInput } from '@/components/ui/OtpInput';
+import { AuthHeroLogo } from '@/components/auth/AuthHeroLogo';
 
 type AuthMethod = 'phone' | 'email' | null;
-type Step = 'enter-credentials' | 'enter-code';
 
 export default function PhoneLoginScreen() {
   const router = useRouter();
-  const { signInWithPhone, signInWithEmail, verifyOtp, isLoading } = useAuthStore();
+  const { signInWithPhone, signInWithEmail, isLoading } = useAuthStore();
 
-  const [step, setStep] = useState<Step>('enter-credentials');
-  const [authMethod, setAuthMethod] = useState<AuthMethod>(null);
   const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [fullPhone, setFullPhone] = useState('');
-  const [emailOrPhone, setEmailOrPhone] = useState(''); // For displaying on code screen
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const sanitizedLocalNumber = localNumber.replace(/\D/g, '');
   const isUk = countryCode === '+44';
@@ -55,14 +70,18 @@ export default function PhoneLoginScreen() {
         }
         
         const phone = `${countryCode}${processedNumber}`;
-        setFullPhone(phone);
-        setEmailOrPhone(phone);
-        setAuthMethod('phone');
 
         const result = await signInWithPhone(phone);
-
         if (result.success) {
-          setStep('enter-code');
+          router.push({
+            pathname: '/(auth)/verify-otp',
+            params: {
+              phoneOrEmail: phone,
+              type: 'sms',
+              onSuccessRoute: '/(tabs)',
+              resendFunction: 'signInWithPhone',
+            },
+          });
         } else if (result.userNotFound) {
           Alert.alert('Phone Not Found', result.error);
         } else {
@@ -77,13 +96,18 @@ export default function PhoneLoginScreen() {
       }
     } else if (isEmailValid) {
       const trimmedEmail = email.trim();
-      setEmailOrPhone(trimmedEmail);
-      setAuthMethod('email');
 
       const result = await signInWithEmail(trimmedEmail);
-
       if (result.success) {
-        setStep('enter-code');
+        router.push({
+          pathname: '/(auth)/verify-otp',
+          params: {
+            phoneOrEmail: trimmedEmail,
+            type: 'email',
+            onSuccessRoute: '/(tabs)',
+            resendFunction: 'signInWithEmail',
+          },
+        });
       } else if (result.userNotFound) {
         Alert.alert('Email Not Found', result.error);
       } else {
@@ -96,57 +120,39 @@ export default function PhoneLoginScreen() {
     }
   };
 
-  const handleVerify = async () => {
-    if (code.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete 6-digit code');
-      return;
-    }
-
-    const result = await verifyOtp(
-      authMethod === 'phone' ? fullPhone : emailOrPhone,
-      code,
-      authMethod === 'phone' ? 'sms' : 'email'
-    );
-
-    if (result.success) {
-      router.replace('/(tabs)');
-    } else {
-      Alert.alert('Verification Failed', result.error || 'Invalid code');
-    }
-  };
-
-  const handleResendCode = async () => {
-    if (authMethod === 'phone') {
-      const result = await signInWithPhone(fullPhone);
-      if (!result.success) {
-        Alert.alert('Error', result.error || 'Failed to resend code');
-      }
-    } else if (authMethod === 'email') {
-      const result = await signInWithEmail(emailOrPhone);
-      if (result.success) {
-        Alert.alert('Verification Sent', 'A new verification has been sent to your email.');
-      } else {
-        Alert.alert('Error', result.error || 'Failed to resend verification');
-      }
-    }
-  };
-
-  const handleBackToCredentials = () => {
-    setStep('enter-credentials');
-    setCode('');
-    setAuthMethod(null);
-  };
-
-  const displayPhone = fullPhone || `${countryCode}${sanitizedLocalNumber}`;
 
   const renderEnterCredentialsStep = () => (
-    <View style={styles.screen}>
-      <View style={styles.body}>
-        <AuthHero
-          title="Sign in"
-          subtitle="Enter your phone number to get started"
-          containerStyle={styles.heroSpacing}
-        />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.screen}>
+        <View style={[
+          styles.body,
+          isKeyboardVisible && styles.bodyKeyboardVisible
+        ]}>
+          {!isKeyboardVisible && (
+            <AuthHeroLogo
+              logoSize={109}
+              title="Sign in"
+              subtitle="Enter your phone number to get started"
+              subtitleFontSize={18}
+              subtitleLetterSpacing={-0.36}
+              subtitleMaxWidth={313}
+            />
+          )}
+          {isKeyboardVisible && (
+            <View style={styles.keyboardHeader}>
+              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+                Sign in
+              </Text>
+              <Text
+                variant="bodyLarge"
+                color="primary"
+                align="center"
+                style={styles.subtitle}
+              >
+                Enter your phone number to get started
+              </Text>
+            </View>
+          )}
 
         <View style={styles.inputSection}>
           {/* Phone Number Input */}
@@ -179,8 +185,7 @@ export default function PhoneLoginScreen() {
               placeholderTextColor="#939393"
               autoCapitalize="none"
               autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
+              blurOnSubmit={false}
               editable={!isLoading}
               accessibilityLabel="Phone number"
             />
@@ -188,7 +193,7 @@ export default function PhoneLoginScreen() {
 
           {/* Or Divider */}
           <View style={styles.orContainer}>
-            <Text variant="body" color="secondary" style={styles.orText}>
+            <Text style={styles.orText}>
               or
             </Text>
           </View>
@@ -204,101 +209,48 @@ export default function PhoneLoginScreen() {
               placeholderTextColor="#939393"
               autoCapitalize="none"
               autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
+              blurOnSubmit={false}
               editable={!isLoading}
               accessibilityLabel="Email address"
             />
           </View>
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <View style={styles.actions}>
-          <AuthButton
-            title="Submit"
-            onPress={handleSubmit}
-            disabled={!canSubmit}
-            loading={isLoading}
-          />
-        </View>
-        <TouchableOpacity
-          onPress={() => router.push('/(auth)/phone-signup')}
-          accessibilityRole="link"
-          style={styles.signUpLink}
-        >
-          <Text variant="body" style={styles.signUpText}>
-            Don't have an account? <Text style={styles.signUpLinkText}>Sign up</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderEnterCodeStep = () => (
-    <View style={styles.screen}>
-      <View style={styles.body}>
-        <AuthHero
-          subtitle={`Sent to ${emailOrPhone}`}
-          containerStyle={styles.heroSpacing}
-        />
-
-        <View style={styles.otpSection}>
-          <OtpInput
-            value={code}
-            onChange={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
-            length={6}
-          />
+          <View style={styles.actionsSection}>
+            <AuthButton
+              title="Sign in"
+              onPress={handleSubmit}
+              disabled={!canSubmit}
+              loading={isLoading}
+              fullWidth={false}
+              style={styles.signInButton}
+            />
+            <TouchableOpacity
+              onPress={() => router.push('/(auth)/phone-signup')}
+              accessibilityRole="link"
+              style={styles.signUpLink}
+            >
+              <Text style={styles.signUpText}>
+                Don't have an account? <Text style={styles.signUpLinkText}>Sign up</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-      <View style={styles.footer}>
-        <View style={styles.footerSpacer} />
-        <AuthButton
-          title="Verify"
-          onPress={handleVerify}
-          loading={isLoading}
-          disabled={code.length !== 6}
-        />
-        <TouchableOpacity
-          onPress={handleBackToCredentials}
-          accessibilityRole="button"
-          style={styles.backButton}
-        >
-          <Text variant="body" color="secondary" align="center">
-            Back
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleResendCode}
-          disabled={isLoading}
-          accessibilityRole="button"
-        >
-          <Text variant="body" weight="semiBold" style={styles.resendText}>
-            Didn't receive a code? <Text style={styles.resendLink}>Resend</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <KeyboardAvoidingView
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <ScrollView
+        contentContainerStyle={styles.primaryScroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
       >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            step === 'enter-credentials' ? styles.primaryScroll : styles.secondaryScroll,
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {step === 'enter-credentials' ? renderEnterCredentialsStep() : renderEnterCodeStep()}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {renderEnterCredentialsStep()}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -308,44 +260,53 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
   primaryScroll: {
-    paddingHorizontal: 34,
-    paddingTop: 100,
-    paddingBottom: 24,
-  },
-  secondaryScroll: {
+    flexGrow: 1,
     paddingHorizontal: 32,
     paddingTop: 100,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   screen: {
-    flex: 1,
-    justifyContent: 'space-between',
+    width: '100%',
+    minHeight: '100%',
   },
   body: {
-    flex: 1,
     width: '100%',
+    justifyContent: 'flex-start',
   },
-  heroSpacing: {
-    marginTop: 0,
-    marginBottom: 0,
+  bodyKeyboardVisible: {
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+  },
+  keyboardHeader: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  title: {
+    color: '#2C2235',
+    fontSize: 30,
+    letterSpacing: -0.6,
+    lineHeight: 40,
+    marginBottom: 15,
+  },
+  subtitle: {
+    color: '#2C2235',
+    fontSize: 18,
+    lineHeight: 28,
+    letterSpacing: -0.36,
+    maxWidth: 313,
   },
   inputSection: {
     width: '100%',
     marginTop: 32,
+    alignItems: 'center',
+    marginBottom: 30,
   },
-  otpSection: {
+  actionsSection: {
     width: '100%',
-    marginTop: 32,
-  },
-  footerSpacer: {
-    height: 32,
+    alignItems: 'center',
+    marginTop: 0,
+    marginBottom: 56,
   },
   phoneField: {
     flexDirection: 'row',
@@ -355,6 +316,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     height: 50,
+    width: 326,
+    alignSelf: 'center',
   },
   countryTrigger: {
     flexDirection: 'row',
@@ -368,7 +331,7 @@ const styles = StyleSheet.create({
   },
   countryCodeText: {
     fontSize: 18,
-    color: '#2C2235',
+    color: '#000000',
     fontWeight: '400',
   },
   phoneDivider: {
@@ -380,7 +343,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     fontSize: 18,
-    color: '#2C2235',
+    color: '#000000',
   },
   orContainer: {
     alignItems: 'center',
@@ -390,6 +353,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#2C2235',
     letterSpacing: -0.14,
+    lineHeight: 28,
   },
   emailField: {
     borderWidth: 2,
@@ -397,13 +361,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     height: 50,
+    width: 326,
+    alignSelf: 'center',
   },
   emailInput: {
     flex: 1,
     paddingHorizontal: 16,
-    fontSize: 14,
+    paddingVertical: 0,
+    fontSize: 16,
     color: '#2C2235',
-    letterSpacing: -0.28,
+    letterSpacing: -0.32,
+    fontWeight: '500', // Medium
   },
   resendText: {
     color: '#2C2235',
@@ -416,23 +384,21 @@ const styles = StyleSheet.create({
   backButton: {
     marginTop: 16,
   },
-  footer: {
-    alignItems: 'center',
-    width: '100%',
-    paddingBottom: 12,
-    marginTop: 32,
-  },
-  actions: {
-    width: '100%',
+  signInButton: {
+    width: 278,
   },
   signUpLink: {
     marginTop: 16,
   },
   signUpText: {
     fontSize: 14,
+    fontWeight: '400', // Regular
     color: '#2C2235',
     letterSpacing: -0.14,
+    lineHeight: 22,
     textAlign: 'center',
+    includeFontPadding: false,
+    paddingVertical: 3,
   },
   signUpLinkText: {
     color: '#1082FF',

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { Button } from '@/components/ui/Button';
 import { GroupLeaderPanel } from '@/components/groups/GroupLeaderPanel';
 import { useGroup } from '@/hooks/useGroups';
@@ -29,14 +29,7 @@ export default function GroupManagementScreen() {
         (membership.role === 'leader' || membership.role === 'admin')
     );
 
-    const isChurchAdminForService = Boolean(
-      userProfile.roles?.includes('church_admin') &&
-        userProfile.service_id &&
-        group.service_id &&
-        userProfile.service_id === group.service_id
-    );
-
-    return Boolean(isLeader || isChurchAdminForService);
+    return Boolean(isLeader);
   }, [group, userProfile]);
 
   return (
@@ -51,7 +44,7 @@ export default function GroupManagementScreen() {
 
       {isLoading && (
         <View style={styles.centerContent}>
-          <LoadingSpinner />
+          <AuthLoadingAnimation />
           <Text style={styles.centerText}>Loading group details…</Text>
         </View>
       )}
@@ -72,7 +65,7 @@ export default function GroupManagementScreen() {
       {!isLoading && group && !hasAccess && (
         <View style={styles.centerContent}>
           <Text style={styles.centerText}>
-            You need to be a group leader or church admin to manage this group.
+            You need to be a group leader to manage this group.
           </Text>
           <Button
             title="Go Back"
