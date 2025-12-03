@@ -1613,7 +1613,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
+    bottom: 50,
     paddingVertical: 8,
     paddingBottom: 66, // Same as horizontal card margins
     backgroundColor: 'transparent',

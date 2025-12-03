@@ -565,12 +565,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingTop: 16, // Figma: logos at y=16 within the nav
+    paddingTop: 0, // Figma: logos at y=16 within the nav
     paddingLeft: 19, // Figma: first logo starts at x=19
     paddingRight: 20,
     paddingBottom: 0,
     minHeight: 80, // Figma: top nav height is 80px
-    marginTop: 36, // Figma: top nav at top-[36px]
+    marginTop: 10, // Figma: top nav at top-[36px]
   },
   logoContainer: {
     flexDirection: 'row',

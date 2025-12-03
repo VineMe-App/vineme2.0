@@ -17,7 +17,9 @@ const HomeHeader = () => {
   const { theme } = useTheme();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { count: unreadCount = 0 } = useNotificationBadge(user?.id);
+  const { count: unreadCount } = useNotificationBadge(user?.id);
+  // Ensure unreadCount is a valid number (0 or positive integer)
+  const badgeCount = typeof unreadCount === 'number' && unreadCount > 0 ? unreadCount : 0;
 
   const handleNotificationPress = () => {
     // Navigate to the notifications page
@@ -31,12 +33,12 @@ const HomeHeader = () => {
       </Text>
       <NotificationIconWithBadge
         onPress={handleNotificationPress}
-        unreadCount={unreadCount}
+        unreadCount={badgeCount}
         size={24}
         color={theme.colors.text.primary}
         badgeColor={theme.colors.error[500]}
         testID="home-notification-icon"
-        accessibilityLabel={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ', no unread notifications'}`}
+        accessibilityLabel={`Notifications${badgeCount > 0 ? `, ${badgeCount} unread` : ', no unread notifications'}`}
         accessibilityHint="Double tap to open notifications panel"
       />
     </View>
@@ -240,6 +242,7 @@ export default function TabLayout() {
           tabBarLabel: 'Profile',
           headerShown: true,
           headerTitle: 'Profile',
+          headerTitleAlign: 'left', // Left-align title like Groups page
           headerTitleStyle: {
             fontSize: 22, // Figma: 22px
             fontFamily: theme.typography.fontFamily.bold,
@@ -258,7 +261,7 @@ export default function TabLayout() {
             shadowOpacity: 0,
           },
           headerTitleContainerStyle: {
-            paddingLeft: 0, // Remove default left padding to match Groups page
+            paddingLeft: 20, // Remove default left padding to match Groups page
           },
           tabBarIcon: ({ color, size }) => (
             <ProfileTabIcon color={color} size={size} />
