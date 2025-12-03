@@ -229,6 +229,24 @@ export const Text: React.FC<TextProps> = ({
   }
   combinedStyle.fontFamily = getFontFamily();
 
+  // Prevent descenders from being clipped on Android by ensuring
+  // line-height is slightly larger than font size.
+  if (Platform.OS === 'android') {
+    const resolvedFontSize =
+      combinedStyle.fontSize ?? typographyConfig.fontSize ?? 0;
+    const resolvedLineHeight =
+      combinedStyle.lineHeight ?? typographyConfig.lineHeight ?? 0;
+    const minimumLineHeight =
+      resolvedFontSize > 0 ? resolvedFontSize + 4 : resolvedLineHeight;
+
+    if (
+      minimumLineHeight &&
+      (!resolvedLineHeight || resolvedLineHeight < minimumLineHeight)
+    ) {
+      combinedStyle.lineHeight = minimumLineHeight;
+    }
+  }
+
   // Accessibility props
   const accessibilityProps = {
     accessible: true,
