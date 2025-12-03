@@ -242,6 +242,7 @@ export default function TabLayout() {
           tabBarLabel: 'Profile',
           headerShown: true,
           headerTitle: 'Profile',
+          headerTitleAlign: 'left', // Left-align title like Groups page
           headerTitleStyle: {
             fontSize: 22, // Figma: 22px
             fontFamily: theme.typography.fontFamily.bold,
@@ -260,7 +261,7 @@ export default function TabLayout() {
             shadowOpacity: 0,
           },
           headerTitleContainerStyle: {
-            paddingLeft: 0, // Remove default left padding to match Groups page
+            paddingLeft: 20, // Remove default left padding to match Groups page
           },
           tabBarIcon: ({ color, size }) => (
             <ProfileTabIcon color={color} size={size} />
