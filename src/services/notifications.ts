@@ -799,13 +799,13 @@ export const triggerJoinRequestReceivedNotification = async (
           body: `${data.requesterName} wants to join "${data.groupTitle}"`,
           data: {
             groupId: data.groupId,
-            groupTitle: data.groupTitle,
-            requesterId: data.requesterId,
-            requesterName: data.requesterName,
-          },
-          action_url: `/group/${data.groupId}/requests`,
-        });
-      })
+        groupTitle: data.groupTitle,
+        requesterId: data.requesterId,
+        requesterName: data.requesterName,
+      },
+      action_url: `/group-management/${data.groupId}?tab=requests`,
+    });
+  })
     );
 
     console.log(

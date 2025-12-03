@@ -195,6 +195,10 @@ function RootLayoutNav() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="group-management/[groupId]"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
           name="(auth)/onboarding-loader"
           options={{ headerShown: false }}
         />
