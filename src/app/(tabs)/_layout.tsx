@@ -17,7 +17,9 @@ const HomeHeader = () => {
   const { theme } = useTheme();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { count: unreadCount = 0 } = useNotificationBadge(user?.id);
+  const { count: unreadCount } = useNotificationBadge(user?.id);
+  // Ensure unreadCount is a valid number (0 or positive integer)
+  const badgeCount = typeof unreadCount === 'number' && unreadCount > 0 ? unreadCount : 0;
 
   const handleNotificationPress = () => {
     // Navigate to the notifications page
@@ -31,12 +33,12 @@ const HomeHeader = () => {
       </Text>
       <NotificationIconWithBadge
         onPress={handleNotificationPress}
-        unreadCount={unreadCount}
+        unreadCount={badgeCount}
         size={24}
         color={theme.colors.text.primary}
         badgeColor={theme.colors.error[500]}
         testID="home-notification-icon"
-        accessibilityLabel={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ', no unread notifications'}`}
+        accessibilityLabel={`Notifications${badgeCount > 0 ? `, ${badgeCount} unread` : ', no unread notifications'}`}
         accessibilityHint="Double tap to open notifications panel"
       />
     </View>
