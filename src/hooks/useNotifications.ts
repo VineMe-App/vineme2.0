@@ -276,7 +276,6 @@ export const useEnhancedNotifications = (userId?: string) => {
       return lastPage.hasMore ? allPages.length : undefined;
     },
     enabled: !!userId,
-    refetchInterval: 30000, // Fallback polling every 30 seconds
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
