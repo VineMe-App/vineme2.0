@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GroupDetail } from '../../components/groups';
 import { useGroup, useGroupMembership } from '../../hooks/useGroups';
 import { useAuthStore } from '../../stores/auth';
+import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import { shareGroup } from '../../utils/deepLinking';
 
 export default function GroupDetailScreen() {
@@ -35,7 +36,9 @@ export default function GroupDetailScreen() {
   const { data: membershipData, refetch: refetchMembership } =
     useGroupMembership(id, userProfile?.id);
 
-  // Check if user can manage the group (is a leader or church admin for the service)
+  const { refetch: refetchUserJoinRequests } = useUserJoinRequests(userProfile?.id);
+
+  // Check if user can manage the group (is a leader)
   const canManageGroup = React.useMemo(() => {
     if (!group || !userProfile) return false;
 
@@ -43,14 +46,7 @@ export default function GroupDetailScreen() {
       membershipData?.membership?.role === 'leader' ||
       membershipData?.membership?.role === 'admin';
 
-    const isChurchAdminForService = Boolean(
-      userProfile.roles?.includes('church_admin') &&
-        userProfile.service_id &&
-        group.service_id &&
-        userProfile.service_id === group.service_id
-    );
-
-    return Boolean(isLeader || isChurchAdminForService);
+    return Boolean(isLeader);
   }, [group, userProfile, membershipData]);
 
   // Update the header title and add share action to header when available
@@ -160,6 +156,7 @@ export default function GroupDetailScreen() {
     // Refetch both group data and membership status
     refetchGroup();
     refetchMembership();
+    refetchUserJoinRequests();
   };
 
   const handleShare = () => {

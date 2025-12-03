@@ -33,6 +33,7 @@ export interface ButtonProps {
     | 'success'
     | 'warning'
     | 'error'
+    | 'danger'
     | 'info'
     | 'ghost'
     | 'outline';
@@ -346,6 +347,10 @@ const getButtonStyles = (
       backgroundColor: theme.colors.error[500],
       borderColor: theme.colors.error[500],
     },
+    danger: {
+      backgroundColor: theme.colors.error[500],
+      borderColor: theme.colors.error[500],
+    },
     info: {
       backgroundColor: theme.colors.info[500],
       borderColor: theme.colors.info[500],
@@ -413,6 +418,7 @@ const getTextStyles = (
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,
     error: theme.colors.text.inverse,
+    danger: theme.colors.text.inverse,
     info: theme.colors.text.inverse,
     ghost: theme.colors.text.secondary,
     outline: theme.colors.primary[500],
@@ -435,6 +441,7 @@ const getLoadingColor = (theme: any, variant: string): string => {
     success: theme.colors.text.inverse,
     warning: theme.colors.text.inverse,
     error: theme.colors.text.inverse,
+    danger: theme.colors.text.inverse,
     info: theme.colors.text.inverse,
     ghost: theme.colors.text.secondary,
     outline: theme.colors.primary[500],
