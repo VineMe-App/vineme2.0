@@ -692,7 +692,7 @@ export const triggerGroupRequestSubmittedNotification = async (
             creatorName: data.creatorName,
             churchId: data.churchId,
           },
-          action_url: `/admin/groups/${data.groupId}`,
+          action_url: `/admin/manage-groups?groupId=${data.groupId}`,
         });
       })
     );
