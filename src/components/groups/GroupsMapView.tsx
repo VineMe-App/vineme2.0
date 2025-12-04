@@ -1638,7 +1638,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 50,
+    bottom: Platform.OS === 'android' ? 62 : 50,
     paddingVertical: 8,
     paddingBottom: 66, // Same as horizontal card margins
     backgroundColor: 'transparent',

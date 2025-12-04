@@ -1280,5 +1280,11 @@ const styles = StyleSheet.create({
     left: 26,
     right: 26,
     zIndex: 10,
+    ...Platform.select({
+      android: {
+        paddingBottom: 16,
+      },
+      default: {},
+    }),
   },
 });
