@@ -12,6 +12,7 @@ import GroupEditorForm, {
   GroupEditorValues,
 } from '../../components/groups/GroupEditorForm';
 import { groupMediaService } from '../../services/groupMedia';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function CreateGroupPage() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function CreateGroupPage() {
             }}
           >
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router)}
               accessibilityRole="button"
               accessibilityLabel="Go back"
               style={{
@@ -126,7 +127,7 @@ export default function CreateGroupPage() {
         [
           {
             text: 'OK',
-            onPress: () => router.back(),
+            onPress: () => safeGoBack(router),
           },
         ]
       );

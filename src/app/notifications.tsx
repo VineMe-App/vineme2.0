@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useEnhancedNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/services/supabase';
 import type { Notification } from '@/types/notifications';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -216,7 +217,7 @@ export default function NotificationsScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={() => safeGoBack(router)}
           activeOpacity={0.7}
         >
           <Ionicons name="chevron-back" size={20} color="#2C2235" />

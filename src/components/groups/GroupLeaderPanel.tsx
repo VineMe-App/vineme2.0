@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -26,16 +26,19 @@ import { useGroupJoinRequests } from '../../hooks/useJoinRequests';
 interface GroupLeaderPanelProps {
   group: GroupWithDetails;
   onGroupUpdated?: () => void;
+  initialTab?: 'members' | 'requests';
 }
 
 export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   group,
   onGroupUpdated,
+  initialTab = 'members',
 }) => {
   const { userProfile } = useAuthStore();
   const router = useRouter();
   // Inline actions on each card
-  const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
+  const [activeTab, setActiveTab] =
+    useState<'members' | 'requests'>(initialTab);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [selectedMember, setSelectedMember] =
     useState<GroupMembershipWithUser | null>(null);
@@ -54,6 +57,10 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
     removeMemberMutation,
     toggleGroupCapacityMutation,
   } = useGroupLeaderActions();
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Check if current user is a leader of this group
   const userMembership = members?.find((m) => m.user_id === userProfile?.id);

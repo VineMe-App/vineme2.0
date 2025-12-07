@@ -17,6 +17,7 @@ import { useGroup, useGroupMembership } from '../../hooks/useGroups';
 import { useAuthStore } from '../../stores/auth';
 import { useUserJoinRequests } from '../../hooks/useJoinRequests';
 import { shareGroup } from '../../utils/deepLinking';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function GroupDetailScreen() {
   const params = useLocalSearchParams<{ id: string; friends?: string }>();
@@ -75,7 +76,7 @@ export default function GroupDetailScreen() {
               }}
             >
               <TouchableOpacity
-                onPress={() => router.back()}
+                onPress={() => safeGoBack(router)}
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
                 style={{
@@ -175,7 +176,7 @@ export default function GroupDetailScreen() {
 
   if (groupError || !group) {
     Alert.alert('Error', 'Failed to load group details', [
-      { text: 'Go Back', onPress: () => router.back() },
+      { text: 'Go Back', onPress: () => safeGoBack(router) },
       { text: 'Retry', onPress: () => refetchGroup() },
     ]);
     return null;

@@ -32,7 +32,8 @@ export default function OtherUserProfileScreen() {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params =
+    useLocalSearchParams<{ id?: string; fromNotification?: string }>();
   const targetUserId = useMemo(
     () => (Array.isArray(params.id) ? params.id[0] : params.id),
     [params.id]
@@ -54,6 +55,17 @@ export default function OtherUserProfileScreen() {
   const acceptRejected = useAcceptRejectedFriendRequest();
 
   const isSelf = user?.id && targetUserId === user.id;
+  const fromNotification =
+    (params?.fromNotification &&
+      (Array.isArray(params.fromNotification)
+        ? params.fromNotification[0]
+        : params.fromNotification)) === '1';
+
+  useEffect(() => {
+    if (fromNotification) {
+      friendshipStatusQuery.refetch();
+    }
+  }, [fromNotification, friendshipStatusQuery.refetch]);
 
   // Filter memberships based on visibility rules
   const visibleMemberships = useMemo(() => {

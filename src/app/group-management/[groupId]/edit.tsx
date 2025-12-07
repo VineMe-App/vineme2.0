@@ -12,6 +12,7 @@ import GroupEditorForm, {
   GroupEditorLocation,
 } from '@/components/groups/GroupEditorForm';
 import { groupMediaService } from '@/services/groupMedia';
+import { safeGoBack } from '@/utils/navigation';
 
 const parseLocation = (location: any): GroupEditorLocation => {
   if (!location) return {};
@@ -116,7 +117,7 @@ export default function EditGroupScreen() {
       Alert.alert('Success', 'Group details updated successfully.', [
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => safeGoBack(router),
         },
       ]);
       refetch();
@@ -152,7 +153,7 @@ export default function EditGroupScreen() {
           <Text style={styles.errorText}>
             We couldn't load this group right now. Please try again shortly.
           </Text>
-          <Button title="Go Back" onPress={() => router.back()} />
+          <Button title="Go Back" onPress={() => safeGoBack(router)} />
         </View>
       )}
 
@@ -161,7 +162,7 @@ export default function EditGroupScreen() {
           <Text style={styles.centerText}>
             You need to be a group leader to edit this group.
           </Text>
-          <Button title="Go Back" onPress={() => router.back()} />
+          <Button title="Go Back" onPress={() => safeGoBack(router)} />
         </View>
       )}
 
@@ -174,7 +175,7 @@ export default function EditGroupScreen() {
           isSubmitting={submitting}
           headerTitle={group.title}
           subTitle="Update the group details and keep members informed."
-          onCancel={() => router.back()}
+          onCancel={() => safeGoBack(router)}
         />
       )}
     </View>

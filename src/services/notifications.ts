@@ -605,7 +605,7 @@ export const triggerFriendRequestNotification = async (
         fromUserId: data.fromUserId,
         fromUserName: data.fromUserName,
       },
-      action_url: `/user/${data.fromUserId}`,
+      action_url: `/user/${data.fromUserId}?fromNotification=1`,
     });
   } catch (error) {
     console.error('Error triggering friend request notification:', error);
@@ -636,7 +636,7 @@ export const triggerFriendRequestAcceptedNotification = async (
         acceptedByUserId: data.acceptedByUserId,
         acceptedByUserName: data.acceptedByUserName,
       },
-      action_url: `/user/${data.acceptedByUserId}`,
+      action_url: `/user/${data.acceptedByUserId}?fromNotification=1`,
     });
   } catch (error) {
     console.error(
@@ -692,7 +692,7 @@ export const triggerGroupRequestSubmittedNotification = async (
             creatorName: data.creatorName,
             churchId: data.churchId,
           },
-          action_url: `/admin/groups/${data.groupId}`,
+          action_url: `/admin/manage-groups?groupId=${data.groupId}`,
         });
       })
     );
@@ -769,7 +769,7 @@ export const triggerGroupRequestDeniedNotification = async (
         deniedByName: data.deniedByName,
         reason: data.reason,
       },
-      action_url: `/group/${data.groupId}`,
+      action_url: '/(tabs)',
     });
   } catch (error) {
     console.error('Error triggering group request denied notification:', error);
@@ -799,13 +799,13 @@ export const triggerJoinRequestReceivedNotification = async (
           body: `${data.requesterName} wants to join "${data.groupTitle}"`,
           data: {
             groupId: data.groupId,
-            groupTitle: data.groupTitle,
-            requesterId: data.requesterId,
-            requesterName: data.requesterName,
-          },
-          action_url: `/group/${data.groupId}/requests`,
-        });
-      })
+        groupTitle: data.groupTitle,
+        requesterId: data.requesterId,
+        requesterName: data.requesterName,
+      },
+      action_url: `/group-management/${data.groupId}?tab=requests`,
+    });
+  })
     );
 
     console.log(
