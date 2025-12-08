@@ -933,26 +933,39 @@ const resolveFriendRequestActionUrl = (
 ) => {
   if (!actionUrl) return undefined;
 
+  // Extract path and query string separately
+  const [path, queryString] = actionUrl.split('?');
+  const query = queryString ? `?${queryString}` : '?fromNotification=1';
+
   // Older notifications used /profile/:id which no longer exists.
-  const legacyProfileMatch = actionUrl.match(/^\/profile\/(.+)$/);
+  const legacyProfileMatch = path.match(/^\/profile\/(.+)$/);
   if (legacyProfileMatch) {
-    return `/user/${legacyProfileMatch[1]}`;
+    // Preserve query string from original actionUrl, or add fromNotification=1 if missing
+    return `/user/${legacyProfileMatch[1]}${query}`;
   }
 
   // Some notifications pointed to the profile tab (/ (tabs)/profile) to open the modal.
-  if (actionUrl === '/(tabs)/profile' && fallbackUserId) {
-    return `/user/${fallbackUserId}`;
+  if (path === '/(tabs)/profile' && fallbackUserId) {
+    // Preserve query string from original actionUrl, or add fromNotification=1 if missing
+    return `/user/${fallbackUserId}${query}`;
   }
 
-  return actionUrl;
+  // If no transformation needed, preserve original actionUrl (which should already have query string)
+  // But ensure fromNotification=1 is present if query string exists
+  if (queryString) {
+    // Query string exists, preserve it (should already have fromNotification=1 from service)
+    return actionUrl;
+  }
+  // No query string, add fromNotification=1
+  return `${actionUrl}?fromNotification=1`;
 };
 
 const getDefaultNotificationTarget = (notification: Notification): string => {
   switch (notification.type) {
     case 'friend_request_received':
-      return `/user/${notification.data.fromUserId}`;
+      return `/user/${notification.data.fromUserId}?fromNotification=1`;
     case 'friend_request_accepted':
-      return `/user/${notification.data.acceptedByUserId}`;
+      return `/user/${notification.data.acceptedByUserId}?fromNotification=1`;
     case 'group_request_submitted':
     case 'group_request_approved':
     case 'group_request_denied':

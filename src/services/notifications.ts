@@ -286,7 +286,8 @@ export const handleNotificationResponse = (
   response: Notifications.NotificationResponse,
   router: any
 ) => {
-  const { actionUrl } = response.notification.request.content.data;
+  const data = response.notification.request.content.data as any;
+  const { actionUrl, type, id } = data;
 
   // this logic is handled when the notification is created
   // the actionUrl holds this data. we just need to route to it
@@ -315,6 +316,32 @@ export const handleNotificationResponse = (
   } */
   if (actionUrl) {
     router.replace(actionUrl);
+    return;
+  }
+
+  // Fallback for legacy/local notifications that don't provide actionUrl
+  switch (type) {
+    case 'friend_request_accepted':
+      router.replace(`/user/${data.acceptedByUserId || id}`);
+      break;
+    case 'friend_request_received':
+      router.replace(`/user/${data.fromUserId || id}`);
+      break;
+    case 'event_reminder':
+      router.replace(`/event/${data.eventId || id}`);
+      break;
+    case 'group_update':
+      router.replace(`/group/${data.groupId || id}`);
+      break;
+    case 'group_request':
+      // Navigate to admin groups management screen
+      router.replace('/(tabs)/profile'); // TODO: Update when admin screens are implemented
+      break;
+    case 'join_request':
+      router.replace(`/group/${data.groupId || id}`);
+      break;
+    default:
+      router.replace('/(tabs)');
   }
 };
 
