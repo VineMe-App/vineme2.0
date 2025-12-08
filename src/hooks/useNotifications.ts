@@ -270,11 +270,11 @@ export const useEnhancedNotifications = (userId?: string) => {
     notifications: Notification[];
     hasMore: boolean;
     total: number;
-  }, Error, InfiniteData<{
+  }, Error, {
     notifications: Notification[];
     hasMore: boolean;
     total: number;
-  }>, (string | undefined)[], number>({
+  }, (string | undefined)[], number>({
     queryKey: ['notifications', 'list', userId],
     queryFn: ({ pageParam }: { pageParam: number }) =>
       getUserNotificationsPaginatedWithSettings({
