@@ -20,6 +20,7 @@ import {
   getUnreadNotificationsWithSettings,
   getUserNotifications,
   markNotificationAsRead,
+  markNotificationsAsRead,
   markAllNotificationsAsRead,
   getAdminNotificationCounts,
   // Enhanced notification service methods
