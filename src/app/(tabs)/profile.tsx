@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     fontWeight: '500', // Medium
     color: '#999999', // Figma: #999999
     letterSpacing: -0.32, // Figma: -0.32px
-    lineHeight: 16,
+    lineHeight: 20,
   },
   infoSection: {
     marginBottom: 0,
