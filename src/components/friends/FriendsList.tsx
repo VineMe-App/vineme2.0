@@ -279,10 +279,6 @@ export function FriendsList({
   };
 
   const renderSearchUserItem = ({ item }: { item: Partial<DatabaseUser> }) => {
-    if (item.id === currentUser?.id) {
-      return null;
-    }
-
     return (
       <UserSearchItem
         user={item}
@@ -296,7 +292,7 @@ export function FriendsList({
   const data = getCurrentData();
   const isLoading = getCurrentLoading();
   const error = getCurrentError();
-  const filteredUsers = searchUsersQuery.data?.filter((u) => u.id !== currentUser?.id) || [];
+  const filteredUsers = searchUsersQuery.data || [];
 
   if (error) {
     return (
@@ -517,7 +513,10 @@ function UserSearchItem({
     }
   };
 
-  const showAddButton = status !== 'accepted' && status !== 'pending';
+  // Don't show "Add" button if this is the current user's own card
+  const isSelf = user.id === currentUser?.id;
+  const showAddButton = !isSelf && status !== 'accepted' && status !== 'pending';
+  const showSentButton = !isSelf && status === 'pending' && !isIncoming;
 
   return (
     <TouchableOpacity
@@ -543,6 +542,11 @@ function UserSearchItem({
         >
           <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>
+      )}
+      {showSentButton && (
+        <View style={styles.sentButtonSmall}>
+          <Text style={styles.sentButtonText}>Sent</Text>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -709,6 +713,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '500',
+    letterSpacing: -0.27,
+    lineHeight: 9,
+  },
+  sentButtonSmall: {
+    backgroundColor: '#FF0083',
+    height: 16,
+    width: 51,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sentButtonText: {
     color: '#FFFFFF',
     fontSize: 9,
     fontWeight: '500',

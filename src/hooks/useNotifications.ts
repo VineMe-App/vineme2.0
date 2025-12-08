@@ -4,6 +4,7 @@ import {
   useMutation,
   useQueryClient,
   useInfiniteQuery,
+  type InfiniteData,
 } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
@@ -46,10 +47,10 @@ import type {
  */
 export const useNotifications = () => {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
   const queryClient = useQueryClient();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription | undefined>(undefined);
+  const responseListener = useRef<Notifications.Subscription | undefined>(undefined);
   const [onboardingCompleted, setOnboardingCompleted] = useState<
     boolean | null
   >(null);
@@ -265,14 +266,23 @@ export const useEnhancedNotifications = (userId?: string) => {
     isLoading: isLoadingNotifications,
     error: notificationsError,
     refetch: refetchNotifications,
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<{
+    notifications: Notification[];
+    hasMore: boolean;
+    total: number;
+  }, Error, {
+    notifications: Notification[];
+    hasMore: boolean;
+    total: number;
+  }, (string | undefined)[], number>({
     queryKey: ['notifications', 'list', userId],
-    queryFn: ({ pageParam = 0 }) =>
+    queryFn: ({ pageParam }: { pageParam: number }) =>
       getUserNotificationsPaginatedWithSettings({
         userId: userId!,
         limit: 20,
         offset: pageParam * 20,
       }),
+    initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.hasMore ? allPages.length : undefined;
     },
@@ -1011,7 +1021,7 @@ const resolveNotificationTarget = (notification: Notification): string => {
 
 export const useNotificationNavigation = () => {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
 
   // Handle notification press/tap
   const handleNotificationPress = useCallback(
@@ -1022,7 +1032,8 @@ export const useNotificationNavigation = () => {
       }
 
       const target = resolveNotificationTarget(notification);
-      router.push(target);
+      // Type assertion to satisfy router.push typings
+      router.push(target as any);
     },
     [router]
   );
@@ -1030,7 +1041,7 @@ export const useNotificationNavigation = () => {
   // Validate navigation permissions
   const validateNavigationPermissions = useCallback(
     (notification: Notification): boolean => {
-      if (!user) return false;
+      if (!user || !userProfile) return false;
 
       // Basic validation - user should only navigate to their own notifications
       if (notification.user_id !== user.id) return false;
@@ -1039,7 +1050,7 @@ export const useNotificationNavigation = () => {
       switch (notification.type) {
         case 'group_request_submitted':
           // Only church admins should see these
-          return user.roles?.includes('church_admin') || false;
+          return userProfile.roles?.includes('church_admin') || false;
         case 'join_request_received':
           // Only group leaders should see these
           // This would need additional group membership validation
@@ -1048,7 +1059,7 @@ export const useNotificationNavigation = () => {
           return true;
       }
     },
-    [user]
+    [user, userProfile]
   );
 
   // Get navigation target without navigating

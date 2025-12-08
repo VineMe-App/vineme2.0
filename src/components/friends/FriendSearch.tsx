@@ -85,11 +85,6 @@ export function FriendSearch({ onClose, onViewProfile, userId, activeFilter = 'f
   };
 
   const renderUserItem = ({ item }: { item: Partial<DatabaseUser> }) => {
-    // Don't show current user in search results
-    if (item.id === user?.id) {
-      return null;
-    }
-
     return (
       <UserSearchItem
         user={item}
@@ -100,8 +95,7 @@ export function FriendSearch({ onClose, onViewProfile, userId, activeFilter = 'f
     );
   };
 
-  const filteredUsers =
-    searchUsersQuery.data?.filter((u) => u.id !== user?.id) || [];
+  const filteredUsers = searchUsersQuery.data || [];
 
   return (
     <View style={styles.container}>
@@ -238,8 +232,11 @@ function UserSearchItem({
     }
   };
 
-  // Only show "Add" button if not already friends or pending
-  const showAddButton = status !== 'accepted' && status !== 'pending';
+  // Don't show "Add" button if this is the current user's own card
+  const isSelf = user.id === currentUser?.id;
+  // Only show "Add" button if not already friends or pending, and not viewing own card
+  const showAddButton = !isSelf && status !== 'accepted' && status !== 'pending';
+  const showSentButton = !isSelf && status === 'pending' && !isIncoming;
 
   return (
     <TouchableOpacity
@@ -265,6 +262,11 @@ function UserSearchItem({
         >
           <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>
+      )}
+      {showSentButton && (
+        <View style={styles.sentButton}>
+          <Text style={styles.sentButtonText}>Sent</Text>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -411,6 +413,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '500',
+    letterSpacing: -0.27,
+    lineHeight: 9,
+  },
+  sentButton: {
+    backgroundColor: '#FF0083',
+    height: 16,
+    width: 51,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sentButtonText: {
     color: '#FFFFFF',
     fontSize: 9,
     fontWeight: '500',
