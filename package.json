@@ -23,8 +23,7 @@
     "build:ios": "expo build:ios",
     "build": "eas build --profile development --platform android",
     "preview:ios": "expo install --ios && expo start --ios",
-    "preview:android": "expo install --android && expo start --android",
-    "adb": "adb reverse tcp:8081 tcp:8081"
+    "preview:android": "expo install --android && expo start --android"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
@@ -44,7 +43,7 @@
     "expo-linking": "^7.1.7",
     "expo-location": "~18.1.6",
     "expo-notifications": "~0.31.4",
-    "expo-router": "~5.1.6",
+    "expo-router": "~5.1.5",
     "expo-secure-store": "~14.2.4",
     "pngjs": "^7.0.0",
     "react": "19.0.0",
