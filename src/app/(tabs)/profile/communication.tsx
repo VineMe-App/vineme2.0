@@ -28,7 +28,9 @@ import {
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useNavigation } from 'expo-router';
+import { router, useNavigation, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authService } from '@/services/auth';
 
 export default function CommunicationAndSecurityScreen() {
   const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
@@ -37,6 +39,7 @@ export default function CommunicationAndSecurityScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const params = useLocalSearchParams();
 
   // Remove header
   useEffect(() => {
@@ -210,7 +213,9 @@ export default function CommunicationAndSecurityScreen() {
   const [phoneCode, setPhoneCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
 
-  const currentEmail = displayUserProfile?.email || user?.email;
+  // Email is stored in auth.users.email, not in the users table
+  // So we prioritize user?.email from auth
+  const currentEmail = user?.email || displayUserProfile?.email;
   
   // Format phone number - if UK number, ensure it's displayed with +44
   const formatPhoneNumber = (phone: string | undefined): string => {
@@ -231,21 +236,74 @@ export default function CommunicationAndSecurityScreen() {
   
   const currentPhone = formatPhoneNumber(displayUserProfile?.phone || user?.phone);
 
+  // Load pending email from query params or AsyncStorage
+  useEffect(() => {
+    const loadPendingEmail = async () => {
+      // First check query params (from deep link)
+      if (params.email) {
+        const decodedEmail = decodeURIComponent(params.email as string);
+        setNewEmail(decodedEmail);
+        setEmailStep('enter-email');
+        // Clear the email param from URL after reading it
+        router.setParams({ email: undefined });
+        // Also clear from AsyncStorage if it exists
+        await AsyncStorage.removeItem('pending_email_verification');
+        
+        // Force refresh the auth user to get updated email
+        const refreshedUser = await authService.getCurrentUser();
+        if (refreshedUser) {
+          useAuthStore.setState({ user: refreshedUser });
+        }
+        
+        // Refetch user profile to get the updated email from auth
+        await Promise.all([
+          refetchUserProfile(),
+          loadUserProfile(),
+        ]);
+      } else {
+        // Check AsyncStorage for pending email verification
+        const storedEmail = await AsyncStorage.getItem('pending_email_verification');
+        if (storedEmail) {
+          setNewEmail(storedEmail);
+          setEmailStep('enter-email');
+          await AsyncStorage.removeItem('pending_email_verification');
+          
+          // Force refresh the auth user to get updated email
+          const refreshedUser = await authService.getCurrentUser();
+          if (refreshedUser) {
+            useAuthStore.setState({ user: refreshedUser });
+          }
+          
+          // Refetch user profile to get the updated email from auth
+          await Promise.all([
+            refetchUserProfile(),
+            loadUserProfile(),
+          ]);
+        }
+      }
+    };
+    loadPendingEmail();
+  }, [params.email, refetchUserProfile, loadUserProfile]);
+
   const handleLinkEmail = async () => {
     if (!newEmail.trim())
       return Alert.alert('Error', 'Please enter your email address');
     if (!/\S+@\S+\.\S+/.test(newEmail))
       return Alert.alert('Error', 'Please enter a valid email address');
-    const result = await linkEmail(newEmail.trim());
+    const emailToLink = newEmail.trim();
+    // Store the email in AsyncStorage so we can pre-fill it after verification
+    await AsyncStorage.setItem('pending_email_verification', emailToLink);
+    // Use default Supabase redirect URL (https://vineme.app/auth/verify-email)
+    const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToLink)}`;
+    const result = await linkEmail(emailToLink, { emailRedirectTo: redirectUrl });
     if (result.success) {
       setEmailStep('idle');
       setNewEmail('');
-      // Refetch user profile to update email display
       await Promise.all([
         refetchUserProfile(),
         loadUserProfile(),
       ]);
-      Alert.alert('Success', 'Email has been linked to your account!');
+      Alert.alert('Success', 'Verification email sent! Please check your inbox.');
     } else {
       Alert.alert('Error', result.error || 'Failed to link email');
     }

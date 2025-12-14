@@ -910,6 +910,53 @@ export class AuthService {
   }
 
   /**
+   * Handle email verification from verification link tokens
+   * Sets the session and verifies the email address
+   */
+  async handleEmailVerification(
+    accessToken: string,
+    refreshToken: string
+  ): Promise<{ success: boolean; error?: string; user?: User }> {
+    try {
+      // Set the session using the tokens from the verification link
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (!data?.session?.user) {
+        return { success: false, error: 'Failed to verify email. Invalid session.' };
+      }
+
+      // Store session securely
+      if (data.session) {
+        await secureStorage.storeAuthSession({
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+          expiresAt: data.session.expires_at,
+        });
+      }
+
+      // Refresh the user to ensure we have the latest data including verified email
+      // Sometimes the session user might not have the email immediately after verification
+      const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+      
+      // Email is now verified in Supabase auth
+      // The email is stored in auth.users.email, not in public.users table
+      return { success: true, user: refreshedUser || data.session.user };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to verify email',
+      };
+    }
+  }
+
+  /**
    * Normalize phone to E.164 format
    */
   private normalizePhone(input: string): string | null {

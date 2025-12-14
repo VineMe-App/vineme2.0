@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "FL6V626V95.com.vineme.app",
+        "paths": [
+          "/group/*",
+          "/event/*",
+          "/referral/*",
+          "/notifications",
+          "/auth/*",
+          "*"
+        ]
+      }
+    ]
+  }
+}
+
+

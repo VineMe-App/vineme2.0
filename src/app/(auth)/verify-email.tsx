@@ -12,6 +12,9 @@ export default function VerifyEmailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { initialize } = useAuthStore();
+  
+  const redirectPath = params.redirect as string | undefined;
+  const email = params.email as string | undefined;
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationResult, setVerificationResult] = useState<{
@@ -48,12 +51,31 @@ export default function VerifyEmailScreen() {
 
       if (result.success) {
         // Reinitialize auth state to reflect the verified user
+        // Force refresh by getting the current user again
+        const { user: currentUser, loadUserProfile } = useAuthStore.getState();
+        if (currentUser) {
+          // Refresh the user from Supabase to get updated email
+          const refreshedUser = await authService.getCurrentUser();
+          if (refreshedUser) {
+            useAuthStore.setState({ user: refreshedUser });
+            await loadUserProfile();
+          }
+        }
         await initialize();
 
         // Show success message briefly before redirecting
         setTimeout(() => {
-          router.replace('/(auth)/onboarding');
+          if (redirectPath === '/profile/communication' && email) {
+            router.replace({
+              pathname: '/(tabs)/profile/communication',
+              params: { email: encodeURIComponent(email) },
+            });
+          } else {
+            router.replace('/(auth)/onboarding');
+          }
         }, 2000);
+      } else {
+        setIsVerifying(false);
       }
     } catch (error) {
       console.error('Email verification error:', error);
