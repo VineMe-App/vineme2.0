@@ -50,28 +50,9 @@ serve(async (req) => {
 
     const bearerTokenMatch = authHeader.match(/^Bearer\s+(.+)$/i);
     const bearerToken = bearerTokenMatch?.[1]?.trim() ?? '';
-    const hasAuthCredential = Boolean(bearerToken || suppliedSecretHeader);
+    const providedSecret = suppliedSecretHeader || bearerToken;
 
-    if (!hasAuthCredential) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Unauthorized' }),
-        { status: 401 }
-      );
-    }
-
-    if (suppliedSecretHeader) {
-      if (suppliedSecretHeader !== expectedSecret) {
-        return new Response(
-          JSON.stringify({ ok: false, error: 'Unauthorized' }),
-          { status: 401 }
-        );
-      }
-      // Valid shared secret provided via custom header
-    } else if (bearerToken === expectedSecret) {
-      // Shared secret sent as bearer token
-    } else if (bearerToken) {
-      // Allow Supabase JWTs used by supabase.functions.invoke
-    } else {
+    if (!providedSecret || providedSecret !== expectedSecret) {
       return new Response(
         JSON.stringify({ ok: false, error: 'Unauthorized' }),
         { status: 401 }
