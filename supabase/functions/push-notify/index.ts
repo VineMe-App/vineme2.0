@@ -13,14 +13,44 @@ serve(async (req) => {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const token = authHeader.replace('Bearer ', '').trim();
+    if (!token) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      {
+        global: {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      },
+    );
+
     const { userId, title, body, data } = await req.json();
     if (!userId || !title || !body) {
       return new Response('Missing required fields', { status: 400 });
     }
 
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAuth.auth.getUser();
+
+    if (authError || !user) {
+      console.error('Auth error validating caller', authError);
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    if (user.id !== userId) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
     // Fetch all device tokens for the user
