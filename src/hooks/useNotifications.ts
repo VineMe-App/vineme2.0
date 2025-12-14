@@ -982,13 +982,13 @@ const getDefaultNotificationTarget = (notification: Notification): string => {
     case 'group_request_denied':
       return `/group/${notification.data.groupId}`;
     case 'join_request_received':
-      return `/group/${notification.data.groupId}/requests`;
+      return `/group/${notification.data.groupId}`;
     case 'join_request_approved':
     case 'join_request_denied':
     case 'group_member_added':
       return `/group/${notification.data.groupId}`;
     case 'referral_accepted':
-      return `/profile/${notification.data.referredUserId}`;
+      return `/user/${notification.data.referredUserId}`;
     case 'referral_joined_group':
       return `/group/${notification.data.groupId}`;
     case 'event_reminder':
