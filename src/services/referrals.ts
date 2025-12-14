@@ -487,9 +487,7 @@ export class ReferralService {
         JSON.stringify(requestBody, null, 2)
       );
 
-      const sharedSecret =
-        process.env.EXPO_PUBLIC_CREATE_REFERRED_USER_SECRET ||
-        process.env.CREATE_REFERRED_USER_SECRET;
+      const sharedSecret = process.env.CREATE_REFERRED_USER_SECRET;
 
       const { data: resp, error } = await supabase.functions.invoke(
         'create-referred-user',
