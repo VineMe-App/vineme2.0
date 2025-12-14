@@ -88,7 +88,8 @@ CREATE POLICY "Users can update own notifications" ON notifications
   FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "System can insert notifications" ON notifications
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can delete own notifications" ON notifications
   FOR DELETE USING (auth.uid() = user_id);

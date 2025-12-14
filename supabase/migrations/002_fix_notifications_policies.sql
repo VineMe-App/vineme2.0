@@ -5,6 +5,16 @@
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_settings ENABLE ROW LEVEL SECURITY;
 
+-- Remove overly permissive insert policy from initial migration if it exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'notifications' AND polname = 'System can insert notifications'
+  ) THEN
+    DROP POLICY "System can insert notifications" ON notifications;
+  END IF;
+END$$;
+
 -- Create select/update/delete policies for notifications (own rows only)
 DO $$
 BEGIN
