@@ -9,6 +9,68 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 // Fix missing import
 import { Animated } from 'react-native';
 
+type FallbackRender = (fallbackProps: {
+  error: Error;
+  resetErrorBoundary: () => void;
+}) => React.ReactNode;
+
+interface LazyErrorBoundaryProps {
+  fallbackRender: FallbackRender;
+  onError?: (error: Error) => void;
+  resetKeys?: unknown[];
+  children: React.ReactNode;
+}
+
+interface LazyErrorBoundaryState {
+  error: Error | null;
+}
+
+const areArraysEqual = (a: unknown[] = [], b: unknown[] = []) => {
+  if (a.length !== b.length) return false;
+  return a.every((value, index) => Object.is(value, b[index]));
+};
+
+class LazyErrorBoundary extends React.Component<
+  LazyErrorBoundaryProps,
+  LazyErrorBoundaryState
+> {
+  state: LazyErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error): LazyErrorBoundaryState {
+    return { error };
+  }
+
+  componentDidCatch(error: Error) {
+    this.props.onError?.(error);
+  }
+
+  componentDidUpdate(prevProps: LazyErrorBoundaryProps) {
+    if (
+      this.state.error &&
+      !areArraysEqual(prevProps.resetKeys ?? [], this.props.resetKeys ?? [])
+    ) {
+      this.resetErrorBoundary();
+    }
+  }
+
+  resetErrorBoundary = () => {
+    this.setState({ error: null });
+  };
+
+  render() {
+    const { fallbackRender, children } = this.props;
+
+    if (this.state.error) {
+      return fallbackRender({
+        error: this.state.error,
+        resetErrorBoundary: this.resetErrorBoundary,
+      });
+    }
+
+    return children;
+  }
+}
+
 export interface LazyLoadingOptions {
   fallback?: React.ComponentType;
   errorBoundary?: React.ComponentType<{ error: Error; retry: () => void }>;
@@ -95,8 +157,8 @@ export function createLazyComponent<T extends ComponentType<any>>(
     }
 
     return (
-      <React.ErrorBoundary
-        fallback={({ error, resetErrorBoundary }) => (
+      <LazyErrorBoundary
+        fallbackRender={({ error, resetErrorBoundary }) => (
           <ErrorBoundary error={error} retry={resetErrorBoundary} />
         )}
         onError={setError}
@@ -105,7 +167,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
         <Suspense fallback={<Fallback />}>
           <LazyComponent {...props} ref={ref} key={retryKey} />
         </Suspense>
-      </React.ErrorBoundary>
+      </LazyErrorBoundary>
     );
   });
 }
