@@ -96,6 +96,7 @@ export const useNotifications = () => {
 
     return () => {
       notificationListener.current?.remove();
+      responseListener.current?.remove();
     };
   }, [router]);
 

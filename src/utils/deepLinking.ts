@@ -107,7 +107,7 @@ export const parseDeepLink = (url: string): DeepLinkData | null => {
       return {
         type: 'auth',
         id,
-        params: queryParams,
+        params: queryParams ?? undefined,
       };
     }
 
@@ -117,7 +117,7 @@ export const parseDeepLink = (url: string): DeepLinkData | null => {
       return {
         type: 'referral',
         id,
-        params: queryParams,
+        params: queryParams ?? undefined,
       };
     }
 
