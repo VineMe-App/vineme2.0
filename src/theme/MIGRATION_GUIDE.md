@@ -332,4 +332,4 @@ After migration, you'll have:
 1. **Check Examples**: Look at `src/components/ui/__examples__/`
 2. **Use DevTools**: Access style guide via 🐞 → Styles tab
 3. **Read Docs**: `src/theme/README.md` and `src/theme/QUICK_REFERENCE.md`
-4. **Run Tests**: `npm run test:styling-system` to verify changes
+4. **Run Tests**: `npm run test` to verify changes
