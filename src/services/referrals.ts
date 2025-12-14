@@ -487,6 +487,7 @@ export class ReferralService {
         JSON.stringify(requestBody, null, 2)
       );
 
+      // Invoke edge function - authentication is handled server-side via Supabase session
       const { data: resp, error } = await supabase.functions.invoke(
         'create-referred-user',
         {
@@ -764,8 +765,10 @@ export class ReferralService {
 
       (topReferrers || []).forEach((item) => {
         const existing = referrerMap.get(item.referred_by_user_id);
+        // Handle case where referrer might be an array (Supabase type inference) or single object
+        const referrer = Array.isArray(item.referrer) ? item.referrer[0] : item.referrer;
         referrerMap.set(item.referred_by_user_id, {
-          name: getFullName(item.referrer) || 'Unknown',
+          name: getFullName(referrer) || 'Unknown',
           count: (existing?.count || 0) + 1,
         });
       });

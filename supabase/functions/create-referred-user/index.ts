@@ -1,7 +1,16 @@
 // Supabase Edge Function: create-referred-user
 // Securely creates an auth user and a public.users profile for referrals using the service role key.
 
+// @ts-ignore - Deno is available in Supabase Edge Functions runtime
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
+
+// @ts-ignore - Deno imports are resolved at runtime in Supabase Edge Functions
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
+// @ts-ignore - ESM imports are resolved at runtime in Supabase Edge Functions
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 interface CreateReferredUserPayload {
@@ -33,7 +42,7 @@ function normalizePhone(phone?: string | null): string | null {
   return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
 }
 
-serve(async (req) => {
+serve(async (req: any) => {
   try {
     if (req.method !== 'POST') {
       return new Response(
@@ -42,8 +51,22 @@ serve(async (req) => {
       );
     }
 
+    // Create Supabase client with user's session for authentication
+    const authHeader = req.headers.get('authorization') || '';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Create client to verify user session
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    });
+    
+    // Parse payload first to get referrerId
     const payload = (await req.json()) as CreateReferredUserPayload;
-
+    
     if (!payload?.email || typeof payload.email !== 'string') {
       return new Response(
         JSON.stringify({ ok: false, error: 'Email is required' }),
@@ -57,10 +80,29 @@ serve(async (req) => {
         { status: 200 }
       );
     }
-
+    
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Unauthorized - authentication required' }),
+        { status: 401 }
+      );
+    }
+    
+    // Ensure the authenticated user is the referrer
+    if (user.id !== payload.referrerId) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Unauthorized - referrer ID mismatch' }),
+        { status: 403 }
+      );
+    }
+    
+    // Create service role client for admin operations
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      supabaseUrl,
+      supabaseServiceKey
     );
 
     // Get referrer's church info first
@@ -101,7 +143,7 @@ serve(async (req) => {
         perPage: 1000,
       });
       const emailMatch = emailUser?.users?.find(
-        (user) => user.email === payload.email
+        (user: any) => user.email === payload.email
       );
       if (emailMatch) {
         existingUserId = emailMatch.id;
@@ -120,7 +162,7 @@ serve(async (req) => {
         });
         const normalizedPhone = normalizePhone(payload.phone);
         if (normalizedPhone) {
-          const phoneMatch = phoneUsers?.users?.find((user) => {
+          const phoneMatch = phoneUsers?.users?.find((user: any) => {
             const userPhone = normalizePhone(user.phone);
             const userMetaPhone = normalizePhone(user.user_metadata?.phone);
             return (
