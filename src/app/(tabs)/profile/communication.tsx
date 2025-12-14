@@ -30,6 +30,7 @@ import { OtpInput } from '@/components/ui/OtpInput';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authService } from '@/services/auth';
 
 export default function CommunicationAndSecurityScreen() {
   const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
@@ -247,6 +248,13 @@ export default function CommunicationAndSecurityScreen() {
         router.setParams({ email: undefined });
         // Also clear from AsyncStorage if it exists
         await AsyncStorage.removeItem('pending_email_verification');
+        
+        // Force refresh the auth user to get updated email
+        const refreshedUser = await authService.getCurrentUser();
+        if (refreshedUser) {
+          useAuthStore.setState({ user: refreshedUser });
+        }
+        
         // Refetch user profile to get the updated email from auth
         await Promise.all([
           refetchUserProfile(),
@@ -259,6 +267,13 @@ export default function CommunicationAndSecurityScreen() {
           setNewEmail(storedEmail);
           setEmailStep('enter-email');
           await AsyncStorage.removeItem('pending_email_verification');
+          
+          // Force refresh the auth user to get updated email
+          const refreshedUser = await authService.getCurrentUser();
+          if (refreshedUser) {
+            useAuthStore.setState({ user: refreshedUser });
+          }
+          
           // Refetch user profile to get the updated email from auth
           await Promise.all([
             refetchUserProfile(),

@@ -941,9 +941,13 @@ export class AuthService {
         });
       }
 
+      // Refresh the user to ensure we have the latest data including verified email
+      // Sometimes the session user might not have the email immediately after verification
+      const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+      
       // Email is now verified in Supabase auth
       // The email is stored in auth.users.email, not in public.users table
-      return { success: true, user: data.session.user };
+      return { success: true, user: refreshedUser || data.session.user };
     } catch (error) {
       return {
         success: false,

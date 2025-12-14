@@ -146,9 +146,81 @@ serve(async (req) => {
       userId = existingUserId;
       reusedExistingUser = true;
       console.log('Reusing existing user:', userId);
+      
+      // Send verification/referral email to existing user
+      try {
+        const { data: existingAuthUser } = await supabase.auth.admin.getUserById(userId);
+        if (existingAuthUser?.user) {
+          let emailToUse = existingAuthUser.user.email;
+          
+          // If user doesn't have an email, link the referral email to their account
+          if (!emailToUse && payload.email) {
+            const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
+            // Update user email via admin API
+            const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+              email: payload.email,
+            });
+            
+            if (updateError) {
+              console.log('Failed to link email to existing user:', updateError.message);
+              // Continue without email - referral will still be created
+            } else {
+              emailToUse = payload.email;
+              console.log('Linked referral email to existing user account');
+              
+              // Manually send verification email since admin API doesn't auto-send
+              const { error: resendError } = await supabase.auth.resend({
+                type: 'signup',
+                email: emailToUse,
+                options: {
+                  emailRedirectTo: redirectUrl,
+                },
+              });
+              
+              if (resendError) {
+                console.log('Failed to send verification email after linking:', resendError.message);
+                // Non-fatal error - email was linked but verification email failed
+              } else {
+                console.log('Sent verification email to newly linked email');
+              }
+            }
+          } else if (emailToUse && !existingAuthUser.user.email_confirmed_at) {
+            // User has email but it's not verified - send verification email
+            const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToUse)}`;
+            // Use resend to actually send the email
+            const { error: resendError } = await supabase.auth.resend({
+              type: 'signup',
+              email: emailToUse,
+              options: {
+                emailRedirectTo: redirectUrl,
+              },
+            });
+            
+            if (resendError) {
+              console.log('Failed to send verification email to existing user:', resendError.message);
+              // Non-fatal error - continue without sending email
+            } else {
+              console.log('Sent verification email to existing unverified user');
+            }
+          } else if (emailToUse && existingAuthUser.user.email_confirmed_at) {
+            // Email is already verified - send a referral notification email
+            // Note: This would require a custom email template or notification system
+            // For now, we'll just log that the user was referred
+            console.log(`User ${userId} was referred but email is already verified. Referral notification could be sent to ${emailToUse}`);
+            // TODO: Implement referral notification email for verified users
+          } else {
+            console.log('Existing user has no email and could not link referral email - no email sent');
+          }
+        }
+      } catch (e) {
+        console.log('Error checking/sending email to existing user:', e);
+        // Non-fatal error - continue
+      }
     } else {
       // Invite new user via Supabase's built-in invitation system
       const normalizedPhone = normalizePhone(payload.phone);
+      // Use the HTTPS redirect URL for email verification
+      const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
       const { data: authData, error: authError } =
         await supabase.auth.admin.inviteUserByEmail(payload.email, {
           data: {
@@ -159,7 +231,7 @@ serve(async (req) => {
             church_id: churchId,
             service_id: serviceId,
           },
-          redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify`,
+          redirectTo: redirectUrl,
         });
 
       if (authError) {
@@ -198,6 +270,29 @@ serve(async (req) => {
         } else {
           console.log('Updated user phone number for authentication');
         }
+      }
+
+      // Send verification email explicitly to ensure it's sent
+      // inviteUserByEmail should send an email, but we'll also send a verification email
+      // to ensure the user receives it with the correct redirect URL
+      try {
+        const { error: resendError } = await supabase.auth.admin.generateLink({
+          type: 'signup',
+          email: payload.email,
+          options: {
+            redirectTo: redirectUrl,
+          },
+        });
+        
+        if (resendError) {
+          console.log('Failed to send verification email:', resendError.message);
+          // Non-fatal error - inviteUserByEmail should have sent an email already
+        } else {
+          console.log('Sent verification email to new user');
+        }
+      } catch (e) {
+        console.log('Error sending verification email:', e);
+        // Non-fatal error - inviteUserByEmail should have sent an email already
       }
     }
 

@@ -51,6 +51,16 @@ export default function VerifyEmailScreen() {
 
       if (result.success) {
         // Reinitialize auth state to reflect the verified user
+        // Force refresh by getting the current user again
+        const { user: currentUser, loadUserProfile } = useAuthStore.getState();
+        if (currentUser) {
+          // Refresh the user from Supabase to get updated email
+          const refreshedUser = await authService.getCurrentUser();
+          if (refreshedUser) {
+            useAuthStore.setState({ user: refreshedUser });
+            await loadUserProfile();
+          }
+        }
         await initialize();
 
         // Show success message briefly before redirecting
