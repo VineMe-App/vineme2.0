@@ -36,6 +36,8 @@ function normalizePhone(phone?: string | null): string | null {
 serve(async (req) => {
   try {
     const authHeader = req.headers.get('authorization') || '';
+    const suppliedSecretHeader =
+      req.headers.get('x-create-referred-user-secret')?.trim() ?? '';
     const expectedSecret = Deno.env.get('CREATE_REFERRED_USER_SECRET');
 
     if (!expectedSecret) {
@@ -46,8 +48,30 @@ serve(async (req) => {
       );
     }
 
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-    if (!token || token !== expectedSecret) {
+    const bearerTokenMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+    const bearerToken = bearerTokenMatch?.[1]?.trim() ?? '';
+    const hasAuthCredential = Boolean(bearerToken || suppliedSecretHeader);
+
+    if (!hasAuthCredential) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Unauthorized' }),
+        { status: 401 }
+      );
+    }
+
+    if (suppliedSecretHeader) {
+      if (suppliedSecretHeader !== expectedSecret) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Unauthorized' }),
+          { status: 401 }
+        );
+      }
+      // Valid shared secret provided via custom header
+    } else if (bearerToken === expectedSecret) {
+      // Shared secret sent as bearer token
+    } else if (bearerToken) {
+      // Allow Supabase JWTs used by supabase.functions.invoke
+    } else {
       return new Response(
         JSON.stringify({ ok: false, error: 'Unauthorized' }),
         { status: 401 }
