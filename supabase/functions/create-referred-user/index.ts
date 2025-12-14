@@ -35,6 +35,25 @@ function normalizePhone(phone?: string | null): string | null {
 
 serve(async (req) => {
   try {
+    const authHeader = req.headers.get('authorization') || '';
+    const expectedSecret = Deno.env.get('CREATE_REFERRED_USER_SECRET');
+
+    if (!expectedSecret) {
+      console.error('Missing CREATE_REFERRED_USER_SECRET environment variable');
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Service misconfigured' }),
+        { status: 500 }
+      );
+    }
+
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!token || token !== expectedSecret) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Unauthorized' }),
+        { status: 401 }
+      );
+    }
+
     if (req.method !== 'POST') {
       return new Response(
         JSON.stringify({ ok: false, error: 'Method Not Allowed' }),
