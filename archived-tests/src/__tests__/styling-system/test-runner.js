@@ -7,12 +7,12 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 const testCategories = {
-  integration: 'src/__tests__/styling-system/integration/**/*.test.{ts,tsx}',
-  'visual-regression': 'src/__tests__/styling-system/visual-regression/**/*.test.{ts,tsx}',
-  accessibility: 'src/__tests__/styling-system/accessibility/**/*.test.{ts,tsx}',
-  performance: 'src/__tests__/styling-system/performance/**/*.test.{ts,tsx}',
-  e2e: 'src/__tests__/styling-system/e2e/**/*.test.{ts,tsx}',
-  all: 'src/__tests__/styling-system/**/*.test.{ts,tsx}',
+  integration: 'archived-tests/src/__tests__/styling-system/integration/**/*.test.{ts,tsx}',
+  'visual-regression': 'archived-tests/src/__tests__/styling-system/visual-regression/**/*.test.{ts,tsx}',
+  accessibility: 'archived-tests/src/__tests__/styling-system/accessibility/**/*.test.{ts,tsx}',
+  performance: 'archived-tests/src/__tests__/styling-system/performance/**/*.test.{ts,tsx}',
+  e2e: 'archived-tests/src/__tests__/styling-system/e2e/**/*.test.{ts,tsx}',
+  all: 'archived-tests/src/__tests__/styling-system/**/*.test.{ts,tsx}',
 };
 
 function runTests(category = 'all', options = {}) {
