@@ -137,14 +137,14 @@ typography.fontWeight.semibold; // 600 - Headings
 ## 📱 Testing Your Changes
 
 ```bash
-# Quick test
-npm run test:styling-system:integration
+# Run all tests
+npm run test
 
-# Full test suite
-npm run test:styling-system
+# Run unit tests
+npm run test:unit
 
-# Accessibility check
-npm run test:styling-system:accessibility
+# Run integration tests
+npm run test:integration
 ```
 
 ## 🎯 Style Guide Pages

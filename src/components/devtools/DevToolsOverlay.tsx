@@ -528,8 +528,9 @@ function StyleGuidePanel({
             style={styles.quickActionBtn}
             onPress={() => {
               // Log testing info
-              console.log('🧪 Style tests: src/__tests__/styling-system/');
-              console.log('🧪 Run tests: npm run test:styling-system');
+              console.log('🧪 Run tests: npm run test');
+              console.log('🧪 Run unit tests: npm run test:unit');
+              console.log('🧪 Run integration tests: npm run test:integration');
             }}
           >
             <Text style={styles.quickActionIcon}>🧪</Text>

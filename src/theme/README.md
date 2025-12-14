@@ -330,12 +330,14 @@ Access these pages through the DevTools overlay (🐞 button) → Styles tab:
 ### 2. Test Your Changes
 
 ```bash
-# Run styling system tests
-npm run test:styling-system
+# Run all tests
+npm run test
 
-# Run specific test categories
-npm run test:styling-system:accessibility
-npm run test:styling-system:performance
+# Run unit tests
+npm run test:unit
+
+# Run integration tests
+npm run test:integration
 ```
 
 ### 3. Performance Optimization
@@ -496,7 +498,7 @@ StylePerformanceDebugger.generateReport();
 ## 📚 Additional Resources
 
 - **Component Examples**: `src/components/ui/__examples__/`
-- **Test Suite**: `src/__tests__/styling-system/`
+- **Test Suite**: Use `npm run test` for general tests or `npm run test:unit` for unit tests
 - **Performance Utils**: `src/utils/performanceStyleUtils.ts`
 - **Migration Tools**: `src/utils/migration/`
 
