@@ -53,6 +53,14 @@
         // Handle SendGrid tracking URLs - extract the final destination
         function extractFinalUrl() {
             const urlParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+
+            // Merge hash parameters (Supabase tokens) into the main params if not already present
+            hashParams.forEach((value, key) => {
+                if (!urlParams.has(key)) {
+                    urlParams.set(key, value);
+                }
+            });
             
             // Check if this is a SendGrid tracking URL
             // SendGrid tracking URLs have 'upn' parameter and redirect to final URL
