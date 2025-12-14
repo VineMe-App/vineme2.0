@@ -84,9 +84,33 @@ export class ReferralService {
       // Sanitize input data
       const sanitizedData = sanitizeReferralInput(data);
 
-      // Check rate limiting first
+      // Ensure we have a referrerId (from caller or current session)
+      let effectiveReferrerId = sanitizedData.referrerId;
+      if (!effectiveReferrerId) {
+        const { user } = await authService.validateAndRefreshSession();
+        if (!user?.id) {
+          return {
+            success: false,
+            error: 'Referrer ID is required',
+            errorDetails: {
+              type: 'validation',
+              message: 'Referrer ID is required',
+              field: 'referrerId',
+              retryable: false,
+            },
+          };
+        }
+        effectiveReferrerId = user.id;
+      }
+
+      const referralData = {
+        ...sanitizedData,
+        referrerId: effectiveReferrerId,
+      };
+
+      // Check rate limiting with the resolved referrer
       const rateLimitCheck = referralRateLimiter.canMakeReferral(
-        data.referrerId
+        effectiveReferrerId
       );
       if (!rateLimitCheck.allowed) {
         return {
@@ -107,8 +131,8 @@ export class ReferralService {
 
       // Comprehensive server-side validation
       const validation = validateServerReferralData(
-        sanitizedData,
-        data.referrerId,
+        referralData,
+        effectiveReferrerId,
         data.groupId
       );
 
@@ -133,8 +157,8 @@ export class ReferralService {
 
       // Check for duplicate referrals
       const duplicateCheck = await this.checkForDuplicateReferral(
-        sanitizedData.email,
-        data.referrerId,
+        referralData.email,
+        effectiveReferrerId,
         data.groupId
       );
 
@@ -156,26 +180,7 @@ export class ReferralService {
       }
 
       // Record the referral attempt for rate limiting
-      referralRateLimiter.recordReferral(data.referrerId);
-
-      // Ensure we have a referrerId (from caller or current session)
-      let effectiveReferrerId = data.referrerId;
-      if (!effectiveReferrerId) {
-        const { user } = await authService.validateAndRefreshSession();
-        if (!user?.id) {
-          return {
-            success: false,
-            error: 'Referrer ID is required',
-            errorDetails: {
-              type: 'validation',
-              message: 'Referrer ID is required',
-              field: 'referrerId',
-              retryable: false,
-            },
-          };
-        }
-        effectiveReferrerId = user.id;
-      }
+      referralRateLimiter.recordReferral(effectiveReferrerId);
 
       // Route to appropriate referral type with retry logic
       const result = await retryWithBackoff(
