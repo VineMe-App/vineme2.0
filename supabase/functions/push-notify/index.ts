@@ -13,6 +13,7 @@ serve(async (req) => {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
+    // Authenticate BEFORE parsing request body to prevent unauthenticated processing
     const authHeader = req.headers.get('Authorization') ?? '';
     const token = authHeader.replace('Bearer ', '').trim();
     if (!token) {
@@ -29,11 +30,7 @@ serve(async (req) => {
       },
     );
 
-    const { userId, title, body, data } = await req.json();
-    if (!userId || !title || !body) {
-      return new Response('Missing required fields', { status: 400 });
-    }
-
+    // Verify authentication BEFORE parsing body
     const {
       data: { user },
       error: authError,
@@ -44,6 +41,13 @@ serve(async (req) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    // Now safe to parse and validate request body
+    const { userId, title, body, data } = await req.json();
+    if (!userId || !title || !body) {
+      return new Response('Missing required fields', { status: 400 });
+    }
+
+    // Verify the authenticated user matches the userId in the request
     if (user.id !== userId) {
       return new Response('Forbidden', { status: 403 });
     }
