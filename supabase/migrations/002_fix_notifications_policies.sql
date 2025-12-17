@@ -43,17 +43,19 @@ BEGIN
   END IF;
 END$$;
 
--- IMPORTANT: Allow inserts of notifications from the app (client) for any user.
--- This mirrors system-triggered notifications until you move creation to a server role.
+-- Allow authenticated users to insert notifications for themselves only. The service
+-- role can still insert for any user to support server-side workflows.
 DO $$
 BEGIN
-  IF NOT EXISTS (
+  IF EXISTS (
     SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'notifications' AND polname = 'insert_notifications_any_authenticated'
   ) THEN
-    CREATE POLICY insert_notifications_any_authenticated ON notifications
-      FOR INSERT TO authenticated
-      WITH CHECK (true);
+    DROP POLICY insert_notifications_any_authenticated ON notifications;
   END IF;
+
+  CREATE POLICY insert_notifications_any_authenticated ON notifications
+    FOR INSERT TO authenticated
+    WITH CHECK (auth.uid() = user_id OR auth.role() = 'service_role');
 END$$;
 
 -- user_notification_settings policies (own row only)
