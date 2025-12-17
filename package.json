@@ -25,7 +25,6 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --coverage --watchAll=false --passWithNoTests",
-    "tests:archive": "node scripts/archive-tests.js",
     "test:unit": "jest --testPathPatterns='src/(services|hooks|utils|components|stores|providers).*\\.test\\.(ts|tsx)$'",
     "test:integration": "jest --testPathPatterns='src/__tests__/integration.*\\.test\\.(ts|tsx)$'",
     "test:e2e": "jest --testPathPatterns='src/__tests__/e2e.*\\.test\\.(ts|tsx)$'",

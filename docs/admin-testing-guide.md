@@ -133,31 +133,14 @@ Tests performance with large datasets:
 
 ```bash
 # Run all admin tests
-npm run test:admin
+npm test -- --testPathPattern="admin"
 
 # Run specific test category
-npm run test src/services/__tests__/admin*.test.ts
+npm test -- --testPathPattern="src/services/__tests__/admin"
 
 # Run with coverage
-npm run test:coverage src/services/__tests__/admin*.test.ts
+npm run test:coverage -- --testPathPattern="admin"
 ```
-
-### Comprehensive Test Runner
-
-Use the custom test runner for detailed reporting:
-
-```bash
-node src/__tests__/admin-test-runner.js
-```
-
-This provides:
-
-- Categorized test execution
-- Detailed reporting
-- Coverage analysis
-- Performance metrics
-- Failure analysis
-- Recommendations
 
 ### Individual Test Categories
 
@@ -354,7 +337,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
       - run: npm ci
-      - run: node src/__tests__/admin-test-runner.js
+      - run: npm test -- --testPathPattern="admin"
       - uses: codecov/codecov-action@v1
 ```
 
@@ -364,7 +347,7 @@ jobs:
 {
   "husky": {
     "hooks": {
-      "pre-commit": "npm run test:admin:quick"
+      "pre-commit": "npm test -- --testPathPattern=\"admin\" --passWithNoTests"
     }
   }
 }
