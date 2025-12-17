@@ -133,49 +133,131 @@ serve(async (req: any) => {
     }
 
     // Check if user already exists by email or phone
+    // We need to iterate through all pages to avoid missing users beyond the first 1000
     let existingUserId: string | null = null;
     let existingUser: any = null;
 
-    // First, try to find by email in auth.users
-    try {
-      const { data: emailUser } = await supabase.auth.admin.listUsers({
-        page: 1,
-        perPage: 1000,
-      });
-      const emailMatch = emailUser?.users?.find(
-        (user: any) => user.email === payload.email
-      );
-      if (emailMatch) {
-        existingUserId = emailMatch.id;
-        existingUser = emailMatch;
+    // Helper function to search for user by email across all pages
+    const findUserByEmail = async (email: string): Promise<any | null> => {
+      let page = 1;
+      const perPage = 1000;
+      
+      while (true) {
+        try {
+          const { data, error } = await supabase.auth.admin.listUsers({
+            page,
+            perPage,
+          });
+          
+          if (error) {
+            console.log(`Error listing users page ${page}:`, error.message);
+            break;
+          }
+          
+          if (!data?.users || data.users.length === 0) {
+            // No more users to check
+            break;
+          }
+          
+          // Search for matching email in current page
+          const match = data.users.find((user: any) => user.email === email);
+          if (match) {
+            return match;
+          }
+          
+          // If we got fewer users than perPage, we've reached the last page
+          if (data.users.length < perPage) {
+            break;
+          }
+          
+          page++;
+        } catch (e) {
+          console.log(`Exception listing users page ${page}:`, e);
+          break;
+        }
       }
-    } catch (e) {
-      // If listUsers fails, continue without existing user check
-    }
+      
+      return null;
+    };
 
-    // If not found by email, try by phone
-    if (!existingUserId && payload.phone) {
-      try {
-        const { data: phoneUsers } = await supabase.auth.admin.listUsers({
-          page: 1,
-          perPage: 1000,
-        });
-        const normalizedPhone = normalizePhone(payload.phone);
-        if (normalizedPhone) {
-          const phoneMatch = phoneUsers?.users?.find((user: any) => {
+    // Helper function to search for user by phone across all pages
+    const findUserByPhone = async (phone: string): Promise<any | null> => {
+      const normalizedPhone = normalizePhone(phone);
+      if (!normalizedPhone) {
+        return null;
+      }
+      
+      let page = 1;
+      const perPage = 1000;
+      
+      while (true) {
+        try {
+          const { data, error } = await supabase.auth.admin.listUsers({
+            page,
+            perPage,
+          });
+          
+          if (error) {
+            console.log(`Error listing users page ${page}:`, error.message);
+            break;
+          }
+          
+          if (!data?.users || data.users.length === 0) {
+            // No more users to check
+            break;
+          }
+          
+          // Search for matching phone in current page
+          const match = data.users.find((user: any) => {
             const userPhone = normalizePhone(user.phone);
             const userMetaPhone = normalizePhone(user.user_metadata?.phone);
             return (
               userPhone === normalizedPhone || userMetaPhone === normalizedPhone
             );
           });
-          if (phoneMatch) {
-            existingUserId = phoneMatch.id;
-            existingUser = phoneMatch;
+          
+          if (match) {
+            return match;
           }
+          
+          // If we got fewer users than perPage, we've reached the last page
+          if (data.users.length < perPage) {
+            break;
+          }
+          
+          page++;
+        } catch (e) {
+          console.log(`Exception listing users page ${page}:`, e);
+          break;
+        }
+      }
+      
+      return null;
+    };
+
+    // First, try to find by email in auth.users (searching all pages)
+    try {
+      const emailMatch = await findUserByEmail(payload.email);
+      if (emailMatch) {
+        existingUserId = emailMatch.id;
+        existingUser = emailMatch;
+      }
+    } catch (e) {
+      console.log('Error finding user by email:', e);
+      // Continue without existing user check
+    }
+
+    // If not found by email, try by phone (searching all pages)
+    if (!existingUserId && payload.phone) {
+      try {
+        const phoneMatch = await findUserByPhone(payload.phone);
+        if (phoneMatch) {
+          existingUserId = phoneMatch.id;
+          existingUser = phoneMatch;
         }
       } catch (e) {
-        // If listUsers fails, continue without existing user check
+        console.log('Error finding user by phone:', e);
+        // Continue without existing user check
       }
     }
 
