@@ -1108,6 +1108,7 @@ export const getAllowedNotificationTypesForUser = async (
       'group_request_submitted',
       'group_request_approved',
       'group_request_denied',
+      'group_member_added',
       'join_request_received',
       'join_request_approved',
       'join_request_denied',
@@ -1123,6 +1124,8 @@ export const getAllowedNotificationTypesForUser = async (
   if (settings.group_request_responses) {
     allowed.push('group_request_approved', 'group_request_denied');
   }
+  // Always allow group member additions until a dedicated setting is introduced
+  allowed.push('group_member_added');
   if (settings.join_requests) allowed.push('join_request_received');
   if (settings.join_request_responses) {
     allowed.push('join_request_approved', 'join_request_denied');
