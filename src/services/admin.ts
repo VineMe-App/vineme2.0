@@ -286,7 +286,7 @@ export class GroupAdminService {
       // Verify the group exists and is pending
       const { data: existingGroup, error: fetchError } = await supabase
         .from('groups')
-        .select('id, status, church_id')
+        .select('id, status, church_id, created_by')
         .eq('id', groupId)
         .single();
 
@@ -314,13 +314,25 @@ export class GroupAdminService {
         };
       }
 
-      // Use the approve_group RPC which handles status update and membership activation
-      const { error } = await supabase.rpc('approve_group', {
-        p_group_id: groupId,
-      });
+      // Use atomic RPC function to approve group and activate leader membership
+      // This ensures both operations succeed or both fail, preventing inconsistent states
+      const { data: approveResult, error: approveError } = await supabase.rpc(
+        'approve_group_atomic',
+        {
+          p_group_id: groupId,
+          p_admin_id: adminId,
+        }
+      );
 
-      if (error) {
-        return { data: null, error: new Error(error.message) };
+      if (approveError) {
+        return { data: null, error: new Error(approveError.message) };
+      }
+
+      if (!approveResult || !approveResult.success) {
+        return {
+          data: null,
+          error: new Error('Failed to approve group atomically'),
+        };
       }
 
       // Fetch the updated group to return
@@ -426,13 +438,25 @@ export class GroupAdminService {
         };
       }
 
-      // Use the deny_group RPC which handles status update and membership deactivation
-      const { error } = await supabase.rpc('deny_group', {
-        p_group_id: groupId,
-      });
+      // Use atomic RPC function to decline group and remove leader membership
+      // This ensures both operations succeed or both fail, preventing inconsistent states
+      const { data: declineResult, error: declineError } = await supabase.rpc(
+        'decline_group_atomic',
+        {
+          p_group_id: groupId,
+          p_admin_id: adminId,
+        }
+      );
 
-      if (error) {
-        return { data: null, error: new Error(error.message) };
+      if (declineError) {
+        return { data: null, error: new Error(declineError.message) };
+      }
+
+      if (!declineResult || !declineResult.success) {
+        return {
+          data: null,
+          error: new Error('Failed to decline group atomically'),
+        };
       }
 
       // Fetch the updated group to return
