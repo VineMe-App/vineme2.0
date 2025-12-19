@@ -64,7 +64,7 @@ export class UserService {
         `
         )
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -533,12 +533,15 @@ export class UserService {
         return { data: null, error: new Error(error.message) };
       }
 
-      const friendshipsWithNames = (data || []).map((friendship) => ({
-        ...friendship,
-        friend: friendship.friend
-          ? { ...friendship.friend, name: getFullName(friendship.friend) }
-          : friendship.friend,
-      }));
+      // Filter out friendships where the friend has been deleted (null)
+      const friendshipsWithNames = (data || [])
+        .filter((friendship) => friendship.friend !== null)
+        .map((friendship) => ({
+          ...friendship,
+          friend: friendship.friend
+            ? { ...friendship.friend, name: getFullName(friendship.friend) }
+            : friendship.friend,
+        }));
 
       return { data: friendshipsWithNames, error: null };
     } catch (error) {
