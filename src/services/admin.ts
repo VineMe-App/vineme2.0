@@ -314,64 +314,25 @@ export class GroupAdminService {
         };
       }
 
-      // Update the group status directly since the approve_group RPC is not available
-      const { error: approveError } = await supabase
-        .from('groups')
-        .update({ status: 'approved', updated_at: new Date().toISOString() })
-        .eq('id', groupId);
+      // Use atomic RPC function to approve group and activate leader membership
+      // This ensures both operations succeed or both fail, preventing inconsistent states
+      const { data: approveResult, error: approveError } = await supabase.rpc(
+        'approve_group_atomic',
+        {
+          p_group_id: groupId,
+          p_admin_id: adminId,
+        }
+      );
 
       if (approveError) {
         return { data: null, error: new Error(approveError.message) };
       }
 
-      // Activate the creator's pending leader membership so they can manage the group
-      if (existingGroup.created_by) {
-        const { data: leaderMembership, error: leaderMembershipError } =
-          await supabase
-            .from('group_memberships')
-            .select('id, status')
-            .eq('group_id', groupId)
-            .eq('user_id', existingGroup.created_by)
-            .eq('role', 'leader')
-            .maybeSingle();
-
-        if (leaderMembershipError) {
-          return { data: null, error: new Error(leaderMembershipError.message) };
-        }
-
-        if (!leaderMembership) {
-          const { error: createLeaderMembershipError } = await supabase
-            .from('group_memberships')
-            .insert({
-              group_id: groupId,
-              user_id: existingGroup.created_by,
-              role: 'leader',
-              status: 'active',
-              joined_at: new Date().toISOString(),
-            });
-
-          if (createLeaderMembershipError) {
-            return {
-              data: null,
-              error: new Error(createLeaderMembershipError.message),
-            };
-          }
-        } else if (leaderMembership.status !== 'active') {
-          const { error: activateLeaderMembershipError } = await supabase
-            .from('group_memberships')
-            .update({
-              status: 'active',
-              joined_at: new Date().toISOString(),
-            })
-            .eq('id', leaderMembership.id);
-
-          if (activateLeaderMembershipError) {
-            return {
-              data: null,
-              error: new Error(activateLeaderMembershipError.message),
-            };
-          }
-        }
+      if (!approveResult || !approveResult.success) {
+        return {
+          data: null,
+          error: new Error('Failed to approve group atomically'),
+        };
       }
 
       // Fetch the updated group to return
