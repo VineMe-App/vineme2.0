@@ -13,32 +13,47 @@ serve(async (req) => {
       return new Response('Method Not Allowed', { status: 405 });
     }
 
-    // Authenticate BEFORE parsing request body to prevent unauthenticated processing
-    const authHeader = req.headers.get('Authorization') ?? '';
-    const token = authHeader.replace('Bearer ', '').trim();
-    if (!token) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-
-    const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      {
-        global: {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      },
+    // Allow authenticated users to send to themselves OR privileged service callers
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const serviceHeader = req.headers.get('x-service-role-key');
+    const isServiceRequest = Boolean(
+      serviceHeader && serviceHeader.trim() === serviceRoleKey,
     );
 
-    // Verify authentication BEFORE parsing body
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseAuth.auth.getUser();
+    let authenticatedUserId: string | null = null;
 
-    if (authError || !user) {
-      console.error('Auth error validating caller', authError);
-      return new Response('Unauthorized', { status: 401 });
+    if (!isServiceRequest) {
+      // Authenticate BEFORE parsing request body to prevent unauthenticated processing
+      const authHeader = req.headers.get('Authorization') ?? '';
+      const token = authHeader.replace('Bearer ', '').trim();
+      if (!token) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+
+      const supabaseAuth = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        {
+          global: {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        },
+      );
+
+      // Verify authentication BEFORE parsing body
+      const {
+        data: { user },
+        error: authError,
+      } = await supabaseAuth.auth.getUser();
+
+      if (authError || !user) {
+        console.error('Auth error validating caller', authError);
+        return new Response('Unauthorized', { status: 401 });
+      }
+
+      authenticatedUserId = user.id;
+    } else if (serviceHeader?.trim() !== serviceRoleKey) {
+      return new Response('Forbidden', { status: 403 });
     }
 
     // Now safe to parse and validate request body
@@ -47,8 +62,9 @@ serve(async (req) => {
       return new Response('Missing required fields', { status: 400 });
     }
 
-    // Verify the authenticated user matches the userId in the request
-    if (user.id !== userId) {
+    // Verify the authenticated user matches the userId in the request unless
+    // the caller is an authorized service request
+    if (!isServiceRequest && authenticatedUserId !== userId) {
       return new Response('Forbidden', { status: 403 });
     }
 
