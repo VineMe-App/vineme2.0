@@ -310,6 +310,17 @@ export default function OtherUserProfileScreen() {
     );
   }
 
+  if (!profile && !profileLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>User not found</Text>
+          <Button title="Go Back" onPress={handleBackPress} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Manual Back Button */}

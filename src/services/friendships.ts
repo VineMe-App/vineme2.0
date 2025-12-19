@@ -305,23 +305,33 @@ export class FriendshipService {
       }
 
       // Transform data to always show the other user as 'friend'
-      const transformedData = (data || []).map((friendship) => {
-        const normalized = {
-          ...friendship,
-          friend: withDisplayName(friendship.friend),
-          user: withDisplayName(friendship.user),
-        } as FriendshipWithUser;
-        if (friendship.user_id === userId) {
-          return normalized;
-        } else {
-          // Swap user and friend for consistent display
-          return {
-            ...normalized,
-            friend: normalized.user,
-            user: normalized.friend,
-          };
-        }
-      });
+      // Filter out friendships where either user has been deleted (null)
+      const transformedData = (data || [])
+        .filter((friendship) => {
+          // Filter out friendships where the friend or user is null (deleted)
+          if (friendship.user_id === userId) {
+            return friendship.friend !== null;
+          } else {
+            return friendship.user !== null;
+          }
+        })
+        .map((friendship) => {
+          const normalized = {
+            ...friendship,
+            friend: withDisplayName(friendship.friend),
+            user: withDisplayName(friendship.user),
+          } as FriendshipWithUser;
+          if (friendship.user_id === userId) {
+            return normalized;
+          } else {
+            // Swap user and friend for consistent display
+            return {
+              ...normalized,
+              friend: normalized.user,
+              user: normalized.friend,
+            };
+          }
+        });
 
       return { data: transformedData, error: null };
     } catch (error) {
@@ -355,10 +365,13 @@ export class FriendshipService {
         return { data: null, error: new Error(error.message) };
       }
 
-      const normalized = (data || []).map((friendship) => ({
-        ...friendship,
-        friend: withDisplayName(friendship.friend),
-      }));
+      // Filter out friendships where the friend has been deleted (null)
+      const normalized = (data || [])
+        .filter((friendship) => friendship.friend !== null)
+        .map((friendship) => ({
+          ...friendship,
+          friend: withDisplayName(friendship.friend),
+        }));
 
       return { data: normalized, error: null };
     } catch (error) {
@@ -394,10 +407,13 @@ export class FriendshipService {
         return { data: null, error: new Error(error.message) };
       }
 
-      const normalized = (data || []).map((friendship) => ({
-        ...friendship,
-        user: withDisplayName(friendship.user),
-      }));
+      // Filter out friendships where the user has been deleted (null)
+      const normalized = (data || [])
+        .filter((friendship) => friendship.user !== null)
+        .map((friendship) => ({
+          ...friendship,
+          user: withDisplayName(friendship.user),
+        }));
 
       return { data: normalized, error: null };
     } catch (error) {
@@ -489,23 +505,33 @@ export class FriendshipService {
       }
 
       // Transform data to always show the other user as 'friend'
-      const transformedData = (data || []).map((friendship) => {
-        const normalized = {
-          ...friendship,
-          friend: withDisplayName(friendship.friend),
-          user: withDisplayName(friendship.user),
-        } as FriendshipWithUser;
-        if (friendship.user_id === userId) {
-          return normalized;
-        } else {
-          // Swap user and friend for consistent display
-          return {
-            ...normalized,
-            friend: normalized.user,
-            user: normalized.friend,
-          };
-        }
-      });
+      // Filter out friendships where either user has been deleted (null)
+      const transformedData = (data || [])
+        .filter((friendship) => {
+          // Filter out friendships where the friend or user is null (deleted)
+          if (friendship.user_id === userId) {
+            return friendship.friend !== null;
+          } else {
+            return friendship.user !== null;
+          }
+        })
+        .map((friendship) => {
+          const normalized = {
+            ...friendship,
+            friend: withDisplayName(friendship.friend),
+            user: withDisplayName(friendship.user),
+          } as FriendshipWithUser;
+          if (friendship.user_id === userId) {
+            return normalized;
+          } else {
+            // Swap user and friend for consistent display
+            return {
+              ...normalized,
+              friend: normalized.user,
+              user: normalized.friend,
+            };
+          }
+        });
 
       return { data: transformedData, error: null };
     } catch (error) {
