@@ -1,11 +1,11 @@
--- RPC function to atomically approve a group and activate leader membership
+-- RPC function to atomically decline a group and deactivate leader membership
 -- This ensures that both operations succeed or both fail, preventing inconsistent states
--- where a group is approved but has no active leader
+-- where a group is declined but the leader's membership remains active
 -- 
--- Security: This function enforces that only church admins (or superadmins) can approve groups,
+-- Security: This function enforces that only church admins (or superadmins) can decline groups,
 -- and only for groups in their own church (or any church for superadmins).
 
-CREATE OR REPLACE FUNCTION approve_group_atomic(
+CREATE OR REPLACE FUNCTION decline_group_atomic(
   p_group_id uuid,
   p_admin_id uuid
 )
@@ -22,7 +22,6 @@ DECLARE
   v_group_church_id uuid;
   v_created_by uuid;
   v_leader_membership_id uuid;
-  v_leader_membership_status text;
   v_result jsonb;
 BEGIN
   -- Ensure caller is authenticated
@@ -77,44 +76,28 @@ BEGIN
     RAISE EXCEPTION 'Access denied to church data' USING ERRCODE = '42501';
   END IF;
 
-  -- Check for existing leader membership
+  -- Deactivate or remove the creator's leader membership
   IF v_created_by IS NOT NULL THEN
-    SELECT id, status
-    INTO v_leader_membership_id, v_leader_membership_status
+    -- Find the leader membership
+    SELECT id
+    INTO v_leader_membership_id
     FROM group_memberships
     WHERE group_id = p_group_id
       AND user_id = v_created_by
       AND role = 'leader'
     LIMIT 1;
 
-    -- Create or activate leader membership
-    IF v_leader_membership_id IS NULL THEN
-      -- Create new leader membership
-      INSERT INTO group_memberships (
-        group_id,
-        user_id,
-        role,
-        status,
-        joined_at
-      ) VALUES (
-        p_group_id,
-        v_created_by,
-        'leader',
-        'active',
-        NOW()
-      ) RETURNING id INTO v_leader_membership_id;
-    ELSIF v_leader_membership_status != 'active' THEN
-      -- Activate existing membership
-      UPDATE group_memberships
-      SET status = 'active',
-          joined_at = COALESCE(joined_at, NOW())
+    -- If membership exists, delete it (cleaner than deactivating)
+    -- This removes the stale membership entirely
+    IF v_leader_membership_id IS NOT NULL THEN
+      DELETE FROM group_memberships
       WHERE id = v_leader_membership_id;
     END IF;
   END IF;
 
-  -- Update group status to approved (only after membership is ensured)
+  -- Update group status to declined (only after membership is cleaned up)
   UPDATE groups
-  SET status = 'approved',
+  SET status = 'declined',
       updated_at = NOW()
   WHERE id = p_group_id;
 
@@ -122,7 +105,7 @@ BEGIN
   v_result := jsonb_build_object(
     'success', true,
     'group_id', p_group_id,
-    'leader_membership_id', v_leader_membership_id
+    'membership_removed', v_leader_membership_id IS NOT NULL
   );
 
   RETURN v_result;
@@ -130,7 +113,7 @@ EXCEPTION
   WHEN OTHERS THEN
     -- Rollback is automatic in PostgreSQL transactions
     -- Return error details
-    RAISE EXCEPTION 'Failed to approve group: %', SQLERRM;
+    RAISE EXCEPTION 'Failed to decline group: %', SQLERRM;
 END;
 $$;
 
@@ -140,5 +123,5 @@ $$;
 -- - Caller ID must match the provided admin ID (prevents impersonation)
 -- - Caller must have 'church_admin' or 'superadmin' role
 -- - Caller's church_id must match the group's church_id (or caller is superadmin)
-GRANT EXECUTE ON FUNCTION approve_group_atomic(uuid, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION decline_group_atomic(uuid, uuid) TO authenticated;
 

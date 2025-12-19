@@ -438,14 +438,25 @@ export class GroupAdminService {
         };
       }
 
-      // Update the group status directly since the deny_group RPC is not available
-      const { error: denyError } = await supabase
-        .from('groups')
-        .update({ status: 'declined', updated_at: new Date().toISOString() })
-        .eq('id', groupId);
+      // Use atomic RPC function to decline group and remove leader membership
+      // This ensures both operations succeed or both fail, preventing inconsistent states
+      const { data: declineResult, error: declineError } = await supabase.rpc(
+        'decline_group_atomic',
+        {
+          p_group_id: groupId,
+          p_admin_id: adminId,
+        }
+      );
 
-      if (denyError) {
-        return { data: null, error: new Error(denyError.message) };
+      if (declineError) {
+        return { data: null, error: new Error(declineError.message) };
+      }
+
+      if (!declineResult || !declineResult.success) {
+        return {
+          data: null,
+          error: new Error('Failed to decline group atomically'),
+        };
       }
 
       // Fetch the updated group to return
