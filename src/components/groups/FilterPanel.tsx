@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  TextInput,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGroupFiltersStore } from '../../stores/groupFilters';
-import { Button, Checkbox } from '../ui';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../theme/provider/useTheme';
 
 interface FilterPanelProps {
   isVisible: boolean;
@@ -26,260 +26,327 @@ const MEETING_DAYS = [
   { label: 'Saturday', value: 'Saturday' },
 ];
 
-const GROUP_CATEGORIES = [
-  { label: 'Bible Study', value: 'bible-study' },
-  { label: 'Prayer Group', value: 'prayer' },
-  { label: 'Youth Group', value: 'youth' },
-  { label: "Women's Ministry", value: 'womens' },
-  { label: "Men's Ministry", value: 'mens' },
-  { label: 'Small Group', value: 'small-group' },
-  { label: 'Fellowship', value: 'fellowship' },
-  { label: 'Discipleship', value: 'discipleship' },
-];
-
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   isVisible,
   onClose,
 }) => {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const {
     filters,
     setMeetingDays,
-    setCategories,
-    setSearchQuery,
     setOnlyWithFriends,
+    setHideFullGroups,
     clearFilters,
   } = useGroupFiltersStore();
 
-  const [localSearchQuery, setLocalSearchQuery] = useState(filters.searchQuery);
+  // Temporary state that only applies when "Apply" is clicked
+  const [tempFilters, setTempFilters] = React.useState(filters);
+
+  // Sync temporary state when modal opens
+  React.useEffect(() => {
+    if (isVisible) {
+      setTempFilters(filters);
+    }
+  }, [isVisible, filters]);
+
+  // Calculate header height: safe area top + header height (60px) + margin (8px)
+  const headerHeight = insets.top + 60 + 8;
+
+  const styles = createStyles(theme, headerHeight);
+
+  const handleMeetingDayToggle = (day: string) => {
+    const newDays = tempFilters.meetingDays.includes(day)
+      ? tempFilters.meetingDays.filter((d) => d !== day)
+      : [...tempFilters.meetingDays, day];
+    setTempFilters({ ...tempFilters, meetingDays: newDays });
+  };
+
+  const handleOnlyWithFriendsToggle = () => {
+    setTempFilters({ ...tempFilters, onlyWithFriends: !tempFilters.onlyWithFriends });
+  };
+
+  const handleHideFullGroupsToggle = () => {
+    setTempFilters({ ...tempFilters, hideFullGroups: !tempFilters.hideFullGroups });
+  };
+
+  const handleReset = () => {
+    setTempFilters({
+      meetingDays: [],
+      searchQuery: '',
+      onlyWithFriends: false,
+      hideFullGroups: false,
+    });
+    clearFilters();
+  };
+
+  const handleApply = () => {
+    // Apply temporary filters to actual store
+    setMeetingDays(tempFilters.meetingDays);
+    setOnlyWithFriends(tempFilters.onlyWithFriends);
+    setHideFullGroups(tempFilters.hideFullGroups);
+    onClose();
+  };
 
   if (!isVisible) return null;
 
-  const handleMeetingDayToggle = (day: string) => {
-    const newDays = filters.meetingDays.includes(day)
-      ? filters.meetingDays.filter((d) => d !== day)
-      : [...filters.meetingDays, day];
-    setMeetingDays(newDays);
-  };
-
-  const handleCategoryToggle = (category: string) => {
-    const newCategories = filters.categories.includes(category)
-      ? filters.categories.filter((c) => c !== category)
-      : [...filters.categories, category];
-    setCategories(newCategories);
-  };
-
-  const handleSearchSubmit = () => {
-    setSearchQuery(localSearchQuery);
-  };
-
-  const handleClearFilters = () => {
-    clearFilters();
-    setLocalSearchQuery('');
-  };
-
-  const hasActiveFilters =
-    filters.meetingDays.length > 0 ||
-    filters.categories.length > 0 ||
-    filters.searchQuery.length > 0;
-
   return (
-    <View style={styles.overlay}>
-      <View style={styles.panel}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Filter Groups</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
+    <>
+      {/* Backdrop */}
+      <TouchableOpacity
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={onClose}
+      />
+      <View style={styles.container}>
+        <View style={styles.panelContent}>
+        {/* Close Button */}
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={onClose}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="close" size={24} color="#2C2235" />
+        </TouchableOpacity>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Search Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Search</Text>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search group titles and descriptions..."
-                value={localSearchQuery}
-                onChangeText={setLocalSearchQuery}
-                onSubmitEditing={handleSearchSubmit}
-                returnKeyType="search"
-              />
-              <TouchableOpacity
-                style={styles.searchButton}
-                onPress={handleSearchSubmit}
-              >
-                <Ionicons name="search-outline" size={16} color="#666" />
-              </TouchableOpacity>
-            </View>
-          </View>
+        {/* Title */}
+        <Text style={styles.title}>Filter groups</Text>
 
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Meeting Days Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Meeting Days</Text>
-            <View style={styles.checkboxGrid}>
-              {MEETING_DAYS.map((day) => (
-                <View key={day.value} style={styles.checkboxItem}>
-                  <Checkbox
-                    checked={filters.meetingDays.includes(day.value)}
+            <Text style={styles.sectionTitle}>Meeting days</Text>
+            <View style={styles.buttonGrid}>
+              {MEETING_DAYS.map((day) => {
+                const isActive = tempFilters.meetingDays.includes(day.value);
+                return (
+                  <TouchableOpacity
+                    key={day.value}
+                    style={[
+                      styles.filterButton,
+                      isActive && styles.filterButtonActive,
+                    ]}
                     onPress={() => handleMeetingDayToggle(day.value)}
-                    label={day.label}
-                  />
-                </View>
-              ))}
+                  >
+                    <Text
+                      style={[
+                        styles.filterButtonText,
+                        isActive && styles.filterButtonTextActive,
+                      ]}
+                    >
+                      {day.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
           {/* Social Filters */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Social</Text>
-            <View style={styles.checkboxGrid}>
-              <View style={styles.checkboxItem}>
-                <Checkbox
-                  checked={filters.onlyWithFriends}
-                  onPress={() => setOnlyWithFriends(!filters.onlyWithFriends)}
-                  label="Only groups with my friends"
-                />
-              </View>
+            <View style={styles.buttonGrid}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  tempFilters.onlyWithFriends && styles.filterButtonActive,
+                ]}
+                onPress={handleOnlyWithFriendsToggle}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    tempFilters.onlyWithFriends && styles.filterButtonTextActive,
+                  ]}
+                >
+                  Only groups with my friends
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          {/* Categories Section */}
+          {/* Availability Filters */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Group Types</Text>
-            <View style={styles.checkboxGrid}>
-              {GROUP_CATEGORIES.map((category) => (
-                <View key={category.value} style={styles.checkboxItem}>
-                  <Checkbox
-                    checked={filters.categories.includes(category.value)}
-                    onPress={() => handleCategoryToggle(category.value)}
-                    label={category.label}
-                  />
-                </View>
-              ))}
+            <Text style={styles.sectionTitle}>Availability</Text>
+            <View style={styles.buttonGrid}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  tempFilters.hideFullGroups && styles.filterButtonActive,
+                ]}
+                onPress={handleHideFullGroupsToggle}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    tempFilters.hideFullGroups && styles.filterButtonTextActive,
+                  ]}
+                >
+                  Show only available groups
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
-          {hasActiveFilters && (
-            <Button
-              title="Clear All Filters"
-              onPress={handleClearFilters}
-              variant="secondary"
-              style={styles.clearButton}
-            />
-          )}
-          <Button
-            title="Apply Filters"
-            onPress={onClose}
-            variant="primary"
-            style={styles.applyButton}
-          />
+        {/* Action Buttons */}
+        <View style={styles.footerActions}>
+          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+            <Text style={styles.applyButtonText}>Apply</Text>
+          </TouchableOpacity>
+        </View>
         </View>
       </View>
-    </View>
+    </>
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 1000,
-  },
-  panel: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: '85%',
-    maxWidth: 400,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: -2,
-      height: 0,
+const createStyles = (theme: any, headerHeight: number) =>
+  StyleSheet.create({
+    backdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 999,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeText: {
-    fontSize: 18,
-    color: '#666',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 12,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    backgroundColor: '#f8f9fa',
-  },
-  searchInput: {
-    flex: 1,
-    padding: 12,
-    fontSize: 16,
-    color: '#1a1a1a',
-  },
-  searchButton: {
-    padding: 12,
-    borderLeftWidth: 1,
-    borderLeftColor: '#ddd',
-  },
-  searchButtonText: {
-    fontSize: 16,
-  },
-  checkboxGrid: {
-    gap: 8,
-  },
-  checkboxItem: {
-    marginBottom: 4,
-  },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    gap: 8,
-  },
-  clearButton: {
-    marginBottom: 8,
-  },
-  applyButton: {
-    // Primary button styles will be applied from Button component
-  },
-});
+    container: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1000,
+      pointerEvents: 'box-none',
+    },
+    panelContent: {
+      marginHorizontal: 16, // Same as sort dropdown
+      marginTop: headerHeight, // Position below header at same height as sort dropdown
+      marginBottom: 8,
+      paddingHorizontal: 25, // Figma: 25px
+      paddingTop: 21, // Figma: 21px
+      paddingBottom: 20,
+      backgroundColor: '#FFFFFF',
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: '#EAEAEA',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 4,
+      maxHeight: '80%',
+    },
+    closeButton: {
+      position: 'absolute',
+      top: 17, // Figma: 17px
+      right: 17, // Figma: 17px
+      width: 24,
+      height: 24,
+      zIndex: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: 20, // Figma: 20px
+      fontWeight: '800', // ExtraBold from Figma
+      color: '#2C2235',
+      letterSpacing: -0.4, // Figma: -0.4px
+      lineHeight: 22,
+      marginBottom: 29, // Figma spacing
+      fontFamily: theme.typography.fontFamily.bold,
+    },
+    scrollView: {
+      maxHeight: 400,
+    },
+    scrollContent: {
+      paddingBottom: 16,
+    },
+    section: {
+      marginBottom: 20, // Figma spacing
+    },
+    sectionTitle: {
+      fontSize: 14, // Figma: 14px
+      fontWeight: '700', // Bold from Figma
+      color: '#2C2235',
+      letterSpacing: -0.28, // Figma: -0.28px
+      lineHeight: 16,
+      marginBottom: 8, // Figma spacing
+      fontFamily: theme.typography.fontFamily.bold,
+    },
+    buttonGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    filterButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: '#F5F3F5', // Unselected from Figma
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 28,
+    },
+    filterButtonActive: {
+      backgroundColor: 'rgba(255, 0, 131, 0.1)', // Light pink from Figma
+    },
+    filterButtonText: {
+      fontSize: 14, // Figma: 14px
+      fontWeight: '500', // Medium from Figma
+      color: '#2C2235',
+      fontFamily: theme.typography.fontFamily.medium,
+      lineHeight: 14,
+      letterSpacing: 0,
+    },
+    filterButtonTextActive: {
+      fontWeight: '700', // Bold when active (from Figma)
+      fontFamily: theme.typography.fontFamily.bold,
+    },
+    footerActions: {
+      flexDirection: 'row',
+      gap: 4, // 8px gap between buttons
+      justifyContent: 'space-between', // Space buttons apart
+      alignItems: 'center',
+    },
+    resetButton: {
+      width: 120, // Figma: 120px
+      borderRadius: 21, // Figma: 21px (100px rounded)
+      height: 42, // Figma: 42px
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#EAEAEA', // Figma: #eaeaea
+    },
+    resetButtonText: {
+      fontSize: 16, // Figma: 16px
+      fontWeight: '700', // Bold from Figma
+      color: '#2C2235',
+      fontFamily: theme.typography.fontFamily.bold,
+      textAlign: 'center',
+    },
+    applyButton: {
+      width: 120, // Figma: 120px
+      backgroundColor: '#2C2235', // Dark purple from Figma
+      borderRadius: 21, // Figma: 21px (100px rounded)
+      height: 42, // Figma: 42px
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    applyButtonText: {
+      fontSize: 16, // Figma: 16px
+      fontWeight: '700', // Bold from Figma
+      color: '#FFFFFF',
+      fontFamily: theme.typography.fontFamily.bold,
+      textAlign: 'center',
+    },
+  });

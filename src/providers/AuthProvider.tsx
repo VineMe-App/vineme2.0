@@ -15,21 +15,37 @@ interface AuthContextType {
   needsOnboarding: boolean;
 
   // Actions - password authentication removed
-  signUpWithPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
-  signInWithPhone: (phone: string) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
-  signInWithEmail: (email: string) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
-  verifyOtp: (phoneOrEmail: string, code: string, type: 'sms' | 'email') => Promise<{ success: boolean; error?: string; user?: User }>;
-  linkEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
+  signUpWithPhone: (
+    phone: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  signInWithPhone: (
+    phone: string
+  ) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
+  signInWithEmail: (
+    email: string
+  ) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
+  verifyOtp: (
+    phoneOrEmail: string,
+    code: string,
+    type: 'sms' | 'email'
+  ) => Promise<{ success: boolean; error?: string; user?: User }>;
+  linkEmail: (
+    email: string,
+    options?: { emailRedirectTo?: string }
+  ) => Promise<{ success: boolean; error?: string }>;
   linkPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   loadUserProfile: () => Promise<void>;
   updateUserProfile: (updates: Partial<DatabaseUser>) => Promise<boolean>;
   createUserProfile: (userData: {
-    name: string;
+    first_name?: string;
+    last_name?: string;
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }) => Promise<boolean>;
   clearError: () => void;
 }
@@ -53,7 +69,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Computed values
   const isAuthenticated = !!authStore.user;
   const hasProfile = !!authStore.userProfile;
-  const needsOnboarding = isAuthenticated && (!hasProfile || authStore.userProfile?.onboarding_complete !== true);
+  const needsOnboarding =
+    isAuthenticated &&
+    (!hasProfile || authStore.userProfile?.onboarding_complete !== true);
 
   const contextValue: AuthContextType = {
     // State
@@ -81,9 +99,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 }
 

@@ -12,6 +12,7 @@ export interface Coordinates {
 export interface ClusterPoint extends Coordinates {
   id: string;
   data: GroupWithDetails;
+  category?: 'service' | 'church' | 'outside';
 }
 
 export interface Cluster {
@@ -19,6 +20,7 @@ export interface Cluster {
   coordinates: Coordinates;
   points: ClusterPoint[];
   count: number;
+  category?: 'service' | 'church' | 'outside';
 }
 
 export interface ClusteringOptions {
@@ -64,27 +66,59 @@ export class MapClusterer {
     bbox: [number, number, number, number], // [west, south, east, north]
     zoom: number
   ): (Cluster | ClusterPoint)[] {
+    // For zoom levels 11-13 where clusters frequently split/combine (18->9,8,1),
+    // use a larger buffer but still rely on bounds filtering to avoid reprocessing
+    // the entire dataset on every pan.
     const minLng = bbox[0];
     const minLat = bbox[1];
     const maxLng = bbox[2];
     const maxLat = bbox[3];
 
-    // Filter points within bounds
-    const pointsInBounds = this.points.filter(
-      (point) =>
-        point.longitude >= minLng &&
-        point.longitude <= maxLng &&
-        point.latitude >= minLat &&
-        point.latitude <= maxLat
-    );
+    const lngRange = maxLng - minLng;
+    const latRange = maxLat - minLat;
+
+    // Use a very large buffer multiplier to include groups well outside the viewport
+    const bufferMultiplier = zoom >= 11 && zoom <= 13 ? 3.0 : 2.0; // Extra padding mid-zoom
+    const minBuffer = zoom >= 11 && zoom <= 13 ? 0.2 : 0.1; // Ensure generous bounds mid-zoom
+
+    const lngBuffer = Math.max(lngRange * bufferMultiplier, minBuffer);
+    const latBuffer = Math.max(latRange * bufferMultiplier, minBuffer);
+
+    // Filter points within bounds (with buffer to prevent edge-case filtering)
+    // Handle longitude wrapping for coordinates near -180/180
+    const pointsInBounds = this.points.filter((point) => {
+      // Check latitude with buffer
+      const inLatBounds = point.latitude >= minLat - latBuffer && point.latitude <= maxLat + latBuffer;
+      
+      if (!inLatBounds) return false;
+      
+      // Check longitude with buffer, handling potential wrapping
+      // For normal cases (not crossing date line)
+      if (minLng <= maxLng) {
+        return point.longitude >= minLng - lngBuffer && point.longitude <= maxLng + lngBuffer;
+      }
+      // For cases crossing date line (west > east), check both sides
+      return (
+        point.longitude >= minLng - lngBuffer ||
+        point.longitude <= maxLng + lngBuffer
+      );
+    });
+
+    const midZoom = zoom >= 11 && zoom <= 13;
+    const pointsToCluster = midZoom && pointsInBounds.length === 0 ? this.points : pointsInBounds;
 
     // If zoom is high enough, return individual points
     if (zoom >= this.options.maxZoom) {
-      return pointsInBounds;
+      return pointsToCluster;
+    }
+
+    if (midZoom) {
+      // Cluster with bounded set to avoid O(N^2) work while keeping generous padding
+      return this.clusterPoints(pointsToCluster, zoom);
     }
 
     // Perform clustering
-    return this.clusterPoints(pointsInBounds, zoom);
+    return this.clusterPoints(pointsToCluster, zoom);
   }
 
   /**
@@ -100,6 +134,7 @@ export class MapClusterer {
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
       data: group,
+      category: (group as any).__category,
     };
   }
 
@@ -138,22 +173,28 @@ export class MapClusterer {
 
   /**
    * Cluster points using simple distance-based clustering
+   * Split clusters by category to ensure different colored groups don't cluster together
    */
   private clusterPoints(
     points: ClusterPoint[],
     zoom: number
   ): (Cluster | ClusterPoint)[] {
+    if (points.length === 0) return [];
+    
     const clusters: (Cluster | ClusterPoint)[] = [];
     const processed = new Set<string>();
     const clusterRadius = this.getClusterRadius(zoom);
 
+    // Process all points to ensure none are lost
     for (const point of points) {
       if (processed.has(point.id)) continue;
 
-      // Find nearby points
+      // Find nearby points WITH THE SAME CATEGORY
       const nearbyPoints = points.filter(
         (p) =>
-          !processed.has(p.id) && this.getDistance(point, p) <= clusterRadius
+          !processed.has(p.id) &&
+          this.getDistance(point, p) <= clusterRadius &&
+          p.category === point.category // Only cluster same category
       );
 
       if (nearbyPoints.length === 1) {
@@ -161,16 +202,29 @@ export class MapClusterer {
         clusters.push(point);
         processed.add(point.id);
       } else {
-        // Create cluster
+        // Create cluster with category
         const cluster: Cluster = {
           id: `cluster_${point.id}_${nearbyPoints.length}`,
           coordinates: this.getCenterPoint(nearbyPoints),
           points: nearbyPoints,
           count: nearbyPoints.length,
+          category: point.category, // Assign category to cluster
         };
 
         clusters.push(cluster);
         nearbyPoints.forEach((p) => processed.add(p.id));
+      }
+    }
+
+    // Safety check: ensure all points were processed
+    if (processed.size !== points.length) {
+      // This should never happen, but if it does, add remaining points as individual markers
+      const unprocessed = points.filter((p) => !processed.has(p.id));
+      if (unprocessed.length > 0) {
+        console.warn(
+          `[MapClusterer] ${unprocessed.length} points were not clustered, adding as individual markers`
+        );
+        clusters.push(...unprocessed);
       }
     }
 
@@ -249,10 +303,10 @@ export class MapClusterer {
  * Viewport-based optimization for map rendering
  */
 export class MapViewportOptimizer {
-  private static readonly VIEWPORT_PADDING = 0.1; // 10% padding around viewport
+  private static readonly BASE_VIEWPORT_PADDING = 0.1; // 10% base padding around viewport
 
   /**
-   * Calculate optimal bounds with padding
+   * Calculate optimal bounds with adaptive padding (more padding when zoomed out and when zoomed in)
    */
   static getOptimalBounds(viewport: {
     latitude: number;
@@ -260,8 +314,25 @@ export class MapViewportOptimizer {
     latitudeDelta: number;
     longitudeDelta: number;
   }): [number, number, number, number] {
-    const latPadding = viewport.latitudeDelta * this.VIEWPORT_PADDING;
-    const lngPadding = viewport.longitudeDelta * this.VIEWPORT_PADDING;
+    // Increase padding both when zoomed out AND when zoomed in
+    // When zoomed out (large delta), need padding to include more groups
+    // When zoomed in (small delta), need padding to prevent precision issues from filtering out markers
+    const zoomLevel = this.getZoomLevel(viewport.latitudeDelta);
+    
+    // Use very generous padding to ensure all visible groups are included in bounds
+    // This prevents groups from disappearing when clusters split or combine (especially on iOS)
+    let paddingMultiplier: number;
+    if (zoomLevel < 10) {
+      // Very zoomed out - use large padding
+      paddingMultiplier = 0.5;
+    } else {
+      // For all other zoom levels, use very generous padding (150% = 2.5x viewport)
+      // This ensures groups don't disappear when clusters change, especially during splits
+      paddingMultiplier = 1.5; // 150% padding = bounds are 2.5x the viewport size
+    }
+    
+    const latPadding = viewport.latitudeDelta * paddingMultiplier;
+    const lngPadding = viewport.longitudeDelta * paddingMultiplier;
 
     return [
       viewport.longitude - viewport.longitudeDelta / 2 - lngPadding, // west

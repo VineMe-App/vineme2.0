@@ -1,25 +1,27 @@
 import { supabase } from './supabase';
 import { authService } from './auth';
-import { emailVerificationService } from './emailVerification';
+import { triggerReferralAcceptedNotification } from './notifications';
 import type {
-  GroupReferral,
-  GeneralReferral,
   GroupReferralWithDetails,
   GeneralReferralWithDetails,
 } from '../types/database';
-import { handleSupabaseError, retryWithBackoff, ValidationError } from '../utils/errorHandling';
+import {
+  handleSupabaseError,
+  retryWithBackoff,
+  ValidationError,
+} from '../utils/errorHandling';
 import { ReferralDatabaseUtils } from './referralDatabase';
 import {
   validateServerReferralData,
   sanitizeReferralInput,
   referralRateLimiter,
   createReferralErrorMessage,
-  type ReferralFormData,
 } from '../utils/referralValidation';
+import { getFullName } from '../utils/name';
 
 export interface CreateReferralData {
   email: string;
-  phone: string;
+  phone?: string;
   note: string;
   firstName?: string;
   lastName?: string;
@@ -28,7 +30,13 @@ export interface CreateReferralData {
 }
 
 export interface ReferralError {
-  type: 'validation' | 'rate_limit' | 'duplicate' | 'network' | 'email' | 'unknown';
+  type:
+    | 'validation'
+    | 'rate_limit'
+    | 'duplicate'
+    | 'network'
+    | 'email'
+    | 'unknown';
   message: string;
   field?: string;
   retryable: boolean;
@@ -38,6 +46,9 @@ export interface ReferralError {
 export interface ReferralResponse {
   success: boolean;
   userId?: string;
+  referralId?: string;
+  membershipCreated?: boolean;
+  reusedExistingUser?: boolean;
   error?: string;
   errorDetails?: ReferralError;
   warnings?: Record<string, string>;
@@ -46,6 +57,14 @@ export interface ReferralResponse {
 export interface ReferralServiceResponse<T = any> {
   data: T | null;
   error: Error | null;
+}
+
+interface CreateReferredUserResult {
+  userId: string | null;
+  referralId?: string | null;
+  warnings?: string[];
+  reusedExistingUser?: boolean;
+  membershipCreated?: boolean;
 }
 
 export class ReferralService {
@@ -57,11 +76,42 @@ export class ReferralService {
    */
   async createReferral(data: CreateReferralData): Promise<ReferralResponse> {
     try {
+      console.log(
+        'createReferral called with data:',
+        JSON.stringify(data, null, 2)
+      );
+
       // Sanitize input data
       const sanitizedData = sanitizeReferralInput(data);
 
-      // Check rate limiting first
-      const rateLimitCheck = referralRateLimiter.canMakeReferral(data.referrerId);
+      // Ensure we have a referrerId (from caller or current session)
+      let effectiveReferrerId = sanitizedData.referrerId;
+      if (!effectiveReferrerId) {
+        const { user } = await authService.validateAndRefreshSession();
+        if (!user?.id) {
+          return {
+            success: false,
+            error: 'Referrer ID is required',
+            errorDetails: {
+              type: 'validation',
+              message: 'Referrer ID is required',
+              field: 'referrerId',
+              retryable: false,
+            },
+          };
+        }
+        effectiveReferrerId = user.id;
+      }
+
+      const referralData = {
+        ...sanitizedData,
+        referrerId: effectiveReferrerId,
+      };
+
+      // Check rate limiting with the resolved referrer
+      const rateLimitCheck = referralRateLimiter.canMakeReferral(
+        effectiveReferrerId
+      );
       if (!rateLimitCheck.allowed) {
         return {
           success: false,
@@ -81,8 +131,8 @@ export class ReferralService {
 
       // Comprehensive server-side validation
       const validation = validateServerReferralData(
-        sanitizedData,
-        data.referrerId,
+        referralData,
+        effectiveReferrerId,
         data.groupId
       );
 
@@ -107,8 +157,8 @@ export class ReferralService {
 
       // Check for duplicate referrals
       const duplicateCheck = await this.checkForDuplicateReferral(
-        sanitizedData.email,
-        data.referrerId,
+        referralData.email,
+        effectiveReferrerId,
         data.groupId
       );
 
@@ -130,27 +180,40 @@ export class ReferralService {
       }
 
       // Record the referral attempt for rate limiting
-      referralRateLimiter.recordReferral(data.referrerId);
+      referralRateLimiter.recordReferral(effectiveReferrerId);
 
       // Route to appropriate referral type with retry logic
-      const result = await retryWithBackoff(async () => {
-        if (data.groupId) {
-          return await this.createGroupReferral(sanitizedData);
-        } else {
-          return await this.createGeneralReferral(sanitizedData);
-        }
-      }, 2, 1000);
+      const result = await retryWithBackoff(
+        async () => {
+          if (data.groupId) {
+            return await this.createGroupReferral({
+              ...sanitizedData,
+              referrerId: effectiveReferrerId,
+            });
+          } else {
+            return await this.createGeneralReferral({
+              ...sanitizedData,
+              referrerId: effectiveReferrerId,
+            });
+          }
+        },
+        2,
+        1000
+      );
 
       // Add warnings if any
       if (validation.warnings) {
-        result.warnings = validation.warnings;
+        result.warnings = {
+          ...(result.warnings || {}),
+          ...validation.warnings,
+        };
       }
 
       return result;
     } catch (error) {
       const errorDetails = createReferralErrorMessage(error);
       const appError = handleSupabaseError(error as Error);
-      
+
       return {
         success: false,
         error: errorDetails.message,
@@ -171,17 +234,52 @@ export class ReferralService {
     data: CreateReferralData
   ): Promise<ReferralResponse> {
     try {
-      // Create user account first
-      const userId = await this.createUserAccount(data);
-      if (!userId) {
+      // Create user account via secure Edge Function
+      const accountResult = await this.createUserAccountViaEdgeFunction(data);
+      if (!accountResult || !accountResult.userId) {
         return { success: false, error: 'Failed to create user account' };
       }
 
-      // Create general referral record
-      await this.createGeneralReferralRecord(userId, data);
+      const userId = accountResult.userId;
+      const warnings = this.formatWarnings(accountResult.warnings);
 
-      return { success: true, userId };
-    } catch (error) {
+      // Trigger referral accepted notification to referrer
+      try {
+        // Try to obtain referred user's name
+        const { data: referredUser } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .eq('id', userId)
+          .single();
+        await triggerReferralAcceptedNotification({
+          referrerId: data.referrerId,
+          referredUserId: userId,
+          referredUserName:
+            getFullName(referredUser) ||
+            data.firstName ||
+            data.email.split('@')[0],
+        });
+      } catch (e) {
+        if (__DEV__) console.warn('Referral accepted notification failed', e);
+      }
+
+      return {
+        success: true,
+        userId,
+        referralId: accountResult.referralId ?? undefined,
+        warnings,
+        reusedExistingUser: accountResult.reusedExistingUser,
+      };
+    } catch (error: any) {
+      // Handle duplicate referral error
+      if (error?.errorCode === 'DUPLICATE_REFERRAL') {
+        return {
+          success: false,
+          error: error.message || 'This person has already been referred by you.',
+          errorDetails: error.errorDetails,
+        };
+      }
+      
       const appError = handleSupabaseError(error as Error);
       return {
         success: false,
@@ -197,30 +295,60 @@ export class ReferralService {
     data: CreateReferralData
   ): Promise<ReferralResponse> {
     try {
-      if (!data.groupId) {
-        return {
-          success: false,
-          error: 'Group ID is required for group referrals',
-        };
+      // Verify group exists when provided
+      if (data.groupId) {
+        const groupExists = await this.verifyGroupExists(data.groupId);
+        if (!groupExists) {
+          return { success: false, error: 'Group not found' };
+        }
       }
 
-      // Verify group exists
-      const groupExists = await this.verifyGroupExists(data.groupId);
-      if (!groupExists) {
-        return { success: false, error: 'Group not found' };
-      }
-
-      // Create user account first
-      const userId = await this.createUserAccount(data);
-      if (!userId) {
+      // Create user account via secure Edge Function
+      const accountResult = await this.createUserAccountViaEdgeFunction(data);
+      if (!accountResult || !accountResult.userId) {
         return { success: false, error: 'Failed to create user account' };
       }
 
-      // Create group referral record
-      await this.createGroupReferralRecord(userId, data);
+      const userId = accountResult.userId;
+      const warnings = this.formatWarnings(accountResult.warnings);
 
-      return { success: true, userId };
-    } catch (error) {
+      // Trigger referral accepted notification to referrer
+      try {
+        const { data: referredUser } = await supabase
+          .from('users')
+          .select('id, first_name, last_name')
+          .eq('id', userId)
+          .single();
+        await triggerReferralAcceptedNotification({
+          referrerId: data.referrerId,
+          referredUserId: userId,
+          referredUserName:
+            getFullName(referredUser) ||
+            data.firstName ||
+            data.email.split('@')[0],
+        });
+      } catch (e) {
+        if (__DEV__) console.warn('Referral accepted notification failed', e);
+      }
+
+      return {
+        success: true,
+        userId,
+        referralId: accountResult.referralId ?? undefined,
+        membershipCreated: accountResult.membershipCreated,
+        warnings,
+        reusedExistingUser: accountResult.reusedExistingUser,
+      };
+    } catch (error: any) {
+      // Handle duplicate referral error
+      if (error?.errorCode === 'DUPLICATE_REFERRAL') {
+        return {
+          success: false,
+          error: error.message || 'This person has already been referred to this group by you.',
+          errorDetails: error.errorDetails,
+        };
+      }
+      
       const appError = handleSupabaseError(error as Error);
       return {
         success: false,
@@ -239,40 +367,45 @@ export class ReferralService {
     }>
   > {
     try {
-      // Get group referrals
-      const { data: groupReferrals, error: groupError } = await supabase
-        .from('group_referrals')
+      // Get all referrals made by this user from the unified referrals table
+      const { data: allReferrals, error: referralsError } = await supabase
+        .from('referrals')
         .select(
           `
           *,
           group:groups(*),
-          referrer:users!group_referrals_referrer_id_fkey(id, name),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
+          referrer:users!referrals_referred_by_user_id_fkey(id, first_name, last_name),
+          referred_user:users!referrals_referred_user_id_fkey(id, first_name, last_name)
         `
         )
-        .eq('referrer_id', userId)
+        .eq('referred_by_user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (groupError) {
-        return { data: null, error: new Error(groupError.message) };
+      if (referralsError) {
+        return { data: null, error: new Error(referralsError.message) };
       }
 
-      // Get general referrals
-      const { data: generalReferrals, error: generalError } = await supabase
-        .from('general_referrals')
-        .select(
-          `
-          *,
-          referrer:users!general_referrals_referrer_id_fkey(id, name),
-          referred_user:users!general_referrals_referred_user_id_fkey(id, name)
-        `
-        )
-        .eq('referrer_id', userId)
-        .order('created_at', { ascending: false });
+      // Separate into group and general referrals
+      const normalizeReferralUser = (user: any) =>
+        user
+          ? {
+              ...user,
+              name: getFullName(user),
+            }
+          : user;
 
-      if (generalError) {
-        return { data: null, error: new Error(generalError.message) };
-      }
+      const hydratedReferrals = (allReferrals || []).map((ref) => ({
+        ...ref,
+        referrer: normalizeReferralUser(ref.referrer),
+        referred_user: normalizeReferralUser(ref.referred_user),
+      }));
+
+      const groupReferrals = hydratedReferrals.filter(
+        (ref) => ref.group_id !== null
+      );
+      const generalReferrals = hydratedReferrals.filter(
+        (ref) => ref.group_id === null
+      );
 
       return {
         data: {
@@ -298,13 +431,13 @@ export class ReferralService {
   ): Promise<ReferralServiceResponse<GroupReferralWithDetails[]>> {
     try {
       const { data, error } = await supabase
-        .from('group_referrals')
+        .from('referrals')
         .select(
           `
           *,
           group:groups(*),
-          referrer:users!group_referrals_referrer_id_fkey(id, name),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
+          referrer:users!referrals_referred_by_user_id_fkey(id, first_name, last_name),
+          referred_user:users!referrals_referred_user_id_fkey(id, first_name, last_name)
         `
         )
         .eq('group_id', groupId)
@@ -314,7 +447,21 @@ export class ReferralService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const normalizeReferralUser = (user: any) =>
+        user
+          ? {
+              ...user,
+              name: getFullName(user),
+            }
+          : user;
+
+      const referralsWithNames = (data || []).map((ref) => ({
+        ...ref,
+        referrer: normalizeReferralUser(ref.referrer),
+        referred_user: normalizeReferralUser(ref.referred_user),
+      }));
+
+      return { data: referralsWithNames, error: null };
     } catch (error) {
       return {
         data: null,
@@ -326,133 +473,107 @@ export class ReferralService {
     }
   }
 
-  /**
-   * Private helper: Create user account for referred person
-   * Requirement 5.1: Send verification email to referred person's email address
-   * Requirement 5.2: Include "verify email" link for account activation
-   */
-  private async createUserAccount(
+  private async createUserAccountViaEdgeFunction(
     data: CreateReferralData
-  ): Promise<string | null> {
+  ): Promise<CreateReferredUserResult | null> {
     try {
-      // Use the enhanced auth service to create referred user
-      const result = await authService.createReferredUser({
+      const requestBody = {
         email: data.email,
         phone: data.phone,
         firstName: data.firstName,
         lastName: data.lastName,
         note: data.note,
         referrerId: data.referrerId,
-      });
+        groupId: data.groupId,
+      };
 
-      if (result.error || !result.userId) {
-        console.error('Failed to create referred user:', result.error);
+      console.log(
+        'Sending to edge function:',
+        JSON.stringify(requestBody, null, 2)
+      );
+
+      // Invoke edge function - authentication is handled server-side via Supabase session
+      const { data: resp, error } = await supabase.functions.invoke(
+        'create-referred-user',
+        {
+          body: requestBody,
+        }
+      );
+
+      if (error) {
+        console.error('Edge function error creating referred user:', error);
         return null;
       }
 
-      // Send verification email using the dedicated email verification service
-      try {
-        const emailResult = await emailVerificationService.sendVerificationEmail(
-          data.email,
-          true // Mark as referral email
+      // Parse the response if it's a string
+      let parsedResponse = resp;
+      if (typeof resp === 'string') {
+        try {
+          parsedResponse = JSON.parse(resp);
+        } catch (e) {
+          console.error('Failed to parse edge function response:', e);
+          return null;
+        }
+      }
+
+      const result = parsedResponse as {
+        ok?: boolean;
+        userId?: string;
+        referralId?: string;
+        warnings?: string[];
+        warning?: string;
+        reusedExistingUser?: boolean;
+        membershipCreated?: boolean;
+        error?: string;
+        errorCode?: string;
+        message?: string;
+      };
+
+      if (!result?.ok) {
+        console.error(
+          'Edge function reported failure creating referred user:',
+          result?.error
         );
-
-        if (!emailResult.success) {
-          console.error('Email verification failed:', emailResult.error);
-          // Log the error but don't fail the referral creation
-          // The user account was created successfully
-        } else {
-          console.log(`Verification email sent successfully to ${data.email}`);
+        console.error(
+          'Full edge function response:',
+          JSON.stringify(result, null, 2)
+        );
+        
+        // Check for duplicate referral error
+        if (result?.errorCode === 'DUPLICATE_REFERRAL' || result?.error === 'DUPLICATE_REFERRAL') {
+          const error = new Error(
+            result?.message || 'This person has already been referred to this group by you.'
+          );
+          (error as any).errorCode = 'DUPLICATE_REFERRAL';
+          (error as any).errorDetails = {
+            type: 'duplicate',
+            message: result?.message || 'This person has already been referred to this group by you.',
+            retryable: false,
+            suggestions: [
+              'Check if they already have an account',
+              'Try referring them to a different group',
+              'Contact them directly to help with their account',
+            ],
+          };
+          throw error;
         }
-      } catch (emailError) {
-        console.error('Error sending verification email:', emailError);
-        // Don't fail the referral creation due to email issues
+        
+        return null;
       }
 
-      return result.userId;
-    } catch (error) {
-      console.error('Error creating user account:', error);
+      const warnings =
+        result.warnings || (result.warning ? [result.warning] : undefined);
+
+      return {
+        userId: result.userId ?? null,
+        referralId: result.referralId ?? null,
+        warnings,
+        reusedExistingUser: result.reusedExistingUser,
+        membershipCreated: result.membershipCreated,
+      };
+    } catch (e) {
+      console.error('Error calling create-referred-user function:', e);
       return null;
-    }
-  }
-
-  /**
-   * Private helper: Create general referral record
-   * Requirement 6.1: Store referrer's ID and referral details
-   * Requirement 6.3: Timestamp tracking for referral creation
-   */
-  private async createGeneralReferralRecord(
-    userId: string,
-    data: CreateReferralData
-  ): Promise<void> {
-    const now = new Date().toISOString();
-    
-    const { error } = await supabase.from('general_referrals').insert({
-      referrer_id: data.referrerId,
-      referred_user_id: userId,
-      note: data.note || null, // Explicitly handle empty notes
-      created_at: now,
-      updated_at: now,
-    });
-
-    if (error) {
-      // Handle specific constraint violations
-      if (error.code === '23505') { // Unique constraint violation
-        throw new Error('This user has already been referred by you');
-      } else if (error.code === '23503') { // Foreign key constraint violation
-        throw new Error('Invalid referrer or user reference');
-      } else if (error.code === '23514') { // Check constraint violation
-        throw new Error('Cannot refer yourself');
-      }
-      
-      throw new Error(
-        `Failed to create general referral record: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * Private helper: Create group referral record
-   * Requirement 6.2: Store referrer's ID, group ID, and referral details in group_referrals table
-   * Requirement 6.3: Timestamp tracking for referral creation
-   * Requirement 6.5: Ensure data integrity and proper relationships
-   */
-  private async createGroupReferralRecord(
-    userId: string,
-    data: CreateReferralData
-  ): Promise<void> {
-    if (!data.groupId) {
-      throw new Error('Group ID is required for group referral record');
-    }
-
-    const now = new Date().toISOString();
-
-    const { error } = await supabase.from('group_referrals').insert({
-      group_id: data.groupId,
-      referrer_id: data.referrerId,
-      referred_user_id: userId,
-      note: data.note || null, // Explicitly handle empty notes
-      created_at: now,
-      updated_at: now,
-    });
-
-    if (error) {
-      // Handle specific constraint violations
-      if (error.code === '23505') { // Unique constraint violation
-        throw new Error('This user has already been referred to this group by you');
-      } else if (error.code === '23503') { // Foreign key constraint violation
-        if (error.message.includes('group_id')) {
-          throw new Error('Group not found or has been deleted');
-        } else {
-          throw new Error('Invalid referrer or user reference');
-        }
-      } else if (error.code === '23514') { // Check constraint violation
-        throw new Error('Cannot refer yourself');
-      }
-      
-      throw new Error(
-        `Failed to create group referral record: ${error.message}`
-      );
     }
   }
 
@@ -461,79 +582,23 @@ export class ReferralService {
    * Requirement 4.5: Add spam protection for referral submissions
    */
   private async checkForDuplicateReferral(
-    email: string,
-    referrerId: string,
-    groupId?: string
+    _email: string,
+    _referrerId: string,
+    _groupId?: string
   ): Promise<{ isDuplicate: boolean; message: string }> {
-    try {
-      // Check if user already exists with this email
-      // public.users no longer stores email; rely on auth to detect existing users by email
-      const { data: existingUser, error: userError } = await supabase.auth.admin.listUsers({
-        page: 1,
-        perPage: 1,
-        email: email.toLowerCase(),
-      }) as any;
+    // Client cannot safely call Admin API; rely on createUser step to surface duplicates.
+    // If the auth user already exists, the create step will error and we convert to a user-friendly message.
+    return { isDuplicate: false, message: '' };
+  }
 
-      if (userError && userError.code !== 'PGRST116') {
-        // Error other than "no rows found"
-        throw userError;
-      }
-
-      if (existingUser) {
-        // User exists, check if they were already referred by this person
-        if (groupId) {
-          // Check group referrals
-          const { data: groupReferral, error: groupRefError } = await supabase
-            .from('group_referrals')
-            .select('id')
-            .eq('referred_user_id', existingUser.id)
-            .eq('referrer_id', referrerId)
-            .eq('group_id', groupId)
-            .single();
-
-          if (groupRefError && groupRefError.code !== 'PGRST116') {
-            throw groupRefError;
-          }
-
-          if (groupReferral) {
-            return {
-              isDuplicate: true,
-              message: 'You have already referred this person to this group',
-            };
-          }
-        } else {
-          // Check general referrals
-          const { data: generalReferral, error: generalRefError } = await supabase
-            .from('general_referrals')
-            .select('id')
-            .eq('referred_user_id', existingUser.id)
-            .eq('referrer_id', referrerId)
-            .single();
-
-          if (generalRefError && generalRefError.code !== 'PGRST116') {
-            throw generalRefError;
-          }
-
-          if (generalReferral) {
-            return {
-              isDuplicate: true,
-              message: 'You have already made a general referral for this person',
-            };
-          }
-        }
-
-        return {
-          isDuplicate: true,
-          message: 'This person already has an account. You can invite them to join groups directly.',
-        };
-      }
-
-      return { isDuplicate: false, message: '' };
-    } catch (error) {
-      console.error('Error checking for duplicate referral:', error);
-      // Don't block referral creation due to duplicate check errors
-      return { isDuplicate: false, message: '' };
-    }
+  private formatWarnings(
+    warnings?: string[]
+  ): Record<string, string> | undefined {
+    if (!warnings?.length) return undefined;
+    return warnings.reduce<Record<string, string>>((acc, warning, index) => {
+      acc[`warning_${index + 1}`] = warning;
+      return acc;
+    }, {});
   }
 
   /**
@@ -543,23 +608,32 @@ export class ReferralService {
     if (error instanceof ValidationError) {
       return 'validation';
     }
-    
-    if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+
+    if (
+      error.message?.includes('rate limit') ||
+      error.message?.includes('too many')
+    ) {
       return 'rate_limit';
     }
-    
-    if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+
+    if (
+      error.message?.includes('already exists') ||
+      error.message?.includes('duplicate')
+    ) {
       return 'duplicate';
     }
-    
-    if (error.message?.includes('network') || error.message?.includes('connection')) {
+
+    if (
+      error.message?.includes('network') ||
+      error.message?.includes('connection')
+    ) {
       return 'network';
     }
-    
+
     if (error.message?.includes('email')) {
       return 'email';
     }
-    
+
     return 'unknown';
   }
 
@@ -592,19 +666,25 @@ export class ReferralService {
       totalReferrals: number;
       groupReferrals: number;
       generalReferrals: number;
-      referralsByMonth: Array<{ month: string; count: number }>;
-      topReferrers: Array<{ referrer_id: string; referrer_name: string; count: number }>;
+      referralsByMonth: { month: string; count: number }[];
+      topReferrers: {
+        referrer_id: string;
+        referrer_name: string;
+        count: number;
+      }[];
     }>
   > {
     try {
-      const dateFilter = startDate && endDate 
-        ? `created_at >= '${startDate}' AND created_at <= '${endDate}'`
-        : '';
+      const dateFilter =
+        startDate && endDate
+          ? `created_at >= '${startDate}' AND created_at <= '${endDate}'`
+          : '';
 
-      // Get group referrals count
+      // Get group referrals count (referrals with group_id)
       const { count: groupCount, error: groupError } = await supabase
-        .from('group_referrals')
+        .from('referrals')
         .select('*', { count: 'exact', head: true })
+        .not('group_id', 'is', null)
         .gte('created_at', startDate || '1970-01-01')
         .lte('created_at', endDate || '2099-12-31');
 
@@ -612,10 +692,11 @@ export class ReferralService {
         return { data: null, error: new Error(groupError.message) };
       }
 
-      // Get general referrals count
+      // Get general referrals count (referrals without group_id)
       const { count: generalCount, error: generalError } = await supabase
-        .from('general_referrals')
+        .from('referrals')
         .select('*', { count: 'exact', head: true })
+        .is('group_id', null)
         .gte('created_at', startDate || '1970-01-01')
         .lte('created_at', endDate || '2099-12-31');
 
@@ -624,24 +705,28 @@ export class ReferralService {
       }
 
       // Get referrals by month (group referrals)
-      const { data: groupMonthlyData, error: groupMonthlyError } = await supabase
-        .from('group_referrals')
-        .select('created_at')
-        .gte('created_at', startDate || '1970-01-01')
-        .lte('created_at', endDate || '2099-12-31')
-        .order('created_at', { ascending: true });
+      const { data: groupMonthlyData, error: groupMonthlyError } =
+        await supabase
+          .from('referrals')
+          .select('created_at')
+          .not('group_id', 'is', null)
+          .gte('created_at', startDate || '1970-01-01')
+          .lte('created_at', endDate || '2099-12-31')
+          .order('created_at', { ascending: true });
 
       if (groupMonthlyError) {
         return { data: null, error: new Error(groupMonthlyError.message) };
       }
 
       // Get referrals by month (general referrals)
-      const { data: generalMonthlyData, error: generalMonthlyError } = await supabase
-        .from('general_referrals')
-        .select('created_at')
-        .gte('created_at', startDate || '1970-01-01')
-        .lte('created_at', endDate || '2099-12-31')
-        .order('created_at', { ascending: true });
+      const { data: generalMonthlyData, error: generalMonthlyError } =
+        await supabase
+          .from('referrals')
+          .select('created_at')
+          .is('group_id', null)
+          .gte('created_at', startDate || '1970-01-01')
+          .lte('created_at', endDate || '2099-12-31')
+          .order('created_at', { ascending: true });
 
       if (generalMonthlyError) {
         return { data: null, error: new Error(generalMonthlyError.message) };
@@ -649,56 +734,51 @@ export class ReferralService {
 
       // Process monthly data
       const monthlyMap = new Map<string, number>();
-      
-      [...(groupMonthlyData || []), ...(generalMonthlyData || [])].forEach(item => {
-        const month = new Date(item.created_at).toISOString().substring(0, 7); // YYYY-MM
-        monthlyMap.set(month, (monthlyMap.get(month) || 0) + 1);
-      });
 
-      const referralsByMonth = Array.from(monthlyMap.entries()).map(([month, count]) => ({
-        month,
-        count,
-      }));
+      [...(groupMonthlyData || []), ...(generalMonthlyData || [])].forEach(
+        (item) => {
+          const month = new Date(item.created_at).toISOString().substring(0, 7); // YYYY-MM
+          monthlyMap.set(month, (monthlyMap.get(month) || 0) + 1);
+        }
+      );
 
-      // Get top referrers from both tables
-      const { data: topGroupReferrers, error: topGroupError } = await supabase
-        .from('group_referrals')
-        .select(`
-          referrer_id,
-          referrer:users!group_referrals_referrer_id_fkey(name)
-        `)
+      const referralsByMonth = Array.from(monthlyMap.entries()).map(
+        ([month, count]) => ({
+          month,
+          count,
+        })
+      );
+
+      // Get top referrers from unified referrals table
+      const { data: topReferrers, error: topReferrersError } = await supabase
+        .from('referrals')
+        .select(
+          `
+          referred_by_user_id,
+          referrer:users!referrals_referred_by_user_id_fkey(first_name, last_name)
+        `
+        )
         .gte('created_at', startDate || '1970-01-01')
         .lte('created_at', endDate || '2099-12-31');
 
-      if (topGroupError) {
-        return { data: null, error: new Error(topGroupError.message) };
-      }
-
-      const { data: topGeneralReferrers, error: topGeneralError } = await supabase
-        .from('general_referrals')
-        .select(`
-          referrer_id,
-          referrer:users!general_referrals_referrer_id_fkey(name)
-        `)
-        .gte('created_at', startDate || '1970-01-01')
-        .lte('created_at', endDate || '2099-12-31');
-
-      if (topGeneralError) {
-        return { data: null, error: new Error(topGeneralError.message) };
+      if (topReferrersError) {
+        return { data: null, error: new Error(topReferrersError.message) };
       }
 
       // Process top referrers
       const referrerMap = new Map<string, { name: string; count: number }>();
-      
-      [...(topGroupReferrers || []), ...(topGeneralReferrers || [])].forEach(item => {
-        const existing = referrerMap.get(item.referrer_id);
-        referrerMap.set(item.referrer_id, {
-          name: item.referrer?.name || 'Unknown',
+
+      (topReferrers || []).forEach((item) => {
+        const existing = referrerMap.get(item.referred_by_user_id);
+        // Handle case where referrer might be an array (Supabase type inference) or single object
+        const referrer = Array.isArray(item.referrer) ? item.referrer[0] : item.referrer;
+        referrerMap.set(item.referred_by_user_id, {
+          name: getFullName(referrer) || 'Unknown',
           count: (existing?.count || 0) + 1,
         });
       });
 
-      const topReferrers = Array.from(referrerMap.entries())
+      const topReferrersList = Array.from(referrerMap.entries())
         .map(([referrer_id, data]) => ({
           referrer_id,
           referrer_name: data.name,
@@ -713,14 +793,17 @@ export class ReferralService {
           groupReferrals: groupCount || 0,
           generalReferrals: generalCount || 0,
           referralsByMonth,
-          topReferrers,
+          topReferrers: topReferrersList,
         },
         error: null,
       };
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get referral statistics'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get referral statistics'),
       };
     }
   }
@@ -729,50 +812,66 @@ export class ReferralService {
    * Get all referrals for a specific referred user
    * Useful for tracking how a user was referred
    */
-  async getReferralsForUser(
-    userId: string
-  ): Promise<
+  async getReferralsForUser(userId: string): Promise<
     ReferralServiceResponse<{
       groupReferral?: GroupReferralWithDetails;
       generalReferral?: GeneralReferralWithDetails;
     }>
   > {
     try {
-      // Check for group referral
-      const { data: groupReferral, error: groupError } = await supabase
-        .from('group_referrals')
-        .select(`
+      // Check for referral in unified table
+      const { data: referral, error: referralError } = await supabase
+        .from('referrals')
+        .select(
+          `
           *,
           group:groups(*),
-          referrer:users!group_referrals_referrer_id_fkey(id, name),
-          referred_user:users!group_referrals_referred_user_id_fkey(id, name)
-        `)
+          referrer:users!referrals_referred_by_user_id_fkey(id, first_name, last_name),
+          referred_user:users!referrals_referred_user_id_fkey(id, first_name, last_name)
+        `
+        )
         .eq('referred_user_id', userId)
         .single();
 
-      // Check for general referral
-      const { data: generalReferral, error: generalError } = await supabase
-        .from('general_referrals')
-        .select(`
-          *,
-          referrer:users!general_referrals_referrer_id_fkey(id, name),
-          referred_user:users!general_referrals_referred_user_id_fkey(id, name)
-        `)
-        .eq('referred_user_id', userId)
-        .single();
+      const normalizeReferralUser = (user: any) =>
+        user
+          ? {
+              ...user,
+              name: getFullName(user),
+            }
+          : user;
 
-      // It's expected that one of these might not exist, so we don't treat that as an error
+      const normalizedReferral = referral
+        ? {
+            ...referral,
+            referrer: normalizeReferralUser(referral.referrer),
+            referred_user: normalizeReferralUser(referral.referred_user),
+          }
+        : referral;
+
+      // It's expected that a referral might not exist, so we don't treat that as an error
       return {
         data: {
-          groupReferral: groupError ? undefined : groupReferral,
-          generalReferral: generalError ? undefined : generalReferral,
+          groupReferral: referralError
+            ? undefined
+            : normalizedReferral?.group_id
+              ? normalizedReferral
+              : undefined,
+          generalReferral: referralError
+            ? undefined
+            : normalizedReferral?.group_id
+              ? undefined
+              : normalizedReferral,
         },
         error: null,
       };
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get referrals for user'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get referrals for user'),
       };
     }
   }
@@ -781,9 +880,13 @@ export class ReferralService {
    * Batch create multiple referrals (for admin/bulk operations)
    * Requirement 6.5: Ensure data integrity and proper relationships
    */
-  async createBatchReferrals(
-    referrals: CreateReferralData[]
-  ): Promise<ReferralServiceResponse<{ successful: number; failed: number; errors: string[] }>> {
+  async createBatchReferrals(referrals: CreateReferralData[]): Promise<
+    ReferralServiceResponse<{
+      successful: number;
+      failed: number;
+      errors: string[];
+    }>
+  > {
     try {
       let successful = 0;
       let failed = 0;
@@ -793,7 +896,7 @@ export class ReferralService {
       const batchSize = 10;
       for (let i = 0; i < referrals.length; i += batchSize) {
         const batch = referrals.slice(i, i + batchSize);
-        
+
         const batchPromises = batch.map(async (referralData) => {
           try {
             const result = await this.createReferral(referralData);
@@ -805,7 +908,9 @@ export class ReferralService {
             }
           } catch (error) {
             failed++;
-            errors.push(`${referralData.email}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            errors.push(
+              `${referralData.email}: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
           }
         });
 
@@ -819,7 +924,10 @@ export class ReferralService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to create batch referrals'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to create batch referrals'),
       };
     }
   }
@@ -834,13 +942,11 @@ export class ReferralService {
     isGroupReferral: boolean
   ): Promise<ReferralServiceResponse<boolean>> {
     try {
-      const tableName = isGroupReferral ? 'group_referrals' : 'general_referrals';
-      
       const { error } = await supabase
-        .from(tableName)
-        .update({ 
+        .from('referrals')
+        .update({
           note,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', referralId);
 
@@ -852,7 +958,10 @@ export class ReferralService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to update referral note'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to update referral note'),
       };
     }
   }
@@ -866,10 +975,8 @@ export class ReferralService {
     isGroupReferral: boolean
   ): Promise<ReferralServiceResponse<boolean>> {
     try {
-      const tableName = isGroupReferral ? 'group_referrals' : 'general_referrals';
-      
       const { error } = await supabase
-        .from(tableName)
+        .from('referrals')
         .delete()
         .eq('id', referralId);
 
@@ -881,7 +988,10 @@ export class ReferralService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to delete referral'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to delete referral'),
       };
     }
   }
@@ -890,9 +1000,7 @@ export class ReferralService {
    * Get referral counts by referrer for leaderboard/gamification
    * Requirement 6.1, 6.2: Store referrer's ID and referral details
    */
-  async getReferralCountsByReferrer(
-    referrerId: string
-  ): Promise<
+  async getReferralCountsByReferrer(referrerId: string): Promise<
     ReferralServiceResponse<{
       groupReferrals: number;
       generalReferrals: number;
@@ -900,21 +1008,23 @@ export class ReferralService {
     }>
   > {
     try {
-      // Get group referrals count
+      // Get group referrals count (referrals with group_id)
       const { count: groupCount, error: groupError } = await supabase
-        .from('group_referrals')
+        .from('referrals')
         .select('*', { count: 'exact', head: true })
-        .eq('referrer_id', referrerId);
+        .eq('referred_by_user_id', referrerId)
+        .not('group_id', 'is', null);
 
       if (groupError) {
         return { data: null, error: new Error(groupError.message) };
       }
 
-      // Get general referrals count
+      // Get general referrals count (referrals without group_id)
       const { count: generalCount, error: generalError } = await supabase
-        .from('general_referrals')
+        .from('referrals')
         .select('*', { count: 'exact', head: true })
-        .eq('referrer_id', referrerId);
+        .eq('referred_by_user_id', referrerId)
+        .is('group_id', null);
 
       if (generalError) {
         return { data: null, error: new Error(generalError.message) };
@@ -931,7 +1041,10 @@ export class ReferralService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to get referral counts'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get referral counts'),
       };
     }
   }
@@ -942,7 +1055,7 @@ export class ReferralService {
    */
   async validateDatabaseSchema(): Promise<
     ReferralServiceResponse<{
-      groupReferralsExists: boolean;
+      referralsExists: boolean;
       generalReferralsExists: boolean;
       indexesExist: boolean;
       constraintsValid: boolean;
@@ -955,7 +1068,10 @@ export class ReferralService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to validate database schema'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to validate database schema'),
       };
     }
   }
@@ -975,10 +1091,11 @@ export class ReferralService {
     try {
       const issues: string[] = [];
 
-      // Check for group referrals with invalid group references
+      // Check for referrals with invalid group references
       const { data: invalidGroupRefs, error: groupRefError } = await supabase
-        .from('group_referrals')
+        .from('referrals')
         .select('id, group_id')
+        .not('group_id', 'is', null)
         .not('group_id', 'in', `(SELECT id FROM groups)`);
 
       if (groupRefError) {
@@ -987,73 +1104,52 @@ export class ReferralService {
 
       // Check for referrals with invalid user references (referrer)
       const { data: invalidReferrers, error: referrerError } = await supabase
-        .from('group_referrals')
-        .select('id, referrer_id')
-        .not('referrer_id', 'in', `(SELECT id FROM users)`);
+        .from('referrals')
+        .select('id, referred_by_user_id')
+        .not('referred_by_user_id', 'in', `(SELECT id FROM users)`);
 
       if (referrerError) {
         return { data: null, error: new Error(referrerError.message) };
       }
 
       // Check for referrals with invalid user references (referred user)
-      const { data: invalidReferredUsers, error: referredError } = await supabase
-        .from('group_referrals')
-        .select('id, referred_user_id')
-        .not('referred_user_id', 'in', `(SELECT id FROM users)`);
+      const { data: invalidReferredUsers, error: referredError } =
+        await supabase
+          .from('referrals')
+          .select('id, referred_user_id')
+          .not('referred_user_id', 'is', null)
+          .not('referred_user_id', 'in', `(SELECT id FROM users)`);
 
       if (referredError) {
         return { data: null, error: new Error(referredError.message) };
       }
 
-      // Similar checks for general referrals
-      const { data: invalidGeneralReferrers, error: generalReferrerError } = await supabase
-        .from('general_referrals')
-        .select('id, referrer_id')
-        .not('referrer_id', 'in', `(SELECT id FROM users)`);
-
-      if (generalReferrerError) {
-        return { data: null, error: new Error(generalReferrerError.message) };
-      }
-
-      const { data: invalidGeneralReferredUsers, error: generalReferredError } = await supabase
-        .from('general_referrals')
-        .select('id, referred_user_id')
-        .not('referred_user_id', 'in', `(SELECT id FROM users)`);
-
-      if (generalReferredError) {
-        return { data: null, error: new Error(generalReferredError.message) };
-      }
-
       // Compile issues
       if (invalidGroupRefs && invalidGroupRefs.length > 0) {
-        issues.push(`${invalidGroupRefs.length} group referrals reference non-existent groups`);
+        issues.push(
+          `${invalidGroupRefs.length} referrals reference non-existent groups`
+        );
       }
 
       if (invalidReferrers && invalidReferrers.length > 0) {
-        issues.push(`${invalidReferrers.length} group referrals reference non-existent referrer users`);
+        issues.push(
+          `${invalidReferrers.length} referrals reference non-existent referrer users`
+        );
       }
 
       if (invalidReferredUsers && invalidReferredUsers.length > 0) {
-        issues.push(`${invalidReferredUsers.length} group referrals reference non-existent referred users`);
-      }
-
-      if (invalidGeneralReferrers && invalidGeneralReferrers.length > 0) {
-        issues.push(`${invalidGeneralReferrers.length} general referrals reference non-existent referrer users`);
-      }
-
-      if (invalidGeneralReferredUsers && invalidGeneralReferredUsers.length > 0) {
-        issues.push(`${invalidGeneralReferredUsers.length} general referrals reference non-existent referred users`);
+        issues.push(
+          `${invalidReferredUsers.length} referrals reference non-existent referred users`
+        );
       }
 
       return {
         data: {
           orphanedGroupReferrals: invalidGroupRefs?.length || 0,
           orphanedGeneralReferrals: 0, // General referrals don't have group dependencies
-          invalidUserReferences: 
-            (invalidReferrers?.length || 0) + 
-            (invalidReferredUsers?.length || 0) + 
-            (invalidGeneralReferrers?.length || 0) + 
-            (invalidGeneralReferredUsers?.length || 0),
+          invalidUserReferences:
+            (invalidReferrers?.length || 0) +
+            (invalidReferredUsers?.length || 0),
           issues,
         },
         error: null,
@@ -1061,15 +1157,21 @@ export class ReferralService {
     } catch (error) {
       return {
         data: null,
-        error: error instanceof Error ? error : new Error('Failed to validate referral integrity'),
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to validate referral integrity'),
       };
     }
   }
-
 }
 
 // Export singleton instance
 export const referralService = new ReferralService();
 
 // Export database utilities for admin/maintenance operations
-export { ReferralDatabaseUtils, REFERRAL_SCHEMA_SQL, COMPLETE_REFERRAL_SCHEMA } from './referralDatabase';
+export {
+  ReferralDatabaseUtils,
+  REFERRAL_SCHEMA_SQL,
+  COMPLETE_REFERRAL_SCHEMA,
+} from './referralDatabase';

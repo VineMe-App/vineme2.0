@@ -1,23 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Alert,
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import {
-  AccessibilityHelpers,
-  AdminAccessibilityLabels,
-  ScreenReaderUtils,
-} from '@/utils/accessibility';
+import { Text } from '@/components/ui/Text';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { adminServiceWrapper } from '@/services/adminServiceWrapper';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { UserManagementCard } from '@/components/admin/UserManagementCard';
 import { AdminErrorBoundary } from '@/components/ui/AdminErrorBoundary';
@@ -27,18 +20,15 @@ import {
   AdminLoadingList,
 } from '@/components/ui/AdminLoadingStates';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { useAdminNotifications } from '@/hooks/useNotifications';
-import { useAdminAsyncOperation } from '@/hooks/useAdminAsyncOperation';
 import { router } from 'expo-router';
-
-type FilterType = 'all' | 'connected' | 'unconnected';
+import { AdminPageLayout } from '@/components/admin/AdminHeader';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function ManageUsersScreen() {
-  const { user, userProfile } = useAuthStore();
-  const [filter, setFilter] = useState<FilterType>('all');
-
-  // Get admin notifications for real-time updates
-  const { refreshNotifications } = useAdminNotifications(user?.id);
+  const { userProfile } = useAuthStore();
+  const [filter, setFilter] = useState<'all' | 'connected' | 'unconnected' | 'needs_group_help'>(
+    'all'
+  );
 
   const {
     data: users,
@@ -106,154 +96,67 @@ export default function ManageUsersScreen() {
 
   const filteredUsers = useMemo(() => {
     if (!users) return [];
-
     switch (filter) {
       case 'connected':
-        return users.filter((user) => user.is_connected);
+        return users.filter((u: any) => u.is_connected);
       case 'unconnected':
-        return users.filter((user) => !user.is_connected);
+        return users.filter((u: any) => !u.is_connected);
+      case 'needs_group_help':
+        return users.filter((u: any) => u.cannot_find_group === true);
       default:
         return users;
     }
   }, [users, filter]);
 
+  const allCount = users?.length || 0;
+  const connectedCount = users?.filter((u: any) => u.is_connected).length || 0;
+  const unconnectedCount = Math.max(0, allCount - connectedCount);
+  const needsGroupHelpCount = users?.filter((u: any) => u.cannot_find_group === true).length || 0;
+
   const handleRefresh = async () => {
     await Promise.all([refetch(), refetchSummary()]);
-    refreshNotifications(); // Refresh notifications as well
   };
 
   const handleUserPress = (userId: string) => {
-    // Navigate to user detail view (to be implemented)
-    Alert.alert('User Details', 'User detail view coming soon!');
+    router.push(`/user/${userId}`);
   };
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Manage Users</Text>
-        </View>
+      <AdminPageLayout title="Manage Users">
         <View style={styles.errorContainer}>
           <ErrorMessage
             message={error.message || 'Failed to load users'}
             onRetry={handleRefresh}
           />
         </View>
-      </View>
+      </AdminPageLayout>
     );
   }
 
   return (
     <ChurchAdminOnly
       fallback={
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Text style={styles.backButtonText}>← Back</Text>
-            </TouchableOpacity>
-            <Text style={styles.title}>Manage Users</Text>
-          </View>
+        <AdminPageLayout title="Manage Users">
           <View style={styles.errorContainer}>
             <ErrorMessage
               message="You do not have permission to access this page. Church admin role required."
-              onRetry={() => router.back()}
+              onRetry={() => safeGoBack(router)}
             />
           </View>
-        </View>
+        </AdminPageLayout>
       }
     >
       <AdminErrorBoundary>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Text style={styles.backButtonText}>← Back</Text>
-            </TouchableOpacity>
-            <Text style={styles.title}>Manage Users</Text>
-          </View>
-
-          {/* Summary Stats */}
-          {summaryLoading ? (
-            <View style={styles.summaryContainer}>
-              <AdminSkeletonLoader
-                lines={1}
-                showAvatar={false}
-                showActions={false}
-              />
-            </View>
-          ) : summaryError ? (
-            <View style={styles.summaryContainer}>
-              <ErrorMessage
-                error="Failed to load summary statistics"
-                onRetry={refetchSummary}
-                showRetry={true}
-              />
-            </View>
-          ) : (
-            churchSummary && (
-              <View style={styles.summaryContainer}>
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryNumber}>
-                    {churchSummary.total_users}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Total Users</Text>
-                </View>
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryNumber}>
-                    {churchSummary.connected_users}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Connected</Text>
-                </View>
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryNumber}>
-                    {churchSummary.unconnected_users}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Unconnected</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.refreshSummaryButton}
-                  onPress={handleRefresh}
-                >
-                  <Text style={styles.refreshSummaryButtonText}>↻</Text>
-                </TouchableOpacity>
-              </View>
-            )
-          )}
-
-          {/* Filter Buttons */}
-          <View
-            style={styles.filterContainer}
-            accessibilityRole="tablist"
-            accessibilityLabel="User filter options"
-          >
+        <AdminPageLayout title="Manage Users">
+          {/* Filters */}
+          <View style={styles.filterContainer}>
             <TouchableOpacity
               style={[
                 styles.filterButton,
                 filter === 'all' && styles.filterButtonActive,
               ]}
-              onPress={() => {
-                setFilter('all');
-                ScreenReaderUtils.announceForAccessibility('Showing all users');
-              }}
-              {...AccessibilityHelpers.createButtonProps(
-                AdminAccessibilityLabels.filterState(
-                  'All users',
-                  filter === 'all',
-                  users?.length
-                ),
-                'Double tap to show all users'
-              )}
+              onPress={() => setFilter('all')}
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === 'all' }}
             >
@@ -263,28 +166,16 @@ export default function ManageUsersScreen() {
                   filter === 'all' && styles.filterButtonTextActive,
                 ]}
               >
-                All Users ({users?.length || 0})
+                All Users
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[
                 styles.filterButton,
                 filter === 'connected' && styles.filterButtonActive,
               ]}
-              onPress={() => {
-                setFilter('connected');
-                ScreenReaderUtils.announceForAccessibility(
-                  'Showing connected users only'
-                );
-              }}
-              {...AccessibilityHelpers.createButtonProps(
-                AdminAccessibilityLabels.filterState(
-                  'Connected users',
-                  filter === 'connected',
-                  users?.filter((u) => u.is_connected).length
-                ),
-                'Double tap to show only users in groups'
-              )}
+              onPress={() => setFilter('connected')}
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === 'connected' }}
             >
@@ -294,28 +185,16 @@ export default function ManageUsersScreen() {
                   filter === 'connected' && styles.filterButtonTextActive,
                 ]}
               >
-                Connected ({users?.filter((u) => u.is_connected).length || 0})
+                Connected
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[
                 styles.filterButton,
                 filter === 'unconnected' && styles.filterButtonActive,
               ]}
-              onPress={() => {
-                setFilter('unconnected');
-                ScreenReaderUtils.announceForAccessibility(
-                  'Showing unconnected users only'
-                );
-              }}
-              {...AccessibilityHelpers.createButtonProps(
-                AdminAccessibilityLabels.filterState(
-                  'Unconnected users',
-                  filter === 'unconnected',
-                  users?.filter((u) => !u.is_connected).length
-                ),
-                'Double tap to show only users not in any groups'
-              )}
+              onPress={() => setFilter('unconnected')}
               accessibilityRole="tab"
               accessibilityState={{ selected: filter === 'unconnected' }}
             >
@@ -325,10 +204,36 @@ export default function ManageUsersScreen() {
                   filter === 'unconnected' && styles.filterButtonTextActive,
                 ]}
               >
-                Unconnected ({users?.filter((u) => !u.is_connected).length || 0}
-                )
+                Unconnected
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filter === 'needs_group_help' && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilter('needs_group_help')}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: filter === 'needs_group_help' }}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filter === 'needs_group_help' && styles.filterButtonTextActive,
+                ]}
+              >
+                Needs Help
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Counts indicator */}
+          <View style={styles.countsRow}>
+            <Text style={styles.countsText}>
+              All: {allCount} • Connected: {connectedCount} • Unconnected:{' '}
+              {unconnectedCount} • Needs Help: {needsGroupHelpCount}
+            </Text>
           </View>
 
           {isLoading ? (
@@ -363,12 +268,16 @@ export default function ManageUsersScreen() {
                       ? 'No users found'
                       : filter === 'connected'
                         ? 'No connected users found'
-                        : 'No unconnected users found'}
+                        : filter === 'unconnected'
+                          ? 'No unconnected users found'
+                          : 'No users needing group help found'}
                   </Text>
                   <Text style={styles.emptySubtext}>
                     {filter === 'unconnected'
                       ? 'All users are connected to groups!'
-                      : 'Users will appear here as they join your church.'}
+                      : filter === 'needs_group_help'
+                        ? 'All users have found suitable groups!'
+                        : 'Users will appear here as they join your church.'}
                   </Text>
                 </View>
               ) : (
@@ -384,7 +293,7 @@ export default function ManageUsersScreen() {
               )}
             </ScrollView>
           )}
-        </View>
+        </AdminPageLayout>
       </AdminErrorBoundary>
     </ChurchAdminOnly>
   );
@@ -395,89 +304,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    flex: 1,
-  },
-  summaryContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    gap: 12,
-    alignItems: 'center',
-  },
-  refreshSummaryButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#e5e7eb',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  refreshSummaryButtonText: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: 'bold',
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  summaryNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: '#6c757d',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+  // Page header is provided by AdminPageLayout
   filterContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
     gap: 8,
   },
   filterButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: '#f8f9fa',
+    borderRadius: 999,
     alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   filterButtonActive: {
     backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   filterButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#6c757d',
+    fontWeight: '600',
+    color: '#374151',
   },
   filterButtonTextActive: {
     color: '#fff',
@@ -501,6 +363,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+  },
+  countsRow: {
+    paddingHorizontal: 24,
+    paddingTop: 6,
+    paddingBottom: 4,
+  },
+  countsText: {
+    fontSize: 12,
+    color: '#6b7280',
   },
   emptyContainer: {
     flex: 1,

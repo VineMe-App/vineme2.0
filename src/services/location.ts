@@ -86,27 +86,82 @@ class LocationService {
   }
 
   /**
+   * Get address autocomplete suggestions
+   */
+  async getAddressSuggestions(query: string): Promise<Address[]> {
+    try {
+      if (!query || query.trim().length < 2) {
+        return [];
+      }
+
+      // Use Mapbox Geocoding API for autocomplete
+      if (MAPBOX_TOKEN) {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          query
+        )}.json?access_token=${MAPBOX_TOKEN}&limit=5&types=address,poi,place`;
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const json = await resp.json();
+          const features = json?.features || [];
+          return features.map((feature: any) => ({
+            formattedAddress: feature.place_name,
+            street: feature.properties?.address || '',
+            city:
+              feature.context?.find((c: any) => c.id.startsWith('place'))
+                ?.text || '',
+            region:
+              feature.context?.find((c: any) => c.id.startsWith('region'))
+                ?.text || '',
+            postalCode:
+              feature.context?.find((c: any) => c.id.startsWith('postcode'))
+                ?.text || '',
+            country:
+              feature.context?.find((c: any) => c.id.startsWith('country'))
+                ?.text || '',
+          }));
+        }
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Error getting address suggestions:', error);
+      return [];
+    }
+  }
+
+  /**
    * Geocode an address string to coordinates
+   * Supports general places (e.g. "Canning Town"), specific addresses, and postcodes
    */
   async geocodeAddress(address: string): Promise<Coordinates | null> {
     try {
       if (!address || address.trim().length === 0) {
         return null;
       }
+
+      const trimmedAddress = address.trim();
+
       // Try expo-location first if available
       if (Location?.geocodeAsync) {
-        const results = await Location.geocodeAsync(address);
-        if (results && results.length > 0) {
-          const { latitude, longitude } = results[0];
-          return { latitude, longitude };
+        try {
+          const results = await Location.geocodeAsync(trimmedAddress);
+          if (results && results.length > 0) {
+            const { latitude, longitude } = results[0];
+            return { latitude, longitude };
+          }
+        } catch (expoError) {
+          console.log('Expo geocoding failed, trying Mapbox:', expoError);
         }
       }
 
-      // Fallback to Mapbox Geocoding if token is provided
+      // Use Mapbox Geocoding for better support of places and postcodes
       if (MAPBOX_TOKEN) {
+        // Use more flexible search types for better results
+        const searchTypes = 'place,postcode,address,poi,locality,neighborhood';
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          address
-        )}.json?access_token=${MAPBOX_TOKEN}&limit=1`;
+          trimmedAddress
+        )}.json?access_token=${MAPBOX_TOKEN}&limit=1&types=${searchTypes}&country=GB`;
+
         const resp = await fetch(url);
         if (resp.ok) {
           const json = await resp.json();

@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { authService } from '../../services/auth';
 import { useAuthStore } from '../../stores/auth';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Text } from '../../components/ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function VerifyEmailScreen() {
@@ -18,6 +13,9 @@ export default function VerifyEmailScreen() {
   const params = useLocalSearchParams();
   const { initialize } = useAuthStore();
   
+  const redirectPath = params.redirect as string | undefined;
+  const email = params.email as string | undefined;
+
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationResult, setVerificationResult] = useState<{
     success: boolean;
@@ -50,15 +48,34 @@ export default function VerifyEmailScreen() {
       );
 
       setVerificationResult(result);
-      
+
       if (result.success) {
         // Reinitialize auth state to reflect the verified user
+        // Force refresh by getting the current user again
+        const { user: currentUser, loadUserProfile } = useAuthStore.getState();
+        if (currentUser) {
+          // Refresh the user from Supabase to get updated email
+          const refreshedUser = await authService.getCurrentUser();
+          if (refreshedUser) {
+            useAuthStore.setState({ user: refreshedUser });
+            await loadUserProfile();
+          }
+        }
         await initialize();
-        
+
         // Show success message briefly before redirecting
         setTimeout(() => {
-          router.replace('/(auth)/onboarding');
+          if (redirectPath === '/profile/communication' && email) {
+            router.replace({
+              pathname: '/(tabs)/profile/communication',
+              params: { email: encodeURIComponent(email) },
+            });
+          } else {
+            router.replace('/(auth)/onboarding');
+          }
         }, 2000);
+      } else {
+        setIsVerifying(false);
       }
     } catch (error) {
       console.error('Email verification error:', error);
@@ -74,7 +91,7 @@ export default function VerifyEmailScreen() {
   const handleResendEmail = async () => {
     try {
       const result = await authService.resendVerificationEmail();
-      
+
       if (result.success) {
         Alert.alert(
           'Email Sent',
@@ -123,11 +140,12 @@ export default function VerifyEmailScreen() {
         <Card style={styles.card}>
           <View style={styles.content}>
             <View style={styles.iconContainer}>
-              <Ionicons name="checkmark-circle" size={64} color="#34C759" />
+              <Ionicons name="checkmark-circle" size={64} color="#ff0083" />
             </View>
             <Text style={styles.title}>Email Verified!</Text>
             <Text style={styles.message}>
-              Your email has been successfully verified. You'll be redirected to complete your profile setup.
+              Your email has been successfully verified. You'll be redirected to
+              complete your profile setup.
             </Text>
           </View>
         </Card>
@@ -145,9 +163,10 @@ export default function VerifyEmailScreen() {
           </View>
           <Text style={styles.title}>Verification Failed</Text>
           <Text style={styles.message}>
-            {verificationResult?.error || 'Unable to verify your email address.'}
+            {verificationResult?.error ||
+              'Unable to verify your email address.'}
           </Text>
-          
+
           <View style={styles.buttonContainer}>
             <Button
               title="Resend Verification Email"

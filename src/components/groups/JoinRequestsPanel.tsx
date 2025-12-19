@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { JoinRequestCard } from './JoinRequestCard';
 import { EmptyState } from '../ui/EmptyState';
@@ -32,10 +33,10 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Join Requests</Text>
+        <Text style={styles.title}>Requests</Text>
         <View style={styles.loadingContainer}>
           <LoadingSpinner size="small" />
-          <Text style={styles.loadingText}>Loading join requests...</Text>
+          <Text style={styles.loadingText}>Loading requests...</Text>
         </View>
       </View>
     );
@@ -44,10 +45,10 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Join Requests</Text>
+        <Text style={styles.title}>Requests</Text>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            Failed to load join requests. Please try again.
+            Failed to load requests. Please try again.
           </Text>
         </View>
       </View>
@@ -57,21 +58,27 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
   const pendingRequests =
     joinRequests?.filter((request) => request.status === 'pending') || [];
 
+  const sortedNewcomers = [...pendingRequests].sort((a, b) => {
+    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return dateB - dateA; // Newest first
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Join Requests</Text>
-        {pendingRequests.length > 0 && (
+        <Text style={styles.title}>Requests</Text>
+        {sortedNewcomers.length > 0 && (
           <View style={styles.countBadge}>
-            <Text style={styles.countText}>{pendingRequests.length}</Text>
+            <Text style={styles.countText}>{sortedNewcomers.length}</Text>
           </View>
         )}
       </View>
 
-      {pendingRequests.length === 0 ? (
+      {sortedNewcomers.length === 0 ? (
         <EmptyState
-          title="No pending requests"
-          message="There are currently no pending join requests for this group."
+          title="No requests"
+          message="Great job! Everyone has been followed up with."
           icon={null}
         />
       ) : (
@@ -79,7 +86,7 @@ export const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({
           style={styles.requestsList}
           showsVerticalScrollIndicator={false}
         >
-          {pendingRequests.map((request) => (
+          {sortedNewcomers.map((request) => (
             <JoinRequestCard
               key={request.id}
               request={request}
@@ -109,7 +116,7 @@ const styles = StyleSheet.create({
   },
   countBadge: {
     marginLeft: 8,
-    backgroundColor: '#ff3b30',
+    backgroundColor: '#ec4899',
     borderRadius: 12,
     minWidth: 24,
     height: 24,
@@ -121,6 +128,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 16,
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -144,5 +156,6 @@ const styles = StyleSheet.create({
   },
   requestsList: {
     flex: 1,
+    paddingBottom: 16,
   },
 });

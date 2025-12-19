@@ -18,6 +18,9 @@ export const userKeys = {
  * Hook to get user profile with related data
  */
 export const useUserProfile = (userId: string | undefined) => {
+  // Import here to avoid circular dependencies
+  const { isDeletionFlowActive } = require('../utils/errorSuppression');
+  
   return useQuery({
     queryKey: userKeys.profile(userId || ''),
     queryFn: async () => {
@@ -26,7 +29,7 @@ export const useUserProfile = (userId: string | undefined) => {
       if (error) throw error;
       return data;
     },
-    enabled: !!userId,
+    enabled: !!userId && !isDeletionFlowActive(), // Disable queries during deletion flow
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -131,14 +134,14 @@ export const useUploadAvatar = () => {
   return useMutation({
     mutationFn: async ({
       userId,
-      file,
+      fileUri,
     }: {
       userId: string;
-      file: File | Blob;
+      fileUri: string;
     }) => {
       const { data: avatarUrl, error } = await userService.uploadAvatar(
         userId,
-        file
+        fileUri
       );
       if (error) throw error;
 
@@ -225,15 +228,50 @@ export const useDeleteAvatar = () => {
  */
 export const useDeleteAccount = () => {
   const queryClient = useQueryClient();
+  const { setDeletionFlowActive } = require('../utils/errorSuppression');
+  
   return useMutation({
     mutationFn: async (userId: string) => {
+      // Set deletion flow flag BEFORE cancelling queries
+      // This ensures queries won't retry when cancelled
+      setDeletionFlowActive(true);
+      
+      // Cancel all running queries before deletion to prevent them from completing
+      // after the user is deleted, which could cause errors
+      await queryClient.cancelQueries();
+      
+      // Remove all queries from cache to prevent any new queries from running
+      queryClient.removeQueries();
+      
       const { data, error } = await userService.deleteAccount(userId);
-      if (error) throw error;
+      if (error) {
+        // Reset flag on error
+        setDeletionFlowActive(false);
+        // Mark sole leader errors as validation errors to prevent retries
+        if (error.message.includes('sole leader')) {
+          const validationError = new Error(error.message) as any;
+          validationError.type = 'validation';
+          throw validationError;
+        }
+        throw error;
+      }
       return data;
     },
-    onSettled: () => {
-      // Clear cached user data on delete attempts
+    retry: false, // Don't retry account deletion - it's a user-initiated action
+    onSuccess: () => {
+      // Clear all cached data immediately after successful deletion
+      // This prevents any queries from trying to refetch after navigation
       queryClient.clear();
+      // Cancel any remaining queries
+      queryClient.cancelQueries();
+      // Remove all queries
+      queryClient.removeQueries();
+    },
+    onSettled: () => {
+      // Also clear on settled to ensure cleanup even if there's an error
+      queryClient.clear();
+      queryClient.cancelQueries();
+      queryClient.removeQueries();
     },
   });
 };

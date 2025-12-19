@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import Text from './Text';
 import { LoadingSpinner } from './LoadingSpinner';
 import { Button } from './Button';
 
@@ -25,7 +26,9 @@ export const AdminLoadingCard: React.FC<AdminLoadingCardProps> = ({
     <View style={styles.loadingCard}>
       <View style={styles.loadingHeader}>
         <LoadingSpinner size="medium" />
-        <Text style={styles.loadingTitle}>{title}</Text>
+        <Text weight="semiBold" style={styles.loadingTitle}>
+          {title}
+        </Text>
       </View>
 
       {message && <Text style={styles.loadingMessage}>{message}</Text>}
@@ -82,21 +85,35 @@ export const AdminBatchLoading: React.FC<AdminBatchLoadingProps> = ({
     <View style={styles.batchLoadingContainer}>
       <View style={styles.batchHeader}>
         <LoadingSpinner size="large" />
-        <Text style={styles.batchTitle}>Processing Operations</Text>
+        <Text weight="semiBold" style={styles.batchTitle}>
+          Processing Operations
+        </Text>
       </View>
 
       <View style={styles.batchStats}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{completed}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
+          <Text weight="bold" style={styles.statNumber}>
+            {completed}
+          </Text>
+          <Text weight="medium" style={styles.statLabel}>
+            Completed
+          </Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statNumber, styles.failedNumber]}>{failed}</Text>
-          <Text style={styles.statLabel}>Failed</Text>
+          <Text weight="bold" style={[styles.statNumber, styles.failedNumber]}>
+            {failed}
+          </Text>
+          <Text weight="medium" style={styles.statLabel}>
+            Failed
+          </Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{remaining}</Text>
-          <Text style={styles.statLabel}>Remaining</Text>
+          <Text weight="bold" style={styles.statNumber}>
+            {remaining}
+          </Text>
+          <Text weight="medium" style={styles.statLabel}>
+            Remaining
+          </Text>
         </View>
       </View>
 
@@ -269,7 +286,6 @@ const styles = StyleSheet.create({
   },
   loadingTitle: {
     fontSize: 16,
-    fontWeight: '600',
     color: '#1a1a1a',
     marginLeft: 12,
   },
@@ -317,7 +333,6 @@ const styles = StyleSheet.create({
   },
   batchTitle: {
     fontSize: 18,
-    fontWeight: '600',
     color: '#1a1a1a',
     marginTop: 12,
   },
@@ -331,7 +346,6 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: '#3b82f6',
     marginBottom: 4,
   },
@@ -342,7 +356,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
     textTransform: 'uppercase',
-    fontWeight: '500',
   },
   currentOperation: {
     fontSize: 14,

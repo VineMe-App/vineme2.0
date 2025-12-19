@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Linking,
+} from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
+import { Text } from '@/components/ui/Text';
 import {
   AccessibilityHelpers,
   AdminAccessibilityLabels,
-  ScreenReaderUtils,
 } from '@/utils/accessibility';
-import { useQuery } from '@tanstack/react-query';
-import { userAdminService, type UserWithGroupStatus } from '@/services/admin';
+import type { UserWithGroupStatus } from '@/services/admin';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
+import { getDisplayName, getFullName } from '@/utils/name';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { supabase } from '@/services/supabase';
+import { adminServiceWrapper } from '@/services/adminServiceWrapper';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UserManagementCardProps {
   user: UserWithGroupStatus;
@@ -19,46 +28,123 @@ interface UserManagementCardProps {
 }
 
 export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
-  const [showHistory, setShowHistory] = useState(false);
+  const queryClient = useQueryClient();
+  const [showContactInfo, setShowContactInfo] = useState(false);
+  const [contactInfo, setContactInfo] = useState<{
+    email?: string;
+    phone?: string;
+  } | null>(null);
+  const [contactLoaded, setContactLoaded] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
 
-  const {
-    data: groupHistory,
-    isLoading: historyLoading,
-    error: historyError,
-  } = useQuery({
-    queryKey: ['admin', 'user-group-history', user.id],
-    queryFn: async () => {
-      const result = await userAdminService.getUserGroupHistory(user.id);
-      if (result.error) {
-        throw result.error;
-      }
-      return result.data || [];
-    },
-    enabled: showHistory,
-  });
-
-  const handleViewHistory = () => {
-    setShowHistory(true);
+  const handleContactPress = async (type: 'email' | 'phone', value: string) => {
+    const url = type === 'email' ? `mailto:${value}` : `tel:${value}`;
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        'Action unavailable',
+        'Would you like to copy this contact info?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Copy',
+            onPress: async () => {
+              await Clipboard.setStringAsync(value);
+              Alert.alert('Copied', 'Contact info copied to clipboard');
+            },
+          },
+        ]
+      );
+    }
   };
 
-  const handleContactUser = () => {
-    if (user.email) {
-      Alert.alert('Contact User', `Contact ${user.name} at ${user.email}?`, [
-        { text: 'Cancel', style: 'cancel' },
+  const loadContactInfo = async () => {
+    if (contactLoaded || contactLoading) return;
+    setContactLoading(true);
+    try {
+      const { data, error } = await supabase.rpc(
+        'get_user_contact_admin',
         {
-          text: 'Email',
-          onPress: () => {
-            // In a real app, this would open the email client
-            Alert.alert('Email', `Would open email to ${user.email}`);
-          },
+          target_user_id: user.id,
+        }
+      );
+      if (error) {
+        throw error;
+      }
+      setContactInfo(data ?? null);
+      setContactLoaded(true); // Only set to true on successful fetch
+    } catch (error) {
+      console.error('Failed to load contact info:', error);
+      Alert.alert(
+        'Unable to load contact info',
+        'Please try again later or contact support.'
+      );
+      // Don't set contactLoaded to true on error, allowing retry
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
+  const toggleContactInfo = () => {
+    const next = !showContactInfo;
+    setShowContactInfo(next);
+    if (next) {
+      loadContactInfo();
+    }
+  };
+
+  const handleMarkContacted = async () => {
+    try {
+      const result = await adminServiceWrapper.updateUserGroupHelpStatus(
+        user.id,
+        {
+          cannot_find_group_contacted_at: new Date().toISOString(),
         },
-      ]);
+        { context: { action: 'markContacted', userId: user.id } }
+      );
+
+      if (result.error) throw result.error;
+
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-summary'] });
+
+      Alert.alert('Success', 'User marked as contacted');
+    } catch (error) {
+      console.error('Failed to mark user as contacted:', error);
+      Alert.alert('Error', 'Failed to update user status');
+    }
+  };
+
+  const handleMarkResolved = async () => {
+    try {
+      const result = await adminServiceWrapper.updateUserGroupHelpStatus(
+        user.id,
+        {
+          cannot_find_group: false,
+          cannot_find_group_resolved_at: new Date().toISOString(),
+        },
+        { context: { action: 'markResolved', userId: user.id } }
+      );
+
+      if (result.error) throw result.error;
+
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'church-summary'] });
+
+      Alert.alert('Success', 'User marked as resolved');
+    } catch (error) {
+      console.error('Failed to mark user as resolved:', error);
+      Alert.alert('Error', 'Failed to update user status');
     }
   };
 
   const getConnectionStatusText = () => {
     return user.is_connected ? 'Connected' : 'Unconnected';
   };
+
+  const fullName = getFullName(user);
+  const displayName = getDisplayName(user) || fullName || 'Member';
 
   return (
     <>
@@ -68,7 +154,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
         activeOpacity={0.7}
         {...AccessibilityHelpers.createNavigationProps(
           AdminAccessibilityLabels.userConnectionStatus(
-            user.name,
+            displayName,
             user.is_connected,
             user.group_count
           ),
@@ -79,8 +165,8 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           <Avatar
             size={50}
             imageUrl={user.avatar_url}
-            name={user.name}
-            accessibilityLabel={`Profile picture for ${user.name}`}
+            name={fullName || displayName}
+            accessibilityLabel={`Profile picture for ${displayName}`}
           />
           <View style={styles.userInfo}>
             <Text
@@ -88,8 +174,28 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
               accessibilityRole="header"
               accessibilityLevel={3}
             >
-              {user.name}
+              {displayName}
             </Text>
+            {user.newcomer && (
+              <Badge
+                variant="warning"
+                size="small"
+                style={styles.newcomerBadge}
+                accessibilityLabel="Newcomer"
+              >
+                Newcomer
+              </Badge>
+            )}
+            {user.cannot_find_group && (
+              <Badge
+                variant="error"
+                size="small"
+                style={styles.needsHelpBadge}
+                accessibilityLabel="Needs group help"
+              >
+                Needs Help
+              </Badge>
+            )}
             <Text
               style={styles.userEmail}
               accessibilityLabel={`Email: ${user.email}`}
@@ -100,7 +206,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
               style={styles.statusContainer}
               accessibilityRole="group"
               accessibilityLabel={AdminAccessibilityLabels.userConnectionStatus(
-                user.name,
+                displayName,
                 user.is_connected,
                 user.group_count
               )}
@@ -122,21 +228,25 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
           </View>
         </View>
 
+        {/* Admin Actions for Group Help */}
+        {user.cannot_find_group && (
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.contactButton]}
+              onPress={handleMarkContacted}
+            >
+              <Text style={styles.actionButtonText}>Mark Contacted</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.resolveButton]}
+              onPress={handleMarkResolved}
+            >
+              <Text style={styles.actionButtonText}>Mark Resolved</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.details}>
-          {user.church && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Church:</Text>
-              <Text style={styles.detailValue}>{user.church.name}</Text>
-            </View>
-          )}
-
-          {user.service && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Service:</Text>
-              <Text style={styles.detailValue}>{user.service.name}</Text>
-            </View>
-          )}
-
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Member Since:</Text>
             <Text style={styles.detailValue}>
@@ -152,102 +262,122 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
               </Text>
             </View>
           )}
-        </View>
 
-        <View
-          style={styles.actions}
-          accessibilityRole="group"
-          accessibilityLabel="User management actions"
-        >
-          <Button
-            title="View History"
-            onPress={handleViewHistory}
-            variant="secondary"
-            size="small"
-            style={styles.actionButton}
-            accessibilityLabel={`View group history for ${user.name}`}
-            accessibilityHint="Double tap to see this user's group membership history"
-          />
-          <Button
-            title="Contact"
-            onPress={handleContactUser}
-            variant="primary"
-            size="small"
-            style={styles.actionButton}
-            accessibilityLabel={`Contact ${user.name}`}
-            accessibilityHint="Double tap to contact this user"
-          />
-        </View>
-      </TouchableOpacity>
-
-      {/* Group History Modal */}
-      <Modal
-        visible={showHistory}
-        onClose={() => setShowHistory(false)}
-        title={`${user.name}'s Group History`}
-      >
-        <View style={styles.historyContent}>
-          {historyLoading ? (
-            <View style={styles.historyLoading}>
-              <LoadingSpinner size="small" />
-              <Text style={styles.historyLoadingText}>Loading history...</Text>
-            </View>
-          ) : historyError ? (
-            <View style={styles.historyError}>
-              <Text style={styles.historyErrorText}>
-                Failed to load group history
+          {user.cannot_find_group && user.cannot_find_group_requested_at && (
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Help Requested:</Text>
+              <Text style={styles.detailValue}>
+                {new Date(user.cannot_find_group_requested_at).toLocaleDateString()}
               </Text>
             </View>
-          ) : groupHistory && groupHistory.length > 0 ? (
-            <View style={styles.historyList}>
-              {groupHistory.map((membership) => (
-                <View key={membership.id} style={styles.historyItem}>
-                  <View style={styles.historyHeader}>
-                    <Text style={styles.historyGroupName}>
-                      {membership.group?.title || 'Unknown Group'}
-                    </Text>
-                    <Badge
-                      variant={
-                        membership.status === 'active' ? 'success' : 'default'
-                      }
-                      size="small"
-                    >
-                      {membership.status}
-                    </Badge>
-                  </View>
-                  <View style={styles.historyDetails}>
-                    <Text style={styles.historyRole}>
-                      Role:{' '}
-                      {membership.role.charAt(0).toUpperCase() +
-                        membership.role.slice(1)}
-                    </Text>
-                    <Text style={styles.historyDate}>
-                      Joined:{' '}
-                      {new Date(membership.joined_at).toLocaleDateString()}
-                    </Text>
-                    {membership.group?.status && (
-                      <Text style={styles.historyGroupStatus}>
-                        Group Status:{' '}
-                        {membership.group.status.charAt(0).toUpperCase() +
-                          membership.group.status.slice(1)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.historyEmpty}>
-              <Text style={styles.historyEmptyText}>
-                No group history found
-              </Text>
-              <Text style={styles.historyEmptySubtext}>
-                This user hasn't joined any groups yet
+          )}
+
+          {user.cannot_find_group_contacted_at && (
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Contacted:</Text>
+              <Text style={styles.detailValue}>
+                {new Date(user.cannot_find_group_contacted_at).toLocaleDateString()}
               </Text>
             </View>
           )}
         </View>
-      </Modal>
+
+        <View style={styles.contactSection}>
+          <View style={styles.contactHeader}>
+            <Text style={styles.contactTitle}>Contact Details</Text>
+            <TouchableOpacity
+              onPress={toggleContactInfo}
+              style={styles.contactToggle}
+            >
+              <Text style={styles.contactToggleText}>
+                {showContactInfo ? 'Hide' : 'Show'} contact info
+              </Text>
+              <Ionicons
+                name={showContactInfo ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color="#007AFF"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {showContactInfo && (
+            <View style={styles.contactInfoContainer}>
+              {contactLoading ? (
+                <View style={styles.contactLoading}>
+                  <LoadingSpinner size="small" />
+                  <Text style={styles.contactLoadingText}>
+                    Loading contact info...
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {contactInfo?.email && (
+                    <View style={styles.contactItem}>
+                      <TouchableOpacity
+                        style={styles.contactMain}
+                          onPress={() =>
+                            handleContactPress('email', contactInfo.email!)
+                          }
+                      >
+                        <Text style={styles.contactLabel}>Email</Text>
+                        <Text style={styles.contactValue}>
+                          {contactInfo.email}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.copyButton}
+                        onPress={async () => {
+                            await Clipboard.setStringAsync(
+                              contactInfo.email!
+                            );
+                          Alert.alert('Copied', 'Email copied to clipboard');
+                        }}
+                      >
+                        <Ionicons name="copy-outline" size={18} color="#6b7280" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {contactInfo?.phone && (
+                    <View style={styles.contactItem}>
+                      <TouchableOpacity
+                        style={styles.contactMain}
+                          onPress={() =>
+                            handleContactPress('phone', contactInfo.phone!)
+                          }
+                      >
+                        <Text style={styles.contactLabel}>Phone</Text>
+                        <Text style={styles.contactValue}>
+                          {contactInfo.phone}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.copyButton}
+                        onPress={async () => {
+                            await Clipboard.setStringAsync(
+                              contactInfo.phone!
+                            );
+                          Alert.alert('Copied', 'Phone number copied to clipboard');
+                        }}
+                      >
+                        <Ionicons name="copy-outline" size={18} color="#6b7280" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {!contactInfo?.email &&
+                    !contactInfo?.phone &&
+                    contactLoaded && (
+                    <Text style={styles.noContactText}>
+                      Contact information not available.
+                    </Text>
+                  )}
+                </>
+              )}
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
     </>
   );
 }
@@ -294,6 +424,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  newcomerBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  needsHelpBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactButton: {
+    backgroundColor: '#3b82f6',
+  },
+  resolveButton: {
+    backgroundColor: '#10b981',
+  },
+  actionButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   groupCount: {
     fontSize: 12,
     color: '#6c757d',
@@ -320,85 +484,71 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 8,
+  contactSection: {
+    marginTop: 8,
   },
-  actionButton: {
-    flex: 1,
-  },
-  historyContent: {
-    maxHeight: 400,
-  },
-  historyLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 12,
-  },
-  historyLoadingText: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  historyError: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  historyErrorText: {
-    fontSize: 14,
-    color: '#dc3545',
-    textAlign: 'center',
-  },
-  historyList: {
-    gap: 12,
-  },
-  historyItem: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 12,
-  },
-  historyHeader: {
+  contactHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  historyGroupName: {
-    fontSize: 16,
+  contactTitle: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a1a',
-    flex: 1,
+    color: '#1f2937',
   },
-  historyDetails: {
+  contactToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
-  historyRole: {
-    fontSize: 14,
-    color: '#6c757d',
+  contactToggleText: {
+    fontSize: 12,
+    color: '#007AFF',
   },
-  historyDate: {
-    fontSize: 14,
-    color: '#6c757d',
+  contactInfoContainer: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 12,
+    gap: 10,
   },
-  historyGroupStatus: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  historyEmpty: {
-    padding: 24,
+  contactItem: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  historyEmptyText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6c757d',
-    textAlign: 'center',
-    marginBottom: 4,
+  contactMain: {
+    flex: 1,
   },
-  historyEmptySubtext: {
+  contactLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 2,
+  },
+  contactValue: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: '#1f2937',
+    fontWeight: '500',
+  },
+  copyButton: {
+    padding: 6,
+  },
+  contactLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  contactLoadingText: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  noContactText: {
+    fontSize: 13,
+    color: '#6b7280',
+    fontStyle: 'italic',
     textAlign: 'center',
   },
 });

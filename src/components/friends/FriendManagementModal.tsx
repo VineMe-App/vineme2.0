@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
-  SafeAreaView,
+  Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import { Text } from '../ui/Text';
 import { FriendsList } from './FriendsList';
 import { FriendSearch } from './FriendSearch';
+import { useTheme } from '../../theme/provider/useTheme';
 
 interface FriendManagementModalProps {
   visible: boolean;
@@ -16,31 +23,30 @@ interface FriendManagementModalProps {
   userId?: string;
 }
 
-type TabType = 'friends' | 'search';
-
 export function FriendManagementModal({
   visible,
   onClose,
   userId,
 }: FriendManagementModalProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('friends');
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [showSearch, setShowSearch] = useState(false);
 
-  const renderTabButton = (tab: TabType, label: string) => {
-    const isActive = activeTab === tab;
+  const handleViewProfile = useCallback(
+    (profileId: string) => {
+      if (!profileId) return;
+      onClose();
+      const delay = Platform.OS === 'ios' ? 350 : 50;
+      setTimeout(() => {
+        router.push(`/user/${profileId}`);
+      }, delay);
+    },
+    [onClose]
+  );
 
-    return (
-      <TouchableOpacity
-        style={[styles.tabButton, isActive && styles.activeTabButton]}
-        onPress={() => setActiveTab(tab)}
-      >
-        <Text
-          style={[styles.tabButtonText, isActive && styles.activeTabButtonText]}
-        >
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  const handleAddFriend = useCallback(() => {
+    setShowSearch(true);
+  }, []);
 
   return (
     <Modal
@@ -49,24 +55,36 @@ export function FriendManagementModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Friends</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Done</Text>
+      <SafeAreaView
+        style={[
+          styles.container,
+          {
+            backgroundColor: '#FFFFFF',
+          },
+        ]}
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onClose}
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={20} color="#2C2235" />
           </TouchableOpacity>
+          <Text style={styles.title}>My friends</Text>
         </View>
 
-        <View style={styles.tabContainer}>
-          {renderTabButton('friends', 'My Friends')}
-          {renderTabButton('search', 'Find Friends')}
-        </View>
-
+        {/* Content with tabs */}
         <View style={styles.content}>
-          {activeTab === 'friends' ? (
-            <FriendsList userId={userId} />
+          {showSearch ? (
+            <FriendSearch onClose={() => setShowSearch(false)} />
           ) : (
-            <FriendSearch />
+            <FriendsList 
+              userId={userId} 
+              onViewProfile={handleViewProfile}
+              onAddFriend={handleAddFriend}
+            />
           )}
         </View>
       </SafeAreaView>
@@ -77,57 +95,25 @@ export function FriendManagementModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    paddingBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: -8,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  closeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#8b5cf6',
-    fontWeight: '500',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#f9fafb',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  activeTabButton: {
-    backgroundColor: '#8b5cf6',
-  },
-  tabButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  activeTabButtonText: {
-    color: '#fff',
+    fontSize: 22, // Figma: 22px
+    fontWeight: '700', // Bold
+    color: '#2C2235', // Figma: #2c2235
+    letterSpacing: -0.44, // Figma: -0.44px
+    lineHeight: 22,
+    marginLeft: 12,
   },
   content: {
     flex: 1,

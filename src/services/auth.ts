@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { secureStorage, SECURE_STORAGE_KEYS } from '../utils/secureStorage';
 import { permissionService } from './permissions';
 import type { User } from '@supabase/supabase-js';
-import type { DatabaseUser } from '../types/database';
+import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { handleSupabaseError, retryWithBackoff } from '../utils/errorHandling';
 
 export interface AuthResponse {
@@ -43,7 +43,7 @@ export class AuthService {
 
       // Clear secure storage on sign out
       await secureStorage.clearAuthSession();
-      
+
       // Clear permission cache
       permissionService.clearUserCache();
 
@@ -78,8 +78,9 @@ export class AuthService {
 
   /**
    * Get the current user's profile from the users table
+   * Includes related church and service objects
    */
-  async getCurrentUserProfile(): Promise<DatabaseUser | null> {
+  async getCurrentUserProfile(): Promise<UserWithDetails | null> {
     try {
       const user = await this.getCurrentUser();
       if (!user) return null;
@@ -98,7 +99,7 @@ export class AuthService {
 
       if (error) return null;
 
-      return data || null;
+      return (data as unknown as UserWithDetails) || null;
     } catch (error) {
       console.error('Error getting user profile:', error);
       return null;
@@ -117,9 +118,14 @@ export class AuthService {
         return { error: new Error('No authenticated user') };
       }
 
+      const payload: Record<string, any> = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from('users')
-        .update(updates)
+        .update(payload)
         .eq('id', user.id);
 
       if (error) {
@@ -139,11 +145,14 @@ export class AuthService {
    * Create user profile after successful sign up
    */
   async createUserProfile(userData: {
-    name: string;
+    first_name?: string;
+    last_name?: string;
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }): Promise<{ error: Error | null }> {
     try {
       const user = await this.getCurrentUser();
@@ -154,7 +163,8 @@ export class AuthService {
       // Insert minimal required fields to avoid 400s from missing FKs or columns
       const payload: Record<string, any> = {
         id: user.id,
-        name: userData.name,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
         roles: ['user'],
         updated_at: new Date().toISOString(),
       };
@@ -174,11 +184,17 @@ export class AuthService {
       if (userData.onboarding_complete !== undefined) {
         payload.onboarding_complete = userData.onboarding_complete;
       }
-      
+      if (userData.avatar_url) {
+        payload.avatar_url = userData.avatar_url;
+      }
+      if (userData.bio) {
+        payload.bio = userData.bio;
+      }
+
       const { error } = await supabase.from('users').upsert(payload, {
-          onConflict: 'id',
-          ignoreDuplicates: false,
-        });
+        onConflict: 'id',
+        ignoreDuplicates: false,
+      });
 
       if (error) {
         // Surface full error info in dev to diagnose 400s
@@ -207,7 +223,7 @@ export class AuthService {
   }> {
     try {
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         return { user: null, error: new Error(error.message) };
       }
@@ -232,7 +248,7 @@ export class AuthService {
         // Refresh the session
         const { data: refreshData, error: refreshError } =
           await supabase.auth.refreshSession();
-        
+
         if (refreshError) {
           await secureStorage.clearAuthSession();
           return { user: null, error: new Error('Session refresh failed') };
@@ -245,7 +261,7 @@ export class AuthService {
             refreshToken: refreshData.session.refresh_token,
             expiresAt: refreshData.session.expires_at,
           });
-          
+
           return { user: refreshData.session.user, error: null };
         }
       }
@@ -277,7 +293,10 @@ export class AuthService {
       }
 
       // Validate input data
-      const validationError = this.validateReferredUserData({ ...data, phone: normalizedPhone });
+      const validationError = this.validateReferredUserData({
+        ...data,
+        phone: normalizedPhone,
+      });
       if (validationError) {
         return { user: null, error: new Error(validationError) };
       }
@@ -309,7 +328,9 @@ export class AuthService {
       );
 
       if (authError || !authData.user) {
-        const appError = handleSupabaseError((authError ?? new Error('Unknown auth error')) as Error);
+        const appError = handleSupabaseError(
+          (authError ?? new Error('Unknown auth error')) as Error
+        );
         return {
           user: null,
           error: new Error(
@@ -346,9 +367,7 @@ export class AuthService {
       const appError = handleSupabaseError(error as Error);
       return {
         user: null,
-        error: new Error(
-          appError.message || 'Failed to create referred user'
-        ),
+        error: new Error(appError.message || 'Failed to create referred user'),
       };
     }
   }
@@ -451,7 +470,7 @@ export class AuthService {
     try {
       // Use Supabase auth to send verification email with custom redirect URL
       const redirectUrl = this.buildEmailVerificationRedirectUrl();
-      
+
       const result = await supabase.auth.resend({
         type: 'signup',
         email: email,
@@ -471,8 +490,8 @@ export class AuthService {
     } catch (error) {
       console.error('Error triggering email verification:', error);
       // Re-throw to allow proper error handling in calling code
-      throw error instanceof Error 
-        ? error 
+      throw error instanceof Error
+        ? error
         : new Error('Failed to send verification email');
     }
   }
@@ -512,7 +531,7 @@ export class AuthService {
           expiresAt: session.expires_at,
         });
       }
-      
+
       callback(session?.user || null);
     });
   }
@@ -526,12 +545,15 @@ export class AuthService {
     try {
       const phone = this.normalizePhone(rawPhone);
       if (!phone) {
-        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+        return {
+          success: false,
+          error: 'Invalid phone number format. Please use +countrycode format.',
+        };
       }
 
-      const { error } = await supabase.auth.signInWithOtp({ 
+      const { error } = await supabase.auth.signInWithOtp({
         phone,
-        options: { shouldCreateUser: true }
+        options: { shouldCreateUser: true },
       });
 
       if (error) {
@@ -542,7 +564,10 @@ export class AuthService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send verification code',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to send verification code',
       };
     }
   }
@@ -556,22 +581,30 @@ export class AuthService {
     try {
       const phone = this.normalizePhone(rawPhone);
       if (!phone) {
-        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+        return {
+          success: false,
+          error: 'Invalid phone number format. Please use +countrycode format.',
+        };
       }
 
-      const { error } = await supabase.auth.signInWithOtp({ 
+      const { error } = await supabase.auth.signInWithOtp({
         phone,
-        options: { shouldCreateUser: false }
+        options: { shouldCreateUser: false },
       });
 
       if (error) {
-        // Check if user not found
-        if (error.message.toLowerCase().includes('user not found') || 
-            error.message.toLowerCase().includes('invalid login credentials')) {
-          return { 
-            success: false, 
-            error: "This phone isn't linked yet. Please log in with your email, then link your phone in Profile → Security.",
-            userNotFound: true
+        const lowerError = error.message.toLowerCase();
+        // Check if user not found or signups disabled (which also indicates user doesn't exist)
+        if (
+          lowerError.includes('user not found') ||
+          lowerError.includes('invalid login credentials') ||
+          lowerError.includes('signups not allowed')
+        ) {
+          return {
+            success: false,
+            error:
+              "There is no account linked to this phone number, please sign up to create an account.",
+            userNotFound: true,
           };
         }
         return { success: false, error: error.message };
@@ -581,7 +614,10 @@ export class AuthService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send verification code',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to send verification code',
       };
     }
   }
@@ -593,8 +629,10 @@ export class AuthService {
     email: string
   ): Promise<{ success: boolean; error?: string; userNotFound?: boolean }> {
     try {
+      console.log('[AuthService] Attempting to send magic link to:', email);
+      
       // Allow email login via magic link (no email signups)
-      const { error } = await supabase.auth.signInWithOtp({
+      const { data, error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: false,
@@ -603,27 +641,68 @@ export class AuthService {
       });
 
       if (error) {
+        console.error('[AuthService] Supabase error sending magic link:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          email,
+        });
+        
         const msg = error.message.toLowerCase();
+        
+        // Check for email service configuration issues (500 errors)
+        if (error.status === 500 && msg.includes('error sending magic link email')) {
+          return {
+            success: false,
+            error: 'Email service is not configured. Please check Supabase SMTP settings in the dashboard.',
+          };
+        }
+        
         // Check if user not found
-        if (msg.includes('user not found') || msg.includes('invalid login credentials')) {
-          return { 
-            success: false, 
-            error: "This email isn't linked yet. Please sign up with your phone first.",
-            userNotFound: true
+        if (
+          msg.includes('user not found') ||
+          msg.includes('invalid login credentials')
+        ) {
+          return {
+            success: false,
+            error:
+              "This email isn't linked yet. Please sign up with your phone first.",
+            userNotFound: true,
           };
         }
         // Some projects configure supabase to block email sign-in entirely; surface a better message
-        if (msg.includes('signups not allowed') || msg.includes('disabled') || msg.includes('not allowed')) {
-          return { success: false, error: 'Email login is currently disabled by server policy.' };
+        if (
+          msg.includes('signups not allowed') ||
+          msg.includes('disabled') ||
+          msg.includes('not allowed')
+        ) {
+          return {
+            success: false,
+            error: 'Email login is currently disabled by server policy.',
+          };
         }
         return { success: false, error: error.message };
       }
 
+      console.log('[AuthService] Magic link sent successfully:', {
+        email,
+        data: data ? 'present' : 'null',
+      });
+
       return { success: true };
     } catch (error) {
+      console.error('[AuthService] Exception caught in signInWithEmail:', {
+        error,
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        email,
+      });
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send magic link',
+        error:
+          error instanceof Error ? error.message : 'Failed to send magic link',
       };
     }
   }
@@ -637,12 +716,12 @@ export class AuthService {
     type: 'sms' | 'email'
   ): Promise<{ success: boolean; error?: string; user?: User }> {
     try {
-      // Expect 4-digit code for SMS, 6-digit for email
-      const expectedLength = type === 'sms' ? 4 : 6;
+      // Always expect 6-digit code for both SMS and email
+      const expectedLength = 6;
       if (!new RegExp(`^\\d{${expectedLength}}$`).test(code)) {
-        return { 
-          success: false, 
-          error: `Enter the ${expectedLength}-digit code` 
+        return {
+          success: false,
+          error: `Enter the ${expectedLength}-digit code`,
         };
       }
 
@@ -655,13 +734,13 @@ export class AuthService {
         verifyOptions = {
           phone: normalizedPhone,
           token: code,
-          type: 'sms' as const
+          type: 'sms' as const,
         };
       } else {
         verifyOptions = {
           email: phoneOrEmail,
           token: code,
-          type: 'email' as const
+          type: 'email' as const,
         };
       }
 
@@ -694,16 +773,103 @@ export class AuthService {
   }
 
   /**
-   * Link email to existing phone-authenticated user (no verification required)
+   * Link email to existing phone-authenticated user
+   * Updates the current authenticated user's email address.
+   * Supabase automatically sends a verification email to the new address.
+   * 
+   * Note: The redirect URL for email verification is configured at the project level
+   * in Supabase dashboard. If a custom redirect URL is needed, it should be configured
+   * in the Supabase project settings (Authentication > URL Configuration).
    */
-  async linkEmail(email: string): Promise<{ success: boolean; error?: string }> {
+  async linkEmail(
+    email: string,
+    options?: { emailRedirectTo?: string; marketingOptIn?: boolean }
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase.auth.updateUser({ email });
+      // Update the user's email address
+      // Supabase automatically sends a verification email when email is updated
+      // Forward the caller-provided redirect when available, otherwise fall back
+      // to the app's deep link so SendGrid-powered templates open VineMe
+      const redirectUrl =
+        options?.emailRedirectTo || this.buildEmailVerificationRedirectUrl();
+      const updateOptions = redirectUrl
+        ? { emailRedirectTo: redirectUrl }
+        : undefined;
+      const { error } = await supabase.auth.updateUser({ email }, updateOptions);
 
       if (error) {
-        return { success: false, error: error.message };
+        // Normalize and classify common failure modes for better UX
+        const raw = error.message || '';
+        const msg = raw.toLowerCase();
+        if (
+          msg.includes('already') ||
+          msg.includes('exists') ||
+          msg.includes('registered') ||
+          msg.includes('already registered') ||
+          msg.includes('already in use')
+        ) {
+          return {
+            success: false,
+            error: 'This email is already in use by another account.',
+          };
+        }
+        if (msg.includes('maximum credits exceeded') || msg.includes('insufficient') || msg.includes('rate limit')) {
+          return {
+            success: false,
+            error:
+              'We could not send a verification email because the email provider credit/limit was exceeded. Please try again later or contact support.',
+          };
+        }
+        return { success: false, error: raw || 'Failed to link email.' };
       }
 
+      // Save marketing preference if provided
+      if (options?.marketingOptIn !== undefined) {
+        const user = await this.getCurrentUser();
+        if (user) {
+          // Fetch existing roles so that we don't accidentally strip elevated permissions
+          let existingRoles: string[] | null = null;
+          const { data: existingProfiles, error: existingProfileError } = await supabase
+            .from('users')
+            .select('roles')
+            .eq('id', user.id)
+            .limit(1);
+
+          if (existingProfileError) {
+            console.warn('Failed to fetch existing roles before marketing opt-in upsert:', existingProfileError);
+          } else if (existingProfiles && existingProfiles.length > 0) {
+            existingRoles = existingProfiles[0]?.roles || null;
+          }
+
+          const payload: Record<string, any> = {
+            id: user.id,
+            marketing_opt_in: options.marketingOptIn,
+            updated_at: new Date().toISOString(),
+          };
+
+          if (existingRoles && existingRoles.length > 0) {
+            payload.roles = existingRoles;
+          } else {
+            payload.roles = ['user']; // Required field for brand new profiles
+          }
+
+          // Use upsert to create or update the profile (profile may not exist yet during onboarding)
+          const { error: profileError } = await supabase
+            .from('users')
+            .upsert(payload, {
+              onConflict: 'id',
+              ignoreDuplicates: false,
+            });
+
+          if (profileError) {
+            console.error('Failed to update marketing preference:', profileError);
+            // Don't fail the entire operation if marketing preference update fails
+            // Email linking succeeded, which is the primary operation
+          }
+        }
+      }
+
+      // Email successfully updated and verification email sent automatically
       return { success: true };
     } catch (error) {
       return {
@@ -716,11 +882,16 @@ export class AuthService {
   /**
    * Link phone to existing email-authenticated user
    */
-  async linkPhone(rawPhone: string): Promise<{ success: boolean; error?: string }> {
+  async linkPhone(
+    rawPhone: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const phone = this.normalizePhone(rawPhone);
       if (!phone) {
-        return { success: false, error: 'Invalid phone number format. Please use +countrycode format.' };
+        return {
+          success: false,
+          error: 'Invalid phone number format. Please use +countrycode format.',
+        };
       }
 
       const { error } = await supabase.auth.updateUser({ phone });
@@ -734,6 +905,53 @@ export class AuthService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to link phone',
+      };
+    }
+  }
+
+  /**
+   * Handle email verification from verification link tokens
+   * Sets the session and verifies the email address
+   */
+  async handleEmailVerification(
+    accessToken: string,
+    refreshToken: string
+  ): Promise<{ success: boolean; error?: string; user?: User }> {
+    try {
+      // Set the session using the tokens from the verification link
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (!data?.session?.user) {
+        return { success: false, error: 'Failed to verify email. Invalid session.' };
+      }
+
+      // Store session securely
+      if (data.session) {
+        await secureStorage.storeAuthSession({
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+          expiresAt: data.session.expires_at,
+        });
+      }
+
+      // Refresh the user to ensure we have the latest data including verified email
+      // Sometimes the session user might not have the email immediately after verification
+      const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+      
+      // Email is now verified in Supabase auth
+      // The email is stored in auth.users.email, not in public.users table
+      return { success: true, user: refreshedUser || data.session.user };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to verify email',
       };
     }
   }

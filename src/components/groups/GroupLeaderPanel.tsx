@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../ui/Avatar';
-import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
-import { EditGroupModal } from './EditGroupModal';
-import { MemberManagementModal } from './MemberManagementModal';
 import { JoinRequestsPanel } from './JoinRequestsPanel';
+import { ArchiveModal } from './ArchiveModal';
+import { MemberManagementModal } from './MemberManagementModal';
+import { useRouter } from 'expo-router';
 import type {
   GroupWithDetails,
   GroupMembershipWithUser,
@@ -27,18 +26,23 @@ import { useGroupJoinRequests } from '../../hooks/useJoinRequests';
 interface GroupLeaderPanelProps {
   group: GroupWithDetails;
   onGroupUpdated?: () => void;
+  initialTab?: 'members' | 'requests';
 }
 
 export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   group,
   onGroupUpdated,
+  initialTab = 'members',
 }) => {
   const { userProfile } = useAuthStore();
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showMemberModal, setShowMemberModal] = useState(false);
+  const router = useRouter();
+  // Inline actions on each card
+  const [activeTab, setActiveTab] =
+    useState<'members' | 'requests'>(initialTab);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [selectedMember, setSelectedMember] =
     useState<GroupMembershipWithUser | null>(null);
-  const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
+  const [showMemberModal, setShowMemberModal] = useState(false);
 
   const { data: members, isLoading: membersLoading } = useGroupMembers(
     group.id
@@ -51,13 +55,25 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
     promoteToLeaderMutation,
     demoteFromLeaderMutation,
     removeMemberMutation,
+    toggleGroupCapacityMutation,
   } = useGroupLeaderActions();
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Check if current user is a leader of this group
   const userMembership = members?.find((m) => m.user_id === userProfile?.id);
   const isGroupLeader = userMembership?.role === 'leader';
 
-  if (!isGroupLeader) {
+  const isChurchAdminForService = Boolean(
+    userProfile?.roles?.includes('church_admin') &&
+      userProfile?.service_id &&
+      group.service_id &&
+      userProfile.service_id === group.service_id
+  );
+
+  if (!isGroupLeader && !isChurchAdminForService) {
     return null; // Don't show panel if user is not a leader
   }
 
@@ -65,11 +81,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   const regularMembers = members?.filter((m) => m.role === 'member') || [];
   const pendingRequestsCount =
     joinRequests?.filter((r) => r.status === 'pending').length || 0;
-
-  const handleMemberPress = (member: GroupMembershipWithUser) => {
-    setSelectedMember(member);
-    setShowMemberModal(true);
-  };
 
   const handlePromoteToLeader = async (member: GroupMembershipWithUser) => {
     if (!userProfile) return;
@@ -92,7 +103,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 'Success',
                 `${member.user?.name} has been promoted to leader`
               );
-              setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
@@ -139,7 +149,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 'Success',
                 `${member.user?.name} has been demoted to member`
               );
-              setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
@@ -186,7 +195,6 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                 'Success',
                 `${member.user?.name} has been removed from the group`
               );
-              setShowMemberModal(false);
               onGroupUpdated?.();
             } catch (error) {
               Alert.alert(
@@ -207,6 +215,53 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
     demoteFromLeaderMutation.isPending ||
     removeMemberMutation.isPending;
 
+  const handleMemberClick = (member: GroupMembershipWithUser) => {
+    setSelectedMember(member);
+    setShowMemberModal(true);
+  };
+
+  const handleCloseMemberModal = () => {
+    setShowMemberModal(false);
+    setSelectedMember(null);
+  };
+
+  const handleToggleCapacity = async () => {
+    if (!userProfile?.id) return;
+
+    const newCapacityStatus = !group.at_capacity;
+    const message = newCapacityStatus
+      ? 'This will mark the group as full. Members can still apply but will see a warning that acceptance is unlikely.'
+      : 'This will mark the group as accepting new members.';
+
+    Alert.alert(
+      newCapacityStatus ? 'Mark as Full?' : 'Mark as Available?',
+      message,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              await toggleGroupCapacityMutation.mutateAsync({
+                groupId: group.id,
+                userId: userProfile.id,
+                atCapacity: newCapacityStatus,
+              });
+              onGroupUpdated?.();
+            } catch (error) {
+              Alert.alert(
+                'Error',
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to update capacity status'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -214,12 +269,77 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
           <Ionicons name="settings-outline" size={24} color="#007AFF" />
           <Text style={styles.title}>Group Management</Text>
         </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => setShowArchiveModal(true)}
+            style={styles.archiveButton}
+          >
+            <Ionicons name="archive-outline" size={20} color="#6b7280" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push(`/group-management/${group.id}/edit`)}
+            style={styles.editButton}
+          >
+            <Ionicons name="pencil-outline" size={20} color="#007AFF" />
+            <Text style={styles.editButtonText}>Edit Details</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Capacity Status */}
+      <View style={styles.capacitySection}>
+        <View style={styles.capacityInfo}>
+          <Ionicons
+            name={group.at_capacity ? 'people' : 'checkmark-circle'}
+            size={20}
+            color={group.at_capacity ? '#f97316' : '#ff0083'}
+          />
+          <View style={styles.capacityTextContainer}>
+            <Text style={styles.capacityLabel}>
+              {group.at_capacity ? 'Group is Full' : 'Accepting New Members'}
+            </Text>
+            <Text style={styles.capacityDescription}>
+              {group.at_capacity
+                ? 'Members can still apply but will see a warning'
+                : 'Group is open for new member applications'}
+            </Text>
+          </View>
+        </View>
         <TouchableOpacity
-          onPress={() => setShowEditModal(true)}
-          style={styles.editButton}
+          onPress={handleToggleCapacity}
+          style={[
+            styles.capacityToggle,
+            group.at_capacity
+              ? styles.capacityToggleFull
+              : styles.capacityToggleAvailable,
+          ]}
+          disabled={toggleGroupCapacityMutation.isPending}
         >
-          <Ionicons name="pencil-outline" size={20} color="#007AFF" />
-          <Text style={styles.editButtonText}>Edit Details</Text>
+          {toggleGroupCapacityMutation.isPending ? (
+            <LoadingSpinner size="small" />
+          ) : (
+            <>
+              <Ionicons
+                name={
+                  group.at_capacity
+                    ? 'checkmark-circle-outline'
+                    : 'close-circle-outline'
+                }
+                size={16}
+                color={group.at_capacity ? '#ff0083' : '#f97316'}
+              />
+              <Text
+                style={[
+                  styles.capacityToggleText,
+                  group.at_capacity
+                    ? styles.capacityToggleTextAvailable
+                    : styles.capacityToggleTextFull,
+                ]}
+              >
+                {group.at_capacity ? 'Mark as Available' : 'Mark as Full'}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -248,7 +368,7 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
               activeTab === 'requests' && styles.activeTabText,
             ]}
           >
-            Join Requests
+            Requests
           </Text>
           {pendingRequestsCount > 0 && (
             <View style={styles.requestsBadge}>
@@ -273,7 +393,8 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                   <TouchableOpacity
                     key={leader.id}
                     style={styles.memberItem}
-                    onPress={() => handleMemberPress(leader)}
+                    onPress={() => handleMemberClick(leader)}
+                    activeOpacity={0.7}
                   >
                     <Avatar
                       size={40}
@@ -286,7 +407,11 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                       </Text>
                       <Text style={styles.memberRole}>Leader</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#666" />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color="#9ca3af"
+                    />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -309,7 +434,8 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                     <TouchableOpacity
                       key={member.id}
                       style={styles.memberItem}
-                      onPress={() => handleMemberPress(member)}
+                      onPress={() => handleMemberClick(member)}
+                      activeOpacity={0.7}
                     >
                       <Avatar
                         size={40}
@@ -325,7 +451,11 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
                           {new Date(member.joined_at).toLocaleDateString()}
                         </Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={20} color="#666" />
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color="#9ca3af"
+                      />
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -343,35 +473,38 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
         </View>
       )}
 
-      {/* Edit Group Modal */}
-      <EditGroupModal
-        visible={showEditModal}
-        group={group}
-        onClose={() => setShowEditModal(false)}
-        onGroupUpdated={() => {
-          setShowEditModal(false);
-          onGroupUpdated?.();
-        }}
+      <ArchiveModal
+        visible={showArchiveModal}
+        groupId={group.id}
+        leaderId={userProfile?.id || ''}
+        onClose={() => setShowArchiveModal(false)}
       />
 
-      {/* Member Management Modal */}
       <MemberManagementModal
         visible={showMemberModal}
         member={selectedMember}
-        isLastLeader={selectedMember?.role === 'leader' && leaders.length === 1}
-        onClose={() => {
-          setShowMemberModal(false);
-          setSelectedMember(null);
+        isLastLeader={leaders.length === 1 && selectedMember?.role === 'leader'}
+        groupId={group.id}
+        leaderId={userProfile?.id || ''}
+        onClose={handleCloseMemberModal}
+        onPromoteToLeader={() => {
+          if (selectedMember) {
+            handlePromoteToLeader(selectedMember);
+            handleCloseMemberModal();
+          }
         }}
-        onPromoteToLeader={() =>
-          selectedMember && handlePromoteToLeader(selectedMember)
-        }
-        onDemoteFromLeader={() =>
-          selectedMember && handleDemoteFromLeader(selectedMember)
-        }
-        onRemoveMember={() =>
-          selectedMember && handleRemoveMember(selectedMember)
-        }
+        onDemoteFromLeader={() => {
+          if (selectedMember) {
+            handleDemoteFromLeader(selectedMember);
+            handleCloseMemberModal();
+          }
+        }}
+        onRemoveMember={() => {
+          if (selectedMember) {
+            handleRemoveMember(selectedMember);
+            handleCloseMemberModal();
+          }
+        }}
         loading={isLoading}
       />
     </View>
@@ -401,6 +534,19 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginLeft: 8,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  archiveButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+  },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -414,6 +560,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  capacitySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    marginBottom: 16,
+  },
+  capacityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  capacityTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  capacityLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 2,
+  },
+  capacityDescription: {
+    fontSize: 12,
+    color: '#6b7280',
+    lineHeight: 16,
+  },
+  capacityToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginLeft: 12,
+  },
+  capacityToggleFull: {
+    backgroundColor: '#fff0f8',
+    borderColor: '#ff0083',
+  },
+  capacityToggleAvailable: {
+    backgroundColor: '#fff7ed',
+    borderColor: '#f97316',
+  },
+  capacityToggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  capacityToggleTextAvailable: {
+    color: '#ff0083',
+  },
+  capacityToggleTextFull: {
+    color: '#f97316',
   },
   section: {
     marginBottom: 16,
@@ -494,7 +699,7 @@ const styles = StyleSheet.create({
   },
   requestsBadge: {
     marginLeft: 6,
-    backgroundColor: '#ff3b30',
+    backgroundColor: '#ec4899',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -510,5 +715,6 @@ const styles = StyleSheet.create({
   requestsContainer: {
     flex: 1,
     minHeight: 200,
+    paddingTop: 8,
   },
 });

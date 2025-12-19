@@ -5,23 +5,27 @@ import {
   onlineManager,
 } from '@tanstack/react-query';
 import { Platform, AppState } from 'react-native';
-import { ReactNode, lazy, Suspense, useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { handleSupabaseError } from '../utils/errorHandling';
 import { globalErrorHandler } from '../utils/globalErrorHandler';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { performanceMonitor } from '../utils/performance';
 import { getPerformanceConfig } from '../config/performance';
 import NetInfo from '@react-native-community/netinfo';
+import { isDeletionFlowActive, isPostDeletionError } from '../utils/errorSuppression';
 
-// Lazy load devtools only in development and on web
-const ReactQueryDevtools =
-  __DEV__ && Platform.OS === 'web'
-    ? lazy(() =>
-        import('@tanstack/react-query-devtools').then((d) => ({
-          default: d.ReactQueryDevtools,
-        }))
-      )
-    : null;
+// Conditionally import devtools only in development and on web
+let ReactQueryDevtools: React.ComponentType<any> | null = null;
+if (__DEV__ && Platform.OS === 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const devtools = require('@tanstack/react-query-devtools');
+    ReactQueryDevtools = devtools.ReactQueryDevtools;
+  } catch (error) {
+    // Devtools not available, continue without them
+    console.warn('React Query Devtools not available:', error);
+  }
+}
 
 const performanceConfig = getPerformanceConfig();
 
@@ -36,19 +40,44 @@ export const queryClient = new QueryClient({
       refetchOnReconnect: 'always', // Always refetch when reconnecting
       refetchOnMount: true, // Refetch when component mounts if data is stale
       retry: (failureCount, error) => {
-        const appError = handleSupabaseError(error as Error);
+        // CRITICAL: Don't retry queries if we're in a deletion flow
+        // This prevents errors from queries trying to fetch deleted user data
+        if (isDeletionFlowActive()) {
+          return false;
+        }
 
-        // Log errors for monitoring
-        globalErrorHandler.logError(appError, {
+        const appError = handleSupabaseError(error as Error, {
           queryRetry: true,
           failureCount,
+          isPostDeletion: isDeletionFlowActive(),
         });
+
+        // Check if this is a post-deletion error that should be suppressed
+        const isPostDeletion = isPostDeletionError(error as Error, {
+          queryRetry: true,
+          failureCount,
+          isPostDeletion: isDeletionFlowActive(),
+        });
+
+        // Skip logging if this is a silent error or post-deletion error
+        if (!appError.silent && !isPostDeletion) {
+          // Log errors for monitoring
+          globalErrorHandler.logError(appError, {
+            queryRetry: true,
+            failureCount,
+          });
+        }
 
         // Record query performance metrics
         performanceMonitor.recordMetric('query_retry', failureCount, {
           errorType: appError.type,
           errorMessage: appError.message,
         });
+
+        // Don't retry if it's a post-deletion error
+        if (isPostDeletion) {
+          return false;
+        }
 
         // Don't retry auth or validation errors
         if (
@@ -130,12 +159,10 @@ function QueryProviderInner({ children }: QueryProviderProps) {
     <>
       {children}
       {ReactQueryDevtools && (
-        <Suspense fallback={null}>
-          <ReactQueryDevtools
-            initialIsOpen={false}
-            buttonPosition="bottom-right"
-          />
-        </Suspense>
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          buttonPosition="bottom-right"
+        />
       )}
     </>
   );

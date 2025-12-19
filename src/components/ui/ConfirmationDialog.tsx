@@ -22,7 +22,8 @@ export interface ConfirmationDialogProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  confirmVariant?: 'primary' | 'danger' | 'warning';
+  confirmVariant?: 'primary' | 'danger' | 'warning' | 'error' | 'secondary';
+  cancelVariant?: 'primary' | 'danger' | 'warning' | 'error' | 'secondary';
   isDestructive?: boolean;
   isLoading?: boolean;
   onConfirm: () => void | Promise<void>;
@@ -43,6 +44,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   confirmVariant = 'primary',
+  cancelVariant = 'secondary',
   isDestructive = false,
   isLoading = false,
   onConfirm,
@@ -55,8 +57,22 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   onCheckboxChange,
   checkboxChecked = false,
 }) => {
+  // Internal state management for checkbox when no external state is provided
+  const [internalCheckboxChecked, setInternalCheckboxChecked] = React.useState(false);
+  
+  // Reset internal state when dialog visibility changes
+  React.useEffect(() => {
+    if (!visible) {
+      setInternalCheckboxChecked(false);
+    }
+  }, [visible]);
+  
+  // Use internal state if no external state management is provided
+  const isCheckboxChecked = onCheckboxChange ? checkboxChecked : internalCheckboxChecked;
+  const handleCheckboxChange = onCheckboxChange || setInternalCheckboxChecked;
+  
   const handleConfirm = async () => {
-    if (checkboxRequired && !checkboxChecked) {
+    if (checkboxRequired && !isCheckboxChecked) {
       return;
     }
     await onConfirm();
@@ -79,7 +95,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     }
   };
 
-  const canConfirm = !isLoading && (!checkboxRequired || checkboxChecked);
+  const canConfirm = !isLoading && (!checkboxRequired || isCheckboxChecked);
 
   return (
     <RNModal
@@ -108,21 +124,20 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           )}
 
           {showCheckbox && checkboxLabel && (
-            <TouchableOpacity
-              style={styles.checkboxContainer}
-              onPress={() => onCheckboxChange?.(!checkboxChecked)}
-              disabled={isLoading}
-            >
-              <View
+            <View style={styles.checkboxContainer}>
+              <TouchableOpacity
                 style={[
                   styles.checkbox,
-                  checkboxChecked && styles.checkboxChecked,
+                  isCheckboxChecked && styles.checkboxChecked,
                 ]}
+                onPress={() => handleCheckboxChange(!isCheckboxChecked)}
+                disabled={isLoading}
+                activeOpacity={0.7}
               >
-                {checkboxChecked && <Text style={styles.checkmark}>✓</Text>}
-              </View>
+                {isCheckboxChecked && <Text style={styles.checkmark}>✓</Text>}
+              </TouchableOpacity>
               <Text style={styles.checkboxLabel}>{checkboxLabel}</Text>
-            </TouchableOpacity>
+            </View>
           )}
 
           {isDestructive && (
@@ -144,21 +159,27 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           )}
 
           <View style={styles.buttonContainer}>
-            <Button
-              title={cancelText}
-              onPress={onCancel}
-              variant="secondary"
-              style={styles.button}
-              disabled={isLoading}
-            />
-            <Button
-              title={confirmText}
-              onPress={handleConfirm}
-              variant={confirmVariant}
-              style={styles.button}
-              disabled={!canConfirm}
-              loading={isLoading}
-            />
+            <View style={styles.buttonWrapper}>
+              <Button
+                title={confirmText}
+                onPress={handleConfirm}
+                variant={confirmVariant}
+                size="small"
+                style={styles.button}
+                disabled={!canConfirm}
+                loading={isLoading}
+              />
+            </View>
+            <View style={styles.buttonWrapper}>
+              <Button
+                title={cancelText}
+                onPress={onCancel}
+                variant={cancelVariant}
+                size="small"
+                style={styles.button}
+                disabled={isLoading}
+              />
+            </View>
           </View>
         </Card>
       </View>
@@ -195,7 +216,7 @@ export class AdminConfirmations {
         onCancel={onCancel}
         isLoading={isLoading}
         icon={
-          <Ionicons name="checkmark-circle-outline" size={24} color="#16a34a" />
+          <Ionicons name="checkmark-circle-outline" size={24} color="#ff0083" />
         }
       />
     );
@@ -255,7 +276,8 @@ export class AdminConfirmations {
           'Group data will be preserved but not accessible',
         ]}
         confirmText="Close Group"
-        confirmVariant="danger"
+        confirmVariant="secondary"
+        cancelVariant="secondary"
         isDestructive={true}
         onConfirm={onConfirm}
         onCancel={onCancel}
@@ -398,7 +420,8 @@ const styles = StyleSheet.create({
   dialog: {
     width: '100%',
     maxWidth: 400,
-    padding: 24,
+    padding: 20,
+    paddingBottom: 48,
   },
   header: {
     alignItems: 'center',
@@ -432,30 +455,31 @@ const styles = StyleSheet.create({
   detailsContainer: {
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
+    padding: 12,
+    marginBottom: 14,
   },
   detailItem: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    lineHeight: 20,
-    marginBottom: 4,
+    lineHeight: 19,
+    marginBottom: 3,
   },
   checkboxContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingVertical: 8,
+    alignItems: 'flex-start',
+    marginBottom: 14,
+    paddingVertical: 6,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     borderWidth: 2,
     borderColor: '#ddd',
     borderRadius: 4,
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0, // Prevent checkbox from shrinking
   },
   checkboxChecked: {
     backgroundColor: '#007AFF',
@@ -470,13 +494,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 20,
+    flexWrap: 'wrap',
+    marginTop: 2,
   },
   warningContainer: {
     backgroundColor: '#fff3cd',
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    padding: 10,
+    marginBottom: 0,
     borderLeftWidth: 4,
     borderLeftColor: '#ffc107',
   },
@@ -488,9 +514,20 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 6,
+    alignItems: 'stretch',
+    marginTop: 32,
+    width: '100%',
+  },
+  buttonWrapper: {
+    flex: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
   },
   button: {
-    flex: 1,
+    width: '100%',
+    minWidth: 0,
+    paddingHorizontal: 8,
   },
 });

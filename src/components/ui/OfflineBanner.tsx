@@ -1,56 +1,90 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import NetInfo from '@react-native-community/netinfo';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
+import { useTheme } from '../../theme/provider/useTheme';
 
 export function OfflineBanner() {
   const { isConnected, isInternetReachable, type } = useNetworkStatus();
+  const { theme } = useTheme();
   const [showReconnected, setShowReconnected] = useState(false);
   const [slideAnim] = useState(new Animated.Value(-50));
+  const [isRendered, setIsRendered] = useState(() =>
+    !isConnected || !isInternetReachable
+  );
+  const hasBeenOfflineRef = useRef(false);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isOffline = !isConnected || !isInternetReachable;
+  const shouldShowBanner = useMemo(
+    () => isOffline || showReconnected,
+    [isOffline, showReconnected]
+  );
 
   useEffect(() => {
-    if (isOffline) {
-      // Slide down when offline
+    if (shouldShowBanner) {
+      setIsRendered(true);
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 300,
+        duration: 250,
         useNativeDriver: true,
       }).start();
-      setShowReconnected(false);
     } else {
-      if (showReconnected) {
-        // Show reconnected message briefly
-        setTimeout(() => {
-          Animated.timing(slideAnim, {
-            toValue: -50,
-            duration: 300,
-            useNativeDriver: true,
-          }).start();
-        }, 2000);
-      } else {
-        // Hide immediately if we were never offline
-        Animated.timing(slideAnim, {
-          toValue: -50,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
-      }
+      Animated.timing(slideAnim, {
+        toValue: -60,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setIsRendered(false);
+        }
+      });
     }
-  }, [isOffline, showReconnected, slideAnim]);
+  }, [shouldShowBanner, slideAnim]);
 
   useEffect(() => {
-    // Show reconnected message when coming back online
-    if (!isOffline && slideAnim._value === 0) {
-      setShowReconnected(true);
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
     }
-  }, [isOffline, slideAnim._value]);
+
+    if (isOffline) {
+      hasBeenOfflineRef.current = true;
+      setShowReconnected(false);
+      return;
+    }
+
+    if (hasBeenOfflineRef.current) {
+      setShowReconnected(true);
+      reconnectTimerRef.current = setTimeout(() => {
+        setShowReconnected(false);
+        hasBeenOfflineRef.current = false;
+      }, 2000);
+    }
+
+    return () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+  }, [isOffline]);
+
+  useEffect(() => {
+    return () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
+    };
+  }, []);
 
   const getMessage = () => {
     if (!isConnected) {
@@ -67,52 +101,89 @@ export function OfflineBanner() {
 
   const getBackgroundColor = () => {
     if (showReconnected) {
-      return '#48bb78'; // Green for reconnected
+      return theme.name === 'dark'
+        ? 'rgba(255, 0, 131, 0.3)' // Primary pink for reconnected (dark theme)
+        : 'rgba(255, 0, 131, 0.3)'; // Primary pink for reconnected (light theme)
     }
-    return '#f56565'; // Red for offline
+    return theme.name === 'dark'
+      ? 'rgba(245, 101, 101, 0.3)' // Red for offline (dark theme)
+      : 'rgba(245, 101, 101, 0.3)'; // Red for offline (light theme)
   };
 
   const handleRetry = async () => {
     // Force a network check - NetInfo will automatically update our state
     try {
-      const NetInfo = await import('@react-native-community/netinfo');
-      await NetInfo.default.refresh();
+      await NetInfo.refresh();
     } catch (error) {
       console.warn('Failed to refresh network status:', error);
     }
   };
+
+  if (!isRendered) {
+    return null;
+  }
 
   return (
     <Animated.View
       style={[
         styles.banner,
         {
-          backgroundColor: getBackgroundColor(),
           transform: [{ translateY: slideAnim }],
+          elevation: Platform.OS === 'android' ? 8 : 0,
+          shadowColor: theme.name === 'dark' ? '#000000' : '#000000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: theme.name === 'dark' ? 0.3 : 0.1,
+          shadowRadius: 4,
         },
       ]}
     >
-      <View style={styles.content}>
-        <Text style={styles.text}>{getMessage()}</Text>
-        {isOffline && (
-          <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <BlurView
+        intensity={Platform.OS === 'ios' ? 80 : 100}
+        tint={theme.name === 'dark' ? 'dark' : 'light'}
+        experimentalBlurMethod={
+          Platform.OS === 'android' ? 'dimezisBlurView' : undefined
+        }
+        style={[
+          styles.blurContainer,
+          {
+            backgroundColor: getBackgroundColor(),
+          },
+        ]}
+      >
+        <View style={styles.content}>
+          <Text style={[styles.text, { color: theme.colors.text.primary }]}>
+            {getMessage()}
+          </Text>
+          {isOffline && (
+            <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
+              <Text
+                style={[styles.retryText, { color: theme.colors.text.primary }]}
+              >
+                Retry
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </BlurView>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   banner: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 1000,
+  },
+  blurContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    width: '100%',
   },
   content: {
     flexDirection: 'row',
@@ -120,7 +191,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    color: 'white',
     fontSize: 14,
     fontWeight: '600',
     flex: 1,
@@ -132,10 +202,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   retryText: {
-    color: 'white',
     fontSize: 12,
     fontWeight: '600',
   },

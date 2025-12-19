@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  View,
+  StyleSheet,
+  StatusBar,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import type { OnboardingData, OnboardingStep } from '@/types/app';
@@ -10,15 +17,10 @@ import NameStep from './NameStep';
 import EmailStep from './EmailStep';
 import ChurchStep from './ChurchStep';
 import GroupStatusStep from './GroupStatusStep';
-import InterestsStep from './InterestsStep';
-import MeetingNightStep from './MeetingNightStep';
+import ProfileDetailsStep from './ProfileDetailsStep';
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
-  {
-    id: 'name',
-    title: 'Your Name',
-    component: NameStep,
-  },
+  { id: 'name', title: 'Your Name', component: NameStep },
   {
     id: 'email',
     title: 'Your Email',
@@ -35,31 +37,27 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     component: GroupStatusStep,
   },
   {
-    id: 'interests',
-    title: 'Your Interests',
-    component: InterestsStep,
-  },
-  {
-    id: 'meeting-night',
-    title: 'Meeting Preference',
-    component: MeetingNightStep,
+    id: 'profile',
+    title: 'Profile Details',
+    component: ProfileDetailsStep,
   },
 ];
 
 export default function OnboardingFlow() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    name: '',
+    first_name: '',
+    last_name: '',
     church_id: undefined,
     service_id: undefined,
-    interests: [],
-    preferred_meeting_night: '',
     group_status: undefined,
+    avatar_url: undefined,
+    bio: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { createUserProfile, user } = useAuthStore();
+  const { createUserProfile, user, signOut } = useAuthStore();
 
   useEffect(() => {
     // Load any existing onboarding data from storage
@@ -73,7 +71,8 @@ export default function OnboardingFlow() {
       );
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        setOnboardingData(parsedData);
+        const { name: _legacyName, ...rest } = parsedData || {};
+        setOnboardingData((prev) => ({ ...prev, ...rest }));
       }
     } catch (error) {
       console.error('Error loading onboarding data:', error);
@@ -114,9 +113,16 @@ export default function OnboardingFlow() {
   };
 
   const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
+    if (currentStepIndex === 0) {
+      // First step: sign out and go back to welcome
+      signOut().then(async () => {
+        await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
+        router.replace('/(auth)/welcome');
+      });
+      return;
     }
+
+    setCurrentStepIndex((prev) => prev - 1);
   };
 
   const completeOnboarding = async (data: OnboardingData) => {
@@ -137,11 +143,14 @@ export default function OnboardingFlow() {
       const isLookingForGroup = data.group_status === 'looking';
       // Create user profile in database AFTER we have an email (EmailStep links auth.user)
       const success = await createUserProfile({
-        name: data.name,
+        first_name: data.first_name?.trim() || undefined,
+        last_name: data.last_name?.trim() || undefined,
         church_id: data.church_id,
         service_id: data.service_id,
         newcomer: isLookingForGroup, // remain newcomer if looking for a group
         onboarding_complete: true, // explicitly mark onboarding complete
+        avatar_url: data.avatar_url,
+        bio: data.bio?.trim() ? data.bio.trim() : undefined,
       });
 
       if (!success) {
@@ -177,40 +186,36 @@ export default function OnboardingFlow() {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       <View style={styles.progressContainer} testID="progress-container">
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${((currentStepIndex + 1) / ONBOARDING_STEPS.length) * 100}%`,
-              },
-            ]}
-          />
-        </View>
-        <View style={styles.stepIndicator}>
-          <View style={styles.stepDots}>
-            {ONBOARDING_STEPS.map((_, index) => (
+        <View style={styles.stepDots}>
+          {ONBOARDING_STEPS.map((_, index) => {
+            const isCompleted = index < currentStepIndex;
+            const isActive = index === currentStepIndex;
+            return (
               <View
                 key={index}
                 style={[
                   styles.stepDot,
-                  index <= currentStepIndex && styles.stepDotActive,
+                  (isCompleted || isActive) && styles.stepDotActive,
                 ]}
               />
-            ))}
-          </View>
+            );
+          })}
         </View>
       </View>
 
-      <View style={styles.stepContainer}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.stepContainer}
+      >
         <StepComponent
           data={onboardingData}
           onNext={handleNext}
           onBack={handleBack}
+          canGoBack={currentStepIndex > 0}
           isLoading={isLoading}
           error={error}
         />
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -221,38 +226,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   progressContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#007AFF',
-    borderRadius: 2,
-  },
-  stepIndicator: {
-    marginTop: 12,
+    paddingTop: 24,
+    paddingBottom: 16,
     alignItems: 'center',
   },
   stepDots: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   stepDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ddd',
-    marginHorizontal: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#EAEAEA',
+    marginHorizontal: 6,
   },
   stepDotActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#ff0083',
   },
   stepContainer: {
     flex: 1,

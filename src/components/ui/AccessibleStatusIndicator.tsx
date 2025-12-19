@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import Text from './Text';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from './Badge';
 import {
@@ -111,6 +112,7 @@ export function AccessibleStatusIndicator({
             />
           )}
           <Text
+            weight="semiBold"
             style={[styles.text, { color: config.colors.text }]}
             accessibilityElementsHidden={true}
           >
@@ -139,6 +141,5 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 12,
-    fontWeight: '600',
   },
 });

@@ -7,7 +7,7 @@ import {
   FlatList,
   StyleSheet,
   ViewStyle,
-  TextStyle,
+  ScrollView,
 } from 'react-native';
 import { Theme } from '../../utils/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,7 @@ interface SelectProps {
   multiple?: boolean;
   style?: ViewStyle;
   testID?: string;
+  variant?: 'modal' | 'dropdown';
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -42,6 +43,7 @@ export const Select: React.FC<SelectProps> = ({
   multiple = false,
   style,
   testID,
+  variant = 'modal',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedValues, setSelectedValues] = useState<(string | number)[]>(
@@ -50,6 +52,7 @@ export const Select: React.FC<SelectProps> = ({
 
   const selectedOption = options.find((option) => option.value === value);
   const displayText = selectedOption?.label || placeholder;
+  const isDropdown = variant === 'dropdown';
 
   const handleSelect = (option: SelectOption) => {
     if (multiple) {
@@ -93,8 +96,23 @@ export const Select: React.FC<SelectProps> = ({
     </TouchableOpacity>
   );
 
+  const toggleOpen = () => {
+    if (disabled) return;
+    if (isDropdown) {
+      setIsOpen((prev) => !prev);
+    } else {
+      setIsOpen(true);
+    }
+  };
+
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[
+        styles.container,
+        style,
+        isDropdown && isOpen && styles.dropdownExpanded,
+      ]}
+    >
       {label && <Text style={styles.label}>{label}</Text>}
 
       <TouchableOpacity
@@ -103,7 +121,7 @@ export const Select: React.FC<SelectProps> = ({
           error && styles.selectorError,
           disabled && styles.selectorDisabled,
         ]}
-        onPress={() => !disabled && setIsOpen(true)}
+        onPress={toggleOpen}
         disabled={disabled}
         testID={testID}
         accessibilityRole="button"
@@ -119,7 +137,7 @@ export const Select: React.FC<SelectProps> = ({
           {displayText}
         </Text>
         <Ionicons
-          name="chevron-down-outline"
+          name={isOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
           size={16}
           color={Theme.colors.textSecondary}
         />
@@ -127,36 +145,54 @@ export const Select: React.FC<SelectProps> = ({
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsOpen(false)}
-      >
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={() => setIsOpen(false)}
-        >
-          <View style={styles.dropdown}>
-            <FlatList
-              data={options}
-              renderItem={renderOption}
-              keyExtractor={(item) => item.value.toString()}
-              style={styles.optionsList}
+      {isDropdown ? (
+        isOpen && (
+          <View style={styles.inlineDropdown}>
+            <ScrollView
+              style={styles.inlineScroll}
+              nestedScrollEnabled
               showsVerticalScrollIndicator={false}
-            />
-            {multiple && (
-              <TouchableOpacity
-                style={styles.doneButton}
-                onPress={() => setIsOpen(false)}
-              >
-                <Text style={styles.doneButtonText}>Done</Text>
-              </TouchableOpacity>
-            )}
+            >
+              {options.map((option) => (
+                <View key={option.value.toString()}>
+                  {renderOption({ item: option })}
+                </View>
+              ))}
+            </ScrollView>
           </View>
-        </TouchableOpacity>
-      </Modal>
+        )
+      ) : (
+        <Modal
+          visible={isOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsOpen(false)}
+        >
+          <TouchableOpacity
+            style={styles.overlay}
+            activeOpacity={1}
+            onPress={() => setIsOpen(false)}
+          >
+            <View style={styles.dropdown}>
+              <FlatList
+                data={options}
+                renderItem={renderOption}
+                keyExtractor={(item) => item.value.toString()}
+                style={styles.optionsList}
+                showsVerticalScrollIndicator={false}
+              />
+              {multiple && (
+                <TouchableOpacity
+                  style={styles.doneButton}
+                  onPress={() => setIsOpen(false)}
+                >
+                  <Text style={styles.doneButtonText}>Done</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -164,6 +200,10 @@ export const Select: React.FC<SelectProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginBottom: Theme.spacing.base,
+    position: 'relative',
+  },
+  dropdownExpanded: {
+    zIndex: 10,
   },
   label: {
     fontSize: Theme.typography.fontSize.base,
@@ -197,11 +237,6 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: Theme.colors.textTertiary,
-  },
-  arrow: {
-    fontSize: Theme.typography.fontSize.sm,
-    color: Theme.colors.textSecondary,
-    marginLeft: Theme.spacing.xs,
   },
   errorText: {
     fontSize: Theme.typography.fontSize.sm,
@@ -257,5 +292,17 @@ const styles = StyleSheet.create({
     color: Theme.colors.white,
     fontSize: Theme.typography.fontSize.base,
     fontWeight: Theme.typography.fontWeight.medium,
+  },
+  inlineDropdown: {
+    marginTop: Theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    borderRadius: Theme.borderRadius.base,
+    backgroundColor: Theme.colors.surface,
+    maxHeight: 310,
+    ...Theme.shadows.md,
+  },
+  inlineScroll: {
+    maxHeight: 310,
   },
 });

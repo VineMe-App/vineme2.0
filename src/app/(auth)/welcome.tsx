@@ -1,61 +1,47 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity,
-  SafeAreaView,
-  Image
-} from 'react-native';
-import { Button } from '@/components/ui/Button';
-import { useRouter, Link } from 'expo-router';
+import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { AuthButton } from '@/components/auth/AuthButton';
+import { Text } from '@/components/ui/Text';
+import { useRouter } from 'expo-router';
+import { AuthHeroLogo } from '@/components/auth/AuthHeroLogo';
 
 export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome to VineMe</Text>
-          <Text style={styles.subtitle}>
-            Connect with your church community and grow together in faith
-          </Text>
+        <View style={styles.body}>
+          <AuthHeroLogo
+            logoSize={109}
+            title="Welcome to VineMe"
+            subtitle="Connect with your church community and grow together in faith."
+            titleMarginBottom={13}
+            subtitleMaxWidth={272}
+            subtitleLineHeight={26}
+          />
         </View>
 
         <View style={styles.actions}>
-          <Button 
-            title="Sign up with Phone" 
+          <AuthButton
+            title="Sign up"
             onPress={() => router.push('/(auth)/phone-signup')}
             style={styles.primaryButton}
+            fullWidth={false}
           />
-          
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <Button 
-            title="Sign in with Phone" 
+          <AuthButton
+            title="Sign in"
+            variant="secondary"
             onPress={() => router.push('/(auth)/phone-login')}
-            variant="secondary"
             style={styles.secondaryButton}
-          />
-
-          <Button 
-            title="Sign in with Email" 
-            onPress={() => router.push('/(auth)/email-login')}
-            variant="secondary"
-            style={styles.secondaryButton}
+            fullWidth={false}
           />
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </Text>
-        </View>
+        <Text style={styles.footerText}>
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -68,60 +54,39 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
-  },
-  header: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingHorizontal: 32,
     alignItems: 'center',
-    paddingVertical: 48,
+    justifyContent: 'space-between',
+    paddingBottom: 40,
+    paddingTop: 100,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 26,
-    paddingHorizontal: 16,
+  body: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
   },
   actions: {
     width: '100%',
+    alignItems: 'center',
+    marginBottom: 56,
   },
   primaryButton: {
-    marginBottom: 16,
+    width: 278,
+    marginBottom: 8,
   },
   secondaryButton: {
-    marginBottom: 12,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e5e5',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  footer: {
-    paddingTop: 24,
+    width: 278,
+    marginBottom: 0,
   },
   footerText: {
     fontSize: 14,
-    color: '#999',
+    fontWeight: '400', // Regular
+    color: '#999999',
     textAlign: 'center',
-    lineHeight: 20,
+    letterSpacing: -0.14,
+    lineHeight: 16,
+    maxWidth: 278,
+    includeFontPadding: false,
   },
 });

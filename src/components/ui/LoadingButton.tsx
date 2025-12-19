@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 22, // Updated to pill shape (half of minHeight: 44)
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,

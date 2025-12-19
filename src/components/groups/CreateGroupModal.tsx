@@ -9,15 +9,17 @@ import {
   Platform,
 } from 'react-native';
 import { Modal, Form, FormField, Input, Select, Button, Card } from '../ui';
-import { useFormContext } from '../ui/Form';
+import { useFormContext, type FormValues } from '../ui/Form';
 import { groupCreationService } from '../../services/groupCreation';
 import { useAuthStore } from '../../stores/auth';
 import { useErrorHandler } from '../../hooks';
 import { locationService, type Coordinates } from '../../services/location';
+import { supabase } from '../../services/supabase';
 import type { CreateGroupData } from '../../services/admin';
 import type { SelectOption } from '../ui/Select';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { debounce } from '../../utils';
+import { LocationPicker } from './LocationPicker';
 
 interface CreateGroupModalProps {
   isVisible: boolean;
@@ -37,13 +39,13 @@ interface GroupFormData {
 type FormStep = 'basic' | 'schedule' | 'location' | 'review';
 
 const MEETING_DAYS: SelectOption[] = [
-  { label: 'Sunday', value: 'sunday' },
-  { label: 'Monday', value: 'monday' },
-  { label: 'Tuesday', value: 'tuesday' },
-  { label: 'Wednesday', value: 'wednesday' },
-  { label: 'Thursday', value: 'thursday' },
-  { label: 'Friday', value: 'friday' },
-  { label: 'Saturday', value: 'saturday' },
+  { label: 'Sunday', value: 'Sunday' },
+  { label: 'Monday', value: 'Monday' },
+  { label: 'Tuesday', value: 'Tuesday' },
+  { label: 'Wednesday', value: 'Wednesday' },
+  { label: 'Thursday', value: 'Thursday' },
+  { label: 'Friday', value: 'Friday' },
+  { label: 'Saturday', value: 'Saturday' },
 ];
 
 const STEP_TITLES = {
@@ -153,7 +155,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     });
   };
 
-  const handleSubmit = async (values: GroupFormData) => {
+  const handleSubmit = async (values: FormValues) => {
     if (!userProfile?.id || !userProfile?.church_id) {
       Alert.alert(
         'Error',
@@ -166,9 +168,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
     try {
       // Ensure Supabase session is present so RLS sees auth.uid()
-      const { data: session } = await import('../../services/supabase').then(
-        (m) => m.supabase.auth.getSession()
-      );
+      const { data: session } = await supabase.auth.getSession();
       const uid = session?.session?.user?.id;
       if (!uid || uid !== userProfile.id) {
         throw new Error('You are not authenticated. Please sign in again.');
@@ -397,29 +397,17 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       <FormField name="location">
         {({ value, error, onChange, onBlur }) => (
           <View>
-            <Input
-              label="Meeting Location"
-              value={value}
-              onChangeText={(text) => {
-                onChange(text);
-                debouncedGeocode(text);
+            <LocationPicker
+              value={{
+                address: value,
+                coordinates: locationCoordinates,
               }}
-              onBlur={onBlur}
-              error={error}
-              placeholder="e.g., Church Room 101, or 123 Main St, City"
-              required
-              editable={!isSubmitting}
+              onChange={(locationData) => {
+                onChange(locationData.address || '');
+                setLocationCoordinates(locationData.coordinates ?? null);
+              }}
             />
-            {isGeocodingLocation && (
-              <Text style={styles.geocodingText}>Finding location...</Text>
-            )}
-            {locationCoordinates && (
-              <View style={styles.locationConfirmation}>
-                <Text style={styles.locationConfirmationText}>
-                  Location found and will be shown on the map
-                </Text>
-              </View>
-            )}
+            {error && <Text style={styles.errorText}>{error}</Text>}
           </View>
         )}
       </FormField>

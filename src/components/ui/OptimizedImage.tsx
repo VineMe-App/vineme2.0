@@ -64,12 +64,15 @@ export function OptimizedImage({
 
     let uri = source.uri;
 
-    // Add optimization parameters for supported services
-    if (
-      uri.includes('supabase') ||
-      uri.includes('cloudinary') ||
-      uri.includes('imagekit')
-    ) {
+    // Supabase Storage doesn't support image transformation via query parameters
+    // Skip optimization for Supabase URLs, but keep it for services that support it
+    if (uri.includes('supabase')) {
+      // Return Supabase URLs as-is without adding transformation params
+      return { uri };
+    }
+
+    // Add optimization parameters for supported services (Cloudinary, ImageKit, etc.)
+    if (uri.includes('cloudinary') || uri.includes('imagekit')) {
       const url = new URL(uri);
 
       // Calculate optimal dimensions
@@ -207,7 +210,11 @@ export function OptimizedImage({
 
   return (
     <View ref={containerRef} style={containerStyle}>
-      {isLoading && renderPlaceholder()}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          {renderPlaceholder()}
+        </View>
+      )}
       <Image
         ref={imageRef}
         source={optimizedSource()}
@@ -274,7 +281,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 100,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    zIndex: 1,
   },
   error: {
     backgroundColor: '#f8f8f8',

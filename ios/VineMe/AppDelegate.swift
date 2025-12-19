@@ -26,6 +26,13 @@ public class AppDelegate: ExpoAppDelegate {
     reactNativeFactory = factory
     bindReactNativeFactory(factory)
 
+    // Initialize Google Maps
+    #if canImport(GoogleMaps)
+    if let apiKey = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String {
+      GMSServices.provideAPIKey(apiKey)
+    }
+    #endif
+
 #if os(iOS) || os(tvOS)
     window = UIWindow(frame: UIScreen.main.bounds)
     factory.startReactNative(
@@ -34,10 +41,6 @@ public class AppDelegate: ExpoAppDelegate {
       launchOptions: launchOptions)
 #endif
 
-// @generated begin react-native-maps-init - expo prebuild (DO NOT MODIFY) sync-cc236d2484af38beaaae052c63ecffa5053253f4
-#if canImport(GoogleMaps)
-GMSServices.provideAPIKey("AIzaSyAdlE2rjHp3qk4mNV8V2YzVmz6YdOjyzYQ")
-#endif
 // @generated end react-native-maps-init
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

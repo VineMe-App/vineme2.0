@@ -256,6 +256,25 @@ export class AdminServiceWrapper {
     );
   }
 
+  async updateUserGroupHelpStatus(
+    userId: string,
+    updates: {
+      cannot_find_group?: boolean;
+      cannot_find_group_contacted_at?: string | null;
+      cannot_find_group_resolved_at?: string | null;
+    },
+    options: ServiceWrapperOptions = {}
+  ): Promise<AdminServiceResponse<boolean>> {
+    return this.executeWithErrorHandling(
+      () => userAdminService.updateUserGroupHelpStatus(userId, updates),
+      'updateUserGroupHelpStatus',
+      {
+        ...options,
+        context: { userId, ...options.context },
+      }
+    );
+  }
+
   /**
    * Batch approve multiple groups
    */
@@ -265,10 +284,10 @@ export class AdminServiceWrapper {
     options: ServiceWrapperOptions = {}
   ): Promise<{
     successful: string[];
-    failed: Array<{ groupId: string; error: AppError }>;
+    failed: { groupId: string; error: AppError }[];
   }> {
     const successful: string[] = [];
-    const failed: Array<{ groupId: string; error: AppError }> = [];
+    const failed: { groupId: string; error: AppError }[] = [];
 
     for (const groupId of groupIds) {
       const result = await this.approveGroup(groupId, adminId, undefined, {
@@ -296,10 +315,10 @@ export class AdminServiceWrapper {
     options: ServiceWrapperOptions = {}
   ): Promise<{
     successful: string[];
-    failed: Array<{ groupId: string; error: AppError }>;
+    failed: { groupId: string; error: AppError }[];
   }> {
     const successful: string[] = [];
-    const failed: Array<{ groupId: string; error: AppError }> = [];
+    const failed: { groupId: string; error: AppError }[] = [];
 
     for (const groupId of groupIds) {
       const result = await this.declineGroup(groupId, adminId, reason, {

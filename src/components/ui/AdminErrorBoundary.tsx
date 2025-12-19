@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
+import Text from './Text';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from './Button';
 import { ErrorMessage } from './ErrorMessage';
@@ -121,7 +122,9 @@ export class AdminErrorBoundary extends React.Component<
             <View style={{ alignItems: 'center', marginBottom: 6 }}>
               <Ionicons name="warning-outline" size={32} color="#f59e0b" />
             </View>
-            <Text style={styles.errorTitle}>Something went wrong</Text>
+            <Text weight="bold" style={styles.errorTitle}>
+              Something went wrong
+            </Text>
 
             {this.isPermissionError(this.state.error!) ? (
               <Text style={styles.errorMessage}>
@@ -148,7 +151,9 @@ export class AdminErrorBoundary extends React.Component<
 
             {__DEV__ && this.state.error && (
               <View style={styles.debugContainer}>
-                <Text style={styles.debugTitle}>Debug Information:</Text>
+                <Text weight="bold" style={styles.debugTitle}>
+                  Debug Information:
+                </Text>
                 <Text style={styles.debugText}>{this.state.error.message}</Text>
                 {this.state.errorInfo && (
                   <Text style={styles.debugText}>
@@ -286,7 +291,9 @@ export const AdminRetryableError: React.FC<AdminRetryableErrorProps> = ({
     <View style={styles.retryableErrorContainer}>
       <View style={styles.errorHeader}>
         <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={styles.errorTitle}>Operation Failed</Text>
+        <Text weight="semiBold" style={styles.errorTitle}>
+          Operation Failed
+        </Text>
       </View>
 
       <Text style={styles.errorDescription}>{getErrorMessage(error)}</Text>
@@ -393,13 +400,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#dc3545',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
   errorMessage: {
     fontSize: 16,
     color: '#6c757d',
@@ -408,6 +408,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
+    flex: 1,
     marginTop: 16,
   },
   debugContainer: {
@@ -419,7 +420,6 @@ const styles = StyleSheet.create({
   },
   debugTitle: {
     fontSize: 14,
-    fontWeight: 'bold',
     color: '#495057',
     marginBottom: 8,
   },
@@ -488,7 +488,6 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 18,
-    fontWeight: '600',
     color: '#c53030',
   },
   errorDescription: {
@@ -507,8 +506,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
-  },
-  retryButton: {
-    flex: 1,
   },
 });

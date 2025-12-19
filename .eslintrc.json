@@ -2,6 +2,8 @@
   "extends": ["expo", "prettier"],
   "plugins": ["prettier"],
   "rules": {
-    "prettier/prettier": "error"
+    "prettier/prettier": "error",
+    "import/export": "warn",
+    "import/no-unresolved": "warn"
   }
 }

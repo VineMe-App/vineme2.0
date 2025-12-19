@@ -6,4 +6,5 @@ export * from './groups';
 export * from './events';
 export * from './friends';
 export * from './referrals';
+export * from './brand';
 export { ErrorBoundary } from './ErrorBoundary';

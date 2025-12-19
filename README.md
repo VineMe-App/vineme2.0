@@ -6,6 +6,7 @@ A cross-platform mobile application built with Expo and React Native to help chu
 
 ### Prerequisites
 
+
 - Node.js (v18 or later)
 - npm or yarn
 - Expo CLI (`npm install -g @expo/cli`)
@@ -33,18 +34,25 @@ A cross-platform mobile application built with Expo and React Native to help chu
 
 ### Development
 
-Start the development server:
+**Quick Start Options:**
 
+The app supports both Expo Go (for rapid testing) and Development Builds (for full features). See [EXPO_GO_SETUP.md](./EXPO_GO_SETUP.md) for detailed information.
+
+**For Expo Go (Quick Testing):**
 ```bash
-npm start
+npm run start:expo-go    # Start server in Expo Go mode
+npm run ios:expo-go      # iOS with Expo Go
+npm run android:expo-go  # Android with Expo Go
 ```
 
-Run on specific platforms:
-
+**For Development Build (Full Features - includes Maps):**
 ```bash
-npm run ios     # iOS simulator
-npm run android # Android emulator
-npm run web     # Web browser
+npm start                # Start development server
+npm run ios              # Start dev client and show QR code for iOS
+npm run android          # Start dev client and show QR code for Android
+npm run ios:simulator    # Auto-launch iOS simulator
+npm run android:simulator # Auto-launch Android emulator
+npm run web              # Web browser
 ```
 
 ### Code Quality

@@ -1,6 +1,14 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import {
+  triggerGroupRequestApprovedNotification,
+  triggerGroupRequestDeniedNotification,
+  triggerJoinRequestApprovedNotification,
+  triggerJoinRequestDeniedNotification,
+  triggerReferralJoinedGroupNotification,
+} from './notifications';
+import { getFullName } from '../utils/name';
+import {
   createPaginationParams,
   createPaginatedResponse,
   type PaginationParams,
@@ -33,7 +41,6 @@ export interface GroupJoinRequest {
   group_id: string;
   user_id: string;
   user?: User;
-  contact_consent: boolean;
   message?: string;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;
@@ -84,7 +91,20 @@ export interface UpdateGroupData {
   location?: any;
   whatsapp_link?: string;
   image_url?: string;
+  at_capacity?: boolean;
 }
+
+const withDisplayName = <
+  T extends { first_name?: string | null; last_name?: string | null },
+>(
+  user: (T & { name?: string | null }) | null | undefined
+) =>
+  user
+    ? {
+        ...user,
+        name: getFullName(user),
+      }
+    : user;
 
 /**
  * Admin service for managing groups
@@ -142,6 +162,23 @@ export class GroupAdminService {
         };
       }
 
+      // Get current user's service ID to filter groups by service
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          data: null,
+          error: new Error('User not authenticated'),
+        };
+      }
+
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('service_id')
+        .eq('id', user.id)
+        .single();
+
       let query = supabase
         .from('groups')
         .select(
@@ -149,20 +186,25 @@ export class GroupAdminService {
           *,
           service:services(*),
           church:churches(*),
-          creator:users!groups_created_by_fkey(id, name, avatar_url),
+          creator:users!groups_created_by_fkey(id, first_name, last_name, avatar_url),
           memberships:group_memberships(
             id,
             user_id,
             role,
             status,
             joined_at,
-            user:users(id, name, avatar_url)
+            user:users(id, first_name, last_name, avatar_url)
           )
         `,
           { count: pagination ? 'exact' : undefined }
         )
         .eq('church_id', churchId)
         .order('created_at', { ascending: false });
+
+      // Filter by service_id if user has one (church admins only see their service's groups)
+      if (userProfile?.service_id) {
+        query = query.eq('service_id', userProfile.service_id);
+      }
 
       if (!includeAll) {
         query = query.in('status', ['pending', 'approved']);
@@ -186,6 +228,12 @@ export class GroupAdminService {
       const groupsWithDetails =
         data?.map((group) => ({
           ...group,
+          creator: withDisplayName(group.creator),
+          memberships:
+            group.memberships?.map((m: any) => ({
+              ...m,
+              user: withDisplayName(m.user),
+            })) || [],
           member_count:
             group.memberships?.filter((m: any) => m.status === 'active')
               .length || 0,
@@ -238,7 +286,7 @@ export class GroupAdminService {
       // Verify the group exists and is pending
       const { data: existingGroup, error: fetchError } = await supabase
         .from('groups')
-        .select('id, status, church_id')
+        .select('id, status, church_id, created_by')
         .eq('id', groupId)
         .single();
 
@@ -266,23 +314,66 @@ export class GroupAdminService {
         };
       }
 
-      // Update group status to approved
-      const { data, error } = await supabase
+      // Use atomic RPC function to approve group and activate leader membership
+      // This ensures both operations succeed or both fail, preventing inconsistent states
+      const { data: approveResult, error: approveError } = await supabase.rpc(
+        'approve_group_atomic',
+        {
+          p_group_id: groupId,
+          p_admin_id: adminId,
+        }
+      );
+
+      if (approveError) {
+        return { data: null, error: new Error(approveError.message) };
+      }
+
+      if (!approveResult || !approveResult.success) {
+        return {
+          data: null,
+          error: new Error('Failed to approve group atomically'),
+        };
+      }
+
+      // Fetch the updated group to return
+      const { data, error: refetchError } = await supabase
         .from('groups')
-        .update({
-          status: 'approved',
-          updated_at: new Date().toISOString(),
-        })
+        .select('*')
         .eq('id', groupId)
-        .select()
         .single();
 
-      if (error) {
-        return { data: null, error: new Error(error.message) };
+      if (refetchError) {
+        return { data: null, error: new Error(refetchError.message) };
       }
 
       // Log the approval action
       await this.logGroupAction(groupId, adminId, 'approved', reason);
+
+      // Notify group creator/leader of approval
+      try {
+        const [{ data: group }, { data: admin }] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('id, title, created_by')
+            .eq('id', groupId)
+            .single(),
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', adminId)
+            .single(),
+        ]);
+        if (group && admin) {
+          await triggerGroupRequestApprovedNotification({
+            groupId: group.id,
+            groupTitle: (group as any).title,
+            leaderId: (group as any).created_by,
+            approvedByName: getFullName(admin),
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Group approved notification failed', e);
+      }
 
       return { data, error: null };
     } catch (error) {
@@ -347,23 +438,67 @@ export class GroupAdminService {
         };
       }
 
-      // Update group status to denied
-      const { data, error } = await supabase
+      // Use atomic RPC function to decline group and remove leader membership
+      // This ensures both operations succeed or both fail, preventing inconsistent states
+      const { data: declineResult, error: declineError } = await supabase.rpc(
+        'decline_group_atomic',
+        {
+          p_group_id: groupId,
+          p_admin_id: adminId,
+        }
+      );
+
+      if (declineError) {
+        return { data: null, error: new Error(declineError.message) };
+      }
+
+      if (!declineResult || !declineResult.success) {
+        return {
+          data: null,
+          error: new Error('Failed to decline group atomically'),
+        };
+      }
+
+      // Fetch the updated group to return
+      const { data, error: refetchError } = await supabase
         .from('groups')
-        .update({
-          status: 'denied',
-          updated_at: new Date().toISOString(),
-        })
+        .select('*')
         .eq('id', groupId)
-        .select()
         .single();
 
-      if (error) {
-        return { data: null, error: new Error(error.message) };
+      if (refetchError) {
+        return { data: null, error: new Error(refetchError.message) };
       }
 
       // Log the decline action
       await this.logGroupAction(groupId, adminId, 'declined', reason);
+
+      // Notify group creator/leader of denial
+      try {
+        const [{ data: group }, { data: admin }] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('id, title, created_by')
+            .eq('id', groupId)
+            .single(),
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', adminId)
+            .single(),
+        ]);
+        if (group && admin) {
+          await triggerGroupRequestDeniedNotification({
+            groupId: group.id,
+            groupTitle: (group as any).title,
+            leaderId: (group as any).created_by,
+            deniedByName: getFullName(admin),
+            reason,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Group denied notification failed', e);
+      }
 
       return { data, error: null };
     } catch (error) {
@@ -443,6 +578,18 @@ export class GroupAdminService {
         return { data: null, error: new Error(error.message) };
       }
 
+      // Set all related memberships to inactive to prevent dangling active/pending memberships
+      try {
+        await supabase
+          .from('group_memberships')
+          .update({ status: 'inactive', joined_at: null, /* preserve updated_at via trigger if present */ })
+          .eq('group_id', groupId)
+          .in('status', ['active', 'pending']);
+      } catch (e) {
+        // Non-fatal: log but do not block closing the group
+        if (__DEV__) console.warn('Failed to inactivate memberships when closing group', e);
+      }
+
       // Log the close action
       await this.logGroupAction(groupId, adminId, 'closed', reason);
 
@@ -484,7 +631,7 @@ export class GroupAdminService {
           user_id,
           status,
           joined_at,
-          user:users(id, name, avatar_url)
+          user:users(id, first_name, last_name, avatar_url)
         `
         )
         .eq('group_id', groupId)
@@ -501,8 +648,7 @@ export class GroupAdminService {
           id: item.id,
           group_id: item.group_id,
           user_id: item.user_id,
-          user: item.user,
-          contact_consent: true, // Default for now, can be enhanced later
+          user: withDisplayName(item.user),
           status: 'pending',
           created_at: item.joined_at,
         })) || [];
@@ -567,6 +713,61 @@ export class GroupAdminService {
         return { data: null, error: new Error(error.message) };
       }
 
+      // Notify requester of approval and fire referral-joined-group if applicable
+      try {
+        const [groupRes, userRes, approverRes] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('id, title')
+            .eq('id', request.group_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('id, first_name, last_name')
+            .eq('id', request.user_id)
+            .single(),
+          supabase.auth.getUser(),
+        ]);
+        const approverId = approverRes?.data?.user?.id;
+        let approverName: string | undefined;
+        if (approverId) {
+          const { data: approverUser } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', approverId)
+            .single();
+          approverName = getFullName(approverUser) || undefined;
+        }
+        if (groupRes.data && userRes.data && approverName) {
+          const requesterName = getFullName(userRes.data);
+          await triggerJoinRequestApprovedNotification({
+            groupId: groupRes.data.id,
+            groupTitle: groupRes.data.title,
+            requesterId: userRes.data.id,
+            approvedByName: approverName,
+          });
+
+          // Check for referral linking this user and group
+          const { data: groupReferral } = await supabase
+            .from('referrals')
+            .select('referred_by_user_id')
+            .eq('referred_user_id', userRes.data.id)
+            .eq('group_id', groupRes.data.id)
+            .maybeSingle();
+          if (groupReferral?.referred_by_user_id) {
+            await triggerReferralJoinedGroupNotification({
+              referrerId: groupReferral.referred_by_user_id,
+              referredUserId: userRes.data.id,
+              referredUserName: requesterName || 'A member',
+              groupId: groupRes.data.id,
+              groupTitle: groupRes.data.title,
+            });
+          }
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Join approval notification failed', e);
+      }
+
       return { data: true, error: null };
     } catch (error) {
       return {
@@ -624,6 +825,43 @@ export class GroupAdminService {
         return { data: null, error: new Error(error.message) };
       }
 
+      // Notify requester of denial
+      try {
+        const [groupRes, userRes, approverRes] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('id, title')
+            .eq('id', request.group_id)
+            .single(),
+          supabase
+            .from('users')
+            .select('id, first_name, last_name')
+            .eq('id', request.user_id)
+            .single(),
+          supabase.auth.getUser(),
+        ]);
+        const approverId = approverRes?.data?.user?.id;
+        let approverName: string | undefined;
+        if (approverId) {
+          const { data: approverUser } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', approverId)
+            .single();
+          approverName = getFullName(approverUser) || undefined;
+        }
+        if (groupRes.data && userRes.data && approverName) {
+          await triggerJoinRequestDeniedNotification({
+            groupId: groupRes.data.id,
+            groupTitle: groupRes.data.title,
+            requesterId: userRes.data.id,
+            deniedByName: approverName,
+          });
+        }
+      } catch (e) {
+        if (__DEV__) console.warn('Join denial notification failed', e);
+      }
+
       return { data: true, error: null };
     } catch (error) {
       return {
@@ -667,6 +905,90 @@ export class GroupAdminService {
     } catch (error) {
       // Don't fail the main operation if logging fails
       console.error('Failed to log group action:', error);
+    }
+  }
+
+  /**
+   * Get all pending join requests for a specific service
+   */
+  async getServiceJoinRequests(
+    serviceId: string
+  ): Promise<AdminServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      // Check permission to manage church groups
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_groups'
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to view join requests'
+          ),
+        };
+      }
+
+      // Get all groups for this service
+      const { data: serviceGroups, error: groupsError } = await supabase
+        .from('groups')
+        .select('id')
+        .eq('service_id', serviceId);
+
+      if (groupsError) {
+        return { data: null, error: new Error(groupsError.message) };
+      }
+
+      const groupIds = serviceGroups?.map((g) => g.id) || [];
+
+      if (groupIds.length === 0) {
+        return { data: [], error: null };
+      }
+
+      // Get all pending join requests for these groups
+      const { data: requests, error: requestsError } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(
+            id,
+            first_name,
+            last_name,
+            avatar_url,
+            newcomer,
+            church:churches(id, name),
+            service:services(id, name)
+          ),
+          group:groups(
+            id,
+            title,
+            service_id,
+            memberships:group_memberships!inner(
+              user_id,
+              role,
+              status,
+              user:users(id, first_name, last_name, avatar_url)
+            )
+          )
+        `
+        )
+        .in('group_id', groupIds)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (requestsError) {
+        return { data: null, error: new Error(requestsError.message) };
+      }
+
+      return { data: requests || [], error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get service join requests'),
+      };
     }
   }
 }
@@ -726,6 +1048,10 @@ export class UserAdminService {
         };
       }
 
+      // For church-wide management views we do NOT filter by the admin's service.
+      // This query powers church-level dashboards and shows all church members
+      // regardless of which service they or the admin belongs to.
+
       let query = supabase
         .from('users')
         .select(
@@ -739,13 +1065,18 @@ export class UserAdminService {
             role,
             status,
             joined_at,
-            group:groups(id, title, status)
+            group:groups(id, title, status, service_id)
           )
         `,
           { count: pagination ? 'exact' : undefined }
         )
         .eq('church_id', churchId)
         .order('name');
+
+      // For church-wide management views we must not scope results to the admin's
+      // own service (if they have one). This query powers church-level dashboards
+      // and is protected by `manage_church_users`, so applying the service filter
+      // would incorrectly hide members from other services within the church.
 
       // Apply pagination if provided
       if (pagination) {
@@ -762,12 +1093,19 @@ export class UserAdminService {
       }
 
       // Transform to include group status
+      // Note: For church-wide views, we do NOT filter by service when calculating
+      // is_connected or group_count, as members connected to other services should
+      // still be classified as connected. All active approved groups across all
+      // services in the church are counted.
+
       let usersWithStatus: UserWithGroupStatus[] =
         data?.map((user) => {
+          // Count all active approved groups across all services (church-wide view)
           const activeGroups =
             user.group_memberships?.filter(
               (m: any) =>
-                m.status === 'active' && m.group?.status === 'approved'
+                m.status === 'active' &&
+                m.group?.status === 'approved'
             ) || [];
 
           return {
@@ -876,7 +1214,7 @@ export class UserAdminService {
         .select(
           `
           *,
-          group:groups(id, title, status, church_id)
+          group:groups(id, title, status, church_id, service_id)
         `
         )
         .eq('user_id', userId)
@@ -965,6 +1303,111 @@ export class UserAdminService {
           error instanceof Error
             ? error
             : new Error('Failed to get church summary'),
+      };
+    }
+  }
+
+  async updateUserGroupHelpStatus(
+    userId: string,
+    updates: {
+      cannot_find_group?: boolean;
+      cannot_find_group_contacted_at?: string | null;
+      cannot_find_group_resolved_at?: string | null;
+    }
+  ): Promise<AdminServiceResponse<boolean>> {
+    try {
+      const permissionCheck = await permissionService.hasPermission(
+        'manage_church_users'
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to manage church users'
+          ),
+        };
+      }
+
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !authUser) {
+        return {
+          data: null,
+          error: new Error('User not authenticated'),
+        };
+      }
+
+      const { data: adminProfile, error: adminProfileError } = await supabase
+        .from('users')
+        .select('church_id')
+        .eq('id', authUser.id)
+        .single();
+
+      if (adminProfileError || !adminProfile?.church_id) {
+        return {
+          data: null,
+          error: new Error('Unable to determine admin church'),
+        };
+      }
+
+      const { data: targetUser, error: targetUserError } = await supabase
+        .from('users')
+        .select('church_id')
+        .eq('id', userId)
+        .single();
+
+      if (targetUserError || !targetUser) {
+        return {
+          data: null,
+          error: new Error('Target user not found'),
+        };
+      }
+
+      if (targetUser.church_id !== adminProfile.church_id) {
+        return {
+          data: null,
+          error: new Error('Cannot modify users from other churches'),
+        };
+      }
+
+      const payload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (typeof updates.cannot_find_group === 'boolean') {
+        payload.cannot_find_group = updates.cannot_find_group;
+      }
+
+      if (updates.cannot_find_group_contacted_at) {
+        payload.cannot_find_group_contacted_at =
+          updates.cannot_find_group_contacted_at;
+      }
+
+      if (updates.cannot_find_group_resolved_at) {
+        payload.cannot_find_group_resolved_at =
+          updates.cannot_find_group_resolved_at;
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .update(payload)
+        .eq('id', userId);
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      return { data: true, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to update user status'),
       };
     }
   }

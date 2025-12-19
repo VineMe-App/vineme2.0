@@ -1,15 +1,17 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import {
-  sendGroupRequestNotification,
-  sendJoinRequestNotification,
+  triggerGroupRequestSubmittedNotification,
+  triggerJoinRequestReceivedNotification,
 } from './notifications';
+import { groupMembershipNotesService } from './groupMembershipNotes';
 import type { Group, GroupMembership } from '../types/database';
 import type {
   CreateGroupData,
   UpdateGroupData,
   AdminServiceResponse,
 } from './admin';
+import { getFullName } from '@/utils/name';
 
 /**
  * Service for group creation and leader management
@@ -47,12 +49,13 @@ export class GroupCreationService {
         };
       }
 
-      // Validate RLS compliance
+      // Validate RLS compliance (must match RLS policies on groups)
       const rlsCheck = await permissionService.validateRLSCompliance(
         'groups',
         'insert',
         {
           church_id: groupData.church_id,
+          service_id: groupData.service_id,
         }
       );
       if (!rlsCheck.hasPermission) {
@@ -83,59 +86,113 @@ export class GroupCreationService {
         }
       } catch {}
 
-      // Create the group with pending status (service_id will be enforced server-side)
-      const { data: group, error: groupError } = await supabase
-        .from('groups')
-        .insert({
-          ...groupData,
-          status: 'pending',
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      // Normalize meeting_time to 24h HH:MM:SS to avoid type issues
+      const normalizeMeetingTime = (value: string): string => {
+        const ampmMatch = value.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!ampmMatch) return value;
+        let hour = parseInt(ampmMatch[1], 10);
+        const minute = ampmMatch[2];
+        const meridiem = ampmMatch[3].toUpperCase();
+        if (meridiem === 'PM' && hour < 12) hour += 12;
+        if (meridiem === 'AM' && hour === 12) hour = 0;
+        const hh = String(hour).padStart(2, '0');
+        return `${hh}:${minute}:00`;
+      };
 
-      if (groupError) {
-        // Provide clearer error for RLS violations
-        const message = groupError.message?.includes('RLS')
-          ? 'RLS policy violation for groups.insert'
-          : groupError.message;
-        return { data: null, error: new Error(message) };
+      // Debug diagnostics to validate auth context and derived values
+      try {
+        const [userRes, svcRes, jwtRes] = await Promise.all([
+          supabase
+            .from('users')
+            .select('id, service_id, church_id, roles')
+            .eq('id', creatorId)
+            .single(),
+          supabase
+            .from('services')
+            .select('id, church_id')
+            .eq('id', groupData.service_id)
+            .single(),
+          supabase.auth.getSession(),
+        ]);
+        if (__DEV__) {
+          console.log(
+            '[CreateGroupDebug] session uid:',
+            jwtRes?.data?.session?.user?.id
+          );
+          console.log('[CreateGroupDebug] user row:', userRes.data);
+          console.log('[CreateGroupDebug] svc row:', svcRes.data);
+          console.log('[CreateGroupDebug] payload:', {
+            ...groupData,
+            meeting_time: normalizeMeetingTime(groupData.meeting_time),
+            created_by: creatorId,
+            status: 'pending',
+          });
+        }
+      } catch (e) {
+        if (__DEV__)
+          console.warn('[CreateGroupDebug] pre-insert diagnostics failed', e);
       }
 
-      // Automatically add creator as leader
-      const { error: membershipError } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: group.id,
-          user_id: creatorId,
-          role: 'leader',
-          status: 'active',
-          joined_at: new Date().toISOString(),
-        });
+      // Use the request_group RPC which handles both group creation and pending membership
+      const { data: groupId, error: groupError } = await supabase.rpc(
+        'request_group',
+        {
+          p_title: groupData.title,
+          p_description: groupData.description,
+          p_meeting_day: groupData.meeting_day,
+          p_location: groupData.location,
+          p_meeting_time: normalizeMeetingTime(groupData.meeting_time),
+          p_service_id: groupData.service_id,
+          p_church_id: groupData.church_id,
+          p_whatsapp_link: groupData.whatsapp_link || null,
+          p_image_url: groupData.image_url || null,
+        }
+      );
 
-      if (membershipError) {
-        // If membership creation fails, we should clean up the group
-        await supabase.from('groups').delete().eq('id', group.id);
+      if (groupError) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.error('[CreateGroupDebug] RPC request_group failed', {
+            message: groupError.message,
+            details: (groupError as any).details,
+            hint: (groupError as any).hint,
+            code: (groupError as any).code,
+          });
+        }
+        return { data: null, error: new Error(groupError.message) };
+      }
+
+      // Fetch the created group to return it
+      const { data: group, error: fetchError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('id', groupId)
+        .single();
+
+      if (fetchError || !group) {
         return {
           data: null,
-          error: new Error('Failed to create group leadership'),
+          error: new Error('Group created but failed to fetch details'),
         };
       }
 
       // Get creator name for notification
       const { data: creator } = await supabase
         .from('users')
-        .select('name')
+        .select('first_name, last_name')
         .eq('id', creatorId)
         .single();
 
-      // Send notification to church admins
+      // Send enhanced notification to church admins
       if (creator) {
-        await sendGroupRequestNotification(
-          groupData.church_id,
-          group.title,
-          creator.name
-        );
+        await triggerGroupRequestSubmittedNotification({
+          groupId: group.id,
+          groupTitle: group.title,
+          creatorId: creatorId,
+          creatorName: getFullName(creator),
+          churchId: groupData.church_id,
+          serviceId: groupData.service_id,
+        });
       }
 
       return { data: group, error: null };
@@ -212,6 +269,31 @@ export class GroupCreationService {
           error instanceof Error
             ? error
             : new Error('Failed to update group details'),
+      };
+    }
+  }
+
+  /**
+   * Toggle group capacity status
+   */
+  async toggleGroupCapacity(
+    groupId: string,
+    userId: string,
+    atCapacity: boolean
+  ): Promise<AdminServiceResponse<Group>> {
+    try {
+      return this.updateGroupDetails(
+        groupId,
+        { at_capacity: atCapacity },
+        userId
+      );
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to toggle group capacity'),
       };
     }
   }
@@ -294,6 +376,23 @@ export class GroupCreationService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Create note for the role change
+      try {
+        await groupMembershipNotesService.createRoleChangeNote(
+          {
+            membership_id: targetMembership.id,
+            group_id: groupId,
+            user_id: userId,
+            previous_role: targetMembership.role,
+            new_role: 'leader',
+          },
+          promoterId
+        );
+      } catch (noteError) {
+        if (__DEV__)
+          console.warn('Failed to create promotion note:', noteError);
       }
 
       return { data, error: null };
@@ -415,6 +514,22 @@ export class GroupCreationService {
         return { data: null, error: new Error(error.message) };
       }
 
+      // Create note for the role change
+      try {
+        await groupMembershipNotesService.createRoleChangeNote(
+          {
+            membership_id: targetMembership.id,
+            group_id: groupId,
+            user_id: userId,
+            previous_role: 'leader',
+            new_role: 'member',
+          },
+          demoterId
+        );
+      } catch (noteError) {
+        if (__DEV__) console.warn('Failed to create demotion note:', noteError);
+      }
+
       return { data, error: null };
     } catch (error) {
       return {
@@ -510,6 +625,22 @@ export class GroupCreationService {
         }
       }
 
+      // Get the membership record before updating (need ID for notes)
+      const { data: membershipRecord, error: fetchError } = await supabase
+        .from('group_memberships')
+        .select('id, status')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (fetchError || !membershipRecord) {
+        return {
+          data: null,
+          error: new Error('Membership not found'),
+        };
+      }
+
       // Remove the member by setting status to inactive
       const { error } = await supabase
         .from('group_memberships')
@@ -519,6 +650,25 @@ export class GroupCreationService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Create note for the member removal
+      try {
+        await groupMembershipNotesService.createStatusChangeNote(
+          {
+            membership_id: membershipRecord.id,
+            group_id: groupId,
+            user_id: userId,
+            note_type: 'member_left',
+            previous_status: 'active',
+            new_status: 'inactive',
+            note_text: 'Removed by group leader',
+          },
+          removerId
+        );
+      } catch (noteError) {
+        if (__DEV__)
+          console.warn('Failed to create member removal note:', noteError);
       }
 
       return { data: true, error: null };
@@ -574,10 +724,13 @@ export class GroupCreationService {
       // Check if user is already a member or has a pending request
       const { data: existingMembership } = await supabase
         .from('group_memberships')
-        .select('status')
+        .select('id, status, role')
         .eq('group_id', groupId)
         .eq('user_id', userId)
         .single();
+
+      let data: any = null;
+      let error: any = null;
 
       if (existingMembership) {
         if (existingMembership.status === 'active') {
@@ -594,20 +747,68 @@ export class GroupCreationService {
             ),
           };
         }
-      }
 
-      // Create pending membership
-      const { data, error } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: groupId,
-          user_id: userId,
-          role: 'member',
-          status: 'pending',
-          joined_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        // If they were inactive or archived, reuse the existing membership row
+        if (
+          existingMembership.status === 'inactive' ||
+          existingMembership.status === 'archived'
+        ) {
+          const updateResult = await supabase
+            .from('group_memberships')
+            .update({
+              status: 'pending',
+              journey_status: null, // Reset journey status for new request
+            })
+            .eq('id', existingMembership.id)
+            .select()
+            .single();
+
+          data = updateResult.data;
+          error = updateResult.error;
+
+          // Create note for the status change (rejoin request)
+          if (!error && data) {
+            try {
+              // Use appropriate note_type based on previous status
+              const noteType: 'request_archived' | 'member_left' =
+                existingMembership.status === 'inactive'
+                  ? 'member_left'
+                  : 'request_archived';
+
+              await groupMembershipNotesService.createStatusChangeNote(
+                {
+                  membership_id: existingMembership.id,
+                  group_id: groupId,
+                  user_id: userId,
+                  note_type: noteType,
+                  previous_status: existingMembership.status,
+                  new_status: 'pending',
+                  note_text: 'User requested to rejoin the group',
+                },
+                userId
+              );
+            } catch (noteError) {
+              if (__DEV__)
+                console.warn('Failed to create rejoin note:', noteError);
+            }
+          }
+        }
+      } else {
+        // No existing membership, create new one
+        const insertResult = await supabase
+          .from('group_memberships')
+          .insert({
+            group_id: groupId,
+            user_id: userId,
+            role: 'member',
+            status: 'pending',
+          })
+          .select()
+          .single();
+
+        data = insertResult.data;
+        error = insertResult.error;
+      }
 
       if (error) {
         return { data: null, error: new Error(error.message) };
@@ -615,17 +816,31 @@ export class GroupCreationService {
 
       // Get requester and group info for notification
       const [requesterResult, groupResult] = await Promise.all([
-        supabase.from('users').select('name').eq('id', userId).single(),
+        supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', userId)
+          .single(),
         supabase.from('groups').select('title').eq('id', groupId).single(),
       ]);
 
-      // Send notification to group leaders
+      // Send enhanced notification to group leaders
       if (requesterResult.data && groupResult.data) {
-        await sendJoinRequestNotification(
+        // Collect leaderIds for the trigger
+        const { data: leaders } = await supabase
+          .from('group_memberships')
+          .select('user_id')
+          .eq('group_id', groupId)
+          .eq('role', 'leader')
+          .eq('status', 'active');
+        const leaderIds = (leaders || []).map((l) => l.user_id);
+        await triggerJoinRequestReceivedNotification({
           groupId,
-          groupResult.data.title,
-          requesterResult.data.name
-        );
+          groupTitle: groupResult.data.title,
+          requesterId: userId,
+          requesterName: getFullName(requesterResult.data) || 'A member',
+          leaderIds,
+        });
       }
 
       // TODO: Store contact consent and message in a separate table

@@ -26,14 +26,14 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
-        name="email-login"
+        name="onboarding"
         options={{
-          title: 'Email Login',
+          title: 'Onboarding',
           headerShown: false,
         }}
       />
       <Stack.Screen
-        name="onboarding"
+        name="onboarding-loader"
         options={{
           title: 'Onboarding',
           headerShown: false,
@@ -43,6 +43,13 @@ export default function AuthLayout() {
         name="verify-email"
         options={{
           title: 'Verify Email',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="verify-otp"
+        options={{
+          title: 'Verify OTP',
           headerShown: false,
         }}
       />

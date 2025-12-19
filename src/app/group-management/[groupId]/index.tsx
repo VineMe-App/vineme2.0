@@ -1,0 +1,158 @@
+import React, { useMemo } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Text } from '@/components/ui/Text';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
+import { Button } from '@/components/ui/Button';
+import { GroupLeaderPanel } from '@/components/groups/GroupLeaderPanel';
+import { useGroup } from '@/hooks/useGroups';
+import { useAuthStore } from '@/stores/auth';
+import { safeGoBack } from '@/utils/navigation';
+import { Ionicons } from '@expo/vector-icons';
+
+export default function GroupManagementScreen() {
+  const router = useRouter();
+  const { groupId, tab } = useLocalSearchParams<{
+    groupId?: string | string[];
+    tab?: string | string[];
+  }>();
+  const { userProfile } = useAuthStore();
+
+  const resolvedGroupId = useMemo(() => {
+    if (!groupId) return undefined;
+    return Array.isArray(groupId) ? groupId[0] : groupId;
+  }, [groupId]);
+
+  const resolvedTab = useMemo<'members' | 'requests'>(() => {
+    const value = Array.isArray(tab) ? tab[0] : tab;
+    return value === 'requests' ? 'requests' : 'members';
+  }, [tab]);
+
+  const { data: group, isLoading, error, refetch } = useGroup(resolvedGroupId);
+
+  const hasAccess = useMemo(() => {
+    if (!group || !userProfile) return false;
+
+    const isLeader = group.memberships?.some(
+      (membership) =>
+        membership.user_id === userProfile.id &&
+        (membership.role === 'leader' || membership.role === 'admin')
+    );
+
+    return Boolean(isLeader);
+  }, [group, userProfile]);
+
+  return (
+    <View style={styles.screen}>
+      <Stack.Screen
+        options={{
+          title: group?.title
+            ? `${group.title} Management`
+            : 'Group Management',
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => safeGoBack(router)}
+              style={styles.headerBackButton}
+            >
+              <Ionicons name="chevron-back" size={20} color="#007AFF" />
+              <Text variant="body" color="primary" style={styles.headerBackText}>
+                Back
+              </Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
+      {isLoading && (
+        <View style={styles.centerContent}>
+          <AuthLoadingAnimation />
+          <Text style={styles.centerText}>Loading group details…</Text>
+        </View>
+      )}
+
+      {!isLoading && error && (
+        <View style={styles.centerContent}>
+          <Text style={styles.errorText}>
+            We couldn't load this group right now. Please try again shortly.
+          </Text>
+          <Button
+            title="Go Back"
+            onPress={() => safeGoBack(router)}
+            style={styles.backButton}
+          />
+        </View>
+      )}
+
+      {!isLoading && group && !hasAccess && (
+        <View style={styles.centerContent}>
+          <Text style={styles.centerText}>
+            You need to be a group leader to manage this group.
+          </Text>
+          <Button
+            title="Go Back"
+            onPress={() => safeGoBack(router)}
+            style={styles.backButton}
+          />
+        </View>
+      )}
+
+      {!isLoading && group && hasAccess && (
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <GroupLeaderPanel
+            group={group}
+            onGroupUpdated={refetch}
+            initialTab={resolvedTab}
+          />
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  headerBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  headerBackText: {
+    marginLeft: 4,
+  },
+  centerText: {
+    marginTop: 16,
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#4b5563',
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#b91c1c',
+    marginBottom: 16,
+  },
+  backButton: {
+    marginTop: 16,
+    alignSelf: 'center',
+    minWidth: 160,
+  },
+});

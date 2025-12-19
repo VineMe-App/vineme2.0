@@ -1,8 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { referralService, CreateReferralData, ReferralResponse } from '../services/referrals';
-import type { 
-  GroupReferralWithDetails, 
-  GeneralReferralWithDetails 
+import {
+  referralService,
+  CreateReferralData,
+  ReferralResponse,
+} from '../services/referrals';
+import type {
+  GroupReferralWithDetails,
+  GeneralReferralWithDetails,
 } from '../types/database';
 import { useAuthStore } from '../stores/auth';
 import { performanceMonitor } from '../utils/performance';
@@ -12,11 +16,14 @@ import { useCallback, useMemo } from 'react';
 export const referralKeys = {
   all: ['referrals'] as const,
   byUser: (userId: string) => [...referralKeys.all, 'byUser', userId] as const,
-  byGroup: (groupId: string) => [...referralKeys.all, 'byGroup', groupId] as const,
-  forUser: (userId: string) => [...referralKeys.all, 'forUser', userId] as const,
-  statistics: (startDate?: string, endDate?: string) => 
+  byGroup: (groupId: string) =>
+    [...referralKeys.all, 'byGroup', groupId] as const,
+  forUser: (userId: string) =>
+    [...referralKeys.all, 'forUser', userId] as const,
+  statistics: (startDate?: string, endDate?: string) =>
     [...referralKeys.all, 'statistics', startDate, endDate] as const,
-  counts: (referrerId: string) => [...referralKeys.all, 'counts', referrerId] as const,
+  counts: (referrerId: string) =>
+    [...referralKeys.all, 'counts', referrerId] as const,
 } as const;
 
 /**
@@ -27,7 +34,7 @@ export const useUserReferrals = (userId?: string) => {
     queryKey: referralKeys.byUser(userId || ''),
     queryFn: async () => {
       if (!userId) throw new Error('User ID is required');
-      
+
       const startTime = Date.now();
       const { data, error } = await referralService.getReferralsByUser(userId);
       const duration = Date.now() - startTime;
@@ -59,14 +66,15 @@ export const useGroupReferrals = (groupId?: string) => {
     queryKey: referralKeys.byGroup(groupId || ''),
     queryFn: async () => {
       if (!groupId) throw new Error('Group ID is required');
-      
+
       const startTime = Date.now();
-      const { data, error } = await referralService.getReferralsForGroup(groupId);
+      const { data, error } =
+        await referralService.getReferralsForGroup(groupId);
       const duration = Date.now() - startTime;
 
       // Record query performance
       performanceMonitor.recordQueryPerformance(
-        `group_referrals_${groupId}`,
+        `referrals_by_group_${groupId}`,
         duration,
         false
       );
@@ -92,7 +100,7 @@ export const useReferralsForUser = (userId?: string) => {
     queryKey: referralKeys.forUser(userId || ''),
     queryFn: async () => {
       if (!userId) throw new Error('User ID is required');
-      
+
       const startTime = Date.now();
       const { data, error } = await referralService.getReferralsForUser(userId);
       const duration = Date.now() - startTime;
@@ -124,7 +132,10 @@ export const useReferralStatistics = (startDate?: string, endDate?: string) => {
     queryKey: referralKeys.statistics(startDate, endDate),
     queryFn: async () => {
       const startTime = Date.now();
-      const { data, error } = await referralService.getReferralStatistics(startDate, endDate);
+      const { data, error } = await referralService.getReferralStatistics(
+        startDate,
+        endDate
+      );
       const duration = Date.now() - startTime;
 
       // Record query performance
@@ -153,9 +164,10 @@ export const useReferralCounts = (referrerId?: string) => {
     queryKey: referralKeys.counts(referrerId || ''),
     queryFn: async () => {
       if (!referrerId) throw new Error('Referrer ID is required');
-      
+
       const startTime = Date.now();
-      const { data, error } = await referralService.getReferralCountsByReferrer(referrerId);
+      const { data, error } =
+        await referralService.getReferralCountsByReferrer(referrerId);
       const duration = Date.now() - startTime;
 
       // Record query performance
@@ -185,9 +197,11 @@ export const useCreateGeneralReferral = () => {
   const { user } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (referralData: Omit<CreateReferralData, 'referrerId'>) => {
+    mutationFn: async (
+      referralData: Omit<CreateReferralData, 'referrerId'>
+    ) => {
       if (!user?.id) throw new Error('User must be authenticated');
-      
+
       const startTime = Date.now();
       const result = await referralService.createGeneralReferral({
         ...referralData,
@@ -202,7 +216,9 @@ export const useCreateGeneralReferral = () => {
       });
 
       if (!result.success) {
-        const error = new Error(result.error || 'Failed to create general referral');
+        const error = new Error(
+          result.error || 'Failed to create general referral'
+        );
         (error as any).errorDetails = result.errorDetails;
         (error as any).warnings = result.warnings;
         throw error;
@@ -233,7 +249,7 @@ export const useCreateGeneralReferral = () => {
         error: error.message,
         hasNote: !!variables.note,
       });
-      
+
       console.error('Failed to create general referral:', error);
     },
   });
@@ -247,10 +263,13 @@ export const useCreateGroupReferral = () => {
   const { user } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (referralData: Omit<CreateReferralData, 'referrerId'>) => {
+    mutationFn: async (
+      referralData: Omit<CreateReferralData, 'referrerId'>
+    ) => {
       if (!user?.id) throw new Error('User must be authenticated');
-      if (!referralData.groupId) throw new Error('Group ID is required for group referrals');
-      
+      if (!referralData.groupId)
+        throw new Error('Group ID is required for group referrals');
+
       const startTime = Date.now();
       const result = await referralService.createGroupReferral({
         ...referralData,
@@ -266,7 +285,9 @@ export const useCreateGroupReferral = () => {
       });
 
       if (!result.success) {
-        const error = new Error(result.error || 'Failed to create group referral');
+        const error = new Error(
+          result.error || 'Failed to create group referral'
+        );
         (error as any).errorDetails = result.errorDetails;
         (error as any).warnings = result.warnings;
         throw error;
@@ -306,7 +327,7 @@ export const useCreateGroupReferral = () => {
         error: error.message,
         hasNote: !!variables.note,
       });
-      
+
       console.error('Failed to create group referral:', error);
     },
   });
@@ -320,9 +341,11 @@ export const useCreateReferral = () => {
   const { user } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (referralData: Omit<CreateReferralData, 'referrerId'>) => {
+    mutationFn: async (
+      referralData: Omit<CreateReferralData, 'referrerId'>
+    ) => {
       if (!user?.id) throw new Error('User must be authenticated');
-      
+
       const startTime = Date.now();
       const result = await referralService.createReferral({
         ...referralData,
@@ -379,7 +402,7 @@ export const useCreateReferral = () => {
         error: error.message,
         hasNote: !!variables.note,
       });
-      
+
       console.error('Failed to create referral:', error);
     },
   });
@@ -395,14 +418,16 @@ export const useCreateBatchReferrals = () => {
   return useMutation({
     mutationFn: async (referrals: Omit<CreateReferralData, 'referrerId'>[]) => {
       if (!user?.id) throw new Error('User must be authenticated');
-      
-      const referralsWithReferrer = referrals.map(referral => ({
+
+      const referralsWithReferrer = referrals.map((referral) => ({
         ...referral,
         referrerId: user.id,
       }));
 
       const startTime = Date.now();
-      const { data, error } = await referralService.createBatchReferrals(referralsWithReferrer);
+      const { data, error } = await referralService.createBatchReferrals(
+        referralsWithReferrer
+      );
       const duration = Date.now() - startTime;
 
       // Record batch operation performance
@@ -439,7 +464,7 @@ export const useCreateBatchReferrals = () => {
       performanceMonitor.recordMetric('batch_referral_error', 1, {
         error: error.message,
       });
-      
+
       console.error('Failed to create batch referrals:', error);
     },
   });
@@ -453,48 +478,54 @@ export const useReferralValidation = () => {
     if (!email || !email.trim()) {
       return 'Email is required';
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return 'Invalid email format';
     }
-    
+
     return null;
   }, []);
 
-  const validatePhone = useCallback((phone: string): string | null => {
+  const validatePhone = useCallback((phone?: string): string | null => {
     if (!phone || !phone.trim()) {
-      return 'Phone number is required';
+      return null; // Phone is optional
     }
-    
+
     const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,}$/;
     if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
       return 'Invalid phone number format';
     }
-    
+
     return null;
   }, []);
 
-  const validateReferralData = useCallback((data: Omit<CreateReferralData, 'referrerId'>): Record<string, string> => {
-    const errors: Record<string, string> = {};
+  const validateReferralData = useCallback(
+    (data: Omit<CreateReferralData, 'referrerId'>): Record<string, string> => {
+      const errors: Record<string, string> = {};
 
-    const emailError = validateEmail(data.email);
-    if (emailError) errors.email = emailError;
+      const emailError = validateEmail(data.email);
+      if (emailError) errors.email = emailError;
 
-    const phoneError = validatePhone(data.phone);
-    if (phoneError) errors.phone = phoneError;
+      const phoneError = validatePhone(data.phone);
+      if (phoneError) errors.phone = phoneError;
 
-    if (data.groupId && !data.groupId.trim()) {
-      errors.groupId = 'Group ID is required for group referrals';
-    }
+      if (data.groupId && !data.groupId.trim()) {
+        errors.groupId = 'Group ID is required for group referrals';
+      }
 
-    return errors;
-  }, [validateEmail, validatePhone]);
+      return errors;
+    },
+    [validateEmail, validatePhone]
+  );
 
-  const isValidReferralData = useCallback((data: Omit<CreateReferralData, 'referrerId'>): boolean => {
-    const errors = validateReferralData(data);
-    return Object.keys(errors).length === 0;
-  }, [validateReferralData]);
+  const isValidReferralData = useCallback(
+    (data: Omit<CreateReferralData, 'referrerId'>): boolean => {
+      const errors = validateReferralData(data);
+      return Object.keys(errors).length === 0;
+    },
+    [validateReferralData]
+  );
 
   return {
     validateEmail,
@@ -513,7 +544,7 @@ export const useReferrals = (userId?: string) => {
 
   // Get user's referrals
   const userReferralsQuery = useUserReferrals(effectiveUserId);
-  
+
   // Get referral counts for current user
   const referralCountsQuery = useReferralCounts(effectiveUserId);
 
@@ -530,22 +561,36 @@ export const useReferrals = (userId?: string) => {
   const getTotalReferrals = useCallback(() => {
     const data = userReferralsQuery.data;
     if (!data) return 0;
-    return (data.groupReferrals?.length || 0) + (data.generalReferrals?.length || 0);
+    return (
+      (data.groupReferrals?.length || 0) + (data.generalReferrals?.length || 0)
+    );
   }, [userReferralsQuery.data]);
 
-  const getRecentReferrals = useCallback((limit: number = 5) => {
-    const data = userReferralsQuery.data;
-    if (!data) return [];
+  const getRecentReferrals = useCallback(
+    (limit: number = 5) => {
+      const data = userReferralsQuery.data;
+      if (!data) return [];
 
-    const allReferrals = [
-      ...(data.groupReferrals || []).map(r => ({ ...r, type: 'group' as const })),
-      ...(data.generalReferrals || []).map(r => ({ ...r, type: 'general' as const })),
-    ];
+      const allReferrals = [
+        ...(data.groupReferrals || []).map((r) => ({
+          ...r,
+          type: 'group' as const,
+        })),
+        ...(data.generalReferrals || []).map((r) => ({
+          ...r,
+          type: 'general' as const,
+        })),
+      ];
 
-    return allReferrals
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, limit);
-  }, [userReferralsQuery.data]);
+      return allReferrals
+        .sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+        .slice(0, limit);
+    },
+    [userReferralsQuery.data]
+  );
 
   const hasReferrals = useCallback(() => {
     return getTotalReferrals() > 0;
@@ -555,7 +600,7 @@ export const useReferrals = (userId?: string) => {
   const referralAnalytics = useMemo(() => {
     const data = userReferralsQuery.data;
     const counts = referralCountsQuery.data;
-    
+
     if (!data || !counts) return null;
 
     return {
@@ -565,7 +610,12 @@ export const useReferrals = (userId?: string) => {
       recentActivity: getRecentReferrals(10),
       hasActivity: hasReferrals(),
     };
-  }, [userReferralsQuery.data, referralCountsQuery.data, getRecentReferrals, hasReferrals]);
+  }, [
+    userReferralsQuery.data,
+    referralCountsQuery.data,
+    getRecentReferrals,
+    hasReferrals,
+  ]);
 
   // Success handlers with user feedback and validation
   const createGeneralReferralWithFeedback = useCallback(
@@ -584,13 +634,17 @@ export const useReferrals = (userId?: string) => {
         const result = await createGeneralReferral.mutateAsync(data);
         return {
           success: true,
-          message: 'General referral created successfully! They will receive an email to set up their account.',
+          message:
+            'General referral created successfully! They will receive an email to set up their account.',
           data: result,
         };
       } catch (error) {
         return {
           success: false,
-          message: error instanceof Error ? error.message : 'Failed to create referral',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to create referral',
           error,
         };
       }
@@ -614,13 +668,17 @@ export const useReferrals = (userId?: string) => {
         const result = await createGroupReferral.mutateAsync(data);
         return {
           success: true,
-          message: 'Group referral created successfully! They will receive an email to set up their account.',
+          message:
+            'Group referral created successfully! They will receive an email to set up their account.',
           data: result,
         };
       } catch (error) {
         return {
           success: false,
-          message: error instanceof Error ? error.message : 'Failed to create group referral',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to create group referral',
           error,
         };
       }
@@ -651,7 +709,10 @@ export const useReferrals = (userId?: string) => {
       } catch (error) {
         return {
           success: false,
-          message: error instanceof Error ? error.message : 'Failed to create referral',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to create referral',
           error,
         };
       }
@@ -662,8 +723,11 @@ export const useReferrals = (userId?: string) => {
   const createBatchReferralsWithFeedback = useCallback(
     async (referrals: Omit<CreateReferralData, 'referrerId'>[]) => {
       // Validate all referrals first
-      const allValidationErrors: Array<{ index: number; errors: Record<string, string> }> = [];
-      
+      const allValidationErrors: {
+        index: number;
+        errors: Record<string, string>;
+      }[] = [];
+
       referrals.forEach((referral, index) => {
         const validationErrors = validation.validateReferralData(referral);
         if (Object.keys(validationErrors).length > 0) {
@@ -689,7 +753,10 @@ export const useReferrals = (userId?: string) => {
       } catch (error) {
         return {
           success: false,
-          message: error instanceof Error ? error.message : 'Failed to create batch referrals',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to create batch referrals',
           error,
         };
       }
@@ -702,44 +769,45 @@ export const useReferrals = (userId?: string) => {
     referrals: userReferralsQuery.data,
     isLoading: userReferralsQuery.isLoading || referralCountsQuery.isLoading,
     error: userReferralsQuery.error || referralCountsQuery.error,
-    isRefetching: userReferralsQuery.isRefetching || referralCountsQuery.isRefetching,
-    
+    isRefetching:
+      userReferralsQuery.isRefetching || referralCountsQuery.isRefetching,
+
     // Analytics data
     analytics: referralAnalytics,
     counts: referralCountsQuery.data,
-    
+
     // Mutation states
     isCreatingGeneral: createGeneralReferral.isPending,
     isCreatingGroup: createGroupReferral.isPending,
     isCreating: createReferral.isPending,
     isCreatingBatch: createBatchReferrals.isPending,
-    
+
     // Mutation errors
     generalReferralError: createGeneralReferral.error,
     groupReferralError: createGroupReferral.error,
     referralError: createReferral.error,
     batchReferralError: createBatchReferrals.error,
-    
+
     // Actions with validation and feedback
     createGeneralReferral: createGeneralReferralWithFeedback,
     createGroupReferral: createGroupReferralWithFeedback,
     createReferral: createReferralWithFeedback,
     createBatchReferrals: createBatchReferralsWithFeedback,
-    
+
     // Raw mutations (for advanced usage)
     createGeneralReferralMutation: createGeneralReferral,
     createGroupReferralMutation: createGroupReferral,
     createReferralMutation: createReferral,
     createBatchReferralsMutation: createBatchReferrals,
-    
+
     // Validation helpers
     validation,
-    
+
     // Helper functions
     getTotalReferrals,
     getRecentReferrals,
     hasReferrals,
-    
+
     // Refetch functions
     refetch: userReferralsQuery.refetch,
     refetchCounts: referralCountsQuery.refetch,
@@ -757,7 +825,10 @@ export const useGroupReferralOperations = (groupId: string) => {
   const createReferralForGroup = useCallback(
     async (data: Omit<CreateReferralData, 'referrerId' | 'groupId'>) => {
       // Validate data first
-      const validationErrors = validation.validateReferralData({ ...data, groupId });
+      const validationErrors = validation.validateReferralData({
+        ...data,
+        groupId,
+      });
       if (Object.keys(validationErrors).length > 0) {
         return {
           success: false,
@@ -773,13 +844,17 @@ export const useGroupReferralOperations = (groupId: string) => {
         });
         return {
           success: true,
-          message: 'Group referral created successfully! They will receive an email to set up their account.',
+          message:
+            'Group referral created successfully! They will receive an email to set up their account.',
           data: result,
         };
       } catch (error) {
         return {
           success: false,
-          message: error instanceof Error ? error.message : 'Failed to create group referral',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to create group referral',
           error,
         };
       }
@@ -793,20 +868,20 @@ export const useGroupReferralOperations = (groupId: string) => {
     isLoading: groupReferralsQuery.isLoading,
     error: groupReferralsQuery.error,
     isRefetching: groupReferralsQuery.isRefetching,
-    
+
     // Mutation state
     isCreating: createGroupReferral.isPending,
     createError: createGroupReferral.error,
-    
+
     // Actions
     createReferral: createReferralForGroup,
-    
+
     // Raw mutation (for advanced usage)
     createReferralMutation: createGroupReferral,
-    
+
     // Validation helpers
     validation,
-    
+
     // Refetch function
     refetch: groupReferralsQuery.refetch,
   };

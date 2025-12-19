@@ -1,11 +1,25 @@
 import { supabase } from './supabase';
 import { permissionService } from './permissions';
+import { groupMembershipNotesService } from './groupMembershipNotes';
+import { triggerJoinRequestReceivedNotification } from './notifications';
+import { getFullName } from '../utils/name';
 import type {
-  Group,
   GroupWithDetails,
   GroupMembership,
   GroupMembershipWithUser,
 } from '../types/database';
+
+const withDisplayName = <
+  T extends { first_name?: string | null; last_name?: string | null },
+>(
+  user: (T & { name?: string | null }) | null | undefined
+) =>
+  user
+    ? {
+        ...user,
+        name: getFullName(user),
+      }
+    : user;
 
 export interface GroupServiceResponse<T = any> {
   data: T | null;
@@ -64,6 +78,7 @@ export class GroupService {
           `
           *,
           service:services(*),
+          church:churches(*),
           
           memberships:group_memberships(
             id,
@@ -71,7 +86,9 @@ export class GroupService {
             role,
             status,
             joined_at,
-            user:users(id, name, avatar_url)
+            journey_status,
+            referral_id,
+            user:users(id, first_name, last_name, avatar_url)
           )
         `
         )
@@ -87,6 +104,10 @@ export class GroupService {
       const groupsWithCount =
         data?.map((group) => ({
           ...group,
+          memberships: group.memberships?.map((m: any) => ({
+            ...m,
+            user: withDisplayName(m.user),
+          })),
           member_count:
             group.memberships?.filter((m: any) => m.status === 'active')
               .length || 0,
@@ -98,6 +119,77 @@ export class GroupService {
         data: null,
         error:
           error instanceof Error ? error : new Error('Failed to get groups'),
+      };
+    }
+  }
+
+  /**
+   * Get all approved groups (church admin or group leader)
+   */
+  async getAllApprovedGroups(): Promise<
+    GroupServiceResponse<GroupWithDetails[]>
+  > {
+    try {
+      // Ensure caller has church admin or group leader privileges
+      const adminCheck = await permissionService.isChurchAdmin();
+      const leaderCheck = await permissionService.isAnyGroupLeader();
+      
+      if (!adminCheck.hasPermission && !leaderCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            'Church admin or group leader role required to view all groups'
+          ),
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('groups')
+        .select(
+          `
+          *,
+          service:services(*),
+          church:churches(*),
+          
+          memberships:group_memberships(
+            id,
+            user_id,
+            role,
+            status,
+            joined_at,
+            journey_status,
+            referral_id,
+            user:users(id, first_name, last_name, avatar_url)
+          )
+        `
+        )
+        .eq('status', 'approved')
+        .order('title');
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      const groupsWithCount =
+        data?.map((group) => ({
+          ...group,
+          memberships: group.memberships?.map((m: any) => ({
+            ...m,
+            user: withDisplayName(m.user),
+          })),
+          member_count:
+            group.memberships?.filter((m: any) => m.status === 'active')
+              .length || 0,
+        })) || [];
+
+      return { data: groupsWithCount, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get groups for church admin'),
       };
     }
   }
@@ -115,6 +207,7 @@ export class GroupService {
           `
           *,
           service:services(*),
+          church:churches(*),
           
           memberships:group_memberships(
             id,
@@ -122,7 +215,9 @@ export class GroupService {
             role,
             status,
             joined_at,
-            user:users(id, name, avatar_url)
+            journey_status,
+            referral_id,
+            user:users(id, first_name, last_name, avatar_url)
           )
         `
         )
@@ -136,6 +231,10 @@ export class GroupService {
       // Add member count
       const groupWithCount = {
         ...data,
+        memberships: data.memberships?.map((m: any) => ({
+          ...m,
+          user: withDisplayName(m.user),
+        })),
         member_count:
           data.memberships?.filter((m: any) => m.status === 'active').length ||
           0,
@@ -165,18 +264,21 @@ export class GroupService {
           *,
           group:groups(
             *,
-            service:services(*)
+            service:services(*),
+            church:churches(*)
           )
         `
         )
         .eq('user_id', userId)
-        .eq('status', 'active');
+        .in('status', ['active', 'pending'])
+        // Only include memberships where the related group is approved or pending
+        .in('group.status', ['approved', 'pending']);
 
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
 
-      // Extract groups from memberships
+      // Extract groups from memberships; filter out any null groups due to RLS
       const groups =
         data?.map((membership) => membership.group).filter(Boolean) || [];
 
@@ -213,6 +315,9 @@ export class GroupService {
         .eq('user_id', userId)
         .single();
 
+      let data: any = null;
+      let error: any = null;
+
       if (existingMembership) {
         if (existingMembership.status === 'active') {
           return {
@@ -228,23 +333,84 @@ export class GroupService {
             ),
           };
         }
-      }
 
-      // Create pending membership instead of active membership
-      const { data, error } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: groupId,
-          user_id: userId,
-          role,
-          status: 'pending',
-          joined_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        // If they were inactive or archived, reuse the existing membership row
+        if (
+          existingMembership.status === 'inactive' ||
+          existingMembership.status === 'archived'
+        ) {
+          const updateResult = await supabase
+            .from('group_memberships')
+            .update({
+              status: 'pending',
+              joined_at: null, // Reset joined_at for pending status (required by constraint)
+              journey_status: null, // Reset journey status for new request
+              created_at: new Date().toISOString(), // Update timestamp so rejoin request appears at top of list
+            })
+            .eq('id', existingMembership.id)
+            .select()
+            .single();
+
+          data = updateResult.data;
+          error = updateResult.error;
+        }
+      } else {
+        // No existing membership, create new one
+        const insertResult = await supabase
+          .from('group_memberships')
+          .insert({
+            group_id: groupId,
+            user_id: userId,
+            role,
+            status: 'pending',
+            joined_at: null, // Must be null for pending status (required by constraint)
+          })
+          .select()
+          .single();
+
+        data = insertResult.data;
+        error = insertResult.error;
+      }
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Trigger leader notifications for the join request
+      try {
+        const [requesterRes, groupRes] = await Promise.all([
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', userId)
+            .single(),
+          supabase.from('groups').select('title').eq('id', groupId).single(),
+        ]);
+
+        if (requesterRes.data && groupRes.data) {
+          const { data: leaders } = await supabase
+            .from('group_memberships')
+            .select('user_id')
+            .eq('group_id', groupId)
+            .eq('role', 'leader')
+            .eq('status', 'active');
+
+          const leaderIds = (leaders || []).map((l) => l.user_id);
+          if (leaderIds.length > 0) {
+            await triggerJoinRequestReceivedNotification({
+              groupId,
+              groupTitle: groupRes.data.title,
+              requesterId: userId,
+              requesterName: getFullName(requesterRes.data),
+              leaderIds,
+            });
+          }
+        }
+      } catch (notifyErr) {
+        console.error(
+          'Failed to trigger join request notifications:',
+          notifyErr
+        );
       }
 
       return { data, error: null };
@@ -279,6 +445,51 @@ export class GroupService {
         };
       }
 
+      // Get membership record before updating
+      const { data: membership, error: fetchError } = await supabase
+        .from('group_memberships')
+        .select('id, status, role')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !membership) {
+        return {
+          data: null,
+          error: new Error('Membership not found'),
+        };
+      }
+
+      // Check if user is a leader
+      if (membership.role === 'leader') {
+        // Get all leaders in the group
+        const { data: allLeaders, error: leadersError } = await supabase
+          .from('group_memberships')
+          .select('id, user_id')
+          .eq('group_id', groupId)
+          .eq('role', 'leader')
+          .eq('status', 'active');
+
+        if (leadersError) {
+          return {
+            data: null,
+            error: new Error('Failed to check group leadership'),
+          };
+        }
+
+        // Prevent the last leader from leaving
+        if (
+          allLeaders &&
+          allLeaders.length === 1 &&
+          allLeaders[0].user_id === userId
+        ) {
+          return {
+            data: null,
+            error: new Error('Cannot leave group as the last leader. Promote another member to leader first or transfer leadership.'),
+          };
+        }
+      }
+
       const { error } = await supabase
         .from('group_memberships')
         .update({ status: 'inactive' })
@@ -287,6 +498,26 @@ export class GroupService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      // Create note for the member leaving
+      if (membership.status === 'active') {
+        try {
+          await groupMembershipNotesService.createStatusChangeNote(
+            {
+              membership_id: membership.id,
+              group_id: groupId,
+              user_id: userId,
+              note_type: 'member_left',
+              previous_status: 'active',
+              new_status: 'inactive',
+            },
+            userId
+          );
+        } catch (noteError) {
+          if (__DEV__)
+            console.warn('Failed to create member left note:', noteError);
+        }
       }
 
       return { data: true, error: null };
@@ -352,7 +583,8 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url)
+          user:users(id, first_name, last_name, avatar_url, newcomer),
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
         `
         )
         .eq('group_id', groupId)
@@ -363,7 +595,12 @@ export class GroupService {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const normalized = (data || []).map((m: any) => ({
+        ...m,
+        user: withDisplayName(m.user),
+      }));
+
+      return { data: normalized, error: null };
     } catch (error) {
       return {
         data: null,
@@ -371,6 +608,62 @@ export class GroupService {
           error instanceof Error
             ? error
             : new Error('Failed to get group members'),
+      };
+    }
+  }
+
+  /**
+   * Get all group memberships (including archived and inactive)
+   * Only for group leaders
+   */
+  async getAllGroupMemberships(
+    groupId: string,
+    userId: string
+  ): Promise<GroupServiceResponse<GroupMembershipWithUser[]>> {
+    try {
+      // Check if user is a leader
+      const permissionCheck = await permissionService.canManageGroupMembership(
+        groupId,
+        userId
+      );
+      if (!permissionCheck.hasPermission) {
+        return {
+          data: null,
+          error: new Error(
+            permissionCheck.reason || 'Access denied to view all memberships'
+          ),
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('group_memberships')
+        .select(
+          `
+          *,
+          user:users(id, first_name, last_name, avatar_url, newcomer),
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
+        `
+        )
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+
+      const normalized = (data || []).map((m: any) => ({
+        ...m,
+        user: withDisplayName(m.user),
+      }));
+
+      return { data: normalized, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to get all group memberships'),
       };
     }
   }
@@ -406,7 +699,8 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url)
+          user:users(id, first_name, last_name, avatar_url, newcomer),
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
         `
         )
         .eq('group_id', groupId)
@@ -418,7 +712,12 @@ export class GroupService {
         return { data: null, error: new Error(error.message) };
       }
 
-      const memberships = (data || []).filter((m: any) => Boolean(m.user?.id));
+      const memberships = (data || [])
+        .map((m: any) => ({
+          ...m,
+          user: withDisplayName(m.user),
+        }))
+        .filter((m: any) => Boolean(m.user?.id));
       return { data: memberships as any, error: null };
     } catch (error) {
       return {
@@ -443,19 +742,24 @@ export class GroupService {
         .select(
           `
           *,
-          user:users(id, name, avatar_url)
+          user:users(id, first_name, last_name, avatar_url)
         `
         )
         .eq('group_id', groupId)
         .eq('status', 'active')
-        .in('role', ['leader', 'admin'])
+        .in('role', ['leader'])
         .order('joined_at');
 
       if (error) {
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data || [], error: null };
+      const normalized = (data || []).map((m: any) => ({
+        ...m,
+        user: withDisplayName(m.user),
+      }));
+
+      return { data: normalized, error: null };
     } catch (error) {
       return {
         data: null,
@@ -488,7 +792,7 @@ export class GroupService {
       // Get referrer details
       const { data: referrer, error: referrerError } = await supabase
         .from('users')
-        .select('name')
+        .select('first_name, last_name')
         .eq('id', referralData.referrer_id)
         .single();
 
@@ -500,7 +804,7 @@ export class GroupService {
       // For now, we'll just log the referral (could be stored in a referrals table)
       console.log('Group referral sent:', {
         group: group.title,
-        referrer: referrer.name,
+        referrer: getFullName(referrer),
         referee: referralData.referee_email,
         message: referralData.message,
         whatsappLink: group.whatsapp_link,
@@ -508,7 +812,7 @@ export class GroupService {
 
       // TODO: Implement actual email sending or store referral in database
       // This could involve:
-      // 1. Storing the referral in a 'group_referrals' table
+      // 1. Storing the referral in a 'referrals' table
       // 2. Sending an email with group details and invitation link
       // 3. Creating a temporary invitation token
 
@@ -539,6 +843,7 @@ export class GroupService {
           `
           *,
           service:services(*),
+          church:churches(*),
           
           memberships:group_memberships(
             id,
@@ -566,6 +871,10 @@ export class GroupService {
       const groupsWithCount =
         data?.map((group) => ({
           ...group,
+          memberships: group.memberships?.map((m: any) => ({
+            ...m,
+            user: m.user ? { ...m.user, name: getFullName(m.user) } : m.user,
+          })),
           member_count:
             group.memberships?.filter((m: any) => m.status === 'active')
               .length || 0,

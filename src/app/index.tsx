@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '../components/auth/AuthLoadingAnimation';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 
@@ -21,7 +21,7 @@ export default function IndexScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>VineMe</Text>
       <Text style={styles.subtitle}>Church Community App</Text>
-      <LoadingSpinner size="large" />
+      <AuthLoadingAnimation />
     </View>
   );
 }

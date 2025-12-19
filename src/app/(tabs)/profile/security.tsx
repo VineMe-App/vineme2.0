@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  Alert, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Alert,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView
+  SafeAreaView,
 } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { useRouter } from 'expo-router';
@@ -18,14 +18,17 @@ import { Card } from '@/components/ui/Card';
 
 export default function ProfileSecurityScreen() {
   const router = useRouter();
-  const { user, userProfile, linkEmail, linkPhone, verifyOtp, isLoading } = useAuthStore();
-  
+  const { user, userProfile, linkEmail, linkPhone, verifyOtp, isLoading } =
+    useAuthStore();
+
   const [emailStep, setEmailStep] = useState<'idle' | 'enter-email'>('idle');
-  const [phoneStep, setPhoneStep] = useState<'idle' | 'enter-phone' | 'verify-code'>('idle');
-  
+  const [phoneStep, setPhoneStep] = useState<
+    'idle' | 'enter-phone' | 'verify-code'
+  >('idle');
+
   const [newEmail, setNewEmail] = useState('');
-  
-  const [countryCode, setCountryCode] = useState('+1');
+
+  const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
   const [phoneCode, setPhoneCode] = useState('');
   const [fullPhone, setFullPhone] = useState('');
@@ -42,7 +45,7 @@ export default function ProfileSecurityScreen() {
     }
 
     const result = await linkEmail(newEmail.trim());
-    
+
     if (result.success) {
       setEmailStep('idle');
       setNewEmail('');
@@ -55,20 +58,28 @@ export default function ProfileSecurityScreen() {
   const handleLinkPhone = async () => {
     const phone = `${countryCode}${localNumber.replace(/\D/g, '')}`;
     setFullPhone(phone);
-    
+
     const result = await linkPhone(phone);
-    
+
     if (result.success) {
       setPhoneStep('verify-code');
-      Alert.alert('Verification Sent', 'Please check your phone for the verification code.');
+      Alert.alert(
+        'Verification Sent',
+        'Please check your phone for the verification code.'
+      );
     } else {
       Alert.alert('Error', result.error || 'Failed to link phone');
     }
   };
 
   const handleVerifyPhone = async () => {
+    if (phoneCode.length !== 6) {
+      Alert.alert('Error', 'Please enter the complete 6-digit code');
+      return;
+    }
+
     const result = await verifyOtp(fullPhone, phoneCode, 'sms');
-    
+
     if (result.success) {
       setPhoneStep('idle');
       setLocalNumber('');
@@ -103,8 +114,8 @@ export default function ProfileSecurityScreen() {
           )}
 
           {emailStep === 'idle' && (
-            <Button 
-              title={currentEmail ? "Update Email" : "Link Email"} 
+            <Button
+              title={currentEmail ? 'Update Email' : 'Link Email'}
               onPress={() => setEmailStep('enter-email')}
               variant="secondary"
               style={styles.actionButton}
@@ -125,26 +136,24 @@ export default function ProfileSecurityScreen() {
                 editable={!isLoading}
               />
               <View style={styles.buttonRow}>
-                <Button 
-                  title="Cancel" 
+                <Button
+                  title="Cancel"
                   onPress={() => {
                     setEmailStep('idle');
                     setNewEmail('');
                   }}
                   variant="secondary"
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
-                <Button 
-                  title="Send Code" 
+                <Button
+                  title="Send Code"
                   onPress={handleLinkEmail}
                   loading={isLoading}
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
               </View>
             </View>
           )}
-
-
         </Card>
 
         {/* Phone Section */}
@@ -160,8 +169,8 @@ export default function ProfileSecurityScreen() {
           )}
 
           {phoneStep === 'idle' && (
-            <Button 
-              title={currentPhone ? "Update Phone" : "Link Phone"} 
+            <Button
+              title={currentPhone ? 'Update Phone' : 'Link Phone'}
               onPress={() => setPhoneStep('enter-phone')}
               variant="secondary"
               style={styles.actionButton}
@@ -170,36 +179,38 @@ export default function ProfileSecurityScreen() {
 
           {phoneStep === 'enter-phone' && (
             <View style={styles.inputSection}>
-              <CountryCodePicker 
-                value={countryCode} 
-                onChange={setCountryCode} 
-                label="Country" 
+              <CountryCodePicker
+                value={countryCode}
+                onChange={setCountryCode}
+                label="Country"
               />
-              <Text style={[styles.label, { marginTop: 16 }]}>Phone Number</Text>
+              <Text style={[styles.label, { marginTop: 16 }]}>
+                Phone Number
+              </Text>
               <TextInput
                 value={localNumber}
                 onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
                 style={styles.input}
                 keyboardType="phone-pad"
-                placeholder="5551234567"
+                placeholder="7123456789"
                 autoCapitalize="none"
                 editable={!isLoading}
               />
               <View style={styles.buttonRow}>
-                <Button 
-                  title="Cancel" 
+                <Button
+                  title="Cancel"
                   onPress={() => {
                     setPhoneStep('idle');
                     setLocalNumber('');
                   }}
                   variant="secondary"
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
-                <Button 
-                  title="Send Code" 
+                <Button
+                  title="Send Code"
                   onPress={handleLinkPhone}
                   loading={isLoading}
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
               </View>
             </View>
@@ -207,29 +218,31 @@ export default function ProfileSecurityScreen() {
 
           {phoneStep === 'verify-code' && (
             <View style={styles.inputSection}>
-              <Text style={styles.label}>Enter 4-digit code</Text>
+              <Text style={styles.label}>Enter 6-digit code</Text>
               <Text style={styles.helperText}>Sent to {fullPhone}</Text>
-              <OtpInput 
-                value={phoneCode} 
-                onChange={(text) => setPhoneCode(text.replace(/\D/g, '').slice(0, 4))} 
-                length={4} 
+              <OtpInput
+                value={phoneCode}
+                onChange={(text) =>
+                  setPhoneCode(text.replace(/\D/g, '').slice(0, 6))
+                }
+                length={6}
               />
               <View style={styles.buttonRow}>
-                <Button 
-                  title="Cancel" 
+                <Button
+                  title="Cancel"
                   onPress={() => {
                     setPhoneStep('idle');
                     setLocalNumber('');
                     setPhoneCode('');
                   }}
                   variant="secondary"
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
-                <Button 
-                  title="Verify" 
+                <Button
+                  title="Verify"
                   onPress={handleVerifyPhone}
                   loading={isLoading}
-                  style={[styles.button, styles.buttonHalf]}
+                  style={styles.buttonHalf}
                 />
               </View>
             </View>

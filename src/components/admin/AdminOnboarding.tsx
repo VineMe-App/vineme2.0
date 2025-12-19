@@ -6,12 +6,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
+import { Text } from '@/components/ui/Text';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
   },
   stepDotCompleted: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#ff0083',
   },
   stepDotText: {
     fontSize: 14,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   },
   featureBullet: {
     fontSize: 16,
-    color: '#10b981',
+    color: '#ff0083',
     fontWeight: 'bold',
     marginRight: 8,
     marginTop: 2,

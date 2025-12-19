@@ -3,7 +3,9 @@
 
 export interface User {
   id: string;
-  name: string;
+  name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   // Email moved to auth.users; not exposed in public.users
   email?: string;
   phone?: string;
@@ -11,6 +13,11 @@ export interface User {
   avatar_url?: string;
   service_id?: string;
   bio?: string;
+  marketing_opt_in?: boolean;
+  cannot_find_group?: boolean;
+  cannot_find_group_requested_at?: string;
+  cannot_find_group_contacted_at?: string;
+  cannot_find_group_resolved_at?: string;
   roles: string[];
   newcomer?: boolean;
   onboarding_complete?: boolean;
@@ -56,28 +63,71 @@ export interface Group {
   service_id: string;
   church_id: string;
   status: 'pending' | 'approved' | 'denied' | 'closed';
+  at_capacity: boolean; // Whether the group is currently at capacity
+  created_by?: string; // ID of the user who created the group
   created_at: string;
   updated_at?: string;
 }
+
+export type MembershipJourneyStatus = 1 | 2 | 3;
 
 export interface GroupMembership {
   id: string;
   group_id: string;
   user_id: string;
   role: 'member' | 'leader' | 'admin';
-  joined_at: string;
-  status: 'active' | 'inactive' | 'pending';
+  joined_at: string | null;
+  status: 'active' | 'inactive' | 'pending' | 'archived';
+  referral_id?: string | null;
+  journey_status?: MembershipJourneyStatus | null;
 }
 
 export interface GroupJoinRequest {
   id: string;
   group_id: string;
   user_id: string;
-  contact_consent: boolean;
-  message?: string;
+  message?: string | null;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;
   updated_at?: string;
+  referral_id?: string | null;
+  journey_status?: MembershipJourneyStatus | null;
+}
+
+export type GroupMembershipNoteType =
+  | 'manual' // Manual note by group leader
+  | 'request_approved' // pending -> active (approved to join)
+  | 'request_archived' // pending -> archived (rejected before joining)
+  | 'member_left' // active -> inactive (left or removed)
+  | 'journey_status_change' // Journey status updated (1, 2, 3) while pending
+  | 'role_change'; // Role changed while active
+
+export interface GroupMembershipNote {
+  id: string;
+  membership_id: string;
+  group_id: string;
+  user_id: string;
+  created_by_user_id: string;
+  note_type: GroupMembershipNoteType;
+  note_text?: string | null;
+
+  // Change tracking
+  previous_status?: 'active' | 'inactive' | 'pending' | 'archived' | null;
+  new_status?: 'active' | 'inactive' | 'pending' | 'archived' | null;
+  previous_journey_status?: MembershipJourneyStatus | null;
+  new_journey_status?: MembershipJourneyStatus | null;
+  previous_role?: 'member' | 'leader' | 'admin' | null;
+  new_role?: 'member' | 'leader' | 'admin' | null;
+
+  // Reason (for archiving or leaving)
+  reason?: string | null;
+
+  created_at: string;
+}
+
+export interface GroupMembershipNoteWithUser extends GroupMembershipNote {
+  created_by?: User;
+  user?: User;
 }
 
 export interface Event {
@@ -113,7 +163,7 @@ export interface Friendship {
   id: string;
   user_id: string;
   friend_id: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'blocked';
+  status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at?: string;
 }
@@ -131,11 +181,13 @@ export interface Ticket {
 // Joined/Extended types for queries with relationships
 export interface GroupMembershipWithUser extends GroupMembership {
   user?: User;
+  referral?: Referral;
 }
 
 export interface GroupJoinRequestWithUser extends GroupJoinRequest {
   user?: User;
   group?: Group;
+  group_leaders?: User[];
 }
 
 export interface GroupWithDetails extends Group {
@@ -166,74 +218,62 @@ export interface UserWithDetails extends User {
   friendships?: Friendship[];
 }
 
-// Contact sharing and privacy types
-export interface ContactAuditLog {
-  id: string;
-  user_id: string; // User whose contact was accessed
-  accessor_id: string; // User who accessed the contact
-  group_id: string; // Group context for the access
-  join_request_id?: string; // Related join request if applicable
-  access_type: 'view' | 'call' | 'email' | 'message';
-  contact_fields: string[]; // Which fields were accessed (email, phone, etc.)
-  created_at: string;
-}
-
-export interface ContactPrivacySettings {
-  id: string;
-  user_id: string;
-  allow_email_sharing: boolean;
-  allow_phone_sharing: boolean;
-  allow_contact_by_leaders: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface ContactAuditLogWithDetails extends ContactAuditLog {
-  user?: {
-    id: string;
-    name: string;
-    email?: string;
-  };
-  accessor?: {
-    id: string;
-    name: string;
-  };
-  group?: {
-    id: string;
-    title: string;
-  };
-}
-
 // Referral system types
-export interface GroupReferral {
-  id: string;
-  group_id: string;
-  referrer_id: string;
-  referred_user_id: string;
-  note?: string;
+export interface Referral {
+  id: string; // Unique referral UUID
+  referred_user_id: string | null;
+  referred_by_user_id: string | null;
+  group_id: string | null;
+  church_id: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  note?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
 }
 
-export interface GeneralReferral {
-  id: string;
-  referrer_id: string;
-  referred_user_id: string;
-  note?: string;
-  created_at: string;
-  updated_at: string;
+export interface ReferralWithDetails extends Referral {
+  group?: Group | null;
+  referrer?: User | null;
+  referred_user?: User | null;
 }
 
-export interface GroupReferralWithDetails extends GroupReferral {
-  group?: Group;
-  referrer?: User;
-  referred_user?: User;
-}
+// Legacy aliases maintained for compatibility while migrating to unified referrals table
+export type GroupReferral = Referral;
+export type GeneralReferral = Referral;
+export type GroupReferralWithDetails = ReferralWithDetails;
+export type GeneralReferralWithDetails = ReferralWithDetails;
 
-export interface GeneralReferralWithDetails extends GeneralReferral {
-  referrer?: User;
-  referred_user?: User;
-}
+// Enhanced Notifications System Types - Re-exported from dedicated notifications types file
+export type {
+  NotificationType,
+  Notification,
+  NotificationSettings,
+  NotificationTriggerData,
+  NotificationGroup,
+  NotificationSummary,
+  NotificationWithDetails,
+  CreateNotificationInput,
+  BatchCreateNotificationInput,
+  NotificationQueryOptions,
+  NotificationFilterOptions,
+  NotificationAction,
+  NotificationInteraction,
+  NotificationSubscription,
+  NotificationSubscriptionManager,
+  NotificationMetrics,
+  NotificationAnalytics,
+  NotificationError,
+  NotificationResult,
+  BatchNotificationResult,
+  QueuedNotification,
+  NotificationQueue,
+  PushNotificationPayload,
+  PushNotificationToken,
+  NotificationTemplate,
+  NotificationTemplateData,
+  NotificationValidationRule,
+  NotificationValidationSchema,
+} from './notifications';
 
 // Database response types
 export type DatabaseUser = User;
@@ -243,5 +283,6 @@ export type DatabaseGroup = Group;
 export type DatabaseEvent = Event;
 export type DatabaseFriendship = Friendship;
 export type DatabaseTicket = Ticket;
-export type DatabaseGroupReferral = GroupReferral;
-export type DatabaseGeneralReferral = GeneralReferral;
+export type DatabaseReferral = Referral;
+export type DatabaseNotification = Notification;
+export type DatabaseNotificationSettings = NotificationSettings;

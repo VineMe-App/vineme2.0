@@ -2,10 +2,10 @@
  * Database operations and schema definitions for referral system
  * This file contains SQL schema definitions and database utilities
  * for the referral tracking system.
- * 
+ *
  * Requirements addressed:
  * - 6.1: Store referrer's ID and referral details for general referrals
- * - 6.2: Store referrer's ID, group ID, and referral details in group_referrals table
+ * - 6.2: Store referrer's ID, group ID, and referral details in referrals table
  * - 6.3: Timestamp tracking for referral creation
  * - 6.5: Ensure data integrity and proper relationships between tables
  */
@@ -17,22 +17,24 @@ import { supabase } from './supabase';
  * These should be executed in your Supabase database
  */
 export const REFERRAL_SCHEMA_SQL = {
-  // Group referrals table with proper foreign key constraints
-  GROUP_REFERRALS_TABLE: `
-    CREATE TABLE IF NOT EXISTS group_referrals (
+  // Referrals table with proper foreign key constraints
+  REFERRALS_TABLE: `
+    CREATE TABLE IF NOT EXISTS referrals (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-      referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
+      referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      church_id UUID REFERENCES churches(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
       note TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      
-      -- Ensure a user can only be referred to a group once by the same referrer
-      UNIQUE(group_id, referrer_id, referred_user_id),
-      
-      -- Ensure a user cannot refer themselves
-      CHECK (referrer_id != referred_user_id)
+
+      -- Prevent duplicate referrals for the same context
+      UNIQUE(referred_by_user_id, referred_user_id, group_id),
+
+      -- Ensure referrers cannot refer themselves
+      CHECK (referred_by_user_id != referred_user_id)
     );
   `,
 
@@ -40,80 +42,81 @@ export const REFERRAL_SCHEMA_SQL = {
   GENERAL_REFERRALS_TABLE: `
     CREATE TABLE IF NOT EXISTS general_referrals (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      referred_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       referred_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      church_id UUID REFERENCES churches(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
       note TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      
-      -- Ensure a user can only be generally referred once by the same referrer
-      UNIQUE(referrer_id, referred_user_id),
-      
-      -- Ensure a user cannot refer themselves
-      CHECK (referrer_id != referred_user_id)
+
+      -- Prevent duplicate general referrals
+      UNIQUE(referred_by_user_id, referred_user_id),
+
+      -- Ensure referrers cannot refer themselves
+      CHECK (referred_by_user_id != referred_user_id)
     );
   `,
 
   // Indexes for better query performance
   INDEXES: `
-    -- Indexes for group_referrals table
-    CREATE INDEX IF NOT EXISTS idx_group_referrals_group_id ON group_referrals(group_id);
-    CREATE INDEX IF NOT EXISTS idx_group_referrals_referrer_id ON group_referrals(referrer_id);
-    CREATE INDEX IF NOT EXISTS idx_group_referrals_referred_user_id ON group_referrals(referred_user_id);
-    CREATE INDEX IF NOT EXISTS idx_group_referrals_created_at ON group_referrals(created_at);
-    
+    -- Indexes for referrals table
+    CREATE INDEX IF NOT EXISTS idx_referrals_group_id ON referrals(group_id);
+    CREATE INDEX IF NOT EXISTS idx_referrals_referred_by_user_id ON referrals(referred_by_user_id);
+    CREATE INDEX IF NOT EXISTS idx_referrals_referred_user_id ON referrals(referred_user_id);
+    CREATE INDEX IF NOT EXISTS idx_referrals_church_id ON referrals(church_id);
+    CREATE INDEX IF NOT EXISTS idx_referrals_created_at ON referrals(created_at);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_referrals_unique_referral
+      ON referrals (referred_by_user_id, referred_user_id, COALESCE(group_id, '00000000-0000-0000-0000-000000000000'));
+
     -- Indexes for general_referrals table
-    CREATE INDEX IF NOT EXISTS idx_general_referrals_referrer_id ON general_referrals(referrer_id);
+    CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_by_user_id ON general_referrals(referred_by_user_id);
     CREATE INDEX IF NOT EXISTS idx_general_referrals_referred_user_id ON general_referrals(referred_user_id);
     CREATE INDEX IF NOT EXISTS idx_general_referrals_created_at ON general_referrals(created_at);
-    
-    -- Composite indexes for common queries
-    CREATE INDEX IF NOT EXISTS idx_group_referrals_referrer_created ON group_referrals(referrer_id, created_at);
-    CREATE INDEX IF NOT EXISTS idx_general_referrals_referrer_created ON general_referrals(referrer_id, created_at);
   `,
 
   // Row Level Security (RLS) policies
   RLS_POLICIES: `
     -- Enable RLS on both tables
-    ALTER TABLE group_referrals ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
     ALTER TABLE general_referrals ENABLE ROW LEVEL SECURITY;
-    
+
     -- Policy: Users can view referrals they made
-    CREATE POLICY "Users can view their own referrals" ON group_referrals
-      FOR SELECT USING (auth.uid() = referrer_id);
-    
+    CREATE POLICY "Users can view their own referrals" ON referrals
+      FOR SELECT USING (auth.uid() = referred_by_user_id);
+
     CREATE POLICY "Users can view their own general referrals" ON general_referrals
-      FOR SELECT USING (auth.uid() = referrer_id);
-    
+      FOR SELECT USING (auth.uid() = referred_by_user_id);
+
     -- Policy: Users can view referrals made about them
-    CREATE POLICY "Users can view referrals about them" ON group_referrals
+    CREATE POLICY "Users can view referrals about them" ON referrals
       FOR SELECT USING (auth.uid() = referred_user_id);
-    
+
     CREATE POLICY "Users can view general referrals about them" ON general_referrals
       FOR SELECT USING (auth.uid() = referred_user_id);
-    
+
     -- Policy: Users can create referrals
-    CREATE POLICY "Users can create group referrals" ON group_referrals
-      FOR INSERT WITH CHECK (auth.uid() = referrer_id);
-    
+    CREATE POLICY "Users can create group referrals" ON referrals
+      FOR INSERT WITH CHECK (auth.uid() = referred_by_user_id);
+
     CREATE POLICY "Users can create general referrals" ON general_referrals
-      FOR INSERT WITH CHECK (auth.uid() = referrer_id);
-    
+      FOR INSERT WITH CHECK (auth.uid() = referred_by_user_id);
+
     -- Policy: Admin users can manage all referrals
-    CREATE POLICY "Admins can manage all group referrals" ON group_referrals
+    CREATE POLICY "Admins can manage all group referrals" ON referrals
       FOR ALL USING (
         EXISTS (
-          SELECT 1 FROM users 
-          WHERE id = auth.uid() 
+          SELECT 1 FROM users
+          WHERE id = auth.uid()
           AND 'admin' = ANY(roles)
         )
       );
-    
+
     CREATE POLICY "Admins can manage all general referrals" ON general_referrals
       FOR ALL USING (
         EXISTS (
-          SELECT 1 FROM users 
-          WHERE id = auth.uid() 
+          SELECT 1 FROM users
+          WHERE id = auth.uid()
           AND 'admin' = ANY(roles)
         )
       );
@@ -130,9 +133,9 @@ export const REFERRAL_SCHEMA_SQL = {
     END;
     $$ language 'plpgsql';
     
-    -- Triggers for group_referrals
-    CREATE TRIGGER update_group_referrals_updated_at
-      BEFORE UPDATE ON group_referrals
+    -- Triggers for referrals
+    CREATE TRIGGER update_referrals_updated_at
+      BEFORE UPDATE ON referrals
       FOR EACH ROW
       EXECUTE FUNCTION update_updated_at_column();
     
@@ -152,54 +155,55 @@ export class ReferralDatabaseUtils {
    * Check if referral tables exist and are properly configured
    */
   static async validateTableStructure(): Promise<{
-    groupReferralsExists: boolean;
+    referralsExists: boolean;
     generalReferralsExists: boolean;
     indexesExist: boolean;
     constraintsValid: boolean;
     errors: string[];
   }> {
     const errors: string[] = [];
-    let groupReferralsExists = false;
+    let referralsExists = false;
     let generalReferralsExists = false;
     let indexesExist = false;
     let constraintsValid = false;
 
     try {
-      // Check if group_referrals table exists
+      // Check if referrals table exists
       const { data: groupTableData, error: groupTableError } = await supabase
-        .from('group_referrals')
+        .from('referrals')
         .select('id')
         .limit(1);
 
       if (!groupTableError) {
-        groupReferralsExists = true;
+        referralsExists = true;
       } else {
-        errors.push(`Group referrals table issue: ${groupTableError.message}`);
+        errors.push(`Referrals table issue: ${groupTableError.message}`);
       }
 
       // Check if general_referrals table exists
-      const { data: generalTableData, error: generalTableError } = await supabase
-        .from('general_referrals')
-        .select('id')
-        .limit(1);
+      const { data: generalTableData, error: generalTableError } =
+        await supabase.from('general_referrals').select('id').limit(1);
 
       if (!generalTableError) {
         generalReferralsExists = true;
       } else {
-        errors.push(`General referrals table issue: ${generalTableError.message}`);
+        errors.push(
+          `General referrals table issue: ${generalTableError.message}`
+        );
       }
 
       // Note: Index and constraint validation would require admin access
       // In a production environment, these would be checked via database admin tools
       indexesExist = true; // Assume indexes exist if tables exist
       constraintsValid = true; // Assume constraints are valid if tables exist
-
     } catch (error) {
-      errors.push(`Database validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Database validation error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     return {
-      groupReferralsExists,
+      referralsExists,
       generalReferralsExists,
       indexesExist,
       constraintsValid,
@@ -211,10 +215,10 @@ export class ReferralDatabaseUtils {
    * Get database schema information for referral tables
    */
   static async getSchemaInfo(): Promise<{
-    tables: Array<{
+    tables: {
       name: string;
-      columns: Array<{ name: string; type: string; nullable: boolean }>;
-    }>;
+      columns: { name: string; type: string; nullable: boolean }[];
+    }[];
     error?: string;
   }> {
     try {
@@ -223,26 +227,46 @@ export class ReferralDatabaseUtils {
       return {
         tables: [
           {
-            name: 'group_referrals',
+            name: 'referrals',
             columns: [
               { name: 'id', type: 'uuid', nullable: false },
-              { name: 'group_id', type: 'uuid', nullable: false },
-              { name: 'referrer_id', type: 'uuid', nullable: false },
+              { name: 'group_id', type: 'uuid', nullable: true },
+              { name: 'referred_by_user_id', type: 'uuid', nullable: false },
               { name: 'referred_user_id', type: 'uuid', nullable: false },
+              { name: 'church_id', type: 'uuid', nullable: true },
+              { name: 'status', type: 'text', nullable: false },
               { name: 'note', type: 'text', nullable: true },
-              { name: 'created_at', type: 'timestamp with time zone', nullable: false },
-              { name: 'updated_at', type: 'timestamp with time zone', nullable: false },
+              {
+                name: 'created_at',
+                type: 'timestamp with time zone',
+                nullable: false,
+              },
+              {
+                name: 'updated_at',
+                type: 'timestamp with time zone',
+                nullable: false,
+              },
             ],
           },
           {
             name: 'general_referrals',
             columns: [
               { name: 'id', type: 'uuid', nullable: false },
-              { name: 'referrer_id', type: 'uuid', nullable: false },
+              { name: 'referred_by_user_id', type: 'uuid', nullable: false },
               { name: 'referred_user_id', type: 'uuid', nullable: false },
+              { name: 'church_id', type: 'uuid', nullable: true },
+              { name: 'status', type: 'text', nullable: false },
               { name: 'note', type: 'text', nullable: true },
-              { name: 'created_at', type: 'timestamp with time zone', nullable: false },
-              { name: 'updated_at', type: 'timestamp with time zone', nullable: false },
+              {
+                name: 'created_at',
+                type: 'timestamp with time zone',
+                nullable: false,
+              },
+              {
+                name: 'updated_at',
+                type: 'timestamp with time zone',
+                nullable: false,
+              },
             ],
           },
         ],
@@ -250,7 +274,8 @@ export class ReferralDatabaseUtils {
     } catch (error) {
       return {
         tables: [],
-        error: error instanceof Error ? error.message : 'Failed to get schema info',
+        error:
+          error instanceof Error ? error.message : 'Failed to get schema info',
       };
     }
   }
@@ -272,13 +297,16 @@ export class ReferralDatabaseUtils {
     try {
       // Check for orphaned records (referrals pointing to non-existent users/groups)
       const { data: orphanedGroupRefs, error: orphanedError } = await supabase
-        .from('group_referrals')
+        .from('referrals')
         .select('id')
+        .not('group_id', 'is', null)
         .not('group_id', 'in', `(SELECT id FROM groups)`)
         .limit(100);
 
       if (orphanedError) {
-        errors.push(`Error checking orphaned records: ${orphanedError.message}`);
+        errors.push(
+          `Error checking orphaned records: ${orphanedError.message}`
+        );
       } else {
         orphanedRecordsFound = orphanedGroupRefs?.length || 0;
       }
@@ -287,9 +315,10 @@ export class ReferralDatabaseUtils {
       // In a production environment, these would be scheduled as database maintenance tasks
       vacuumCompleted = true; // Assume maintenance is handled at database level
       statisticsUpdated = true; // Assume statistics are updated regularly
-
     } catch (error) {
-      errors.push(`Maintenance error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Maintenance error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     return {
@@ -308,7 +337,7 @@ export const COMPLETE_REFERRAL_SCHEMA = `
 -- Referral System Database Schema
 -- Execute this SQL in your Supabase database to set up the referral tables
 
-${REFERRAL_SCHEMA_SQL.GROUP_REFERRALS_TABLE}
+${REFERRAL_SCHEMA_SQL.REFERRALS_TABLE}
 
 ${REFERRAL_SCHEMA_SQL.GENERAL_REFERRALS_TABLE}
 

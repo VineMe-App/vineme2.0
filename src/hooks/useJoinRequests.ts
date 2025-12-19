@@ -1,11 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { joinRequestService } from '../services/joinRequests';
-import type {
-  GroupJoinRequest,
-  GroupJoinRequestWithUser,
-  GroupMembership,
-} from '../types/database';
+import type { MembershipJourneyStatus } from '../types/database';
 import type { CreateJoinRequestData } from '../services/joinRequests';
+import { noteKeys } from './useGroupMembershipNotes';
 
 // Query keys
 export const joinRequestKeys = {
@@ -134,6 +131,14 @@ export const useApproveJoinRequest = () => {
       queryClient.invalidateQueries({
         queryKey: ['groups', 'members', variables.groupId],
       });
+
+      // Invalidate notes queries so approval notes appear immediately
+      queryClient.invalidateQueries({
+        queryKey: noteKeys.membership(variables.requestId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: noteKeys.group(variables.groupId),
+      });
     },
     onError: (error) => {
       console.error('Failed to approve join request:', error);
@@ -142,7 +147,66 @@ export const useApproveJoinRequest = () => {
 };
 
 /**
- * Hook to decline a join request
+ * Hook to archive a join request with reason
+ */
+export const useArchiveJoinRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      requestId,
+      declinerId,
+      groupId,
+      reason,
+      notes,
+    }: {
+      requestId: string;
+      declinerId: string;
+      groupId: string;
+      reason?: string;
+      notes?: string;
+    }) => {
+      const { data, error } = await joinRequestService.archiveJoinRequest(
+        requestId,
+        declinerId,
+        reason,
+        notes
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate join requests queries
+      queryClient.invalidateQueries({
+        queryKey: joinRequestKeys.byGroup(variables.groupId),
+      });
+
+      // Invalidate group data to update pending requests count
+      queryClient.invalidateQueries({
+        queryKey: ['groups', 'byId', variables.groupId],
+      });
+
+      // Invalidate notes queries so archive notes appear immediately
+      queryClient.invalidateQueries({
+        queryKey: noteKeys.membership(variables.requestId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: noteKeys.group(variables.groupId),
+      });
+
+      // Also invalidate all memberships query for archive view
+      queryClient.invalidateQueries({
+        queryKey: ['groups', 'members', variables.groupId, 'all'],
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to archive join request:', error);
+    },
+  });
+};
+
+/**
+ * Hook to decline a join request (deprecated - use useArchiveJoinRequest)
  */
 export const useDeclineJoinRequest = () => {
   const queryClient = useQueryClient();
@@ -279,14 +343,54 @@ export const useInitiateContactAction = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      // Invalidate contact audit logs
+    onError: (error) => {
+      console.error('Failed to initiate contact action:', error);
+    },
+  });
+};
+
+/**
+ * Hook to update the journey status of a membership
+ */
+export const useUpdateMembershipJourneyStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      membershipId,
+      leaderId,
+      journeyStatus,
+    }: {
+      membershipId: string;
+      leaderId: string;
+      journeyStatus: MembershipJourneyStatus | null;
+    }) => {
+      const { data, error } = await joinRequestService.updateJourneyStatus(
+        membershipId,
+        leaderId,
+        journeyStatus
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (!data) return;
       queryClient.invalidateQueries({
-        queryKey: ['contactAudit'],
+        queryKey: joinRequestKeys.byGroup(data.group_id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['groups', 'members', data.group_id],
+      });
+      // Invalidate notes queries so journey status changes appear immediately
+      queryClient.invalidateQueries({
+        queryKey: noteKeys.membership(data.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: noteKeys.group(data.group_id),
       });
     },
     onError: (error) => {
-      console.error('Failed to initiate contact action:', error);
+      console.error('Failed to update membership journey status:', error);
     },
   });
 };

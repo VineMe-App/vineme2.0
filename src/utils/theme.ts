@@ -12,9 +12,9 @@ export const Colors = {
   secondaryDark: '#3F3EA3',
 
   // Semantic colors
-  success: '#34C759',
-  successLight: '#5ED77A',
-  successDark: '#248A3D',
+  success: '#ff0083', // Updated to use primary pink
+  successLight: '#ff43ab',
+  successDark: '#cc0067',
 
   warning: '#FF9500',
   warningLight: '#FFB340',

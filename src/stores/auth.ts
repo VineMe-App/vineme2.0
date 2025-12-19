@@ -1,28 +1,44 @@
 import { create } from 'zustand';
 import type { User } from '@supabase/supabase-js';
-import type { DatabaseUser } from '../types/database';
+import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { authService } from '../services/auth';
+import { getFullName } from '../utils/name';
+import { setDeletionFlowActive } from '../utils/errorSuppression';
 
 interface AuthState {
   // State
   user: User | null;
-  userProfile: DatabaseUser | null;
+  userProfile: UserWithDetails | null;
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
 
   // Actions - password authentication removed
-  signUpWithPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
-  signInWithPhone: (phone: string) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
-  signInWithEmail: (email: string) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
-  verifyOtp: (phoneOrEmail: string, code: string, type: 'sms' | 'email') => Promise<{ success: boolean; error?: string; user?: User }>;
-  linkEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
+  signUpWithPhone: (
+    phone: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  signInWithPhone: (
+    phone: string
+  ) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
+  signInWithEmail: (
+    email: string
+  ) => Promise<{ success: boolean; error?: string; userNotFound?: boolean }>;
+  verifyOtp: (
+    phoneOrEmail: string,
+    code: string,
+    type: 'sms' | 'email'
+  ) => Promise<{ success: boolean; error?: string; user?: User }>;
+  linkEmail: (
+    email: string,
+    options?: { emailRedirectTo?: string; marketingOptIn?: boolean }
+  ) => Promise<{ success: boolean; error?: string }>;
   linkPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   loadUserProfile: () => Promise<void>;
   updateUserProfile: (updates: Partial<DatabaseUser>) => Promise<boolean>;
   createUserProfile: (userData: {
-    name: string;
+    first_name?: string;
+    last_name?: string;
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
@@ -52,7 +68,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Phone sign up failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Phone sign up failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -68,7 +85,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Phone sign in failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Phone sign in failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -84,13 +102,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Email sign in failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Email sign in failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
   },
 
-  verifyOtp: async (phoneOrEmail: string, code: string, type: 'sms' | 'email') => {
+  verifyOtp: async (
+    phoneOrEmail: string,
+    code: string,
+    type: 'sms' | 'email'
+  ) => {
     set({ isLoading: true, error: null });
     try {
       const result = await authService.verifyOtp(phoneOrEmail, code, type);
@@ -106,8 +129,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             (result.user.user_metadata as any)?.name ||
             result.user.phone ||
             'New User';
+          const parts = String(fallbackName).trim().split(/\s+/);
+          const firstName = parts.shift() || undefined;
+          const lastName = parts.length > 0 ? parts.join(' ') : undefined;
           await get().createUserProfile({
-            name: String(fallbackName),
+            first_name: firstName,
+            last_name: lastName,
             newcomer: true,
             onboarding_complete: false,
           });
@@ -120,23 +147,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'OTP verification failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
   },
 
-  linkEmail: async (email: string) => {
+  linkEmail: async (
+    email: string,
+    options?: { emailRedirectTo?: string; marketingOptIn?: boolean }
+  ) => {
     set({ isLoading: true, error: null });
     try {
-      const result = await authService.linkEmail(email);
+      const result = await authService.linkEmail(email, options);
       set({ isLoading: false });
       if (!result.success && result.error) {
         set({ error: result.error });
+      } else if (result.success) {
+        // Reload user profile to get updated marketing preference
+        await get().loadUserProfile();
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Email linking failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Email linking failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -155,7 +190,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Phone linking failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Phone linking failed';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -165,10 +201,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      // Set flag to suppress expected post-sign-out errors
+      setDeletionFlowActive(true);
+      
       const { error } = await authService.signOut();
 
       if (error) {
         set({ error: error.message, isLoading: false });
+        setDeletionFlowActive(false);
         return;
       }
 
@@ -178,10 +218,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         error: null,
       });
+      
+      // Reset flag after a short delay to allow queries to complete
+      setTimeout(() => setDeletionFlowActive(false), 2000);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Sign out failed';
       set({ error: errorMessage, isLoading: false });
+      setDeletionFlowActive(false);
     }
   },
 
@@ -193,7 +237,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       const userProfile = await authService.getCurrentUserProfile();
-      set({ userProfile, isLoading: false });
+      const enrichedProfile = userProfile
+        ? {
+            ...userProfile,
+            name: getFullName(userProfile),
+          }
+        : null;
+      set({ userProfile: enrichedProfile, isLoading: false });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to load user profile';
@@ -226,11 +276,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   createUserProfile: async (userData: {
-    name: string;
+    first_name?: string;
+    last_name?: string;
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
     onboarding_complete?: boolean;
+    avatar_url?: string;
+    bio?: string;
   }): Promise<boolean> => {
     set({ isLoading: true, error: null });
 

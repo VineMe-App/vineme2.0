@@ -400,6 +400,48 @@ export class PermissionService {
   }
 
   /**
+   * Check if user is a group leader of any group
+   */
+  async isAnyGroupLeader(): Promise<PermissionCheck> {
+    const user = await this.getCurrentUserWithCache();
+
+    if (!user) {
+      return { hasPermission: false, reason: 'User not authenticated' };
+    }
+
+    // Superadmin and church admins are treated as group leaders
+    if (
+      user.roles.includes('superadmin') ||
+      user.roles.includes('church_admin')
+    ) {
+      return { hasPermission: true };
+    }
+
+    // Check if user has 'group_leader' role (legacy)
+    if (user.roles.includes('group_leader')) {
+      return { hasPermission: true };
+    }
+
+    // Check if user is a leader of any group via group_memberships
+    const { data: memberships } = await supabase
+      .from('group_memberships')
+      .select('role, status')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .eq('role', 'leader')
+      .limit(1);
+
+    if (memberships && memberships.length > 0) {
+      return { hasPermission: true };
+    }
+
+    return {
+      hasPermission: false,
+      reason: 'User is not a group leader',
+    };
+  }
+
+  /**
    * Get user's effective permissions
    */
   async getUserPermissions(): Promise<Permission[]> {
@@ -481,6 +523,20 @@ export class PermissionService {
         if (operation === 'select') {
           // Users can view groups from their church
           if (user.church_id && filters.church_id?.includes(user.church_id)) {
+            return { hasPermission: true };
+          }
+        }
+        if (operation === 'insert') {
+          // Users can create groups for their own service
+          if (user.service_id && filters.service_id === user.service_id) {
+            return { hasPermission: true };
+          }
+          // Church admins can create groups within their church
+          if (
+            user.roles.includes('church_admin') &&
+            user.church_id &&
+            filters.church_id === user.church_id
+          ) {
             return { hasPermission: true };
           }
         }

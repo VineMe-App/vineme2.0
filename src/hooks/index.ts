@@ -16,6 +16,7 @@ export {
   useUserGroups,
   useGroupMembers,
   useGroupMembership,
+  useAllApprovedGroups,
   useSearchGroups,
   useJoinGroup,
   useLeaveGroup,
@@ -44,7 +45,7 @@ export {
   useSendFriendRequest,
   useAcceptFriendRequest,
   useRejectFriendRequest,
-  useBlockUser,
+  useAcceptRejectedFriendRequest,
   useRemoveFriend,
   useFriendshipData,
   friendshipKeys,
@@ -77,16 +78,9 @@ export {
   useDeclineJoinRequest,
   useCancelJoinRequest,
   useGetContactInfo,
+  useUpdateMembershipJourneyStatus,
   joinRequestKeys,
 } from './useJoinRequests';
-export {
-  useUserContactLogs,
-  useGroupContactLogs,
-  usePrivacySettings,
-  useUpdatePrivacySettings,
-  useCanShareContact,
-  contactAuditKeys,
-} from './useContactAudit';
 export {
   useUserReferrals,
   useGroupReferrals,
@@ -102,3 +96,30 @@ export {
   useGroupReferralOperations,
   referralKeys,
 } from './useReferrals';
+
+// Style Performance Hooks
+export {
+  useOptimizedStyles,
+  useMemoizedStyleCalculation,
+  useStylePerformanceMonitor,
+  useOptimizedThemeSwitch,
+  useBatchedStyleOperations,
+  useStylePerformanceDebug,
+  withStylePerformanceMonitoring,
+  useCriticalStylePreloader,
+  useStyleCacheManagement,
+} from './useStylePerformance';
+
+// Enhanced Notification Hooks
+export {
+  useNotifications,
+  useLegacyNotificationSettings,
+  useEventReminders,
+  useNotificationPermissions,
+  useAdminNotifications,
+  useEnhancedNotifications,
+  useNotificationPanel,
+  useNotificationBadge,
+  useNotificationSettings,
+  useNotificationNavigation,
+} from './useNotifications';

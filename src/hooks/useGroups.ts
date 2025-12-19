@@ -3,10 +3,12 @@ import { groupService } from '../services/groups';
 import type { GroupWithDetails, GroupMembership } from '../types/database';
 import type { GroupReferralData } from '../services/groups';
 import { performanceMonitor } from '../utils/performance';
+import { permissionService } from '../services/permissions';
 
 // Query keys
 export const groupKeys = {
   all: ['groups'] as const,
+  allApproved: ['groups', 'allApproved'] as const,
   byChurch: (churchId: string) =>
     [...groupKeys.all, 'byChurch', churchId] as const,
   byId: (groupId: string) => [...groupKeys.all, 'byId', groupId] as const,
@@ -51,6 +53,26 @@ export const useGroupsByChurch = (churchId: string | undefined) => {
     meta: {
       // Add metadata for React Query DevTools
       description: 'Fetch groups by church with performance monitoring',
+    },
+  });
+};
+
+/**
+ * Hook to get all approved groups (church admin)
+ */
+export const useAllApprovedGroups = (enabled?: boolean) => {
+  return useQuery({
+    queryKey: groupKeys.allApproved,
+    queryFn: async () => {
+      const { data, error } = await groupService.getAllApprovedGroups();
+      if (error) throw error;
+      return data;
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    meta: {
+      description: 'Fetch all approved groups for church admins',
     },
   });
 };
@@ -103,6 +125,31 @@ export const useGroupMembers = (groupId: string | undefined) => {
       return data;
     },
     enabled: !!groupId,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+  });
+};
+
+/**
+ * Hook to get all group memberships (including archived and inactive)
+ * Only for group leaders
+ */
+export const useAllGroupMemberships = (
+  groupId: string | undefined,
+  userId: string | undefined
+) => {
+  return useQuery({
+    queryKey: [...groupKeys.members(groupId || ''), 'all', userId || ''],
+    queryFn: async () => {
+      if (!groupId || !userId)
+        throw new Error('Group ID and User ID are required');
+      const { data, error } = await groupService.getAllGroupMemberships(
+        groupId,
+        userId
+      );
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!groupId && !!userId,
     staleTime: 3 * 60 * 1000, // 3 minutes
   });
 };
@@ -166,6 +213,23 @@ export const useGroupMembership = (
     },
     enabled: !!groupId && !!userId,
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+/**
+ * Hook to check if user is a group leader of any group
+ */
+export const useIsGroupLeader = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: [...groupKeys.all, 'isGroupLeader', userId || ''],
+    queryFn: async () => {
+      if (!userId) return false;
+      const result = await permissionService.isAnyGroupLeader();
+      return result.hasPermission;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000,
   });
 };
 

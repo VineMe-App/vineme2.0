@@ -3,8 +3,14 @@ import { authService } from './auth';
 import { handleSupabaseError, retryWithBackoff } from '../utils/errorHandling';
 
 export interface EmailVerificationService {
-  sendVerificationEmail(email: string, isReferral?: boolean): Promise<EmailVerificationResult>;
-  verifyEmailFromTokens(accessToken: string, refreshToken: string): Promise<EmailVerificationResult>;
+  sendVerificationEmail(
+    email: string,
+    isReferral?: boolean
+  ): Promise<EmailVerificationResult>;
+  verifyEmailFromTokens(
+    accessToken: string,
+    refreshToken: string
+  ): Promise<EmailVerificationResult>;
   checkVerificationStatus(userId: string): Promise<boolean>;
   resendVerificationEmail(email: string): Promise<EmailVerificationResult>;
 }
@@ -22,28 +28,31 @@ export class EmailVerificationServiceImpl implements EmailVerificationService {
    * Requirement 5.2: Include "verify email" link for account activation
    */
   async sendVerificationEmail(
-    email: string, 
+    email: string,
     isReferral: boolean = false
   ): Promise<EmailVerificationResult> {
     try {
       const redirectUrl = this.buildVerificationRedirectUrl();
-      
-      const result = await retryWithBackoff(async () => {
-        return await supabase.auth.resend({
-          type: 'signup',
-          email: email,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              is_referral: isReferral,
+
+      const result = await retryWithBackoff(
+        async () => {
+          return await supabase.auth.resend({
+            type: 'signup',
+            email: email,
+            options: {
+              emailRedirectTo: redirectUrl,
+              data: {
+                is_referral: isReferral,
+              },
             },
-          },
-        });
-      }, {
-        maxRetries: 3,
-        baseDelay: 1000,
-        maxDelay: 5000,
-      });
+          });
+        },
+        {
+          maxRetries: 3,
+          baseDelay: 1000,
+          maxDelay: 5000,
+        }
+      );
 
       if (result.error) {
         console.error('Failed to send verification email:', result.error);
@@ -71,12 +80,12 @@ export class EmailVerificationServiceImpl implements EmailVerificationService {
    * Requirement 5.4: Update user's status appropriately when verification is complete
    */
   async verifyEmailFromTokens(
-    accessToken: string, 
+    accessToken: string,
     refreshToken: string
   ): Promise<EmailVerificationResult> {
     try {
       const result = await authService.handleEmailVerification(
-        accessToken, 
+        accessToken,
         refreshToken
       );
 
@@ -95,9 +104,8 @@ export class EmailVerificationServiceImpl implements EmailVerificationService {
       console.error('Error verifying email from tokens:', error);
       return {
         success: false,
-        error: error instanceof Error 
-          ? error.message 
-          : 'Email verification failed',
+        error:
+          error instanceof Error ? error.message : 'Email verification failed',
       };
     }
   }
@@ -117,10 +125,12 @@ export class EmailVerificationServiceImpl implements EmailVerificationService {
   /**
    * Resend verification email for a user
    */
-  async resendVerificationEmail(email: string): Promise<EmailVerificationResult> {
+  async resendVerificationEmail(
+    email: string
+  ): Promise<EmailVerificationResult> {
     try {
       const result = await authService.resendVerificationEmail();
-      
+
       if (!result.success) {
         return {
           success: false,
@@ -133,9 +143,10 @@ export class EmailVerificationServiceImpl implements EmailVerificationService {
       console.error('Error resending verification email:', error);
       return {
         success: false,
-        error: error instanceof Error 
-          ? error.message 
-          : 'Failed to resend verification email',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to resend verification email',
       };
     }
   }
@@ -152,31 +163,31 @@ export class EmailVerificationServiceImpl implements EmailVerificationService {
    */
   private getEmailErrorMessage(errorMessage: string): string {
     const lowerError = errorMessage.toLowerCase();
-    
+
     if (lowerError.includes('rate limit')) {
       return 'Too many verification emails sent. Please wait a few minutes before trying again.';
     }
-    
+
     if (lowerError.includes('invalid email')) {
       return 'The email address is invalid. Please check and try again.';
     }
-    
+
     if (lowerError.includes('user not found')) {
       return 'No account found with this email address.';
     }
-    
+
     if (lowerError.includes('email already confirmed')) {
       return 'This email address has already been verified.';
     }
-    
+
     if (lowerError.includes('network') || lowerError.includes('timeout')) {
       return 'Network error. Please check your connection and try again.';
     }
-    
+
     if (lowerError.includes('service unavailable')) {
       return 'Email service is temporarily unavailable. Please try again later.';
     }
-    
+
     // Default error message
     return 'Failed to send verification email. Please try again.';
   }
@@ -195,10 +206,11 @@ export class EmailVerificationServiceImpl implements EmailVerificationService {
   private getReferralEmailTemplateData(referrerName?: string) {
     return {
       subject: 'Welcome to VineMe - Verify Your Email',
-      greeting: referrerName 
+      greeting: referrerName
         ? `You've been invited to join VineMe by ${referrerName}!`
         : 'Welcome to VineMe!',
-      instructions: 'Click the link below to verify your email and complete your account setup.',
+      instructions:
+        'Click the link below to verify your email and complete your account setup.',
       callToAction: 'Verify Email & Get Started',
     };
   }

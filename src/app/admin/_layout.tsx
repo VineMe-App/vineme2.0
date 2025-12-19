@@ -1,9 +1,11 @@
 import { Stack } from 'expo-router';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { AdminErrorBoundary } from '@/components/ui/AdminErrorBoundary';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '@/components/ui/Text';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { router } from 'expo-router';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function AdminLayout() {
   return (
@@ -13,8 +15,8 @@ export default function AdminLayout() {
           <View style={styles.errorContainer}>
             <Text style={styles.errorTitle}>Access Denied</Text>
             <ErrorMessage
-              message="You do not have permission to access admin features. Church admin role required."
-              onRetry={() => router.back()}
+              error="You do not have permission to access admin features. Church admin role required."
+              onRetry={() => safeGoBack(router)}
             />
           </View>
         </View>
@@ -24,11 +26,39 @@ export default function AdminLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
+            headerTitleStyle: {
+              fontFamily: 'Figtree-Bold',
+            },
           }}
         >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="manage-groups" />
-          <Stack.Screen name="manage-users" />
+          <Stack.Screen
+            name="index"
+            options={{
+              headerShown: false,
+              title: 'Admin Dashboard',
+            }}
+          />
+          <Stack.Screen
+            name="manage-groups"
+            options={{
+              headerShown: false,
+              title: 'Manage Groups',
+            }}
+          />
+          <Stack.Screen
+            name="manage-users"
+            options={{
+              headerShown: false,
+              title: 'Manage Users',
+            }}
+          />
+          <Stack.Screen
+            name="notifications"
+            options={{
+              headerShown: false,
+              title: 'Notifications',
+            }}
+          />
         </Stack>
       </AdminErrorBoundary>
     </ChurchAdminOnly>

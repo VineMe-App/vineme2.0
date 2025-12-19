@@ -1,277 +1,317 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  Alert, 
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  TextInput,
+  Alert,
   TouchableOpacity,
-  KeyboardAvoidingView,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+  Keyboard,
   Platform,
-  ScrollView
+  TouchableWithoutFeedback,
 } from 'react-native';
-import { Button } from '@/components/ui/Button';
-import { useRouter, Link } from 'expo-router';
+import { AuthButton } from '@/components/auth/AuthButton';
+import { Text } from '@/components/ui/Text';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
-import { OtpInput } from '@/components/ui/OtpInput';
+import { AuthHeroLogo } from '@/components/auth/AuthHeroLogo';
 
 export default function PhoneSignUpScreen() {
   const router = useRouter();
-  const { signUpWithPhone, verifyOtp, linkEmail, isLoading } = useAuthStore();
-  
-  const [step, setStep] = useState<'enter-phone' | 'enter-code' | 'link-email'>('enter-phone');
-  const [countryCode, setCountryCode] = useState('+1');
+  const { signUpWithPhone, isLoading } = useAuthStore();
+
+  const [countryCode, setCountryCode] = useState('+44');
   const [localNumber, setLocalNumber] = useState('');
-  const [code, setCode] = useState('');
-  const [email, setEmail] = useState('');
-  const [fullPhone, setFullPhone] = useState('');
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  const sanitizedLocalNumber = localNumber.replace(/\D/g, '');
+  // Validate UK numbers as 10–11 digits (allow leading 0 in local part), otherwise use a general E.164-style length check (6–15 digits)
+  const isUk = countryCode === '+44';
+  const isPhoneValid = isUk
+    ? sanitizedLocalNumber.length === 10 || sanitizedLocalNumber.length === 11
+    : sanitizedLocalNumber.length >= 6 && sanitizedLocalNumber.length <= 15;
 
   const handleSendCode = async () => {
-    const phone = `${countryCode}${localNumber.replace(/\D/g, '')}`;
-    setFullPhone(phone);
-    
-    const result = await signUpWithPhone(phone);
-    
-    if (result.success) {
-      setStep('enter-code');
-    } else {
-      Alert.alert('Error', result.error || 'Failed to send code');
-    }
-  };
-
-  const handleVerify = async () => {
-    const result = await verifyOtp(fullPhone, code, 'sms');
-    
-    if (result.success) {
-      // After successful phone verification, ask for email
-      setStep('link-email');
-    } else {
-      Alert.alert('Verification Failed', result.error || 'Invalid code');
-    }
-  };
-
-  const handleLinkEmail = async () => {
-    if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email address');
+    if (!isPhoneValid || isLoading) {
+      if (!isPhoneValid) {
+        const msg = isUk
+          ? 'Enter a valid UK phone number (10–11 digits).'
+          : 'Enter a valid phone number (6–15 digits).';
+        Alert.alert('Invalid Number', msg);
+      }
       return;
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
+    try {
+      // If UK number (+44) and 11 digits starting with 0, remove the leading 0
+      let processedNumber = sanitizedLocalNumber;
+      if (isUk && processedNumber.length === 11 && processedNumber.startsWith('0')) {
+        processedNumber = processedNumber.slice(1); // Remove leading 0
+      }
+      
+      const phone = `${countryCode}${processedNumber}`;
 
-    const result = await linkEmail(email.trim());
-    
-    if (result.success) {
-      Alert.alert(
-        'Account Created!',
-        'Your account has been created successfully with phone verification.',
-        [
-          {
-            text: 'Continue',
-            onPress: () => router.replace('/(auth)/onboarding'),
+      const result = await signUpWithPhone(phone);
+      if (result.success) {
+        router.push({
+          pathname: '/(auth)/verify-otp',
+          params: {
+            phoneOrEmail: phone,
+            type: 'sms',
+            onSuccessRoute: '/(auth)/onboarding-loader',
+            resendFunction: 'signUpWithPhone',
           },
-        ]
+        });
+      } else {
+        Alert.alert('Error', result.error || 'Failed to send verification code.');
+      }
+    } catch (error) {
+      console.error('Send code error', error);
+      Alert.alert(
+        'Network Error',
+        'Unable to send the verification code right now. Please check your connection and try again.'
       );
-    } else {
-      Alert.alert('Error', result.error || 'Failed to link email');
     }
   };
 
-  const handleResendCode = async () => {
-    const result = await signUpWithPhone(fullPhone);
-    if (!result.success) {
-      Alert.alert('Error', result.error || 'Failed to resend code');
-    }
-  };
+
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>
-            {step === 'enter-phone' && 'Enter your phone number to get started'}
-            {step === 'enter-code' && 'Enter the 4-digit code sent to your phone'}
-            {step === 'link-email' && 'Link your email address to complete setup'}
-          </Text>
-        </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <ScrollView
+        contentContainerStyle={styles.primaryScroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.screen}>
+            <View style={[
+              styles.body,
+              isKeyboardVisible && styles.bodyKeyboardVisible
+            ]}>
+              {!isKeyboardVisible && (
+                <AuthHeroLogo
+                  logoSize={109}
+                  title="Create account"
+                  subtitle="Enter your phone number to get started"
+                  subtitleMaxWidth={326}
+                />
+              )}
+              {isKeyboardVisible && (
+                <View style={styles.keyboardHeader}>
+                  <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+                    Create account
+                  </Text>
+                  <Text
+                    variant="bodyLarge"
+                    color="primary"
+                    align="center"
+                    style={styles.subtitle}
+                  >
+                    Enter your phone number to get started
+                  </Text>
+                </View>
+              )}
 
-        <View style={styles.form}>
-          {step === 'enter-phone' && (
-            <>
-              <CountryCodePicker 
-                value={countryCode} 
-                onChange={setCountryCode} 
-                label="Country" 
-              />
-              <Text style={[styles.label, { marginTop: 16 }]}>Phone Number</Text>
-              <TextInput
-                value={localNumber}
-                onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
-                style={styles.input}
-                keyboardType="phone-pad"
-                placeholder="5551234567"
-                autoCapitalize="none"
-                editable={!isLoading}
-              />
-              <Button 
-                title="Send Code" 
-                onPress={handleSendCode} 
-                loading={isLoading}
-                style={styles.button}
-              />
-            </>
-          )}
-
-          {step === 'enter-code' && (
-            <>
-              <Text style={styles.label}>Enter 4-digit code</Text>
-              <Text style={styles.phoneDisplay}>Sent to {fullPhone}</Text>
-              <OtpInput 
-                value={code} 
-                onChange={(text) => setCode(text.replace(/\D/g, '').slice(0, 4))} 
-                length={4} 
-              />
-              <Button 
-                title="Verify" 
-                onPress={handleVerify} 
-                loading={isLoading}
-                style={styles.button}
-              />
-              <View style={styles.resendContainer}>
-                <TouchableOpacity onPress={handleResendCode} disabled={isLoading}>
-                  <Text style={styles.resendText}>Didn't receive code? Resend</Text>
-                </TouchableOpacity>
+              <View style={styles.inputSection}>
+              <View style={styles.phoneField}>
+                <CountryCodePicker
+                  value={countryCode}
+                  onChange={setCountryCode}
+                  hideLabel
+                  renderTrigger={({ selected, open }) => (
+                    <TouchableOpacity
+                      style={styles.countryTrigger}
+                      onPress={open}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select country code"
+                    >
+                      <Text style={styles.countryFlag}>{selected.flag}</Text>
+                      <Text style={styles.countryCodeText}>
+                        {selected.code}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+                <View style={styles.phoneDivider} />
+                <TextInput
+                  value={localNumber}
+                  onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
+                  style={styles.phoneInput}
+                  keyboardType="phone-pad"
+                  placeholder="7123456789"
+                  placeholderTextColor="#B4B4B4"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  blurOnSubmit={false}
+                  editable={!isLoading}
+                  accessibilityLabel="Phone number"
+                />
               </View>
-            </>
-          )}
+            </View>
 
-          {step === 'link-email' && (
-            <>
-              <Text style={styles.label}>Email Address</Text>
-              <Text style={styles.helperText}>
-                We'll use this to send you important updates and help you recover your account.
-              </Text>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                style={styles.input}
-                keyboardType="email-address"
-                placeholder="Enter your email"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
-              />
-              <Button 
-                title="Complete Setup" 
-                onPress={handleLinkEmail} 
-                loading={isLoading}
-                style={styles.button}
-              />
-            </>
-          )}
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Link href="/(auth)/phone-login" asChild>
-              <TouchableOpacity>
-                <Text style={styles.linkText}>Sign in</Text>
-              </TouchableOpacity>
-            </Link>
+              <View style={styles.actionsSection}>
+                <AuthButton
+                  title="Sign up"
+                  onPress={handleSendCode}
+                  disabled={!isPhoneValid}
+                  loading={isLoading}
+                  fullWidth={false}
+                  style={styles.signUpButton}
+                />
+                <View style={styles.signInPrompt}>
+                  <Text style={styles.signInPromptText}>
+                    Already have an account?{' '}
+                    <Text style={styles.signInLink} onPress={() => router.push('/(auth)/phone-login')}>
+                      Sign in
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
   },
-  scrollContent: {
+  primaryScroll: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
+    paddingHorizontal: 32,
+    paddingTop: 100,
+    paddingBottom: 100,
   },
-  header: {
+  screen: {
+    width: '100%',
+    minHeight: '100%',
+  },
+  body: {
+    width: '100%',
+    justifyContent: 'flex-start',
+  },
+  bodyKeyboardVisible: {
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+  },
+  keyboardHeader: {
+    marginBottom: 24,
     alignItems: 'center',
-    marginBottom: 32,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    color: '#2C2235',
+    fontSize: 30,
+    letterSpacing: -0.6,
+    lineHeight: 40,
+    marginBottom: 15,
   },
   subtitle: {
+    color: '#2C2235',
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 28,
+    letterSpacing: -0.32,
+    maxWidth: 326,
   },
-  form: {
+  heroSpacing: {
+    marginTop: 0,
+  },
+  inputSection: {
     width: '100%',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  helperText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
-    marginBottom: 16,
-  },
-  button: {
-    marginTop: 8,
-  },
-  phoneDisplay: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  resendContainer: {
+    marginTop: 32,
     alignItems: 'center',
-    marginTop: 16,
+    marginBottom: 130,
   },
-  resendText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
+  actionsSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 0,
+    marginBottom: 56,
   },
-  footer: {
+  phoneField: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    height: 50,
+    width: 326,
+    alignSelf: 'center',
   },
-  footerText: {
-    fontSize: 16,
-    color: '#666',
+  countryTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: '100%',
   },
-  linkText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
+  countryFlag: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  countryCodeText: {
+    fontSize: 18,
+    color: '#000000',
+    fontWeight: '400',
+  },
+  phoneDivider: {
+    width: 1,
+    height: '60%',
+    backgroundColor: '#EAEAEA',
+  },
+  phoneInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    fontSize: 18,
+    color: '#000000',
+  },
+  signUpButton: {
+    width: 278,
+  },
+  signInPrompt: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  signInPromptText: {
+    fontSize: 14,
+    fontWeight: '400', // Regular
+    color: '#2C2235',
+    textAlign: 'center',
+    letterSpacing: -0.14,
+    lineHeight: 22,
+    includeFontPadding: false,
+    paddingVertical: 3,
+  },
+  signInLink: {
+    color: '#1082ff',
   },
 });

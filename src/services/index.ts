@@ -11,8 +11,13 @@ export { groupAdminService, userAdminService } from './admin';
 export { groupCreationService } from './groupCreation';
 export { joinRequestService } from './joinRequests';
 export { locationService } from './location';
-export { contactAuditService } from './contactAudit';
-export { referralService, ReferralDatabaseUtils, REFERRAL_SCHEMA_SQL, COMPLETE_REFERRAL_SCHEMA } from './referrals';
+export { groupMediaService } from './groupMedia';
+export {
+  referralService,
+  ReferralDatabaseUtils,
+  REFERRAL_SCHEMA_SQL,
+  COMPLETE_REFERRAL_SCHEMA,
+} from './referrals';
 export type { AuthResponse, SignUpData, SignInData } from './auth';
 export type { UpdateUserProfileData, UserServiceResponse } from './users';
 export type {
@@ -45,11 +50,6 @@ export type {
   Address,
   LocationPermissionStatus,
 } from './location';
-export type {
-  ContactAuditServiceResponse,
-  LogContactAccessData,
-  UpdatePrivacySettingsData,
-} from './contactAudit';
 export type {
   CreateReferralData,
   ReferralResponse,

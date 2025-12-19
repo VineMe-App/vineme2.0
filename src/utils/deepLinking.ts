@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import { Share, Alert } from 'react-native';
 
 export interface DeepLinkData {
-  type: 'group' | 'event' | 'auth' | 'referral';
+  type: 'group' | 'event' | 'auth' | 'referral' | 'notifications';
   id: string;
   title?: string;
   params?: Record<string, any>;
@@ -21,6 +21,8 @@ export const generateDeepLink = (data: DeepLinkData): string => {
       return `${baseUrl}event/${data.id}`;
     case 'referral':
       return `${baseUrl}referral/${data.id}`;
+    case 'notifications':
+      return `${baseUrl}notifications`;
     default:
       return baseUrl;
   }
@@ -36,10 +38,16 @@ export const shareGroup = async (groupId: string, groupTitle: string) => {
       id: groupId,
       title: groupTitle,
     });
+    // Use a web URL for messaging apps like WhatsApp so links are clickable
+    const webUrl = generateWebUrl({
+      type: 'group',
+      id: groupId,
+      title: groupTitle,
+    });
 
     const shareOptions = {
-      message: `Check out this Bible study group: ${groupTitle}\n\nJoin us on VineMe: ${deepLink}`,
-      url: deepLink,
+      message: `Check out this Bible study group: ${groupTitle}\n\nOpen on the web: ${webUrl}`,
+      url: webUrl,
       title: `Join ${groupTitle} on VineMe`,
     };
 
@@ -96,21 +104,26 @@ export const parseDeepLink = (url: string): DeepLinkData | null => {
     // Handle auth links: vineme://auth/verify-email
     if (segments.length >= 2 && segments[0] === 'auth') {
       const [, id] = segments;
-      return { 
-        type: 'auth', 
+      return {
+        type: 'auth',
         id,
-        params: queryParams 
+        params: queryParams ?? undefined,
       };
     }
 
     // Handle referral landing page: vineme://referral/landing
     if (segments.length >= 2 && segments[0] === 'referral') {
       const [, id] = segments;
-      return { 
-        type: 'referral', 
+      return {
+        type: 'referral',
         id,
-        params: queryParams 
+        params: queryParams ?? undefined,
       };
+    }
+
+    // Handle notifications
+    if (segments.length >= 1 && segments[0] === 'notifications') {
+      return { type: 'notifications', id: 'inbox' };
     }
 
     // Handle group and event links
@@ -152,13 +165,16 @@ export const handleDeepLink = (url: string, router: any) => {
             });
           }
           const queryString = params.toString();
-          const route = queryString 
+          const route = queryString
             ? `/(auth)/verify-email?${queryString}`
             : '/(auth)/verify-email';
           router.push(route);
           return true;
         }
         return false;
+      case 'notifications':
+        router.push('/notifications');
+        return true;
       case 'referral':
         if (linkData.id === 'landing') {
           router.push('/referral-landing');

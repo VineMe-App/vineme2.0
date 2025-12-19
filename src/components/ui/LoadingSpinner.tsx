@@ -1,16 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-  Animated,
-} from 'react-native';
-import { Theme } from '../../utils/theme';
+import React, { useEffect, useRef, useContext } from 'react';
+import { ActivityIndicator, StyleSheet, Animated } from 'react-native';
+import { Text } from './Text';
+import { ThemeContext } from '../../theme/provider/ThemeContext';
 import { fadeIn, pulse } from '../../utils/animations';
 
+type SpinnerSize = 'small' | 'medium' | 'large';
+
 interface LoadingSpinnerProps {
-  size?: 'small' | 'large';
+  size?: SpinnerSize;
   color?: string;
   message?: string;
   overlay?: boolean;
@@ -20,12 +17,17 @@ interface LoadingSpinnerProps {
 
 export function LoadingSpinner({
   size = 'large',
-  color = Theme.colors.primary,
+  color,
   message,
   overlay = false,
   testID,
   animated = true,
 }: LoadingSpinnerProps) {
+  // Safely access theme context - won't throw if provider isn't ready
+  const themeContext = useContext(ThemeContext);
+  const spinnerColor =
+    color || themeContext?.theme?.colors?.primary?.[500] || '#ff0083';
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -46,6 +48,14 @@ export function LoadingSpinner({
     ? [styles.container, styles.overlay]
     : styles.container;
 
+  const indicatorNativeSize = size === 'small' ? 'small' : 'large';
+  const indicatorStyle =
+    size === 'small'
+      ? styles.indicatorSmall
+      : size === 'medium'
+        ? styles.indicatorMedium
+        : styles.indicatorLarge;
+
   return (
     <Animated.View
       style={[
@@ -58,16 +68,16 @@ export function LoadingSpinner({
       testID={testID}
     >
       <ActivityIndicator
-        size={size}
-        color={color}
-        style={size === 'large' ? styles.indicatorLarge : styles.indicatorSmall}
+        size={indicatorNativeSize}
+        color={spinnerColor}
+        style={indicatorStyle}
       />
       {message && (
-        <Animated.Text
-          style={[styles.message, animated && { opacity: fadeAnim }]}
-        >
-          {message}
-        </Animated.Text>
+        <Animated.View style={animated && { opacity: fadeAnim }}>
+          <Text variant="body" color="secondary" style={styles.message}>
+            {message}
+          </Text>
+        </Animated.View>
       )}
     </Animated.View>
   );
@@ -77,15 +87,19 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Theme.spacing.lg,
+    padding: 18, // lg spacing
   },
   indicatorSmall: {
     width: 20,
     height: 20,
   },
+  indicatorMedium: {
+    width: 32,
+    height: 32,
+  },
   indicatorLarge: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
   },
   overlay: {
     position: 'absolute',
@@ -93,13 +107,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Theme.colors.overlayLight,
-    zIndex: Theme.layout.zIndex.overlay,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    zIndex: 1000,
   },
   message: {
-    marginTop: Theme.spacing.md,
-    fontSize: Theme.typography.fontSize.base,
-    color: Theme.colors.textSecondary,
+    marginTop: 12, // md spacing
     textAlign: 'center',
   },
 });

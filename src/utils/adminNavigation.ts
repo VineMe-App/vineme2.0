@@ -5,6 +5,7 @@
 
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
+import { safeGoBack } from '@/utils/navigation';
 
 export interface NavigationOptions {
   replace?: boolean;
@@ -88,13 +89,8 @@ export class AdminNavigation {
    * Navigate back with optional fallback
    */
   static goBack(fallbackRoute?: string) {
-    if (router.canGoBack()) {
-      router.back();
-    } else if (fallbackRoute) {
-      router.replace(fallbackRoute);
-    } else {
-      router.replace('/(tabs)/profile');
-    }
+    const fallback = fallbackRoute || '/(tabs)';
+    safeGoBack(router, fallback);
   }
 
   /**
@@ -135,8 +131,8 @@ export class AdminNavigation {
    */
   static getBreadcrumbs(
     currentRoute: string
-  ): Array<{ label: string; route?: string }> {
-    const breadcrumbs: Array<{ label: string; route?: string }> = [];
+  ): { label: string; route?: string }[] {
+    const breadcrumbs: { label: string; route?: string }[] = [];
 
     if (currentRoute.startsWith('/admin/')) {
       breadcrumbs.push({ label: 'Profile', route: '/(tabs)/profile' });

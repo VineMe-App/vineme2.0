@@ -4,13 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   Linking,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { AuthLoadingAnimation } from '../../components/auth/AuthLoadingAnimation';
 import { useLocalSearchParams, router } from 'expo-router';
 import {
   useEvent,
@@ -22,6 +21,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/Button';
 import { formatDateTime, isToday } from '../../utils/helpers';
 import { shareEvent } from '../../utils/deepLinking';
+import { OptimizedImage } from '../../components/ui/OptimizedImage';
+import { safeGoBack } from '@/utils/navigation';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -181,7 +182,7 @@ export default function EventDetailScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" />
+          <AuthLoadingAnimation />
           <Text style={styles.loadingText}>Loading event details...</Text>
         </View>
       </View>
@@ -199,7 +200,7 @@ export default function EventDetailScreen() {
           </Text>
           <Button
             title="Go Back"
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router)}
             style={styles.backButton}
           />
         </View>
@@ -214,7 +215,13 @@ export default function EventDetailScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {event.image_url && (
-        <Image source={{ uri: event.image_url }} style={styles.heroImage} />
+        <OptimizedImage
+          source={{ uri: event.image_url }}
+          style={styles.heroImage}
+          quality="medium"
+          lazy={false}
+          resizeMode="cover"
+        />
       )}
 
       <View style={styles.content}>

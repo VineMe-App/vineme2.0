@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import Text from './Text';
 import { Theme } from '../../utils/theme';
 
 interface DividerProps {
@@ -43,7 +44,9 @@ export const Divider: React.FC<DividerProps> = ({
     return (
       <View style={styles.labelContainer} testID={testID}>
         <View style={[dividerStyle, styles.labelDivider]} />
-        <Text style={[styles.label, labelStyle]}>{label}</Text>
+        <Text weight="medium" style={[styles.label, labelStyle]}>
+          {label}
+        </Text>
         <View style={[dividerStyle, styles.labelDivider]} />
       </View>
     );
@@ -76,6 +79,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.base,
     fontSize: Theme.typography.fontSize.sm,
     color: Theme.colors.textSecondary,
-    fontWeight: Theme.typography.fontWeight.medium,
   },
 });

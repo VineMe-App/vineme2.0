@@ -1,37 +1,37 @@
 import React, { useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   Linking,
   Alert,
 } from 'react-native';
+import { Text } from '../ui/Text';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
+import { OptimizedImage } from '../ui/OptimizedImage';
 import { useRouter } from 'expo-router';
 import type { GroupWithDetails } from '../../types/database';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
-import { GroupLeaderPanel } from './GroupLeaderPanel';
-import { JoinRequestModal } from './JoinRequestModal';
 import {
-  useJoinGroup,
   useLeaveGroup,
   useGroupMembers,
   useGroupLeaders,
   useFriendsInGroup,
 } from '../../hooks/useGroups';
-import { useUserJoinRequests } from '../../hooks/useJoinRequests';
-// import type { GroupMembershipWithUser } from '../../types/database';
+import {
+  useCreateJoinRequest,
+  useUserJoinRequests,
+} from '../../hooks/useJoinRequests';
 import { useAuthStore } from '../../stores/auth';
 import { useFriends } from '../../hooks/useFriendships';
 import { Modal } from '../ui/Modal';
 import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '../../services/location';
-import { ReferralFormModal, type ReferralFormData } from '../referrals';
-import { referralService } from '../../services/referrals';
+// Referral handled via /referral page
+// import { referralService } from '../../services/referrals';
 
 interface GroupDetailProps {
   group: GroupWithDetails;
@@ -51,17 +51,44 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const router = useRouter();
   const { userProfile } = useAuthStore();
   const [showAllMembers, setShowAllMembers] = useState(false);
-  const [showJoinRequestModal, setShowJoinRequestModal] = useState(false);
+  // Removed modal-based join flow in favor of native alert confirmation
   const [showFriendsModal, setShowFriendsModal] = useState(openFriendsOnMount);
-  const [showReferralModal, setShowReferralModal] = useState(false);
+  // Referral modal removed in favor of navigation
 
-  const joinGroupMutation = useJoinGroup();
   const leaveGroupMutation = useLeaveGroup();
+  const createJoinRequestMutation = useCreateJoinRequest();
   const [canSeeMembers, setCanSeeMembers] = useState(false);
   const { data: userJoinRequests } = useUserJoinRequests(userProfile?.id);
   const friendsQuery = useFriends(userProfile?.id);
 
-  const formatMeetingTime = (day: string, time: string) => `${day}s at ${time}`;
+  // Determine category for placeholder image
+  const category = useMemo(() => {
+    const userChurchId = userProfile?.church_id;
+    const userServiceId = userProfile?.service_id;
+    const isInUserService = !!userServiceId && group.service_id === userServiceId;
+    const isInUserChurch = !!userChurchId && group.church_id === userChurchId;
+
+    if (isInUserService) {
+      return 'service' as const;
+    } else if (isInUserChurch) {
+      return 'church' as const;
+    } else {
+      return 'outside' as const;
+    }
+  }, [userProfile?.church_id, userProfile?.service_id, group.service_id, group.church_id]);
+
+  const formatMeetingTime = (day: string, time: string) => {
+    const date = new Date(`2000-01-01T${time}`);
+    const formattedTime = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    // Format as "Mondays 7pm" (remove "s at" and format time)
+    const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+    const timeOnly = formattedTime.replace(/:00 /, '').toLowerCase();
+    return `${dayName}s ${timeOnly}`;
+  };
 
   const formatLocation = (location: any) => {
     const parsed = locationService.parseGroupLocation(location);
@@ -79,10 +106,70 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
       return;
     }
 
-    setShowJoinRequestModal(true);
+    // Show warning if group is at capacity
+    if (group.at_capacity) {
+      Alert.alert(
+        'Group is Full',
+        'This group is currently at capacity. You can still apply, but acceptance is unlikely. Do you want to continue?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Continue',
+            onPress: () => showJoinConsent(),
+          },
+        ]
+      );
+    } else {
+      showJoinConsent();
+    }
+  };
+
+  const showJoinConsent = () => {
+    if (!userProfile) return;
+
+    Alert.alert(
+      'Send Join Request?',
+      'Please note: The connect group leaders will be able to see your contact details when you request to join. Do you wish to send your join request?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Request',
+          onPress: async () => {
+            try {
+              await createJoinRequestMutation.mutateAsync({
+                group_id: group.id,
+                user_id: userProfile.id,
+              });
+              onMembershipChange?.();
+              Alert.alert(
+                'Request Sent',
+                'Your request has been sent to the group leaders.'
+              );
+            } catch (error) {
+              Alert.alert(
+                'Error',
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to send join request'
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleLeaveGroup = () => {
+    // Check if user is the last leader
+    if (isGroupLeader && leaders.length === 1) {
+      Alert.alert(
+        'Cannot Leave Group',
+        'You are the only leader of this group. You must promote another member to leader or transfer leadership before you can leave the group.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     Alert.alert('Leave Group', 'Are you sure you want to leave this group?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -153,13 +240,15 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   const leaders = leadersData || [];
   const regularMembers = (members || []).filter(
-    (member) => member.role === 'member'
+    (member) => member.role === 'member' && member.status === 'active'
   );
   const displayMembers = showAllMembers
     ? regularMembers
     : regularMembers.slice(0, 6);
 
-  const isLoading = joinGroupMutation.isPending || leaveGroupMutation.isPending;
+  const isLoading =
+    leaveGroupMutation.isPending ||
+    createJoinRequestMutation.isPending;
 
   // Check if current user is a leader of this group
   const userMembership = members?.find((m) => m.user_id === userProfile?.id);
@@ -207,171 +296,341 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     (request) => request.group_id === group.id && request.status === 'pending'
   );
 
-  const handleGroupUpdated = () => {
-    onMembershipChange?.();
-  };
+  // Debug logging
+  console.log('GroupDetail Debug:', {
+    groupId: group.id,
+    groupTitle: group.title,
+    membershipStatus,
+    pendingRequest: !!pendingRequest,
+    userJoinRequests: userJoinRequests?.length || 0,
+    groupStatus: group.status,
+  });
 
-  const handleReferralSubmit = async (data: ReferralFormData) => {
-    if (!userProfile) {
-      Alert.alert('Error', 'You must be signed in to refer someone');
-      return;
-    }
-
-    try {
-      const result = await referralService.createReferral({
-        ...data,
-        groupId: group.id,
-        referrerId: userProfile.id,
-      });
-
-      if (result.success) {
-        Alert.alert(
-          'Referral Sent!',
-          'Your referral has been sent successfully. They will receive an email to set up their account and join the group.',
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert(
-          'Error',
-          result.error || 'Failed to send referral. Please try again.',
-          [{ text: 'OK' }]
-        );
-      }
-    } catch (error) {
-      console.error('Error submitting referral:', error);
-      Alert.alert(
-        'Error',
-        'There was an error sending the referral. Please try again.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
+  // Referral submission handled in /referral page
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {group.image_url && (
-        <Image source={{ uri: group.image_url }} style={styles.headerImage} />
-      )}
+      <View style={styles.headerContainer}>
+        {group.image_url ? (
+          <OptimizedImage
+            source={{ uri: group.image_url }}
+            style={styles.headerImage}
+            quality="medium"
+            lazy={false}
+            resizeMode="cover"
+          />
+        ) : (
+          <GroupPlaceholderImage style={styles.headerImage} category={category} />
+        )}
+      </View>
 
       <View style={styles.content}>
-        {/* Header with title and status */}
-        <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>{group.title}</Text>
-            {membershipStatus && (
-              <View
-                style={[styles.statusBadge, styles[`${membershipStatus}Badge`]]}
-              >
-                <Text
-                  style={[styles.statusText, styles[`${membershipStatus}Text`]]}
-                >
-                  {membershipStatus === 'member'
-                    ? 'Member'
-                    : membershipStatus === 'leader'
-                      ? 'Leader'
-                      : 'Admin'}
-                </Text>
-              </View>
-            )}
-            {group.status === 'pending' && isGroupLeader && (
-              <View style={styles.pendingBadge}>
-                <Ionicons name="time-outline" size={16} color="#b45309" />
-                <Text style={styles.pendingText}>Pending admin approval</Text>
-              </View>
-            )}
-          </View>
-          {onShare && (
-            <TouchableOpacity onPress={onShare} style={styles.iconButton}>
-              <Ionicons name="share-outline" size={22} color="#374151" />
-            </TouchableOpacity>
-          )}
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.description}>{group.description}</Text>
         </View>
 
-        <Text style={styles.description}>{group.description}</Text>
-
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Meeting Details</Text>
-          <View style={styles.infoRowAlt}>
-            <Ionicons name="calendar-outline" size={18} color="#6b7280" />
-            <Text style={styles.infoValueAlt} numberOfLines={1}>
-              {formatMeetingTime(group.meeting_day, group.meeting_time)}
-            </Text>
-          </View>
-          <View style={styles.infoRowAlt}>
-            <Ionicons name="location-outline" size={18} color="#6b7280" />
-            <Text style={styles.infoValueAlt} numberOfLines={1}>
-              {formatLocation(group.location)}
-            </Text>
-          </View>
-          {!!group.member_count && (
-            <View style={styles.infoRowAlt}>
-              <Ionicons name="people-outline" size={18} color="#6b7280" />
-              <Text style={styles.infoValueAlt} numberOfLines={1}>
-                {group.member_count} member{group.member_count !== 1 ? 's' : ''}
+        {/* Full Badge */}
+        {group.at_capacity && (
+          <View style={styles.capacityBanner}>
+            <Ionicons name="people" size={20} color="#c2410c" />
+            <View style={styles.capacityBannerTextContainer}>
+              <Text style={styles.capacityBannerTitle}>Group is Full</Text>
+              <Text style={styles.capacityBannerDescription}>
+                This group is currently at capacity. You can still apply, but
+                acceptance is unlikely.
               </Text>
-            </View>
-          )}
-          {friendsInGroup.length > 0 && (
-            <TouchableOpacity
-              style={[styles.infoRowAlt, styles.friendsRow]}
-              onPress={() => setShowFriendsModal(true)}
-            >
-              <Ionicons
-                name="person-circle-outline"
-                size={18}
-                color="#2563eb"
-              />
-              <Text
-                style={[styles.infoValueAlt, styles.friendsText]}
-                numberOfLines={1}
-              >
-                {friendsInGroup.length} friend
-                {friendsInGroup.length !== 1 ? 's' : ''} in this group
-              </Text>
-              <Ionicons
-                name="chevron-forward-outline"
-                size={18}
-                color="#2563eb"
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Leaders Section - hidden when current user is a leader */}
-        {!isGroupLeader && leaders.length > 0 && (
-          <View style={styles.membersSection}>
-            <Text style={styles.sectionTitle}>
-              Leader{leaders.length > 1 ? 's' : ''}
-            </Text>
-            <View style={styles.membersList}>
-              {leaders.map((member) => (
-                <TouchableOpacity
-                  key={member.id}
-                  style={styles.memberItem}
-                  onPress={() =>
-                    member.user?.id && router.push(`/user/${member.user.id}`)
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel={`View ${member.user?.name || 'user'} profile`}
-                >
-                  <Avatar
-                    size={40}
-                    imageUrl={member.user?.avatar_url}
-                    name={member.user?.name || 'Unknown'}
-                  />
-                  <View style={styles.memberInfo}>
-                    <Text style={styles.memberName}>
-                      {member.user?.name || 'Unknown'}
-                    </Text>
-                    <Text style={styles.memberRole}>
-                      {member.role === 'admin' ? 'Admin' : 'Leader'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
             </View>
           </View>
         )}
+
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Meeting details</Text>
+          <View style={styles.meetingDetailsContainer}>
+            <View style={styles.meetingDetailsLeft}>
+              {group.meeting_day && group.meeting_time && (
+                <View style={styles.infoRowAlt}>
+                  <Ionicons name="time-outline" size={16} color="#2C2235" />
+                  <Text style={styles.infoValueAlt} numberOfLines={1}>
+                    {formatMeetingTime(group.meeting_day, group.meeting_time)}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.infoRowAlt}>
+                <Ionicons name="location-outline" size={16} color="#2C2235" />
+                <Text style={styles.infoValueAlt}>
+                  {formatLocation(group.location)}
+                </Text>
+              </View>
+              {!!group.member_count && (
+                <View style={styles.infoRowAlt}>
+                  <Ionicons name="person-outline" size={16} color="#2C2235" />
+                  <Text style={styles.infoValueAlt} numberOfLines={1}>
+                    {group.member_count} members
+                  </Text>
+                </View>
+              )}
+              {friendsInGroup.length > 0 && (
+                <TouchableOpacity
+                  style={styles.infoRowAlt}
+                  onPress={() => setShowFriendsModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="people-outline" size={16} color="#2C2235" />
+                  <Text style={styles.infoValueAlt} numberOfLines={1}>
+                    {friendsInGroup.length} {friendsInGroup.length === 1 ? 'friend' : 'friends'} in this group
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {leaders.length > 0 && (
+                <View style={styles.infoRowAlt}>
+                  <View style={styles.leaderIconContainer}>
+                    <Ionicons name="person-outline" size={16} color="#2C2235" />
+                  </View>
+                  <Text style={styles.infoValueAlt}>
+                    {(() => {
+                      const leaderNames = leaders.map(l => l.user?.name || 'Unknown');
+                      if (leaderNames.length === 1) {
+                        return `Led by ${leaderNames[0]}`;
+                      } else if (leaderNames.length === 2) {
+                        return `Led by ${leaderNames[0]} and ${leaderNames[1]}`;
+                      } else {
+                        return `Led by ${leaderNames.slice(0, -1).join(', ')}, and ${leaderNames[leaderNames.length - 1]}`;
+                      }
+                    })()}
+                  </Text>
+                </View>
+              )}
+            </View>
+            
+            {/* Leader avatars on the right */}
+            {leaders.length > 0 && (
+              <View style={styles.leaderAvatarsContainer}>
+                {(() => {
+                  // Extract user objects from leaders (same structure as GroupCard)
+                  const leaderUsers = leaders.map((leader) => leader.user).filter(Boolean);
+                  
+                  if (leaderUsers.length === 1) {
+                    // Single leader - 60px
+                    return (
+                      <View
+                        style={[
+                          styles.leaderProfilePicture,
+                          {
+                            width: 64,
+                            height: 64,
+                            borderRadius: 32,
+                          },
+                        ]}
+                      >
+                        <Avatar
+                          imageUrl={leaderUsers[0]?.avatar_url}
+                          name={leaderUsers[0]?.name || undefined}
+                          size={60}
+                        />
+                      </View>
+                    );
+                  } else if (leaderUsers.length === 2) {
+                    // Two leaders - side by side positioning
+                    return (
+                      <View style={styles.sideBySideContainer}>
+                        <View
+                          style={[
+                            styles.leaderProfilePicture,
+                            {
+                              width: 54,
+                              height: 54,
+                              borderRadius: 27,
+                              marginRight: -8,
+                            },
+                          ]}
+                        >
+                          <Avatar
+                            imageUrl={leaderUsers[0]?.avatar_url}
+                            name={leaderUsers[0]?.name || undefined}
+                            size={50}
+                          />
+                        </View>
+                        <View
+                          style={[
+                            styles.leaderProfilePicture,
+                            {
+                              width: 54,
+                              height: 54,
+                              borderRadius: 27,
+                            },
+                          ]}
+                        >
+                          <Avatar
+                            imageUrl={leaderUsers[1]?.avatar_url}
+                            name={leaderUsers[1]?.name || undefined}
+                            size={50}
+                          />
+                        </View>
+                      </View>
+                    );
+                  } else if (leaderUsers.length === 3) {
+                    // Three leaders - pyramid formation (2 on top, 1 below), 50px each
+                    return (
+                      <View style={styles.pyramidContainer}>
+                        <View style={styles.pyramidRow}>
+                          <View
+                            style={[
+                              styles.leaderProfilePicture,
+                              {
+                                width: 54,
+                                height: 54,
+                                borderRadius: 27,
+                                marginRight: -8,
+                              },
+                            ]}
+                          >
+                            <Avatar
+                              imageUrl={leaderUsers[0]?.avatar_url}
+                              name={leaderUsers[0]?.name || undefined}
+                              size={50}
+                            />
+                          </View>
+                          <View
+                            style={[
+                              styles.leaderProfilePicture,
+                              {
+                                width: 54,
+                                height: 54,
+                                borderRadius: 27,
+                              },
+                            ]}
+                          >
+                            <Avatar
+                              imageUrl={leaderUsers[1]?.avatar_url}
+                              name={leaderUsers[1]?.name || undefined}
+                              size={50}
+                            />
+                          </View>
+                        </View>
+                        <View style={[styles.pyramidRow, { marginTop: -8 }]}>
+                          <View
+                            style={[
+                              styles.leaderProfilePicture,
+                              {
+                                width: 54,
+                                height: 54,
+                                borderRadius: 27,
+                                marginLeft: 23, // Center the bottom avatar under the gap between top two
+                              },
+                            ]}
+                          >
+                            <Avatar
+                              imageUrl={leaderUsers[2]?.avatar_url}
+                              name={leaderUsers[2]?.name || undefined}
+                              size={50}
+                            />
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  } else {
+                    // Four or more leaders - square/2x2 grid formation, 50px each
+                    return (
+                      <View style={styles.squareContainer}>
+                        {/* Top row: first 2 leaders */}
+                        <View style={[styles.squareRow, { marginTop: 0 }]}>
+                          {leaderUsers.slice(0, 2).map((leader, index) => (
+                            <View
+                              key={leader?.id || `leader-${index}`}
+                              style={[
+                                styles.leaderProfilePicture,
+                                styles.squareAvatarItem,
+                                {
+                                  width: 54,
+                                  height: 54,
+                                  borderRadius: 27,
+                                  marginRight: index === 0 ? -8 : 0,
+                                },
+                              ]}
+                            >
+                              <Avatar
+                                imageUrl={leader?.avatar_url}
+                                name={leader?.name || undefined}
+                                size={50}
+                              />
+                            </View>
+                          ))}
+                        </View>
+                        {/* Bottom row: next 2 leaders (or "+N" indicator) */}
+                        <View style={[styles.squareRow, { marginTop: -8 }]}>
+                          {leaderUsers.length === 4 ? (
+                            // Show both leaders if exactly 4
+                            leaderUsers.slice(2, 4).map((leader, index) => (
+                              <View
+                                key={leader?.id || `leader-${index + 2}`}
+                                style={[
+                                  styles.leaderProfilePicture,
+                                  styles.squareAvatarItem,
+                                  {
+                                    width: 54,
+                                    height: 54,
+                                    borderRadius: 27,
+                                    marginRight: index === 0 ? -8 : 0,
+                                  },
+                                ]}
+                              >
+                                <Avatar
+                                  imageUrl={leader?.avatar_url}
+                                  name={leader?.name || undefined}
+                                  size={50}
+                                />
+                              </View>
+                            ))
+                          ) : (
+                            // Show 3rd leader and "+N" indicator if more than 4
+                            <>
+                              <View
+                                style={[
+                                  styles.leaderProfilePicture,
+                                  styles.squareAvatarItem,
+                                  {
+                                    width: 54,
+                                    height: 54,
+                                    borderRadius: 27,
+                                    marginRight: -8,
+                                  },
+                                ]}
+                              >
+                                <Avatar
+                                  imageUrl={leaderUsers[2]?.avatar_url}
+                                  name={leaderUsers[2]?.name || undefined}
+                                  size={50}
+                                />
+                              </View>
+                              <View
+                                style={[
+                                  styles.leaderProfilePicture,
+                                  {
+                                    width: 54,
+                                    height: 54,
+                                    borderRadius: 27,
+                                    backgroundColor: 'rgba(44, 34, 53, 0.9)',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  },
+                                ]}
+                              >
+                                <Text style={styles.moreLeadersIndicatorText}>
+                                  +{leaderUsers.length - 3}
+                                </Text>
+                              </View>
+                            </>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  }
+                })()}
+              </View>
+            )}
+          </View>
+        </View>
+
 
         {/* Members Section - visible to members/leaders/admins or service-level church admins */}
         {(membershipStatus || isChurchAdminForService) &&
@@ -419,7 +678,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                         </Text>
                         <Text style={styles.memberJoinDate}>
                           Joined{' '}
-                          {new Date(member.joined_at).toLocaleDateString()}
+                          {member.joined_at
+                            ? new Date(member.joined_at).toLocaleDateString()
+                            : 'Unknown'}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -428,11 +689,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
               )}
             </View>
           )}
-
-        {/* Group Leader Panel - only for leaders */}
-        {isGroupLeader && (
-          <GroupLeaderPanel group={group} onGroupUpdated={handleGroupUpdated} />
-        )}
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
@@ -446,59 +702,85 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                   style={styles.whatsappButton}
                 />
               )}
-              <Button
-                title="Refer a Friend"
-                onPress={() => setShowReferralModal(true)}
-                variant="secondary"
-              />
+              {group.status !== 'pending' && (
+                <Button
+                  title="Refer a Friend"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/referral',
+                      params: { groupId: group.id, groupName: group.title },
+                    })
+                  }
+                  variant="secondary"
+                />
+              )}
               <Button
                 title="Leave Group"
                 onPress={handleLeaveGroup}
-                variant="danger"
+                variant="error"
                 loading={isLoading}
                 disabled={isLoading}
               />
             </View>
           ) : pendingRequest ? (
-            <View style={styles.pendingRequestContainer}>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
-              >
-                <Ionicons name="time-outline" size={16} color="#92400e" />
-                <Text style={styles.pendingRequestText}>
-                  Your join request is pending approval
+            <View style={styles.pendingRequestWrapper}>
+              <View style={styles.pendingRequestContainer}>
+                <View
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                >
+                  <Ionicons name="time-outline" size={16} color="#92400e" />
+                  <Text style={styles.pendingRequestText}>
+                    Your join request is pending approval
+                  </Text>
+                </View>
+                <Text style={styles.pendingRequestSubtext}>
+                  Group leaders will review your request and get back to you
+                  soon.
                 </Text>
               </View>
-              <Text style={styles.pendingRequestSubtext}>
-                Group leaders will review your request and get back to you soon.
-              </Text>
+              <Button
+                title="Refer a Friend"
+                onPress={() => {
+                  console.log(
+                    'Refer a Friend button pressed for group:',
+                    group.id
+                  );
+                  router.push({
+                    pathname: '/referral',
+                    params: { groupId: group.id, groupName: group.title },
+                  });
+                }}
+                variant="primary"
+                style={styles.referButtonOutsidePending}
+                textStyle={styles.referButtonText}
+              />
             </View>
           ) : (
             <View style={styles.actionButtons}>
               <Button
-                title="Request to Join"
+                title="Refer a friend"
+                onPress={() =>
+                  router.push({
+                    pathname: '/referral',
+                    params: { groupId: group.id, groupName: group.title },
+                  })
+                }
+                variant="primary"
+                style={styles.referFriendButton}
+                textStyle={styles.referButtonText}
+              />
+              <Button
+                title="Request to join"
                 onPress={handleJoinGroup}
                 loading={isLoading}
                 disabled={isLoading}
-              />
-              <Button
-                title="Refer a Friend"
-                onPress={() => setShowReferralModal(true)}
-                variant="secondary"
+                style={styles.requestJoinButton}
               />
             </View>
           )}
         </View>
 
-        {/* Join Request Modal */}
-        {userProfile && (
-          <JoinRequestModal
-            visible={showJoinRequestModal}
-            onClose={() => setShowJoinRequestModal(false)}
-            group={group}
-            userId={userProfile.id}
-          />
-        )}
+        {/* Join Request Modal removed; using native alert confirmation */}
 
         {/* Friends in Group Modal */}
         <Modal
@@ -507,14 +789,10 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           title="Friends in this Group"
           size="large"
           scrollable
-          style={styles.friendsModal}
+          headerStyle={styles.friendsModalHeader}
         >
           {friendsInGroup.length > 0 ? (
             <View style={styles.friendsModalContainer}>
-              <Text style={styles.friendsCountText}>
-                {friendsInGroup.length} friend
-                {friendsInGroup.length !== 1 ? 's' : ''} in this group
-              </Text>
               <View style={styles.friendsList}>
                 {friendsInGroup.map((friend) => (
                   <TouchableOpacity
@@ -558,14 +836,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
           )}
         </Modal>
 
-        {/* Referral Form Modal */}
-        <ReferralFormModal
-          visible={showReferralModal}
-          onClose={() => setShowReferralModal(false)}
-          groupId={group.id}
-          groupName={group.title}
-          onSubmit={handleReferralSubmit}
-        />
+        {/* Referral Form handled via /referral page */}
       </View>
     </ScrollView>
   );
@@ -576,19 +847,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  headerContainer: {
+    position: 'relative',
+  },
   headerImage: {
     width: '100%',
-    height: 200,
+    height: 195, // Figma height
     backgroundColor: '#f0f0f0',
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  imageBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fffbeb',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 24,
+  },
+  pendingText: {
+    color: '#92400e',
+    fontWeight: '600',
+    fontSize: 12,
   },
   content: {
-    padding: 16,
+    paddingTop: 0,
+    paddingBottom: 16,
+    paddingHorizontal: 0, // No horizontal padding - items positioned individually
   },
   header: {
+    display: 'none',
+  },
+  headerActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
   },
   titleSection: {
     flex: 1,
@@ -598,6 +895,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     backgroundColor: '#f3f4f6',
+    marginLeft: 8,
   },
   title: {
     fontSize: 24,
@@ -605,37 +903,25 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 8,
   },
-  pendingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    backgroundColor: '#fffbeb',
-    borderWidth: 1,
-    borderColor: '#fde68a',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  pendingText: {
-    color: '#92400e',
-    fontWeight: '600',
-  },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     minWidth: 70,
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   memberBadge: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: 'rgba(227, 242, 253, 0.9)',
+    borderColor: 'rgba(25, 118, 210, 0.3)',
   },
   leaderBadge: {
-    backgroundColor: '#fff3e0',
+    backgroundColor: 'rgba(255, 243, 224, 0.9)',
+    borderColor: 'rgba(245, 124, 0, 0.3)',
   },
   adminBadge: {
-    backgroundColor: '#fce4ec',
+    backgroundColor: 'rgba(252, 228, 236, 0.9)',
+    borderColor: 'rgba(194, 24, 91, 0.3)',
   },
   statusText: {
     fontSize: 14,
@@ -643,38 +929,158 @@ const styles = StyleSheet.create({
   },
   memberText: {
     color: '#1976d2',
+    opacity: 0.9,
   },
   leaderText: {
     color: '#f57c00',
+    opacity: 0.9,
   },
   adminText: {
     color: '#c2185b',
+    opacity: 0.9,
+  },
+  descriptionContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 0,
+    paddingHorizontal: 0,
   },
   description: {
     fontSize: 16,
-    color: '#333',
-    lineHeight: 24,
-    marginBottom: 24,
+    color: '#2C2235',
+    lineHeight: 22,
+    letterSpacing: -0.32,
+    width: 342, // Figma: 342px width
+    fontFamily: 'Figtree-Regular',
+    textAlign: 'left',
+  },
+  capacityBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff7ed',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+    marginBottom: 20,
+    gap: 12,
+  },
+  capacityBannerTextContainer: {
+    flex: 1,
+  },
+  capacityBannerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#9a3412',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  capacityBannerDescription: {
+    fontSize: 13,
+    color: '#7c2d12',
+    lineHeight: 18,
   },
   infoSection: {
     marginBottom: 24,
+    paddingLeft: 23, // Figma: 23px from left
+    marginTop: 30, // Positioned after description
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 12,
+    fontWeight: '700',
+    color: '#2C2235',
+    letterSpacing: -0.36,
+    marginBottom: 17, // Figma spacing
+    fontFamily: 'Figtree-Bold',
+    lineHeight: 16,
+  },
+  meetingDetailsContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    position: 'relative',
+  },
+  meetingDetailsLeft: {
+    flex: 1,
+    marginRight: 16,
+    paddingRight: 140, // Buffer space for leader avatars (108px max width + 20px padding + extra for overlap)
+  },
+  leaderAvatarsContainer: {
+    position: 'absolute',
+    right: 20,
+    top: 0,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    zIndex: 1,
+    overflow: 'visible',
+  },
+  leaderProfilePicture: {
+    borderWidth: 2,
+    borderColor: '#FF0083', // Pink border to match GroupCard
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  sideBySideContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0,
+  },
+  pyramidContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pyramidRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  squareContainer: {
+    width: 108, // 2 avatars × 54px (with -8px overlap)
+    height: 108, // 2 rows × 54px (with -8px overlap)
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  squareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  squareAvatarItem: {
+    // Ensure each square avatar item has proper positioning
+    position: 'relative',
+  },
+  moreLeadersIndicatorText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   infoRowAlt: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    alignItems: 'flex-start',
+    gap: 10, // Gap between icon and text (23px icon position + 16px icon + gap = 49px text start)
+    marginBottom: 12,
+    minHeight: 16, // Minimum height for icon
   },
   infoValueAlt: {
     fontSize: 16,
-    color: '#333',
+    color: '#2C2235',
+    letterSpacing: -0.32,
     flex: 1,
+    fontFamily: 'Figtree-Regular',
+    lineHeight: 20, // Figma: line height for multi-line
+  },
+  leaderIconContainer: {
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   friendsRow: {
     backgroundColor: '#eff6ff',
@@ -732,31 +1138,39 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   actionSection: {
-    marginTop: 8,
+    marginTop: 20,
     marginBottom: 32,
+    paddingHorizontal: 51, // Figma: buttons positioned at 51px from left
   },
   actionButtons: {
-    gap: 12,
+    gap: 10, // Gap between buttons
+  },
+  referFriendButton: {
+    backgroundColor: '#EAEAEA',
+    borderColor: '#EAEAEA',
+    height: 42,
+    borderRadius: 21,
+    width: 278, // Figma: 278px width
+    alignSelf: 'center',
+  },
+  requestJoinButton: {
+    backgroundColor: '#2C2235',
+    borderColor: '#2C2235',
+    height: 42,
+    borderRadius: 21,
+    width: 278, // Figma: 278px width
+    alignSelf: 'center',
   },
   whatsappButton: {
     backgroundColor: '#25D366',
     borderColor: '#25D366',
   },
-  friendsModal: {
-    width: '90%',
-    maxWidth: 500,
-    minHeight: 400,
-    maxHeight: '80%',
+  friendsModalHeader: {
+    borderBottomWidth: 0,
   },
   friendsModalContainer: {
     flex: 1,
     width: '100%',
-  },
-  friendsCountText: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 20,
-    textAlign: 'center',
   },
   friendsList: {
     flex: 1,
@@ -806,6 +1220,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  pendingRequestWrapper: {
+    gap: 12,
+  },
   pendingRequestContainer: {
     padding: 16,
     backgroundColor: '#fff3cd',
@@ -826,5 +1243,17 @@ const styles = StyleSheet.create({
     color: '#856404',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  referButtonOutsidePending: {
+    marginTop: 0,
+    backgroundColor: '#EAEAEA',
+    borderColor: '#EAEAEA',
+    height: 42,
+    borderRadius: 21,
+    width: 278,
+    alignSelf: 'center',
+  },
+  referButtonText: {
+    color: '#2C2235', // Dark text for grey buttons
   },
 });
