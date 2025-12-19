@@ -1,6 +1,6 @@
 -- RPC function to get user contact information for admin/group leader access
 -- Returns name, email, and phone for a target user
--- Requires authentication and proper permissions (checked in application layer)
+-- Enforces authentication and role/membership checks server-side
 --
 -- Note: Email is stored in auth.users, which may not be directly accessible from
 -- a PostgreSQL function. This function returns name and phone from public.users.
@@ -24,6 +24,38 @@ BEGIN
   -- Ensure caller is authenticated
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Unauthorized' USING ERRCODE = '42501';
+  END IF;
+
+  -- Ensure caller is authorised: either a church admin for the user's church,
+  -- a leader/admin for a group the user belongs to (pending or active),
+  -- or the user themselves.
+  IF NOT (
+    target_user_id = auth.uid()
+    OR EXISTS (
+      SELECT 1
+      FROM public.users target
+      JOIN public.users caller ON caller.id = auth.uid()
+      WHERE target.id = target_user_id
+        AND caller.church_id IS NOT NULL
+        AND caller.church_id = target.church_id
+        AND caller.roles @> ARRAY['church_admin']::text[]
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.group_memberships leader_membership
+      WHERE leader_membership.user_id = auth.uid()
+        AND leader_membership.status = 'active'
+        AND leader_membership.role IN ('leader', 'admin')
+        AND EXISTS (
+          SELECT 1
+          FROM public.group_memberships target_membership
+          WHERE target_membership.group_id = leader_membership.group_id
+            AND target_membership.user_id = target_user_id
+            AND target_membership.status IN ('active', 'pending')
+        )
+    )
+  ) THEN
+    RAISE EXCEPTION 'Forbidden' USING ERRCODE = '42501';
   END IF;
 
   -- Get name and phone from public.users
@@ -71,8 +103,5 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users
--- Note: Application layer should enforce additional permission checks
--- (e.g., group leader or church admin status)
+-- Grant execute permission to authenticated users (function enforces role checks)
 GRANT EXECUTE ON FUNCTION get_user_contact_admin(uuid) TO authenticated;
-
