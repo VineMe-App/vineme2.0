@@ -43,7 +43,7 @@ BEGIN
   END IF;
 END$$;
 
--- IMPORTANT: Allow inserts of notifications from the app (client) for any user.
+-- Allow client inserts for the current user; service role can insert for anyone.
 -- This mirrors system-triggered notifications until you move creation to a server role.
 DO $$
 BEGIN
@@ -51,8 +51,8 @@ BEGIN
     SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'notifications' AND polname = 'insert_notifications_any_authenticated'
   ) THEN
     CREATE POLICY insert_notifications_any_authenticated ON notifications
-      FOR INSERT TO authenticated
-      WITH CHECK (true);
+      FOR INSERT TO authenticated, service_role
+      WITH CHECK (auth.uid() = user_id OR auth.role() = 'service_role');
   END IF;
 END$$;
 
@@ -87,4 +87,3 @@ END$$;
 -- Note: For production, prefer inserting notifications via a SECURITY DEFINER function
 -- executed with the service role or a trusted database role, and restrict this broad
 -- insert policy. This migration unblocks client-side inserts used by the app today.
-
