@@ -286,7 +286,7 @@ export class GroupAdminService {
       // Verify the group exists and is pending
       const { data: existingGroup, error: fetchError } = await supabase
         .from('groups')
-        .select('id, status, church_id')
+        .select('id, status, church_id, created_by')
         .eq('id', groupId)
         .single();
 
@@ -322,6 +322,56 @@ export class GroupAdminService {
 
       if (approveError) {
         return { data: null, error: new Error(approveError.message) };
+      }
+
+      // Activate the creator's pending leader membership so they can manage the group
+      if (existingGroup.created_by) {
+        const { data: leaderMembership, error: leaderMembershipError } =
+          await supabase
+            .from('group_memberships')
+            .select('id, status')
+            .eq('group_id', groupId)
+            .eq('user_id', existingGroup.created_by)
+            .eq('role', 'leader')
+            .maybeSingle();
+
+        if (leaderMembershipError) {
+          return { data: null, error: new Error(leaderMembershipError.message) };
+        }
+
+        if (!leaderMembership) {
+          const { error: createLeaderMembershipError } = await supabase
+            .from('group_memberships')
+            .insert({
+              group_id: groupId,
+              user_id: existingGroup.created_by,
+              role: 'leader',
+              status: 'active',
+              joined_at: new Date().toISOString(),
+            });
+
+          if (createLeaderMembershipError) {
+            return {
+              data: null,
+              error: new Error(createLeaderMembershipError.message),
+            };
+          }
+        } else if (leaderMembership.status !== 'active') {
+          const { error: activateLeaderMembershipError } = await supabase
+            .from('group_memberships')
+            .update({
+              status: 'active',
+              joined_at: new Date().toISOString(),
+            })
+            .eq('id', leaderMembership.id);
+
+          if (activateLeaderMembershipError) {
+            return {
+              data: null,
+              error: new Error(activateLeaderMembershipError.message),
+            };
+          }
+        }
       }
 
       // Fetch the updated group to return
