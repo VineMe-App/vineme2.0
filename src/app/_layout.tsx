@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, router, useSegments } from 'expo-router';
-import { StatusBar, Text as RNText } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
@@ -12,6 +12,7 @@ import { ThemeProvider } from '@/theme/provider';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { ErrorBoundary, OfflineBanner } from '@/components';
+import { WebNavbar } from '@/components/ui/WebNavbar';
 import { DevToolsOverlay } from '@/components/devtools/DevToolsOverlay';
 
 import { handleDeepLink } from '@/utils/deepLinking';
@@ -171,6 +172,7 @@ function RootLayoutNav() {
   return (
     <>
       <OfflineBanner />
+      {Platform.OS === 'web' && <WebNavbar />}
       <Stack
         screenOptions={{
           headerTitleStyle: {
