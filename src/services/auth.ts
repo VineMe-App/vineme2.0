@@ -207,14 +207,12 @@ export class AuthService {
       });
 
       if (error) {
-        // If RPC doesn't exist, we'll need to handle it manually
-        // For now, just log and continue with new profile creation
         if (__DEV__) {
           console.warn(
-            '[createUserProfile] RPC link_orphaned_user not available, creating new profile'
+            '[createUserProfile] RPC link_orphaned_user failed, creating new profile'
           );
         }
-        return { error: null }; // Non-fatal, continue with new profile
+        return { error: new Error(error.message) };
       }
 
       if (data?.success) {
@@ -231,7 +229,12 @@ export class AuthService {
       if (__DEV__) {
         console.error('[createUserProfile] Error linking orphaned user:', error);
       }
-      return { error: null }; // Non-fatal, continue with new profile
+      return {
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to link orphaned user data'),
+      };
     }
   }
 
