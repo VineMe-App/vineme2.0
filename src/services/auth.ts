@@ -168,11 +168,18 @@ export class AuthService {
       );
 
       if (error) {
+        // Function doesn't exist or other error - gracefully skip orphaned user linking
         if (__DEV__) {
-          console.log(
-            '[createUserProfile] Error finding orphaned user:',
-            error.message
-          );
+          if (error.message?.includes('does not exist') || error.message?.includes('function')) {
+            console.log(
+              '[createUserProfile] find_orphaned_user_by_name function not available (migration may not be applied)'
+            );
+          } else {
+            console.log(
+              '[createUserProfile] Error finding orphaned user:',
+              error.message
+            );
+          }
         }
         return null;
       }
@@ -224,10 +231,18 @@ export class AuthService {
       });
 
       if (error) {
+        // Function doesn't exist or other error - gracefully skip linking
         if (__DEV__) {
-          console.warn(
-            '[createUserProfile] RPC link_orphaned_user failed, creating new profile'
-          );
+          if (error.message?.includes('does not exist') || error.message?.includes('function')) {
+            console.warn(
+              '[createUserProfile] link_orphaned_user function not available (migration may not be applied)'
+            );
+          } else {
+            console.warn(
+              '[createUserProfile] RPC link_orphaned_user failed:',
+              error.message
+            );
+          }
         }
         return { error: new Error(error.message) };
       }
