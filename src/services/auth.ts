@@ -202,18 +202,37 @@ export class AuthService {
    * Link existing orphaned user data to new auth user
    * Transfers all related data (memberships, friendships, etc.) to the new user ID
    * Returns the orphaned user's roles if they existed
+   * 
+   * Handles two scenarios:
+   * 1. Orphaned public.users (no auth.users) - transfers all data from old_user_id to new_user_id
+   * 2. Orphaned auth.users (no public.users) - no data to transfer, just use the auth.users id
    */
   private async linkOrphanedUserData(
     oldUserId: string,
     newUserId: string
   ): Promise<{ error: Error | null; roles?: string[] }> {
     try {
-      // Fetch the orphaned user's roles before linking (since linking deletes the old record)
+      // Check if oldUserId exists in public.users (orphaned public.users scenario)
       const { data: orphanedUser, error: fetchError } = await supabase
         .from('users')
         .select('roles')
         .eq('id', oldUserId)
         .maybeSingle();
+
+      // If oldUserId doesn't exist in public.users, it's an orphaned auth.users
+      // In this case, we just need to use the auth.users id (oldUserId) directly
+      // No data transfer needed since there's no public.users data
+      if (!orphanedUser && !fetchError) {
+        // Orphaned auth.users - no public.users data to transfer
+        // The new signup will create a public.users record with new_user_id
+        // We can't transfer anything, so just return success
+        if (__DEV__) {
+          console.log(
+            '[createUserProfile] Orphaned auth.users found (no public.users), no data to transfer'
+          );
+        }
+        return { error: null };
+      }
 
       const orphanedRoles = orphanedUser?.roles || null;
 
@@ -224,7 +243,7 @@ export class AuthService {
         );
       }
 
-      // Use RPC function to transfer all user data
+      // Use RPC function to transfer all user data from orphaned public.users
       const { data, error } = await supabase.rpc('link_orphaned_user', {
         old_user_id: oldUserId,
         new_user_id: newUserId,
