@@ -81,7 +81,38 @@ AS $$
 DECLARE
   result JSONB;
   updated_count INTEGER := 0;
+  v_caller_id UUID;
+  v_old_is_orphaned BOOLEAN := false;
 BEGIN
+  v_caller_id := auth.uid();
+
+  -- Ensure the caller is linking their own new auth user
+  IF v_caller_id IS NULL OR v_caller_id <> new_user_id THEN
+    result := jsonb_build_object(
+      'success', false,
+      'message', 'Not authorized to link user data'
+    );
+    RETURN result;
+  END IF;
+
+  -- Ensure the old user is an orphaned public.users record (no auth.users)
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.users pu
+    LEFT JOIN auth.users au ON pu.id = au.id
+    WHERE pu.id = old_user_id
+      AND au.id IS NULL
+  )
+  INTO v_old_is_orphaned;
+
+  IF NOT v_old_is_orphaned THEN
+    result := jsonb_build_object(
+      'success', false,
+      'message', 'Old user is not an orphaned profile'
+    );
+    RETURN result;
+  END IF;
+
   -- Update group_memberships
   UPDATE public.group_memberships
   SET user_id = new_user_id
