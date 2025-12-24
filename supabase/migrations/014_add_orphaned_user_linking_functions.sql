@@ -29,10 +29,11 @@ BEGIN
        AND LOWER(TRIM(COALESCE(pu.first_name, ''))) = LOWER(TRIM(p_first_name))
        AND p_last_name IS NOT NULL 
        AND LOWER(TRIM(COALESCE(pu.last_name, ''))) = LOWER(TRIM(p_last_name)))
-      -- Or match by first_name only if last_name is not provided
+      -- Or match by first_name only if both last names are missing
       OR (p_first_name IS NOT NULL 
           AND LOWER(TRIM(COALESCE(pu.first_name, ''))) = LOWER(TRIM(p_first_name))
-          AND (p_last_name IS NULL OR pu.last_name IS NULL))
+          AND p_last_name IS NULL
+          AND NULLIF(TRIM(pu.last_name), '') IS NULL)
     )
   ORDER BY 
     -- Prefer exact matches (both first and last name)
@@ -153,4 +154,3 @@ COMMENT ON FUNCTION link_orphaned_user IS
 
 -- Notify PostgREST to reload schema cache
 NOTIFY pgrst, 'reload schema';
-
