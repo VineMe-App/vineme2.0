@@ -142,7 +142,102 @@ export class AuthService {
   }
 
   /**
+   * Find and link orphaned user profile by name
+   * Returns the orphaned user ID if found, null otherwise
+   */
+  private async findOrphanedUserByName(
+    first_name?: string,
+    last_name?: string,
+    email?: string,
+    phone?: string
+  ): Promise<string | null> {
+    if (!first_name && !last_name && !email && !phone) {
+      return null;
+    }
+
+    try {
+      // Use RPC function to find orphaned users by name/email/phone
+      const { data: orphanedUsers, error } = await supabase.rpc(
+        'find_orphaned_user_by_name',
+        {
+          p_first_name: first_name?.trim() || null,
+          p_last_name: last_name?.trim() || null,
+          p_email: email?.trim().toLowerCase() || null,
+          p_phone: phone?.trim() || null,
+        }
+      );
+
+      if (error) {
+        if (__DEV__) {
+          console.log(
+            '[createUserProfile] Error finding orphaned user:',
+            error.message
+          );
+        }
+        return null;
+      }
+
+      // RPC returned results
+      if (orphanedUsers && orphanedUsers.length > 0) {
+        return orphanedUsers[0].id;
+      }
+
+      return null;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('[createUserProfile] Error finding orphaned user:', error);
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Link existing orphaned user data to new auth user
+   * Transfers all related data (memberships, friendships, etc.) to the new user ID
+   */
+  private async linkOrphanedUserData(
+    oldUserId: string,
+    newUserId: string
+  ): Promise<{ error: Error | null }> {
+    try {
+      // Use RPC function to transfer all user data
+      const { data, error } = await supabase.rpc('link_orphaned_user', {
+        old_user_id: oldUserId,
+        new_user_id: newUserId,
+      });
+
+      if (error) {
+        // If RPC doesn't exist, we'll need to handle it manually
+        // For now, just log and continue with new profile creation
+        if (__DEV__) {
+          console.warn(
+            '[createUserProfile] RPC link_orphaned_user not available, creating new profile'
+          );
+        }
+        return { error: null }; // Non-fatal, continue with new profile
+      }
+
+      if (data?.success) {
+        if (__DEV__) {
+          console.log(
+            `[createUserProfile] Successfully linked orphaned user ${oldUserId} to ${newUserId}`
+          );
+        }
+        return { error: null };
+      }
+
+      return { error: new Error(data?.message || 'Failed to link user data') };
+    } catch (error) {
+      if (__DEV__) {
+        console.error('[createUserProfile] Error linking orphaned user:', error);
+      }
+      return { error: null }; // Non-fatal, continue with new profile
+    }
+  }
+
+  /**
    * Create user profile after successful sign up
+   * Automatically links to existing orphaned user profiles by name/email/phone
    */
   async createUserProfile(userData: {
     first_name?: string;
@@ -158,6 +253,40 @@ export class AuthService {
       const user = await this.getCurrentUser();
       if (!user) {
         return { error: new Error('No authenticated user') };
+      }
+
+      // Check for orphaned user with matching name/email/phone
+      const orphanedUserId = await this.findOrphanedUserByName(
+        userData.first_name,
+        userData.last_name,
+        user.email || undefined,
+        user.phone || undefined
+      );
+
+      if (orphanedUserId) {
+        if (__DEV__) {
+          console.log(
+            `[createUserProfile] Found orphaned user ${orphanedUserId}, attempting to link...`
+          );
+        }
+
+        // Try to link the orphaned user data to the new auth user
+        const linkResult = await this.linkOrphanedUserData(
+          orphanedUserId,
+          user.id
+        );
+
+        if (linkResult.error) {
+          // If linking fails, continue with new profile creation
+          if (__DEV__) {
+            console.warn(
+              '[createUserProfile] Failed to link orphaned user, creating new profile'
+            );
+          }
+        } else {
+          // Successfully linked, reload profile and return
+          return { error: null };
+        }
       }
 
       // Insert minimal required fields to avoid 400s from missing FKs or columns
