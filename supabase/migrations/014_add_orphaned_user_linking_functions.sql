@@ -50,17 +50,25 @@ BEGIN
   FROM auth.users au
   WHERE au.id = v_current_user_id;
   
-  -- If we couldn't find the current user, return empty
-  IF v_auth_email IS NULL AND v_auth_phone IS NULL THEN
-    RETURN;
+  -- Require email OR phone AND first_name AND last_name for matching
+  -- If any are missing, user should sign up again (return empty)
+  IF (v_auth_email IS NULL AND v_auth_phone IS NULL) THEN
+    RETURN;  -- No email/phone - user must sign up
   END IF;
   
   -- Use auth metadata name if available, otherwise fall back to provided name
   v_auth_first_name := COALESCE(v_auth_first_name, p_first_name);
   v_auth_last_name := COALESCE(v_auth_last_name, p_last_name);
   
-  -- Step 2: Find orphaned public.users (no auth.users) that matches by first_name and last_name
+  -- Require both first_name and last_name for matching
+  IF v_auth_first_name IS NULL OR NULLIF(TRIM(v_auth_first_name), '') IS NULL OR
+     v_auth_last_name IS NULL OR NULLIF(TRIM(v_auth_last_name), '') IS NULL THEN
+    RETURN;  -- Missing first or last name - user must sign up
+  END IF;
+  
+  -- Step 2: Find orphaned public.users (no auth.users) that matches by first_name AND last_name
   -- We use the current authenticated user's name to find their orphaned profile
+  -- The email/phone requirement is satisfied by having it in auth.users (current user)
   SELECT 
     pu.id,
     pu.first_name,
@@ -71,11 +79,10 @@ BEGIN
   LEFT JOIN auth.users au ON pu.id = au.id
   WHERE au.id IS NULL  -- Only orphaned users (no auth.users record)
     AND (
-      -- Match by first_name and last_name (case-insensitive, trimmed)
-      (v_auth_first_name IS NOT NULL 
-       AND LOWER(TRIM(COALESCE(pu.first_name, ''))) = LOWER(TRIM(v_auth_first_name))
-       AND v_auth_last_name IS NOT NULL 
-       AND LOWER(TRIM(COALESCE(pu.last_name, ''))) = LOWER(TRIM(v_auth_last_name)))
+      -- Match by first_name AND last_name (case-insensitive, trimmed)
+      -- Both must match exactly
+      LOWER(TRIM(COALESCE(pu.first_name, ''))) = LOWER(TRIM(v_auth_first_name))
+      AND LOWER(TRIM(COALESCE(pu.last_name, ''))) = LOWER(TRIM(v_auth_last_name))
     )
   ORDER BY pu.created_at DESC
   LIMIT 1;
@@ -223,7 +230,7 @@ $$;
 
 -- Add comments for documentation
 COMMENT ON FUNCTION find_orphaned_user_by_name IS 
-  'Finds orphaned public.users records that should be linked to the current authenticated user''s account. Matching strategy: (1) Get current user''s email/phone from auth.users (auth.uid()); (2) Extract name from auth.users metadata; (3) Find orphaned public.users (no auth.users) matching by first_name and last_name; (4) Return orphaned public.users id for linking. Security: Only uses current authenticated user''s credentials (auth.uid()), ignoring caller-supplied parameters to prevent cross-account data takeover.';
+  'Finds orphaned public.users records that should be linked to the current authenticated user''s account. Matching strategy: (1) Get current user''s email/phone from auth.users (auth.uid()); (2) Extract name from auth.users metadata; (3) Require email OR phone AND first_name AND last_name; (4) Find orphaned public.users (no auth.users) matching by first_name AND last_name; (5) Return orphaned public.users id for linking. If email/phone or name is missing, returns empty (user must sign up). Security: Only uses current authenticated user''s credentials (auth.uid()), ignoring caller-supplied parameters to prevent cross-account data takeover.';
 
 COMMENT ON FUNCTION link_orphaned_user IS 
   'Transfers all related data from an orphaned user (old_user_id) to a new auth user (new_user_id). Updates all foreign key references and deletes the old orphaned user record. Used to preserve user data when linking orphaned profiles during sign-up.';
