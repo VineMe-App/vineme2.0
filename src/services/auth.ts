@@ -194,12 +194,29 @@ export class AuthService {
   /**
    * Link existing orphaned user data to new auth user
    * Transfers all related data (memberships, friendships, etc.) to the new user ID
+   * Returns the orphaned user's roles if they existed
    */
   private async linkOrphanedUserData(
     oldUserId: string,
     newUserId: string
-  ): Promise<{ error: Error | null }> {
+  ): Promise<{ error: Error | null; roles?: string[] }> {
     try {
+      // Fetch the orphaned user's roles before linking (since linking deletes the old record)
+      const { data: orphanedUser, error: fetchError } = await supabase
+        .from('users')
+        .select('roles')
+        .eq('id', oldUserId)
+        .maybeSingle();
+
+      const orphanedRoles = orphanedUser?.roles || null;
+
+      if (__DEV__ && orphanedRoles) {
+        console.log(
+          `[createUserProfile] Found orphaned user roles:`,
+          orphanedRoles
+        );
+      }
+
       // Use RPC function to transfer all user data
       const { data, error } = await supabase.rpc('link_orphaned_user', {
         old_user_id: oldUserId,
@@ -221,7 +238,7 @@ export class AuthService {
             `[createUserProfile] Successfully linked orphaned user ${oldUserId} to ${newUserId}`
           );
         }
-        return { error: null };
+        return { error: null, roles: orphanedRoles || undefined };
       }
 
       return { error: new Error(data?.message || 'Failed to link user data') };
@@ -266,6 +283,8 @@ export class AuthService {
         user.phone || undefined
       );
 
+      let orphanedRoles: string[] | null = null;
+
       if (orphanedUserId) {
         if (__DEV__) {
           console.log(
@@ -287,27 +306,73 @@ export class AuthService {
             );
           }
         } else {
-          // Successfully linked, but we still need to apply the new userData fields
-          // (church_id, service_id, newcomer, onboarding_complete, etc.)
-          // Continue to the upsert below to apply these fields
+          // Successfully linked, preserve the orphaned user's roles
+          orphanedRoles = linkResult.roles || null;
           if (__DEV__) {
             console.log(
               '[createUserProfile] Successfully linked orphaned user, applying new profile data...'
+            );
+            if (orphanedRoles) {
+              console.log(
+                `[createUserProfile] Preserving orphaned user roles:`,
+                orphanedRoles
+              );
+            }
+          }
+        }
+      }
+
+      // Fetch existing roles to preserve elevated permissions (church_admin, superadmin)
+      // Check both: orphaned user roles (from link) and existing profile roles
+      let existingRoles: string[] | null = null;
+
+      // First, use roles from orphaned user if we just linked
+      if (orphanedRoles) {
+        existingRoles = orphanedRoles;
+      } else {
+        // Otherwise, check if profile already exists
+        const { data: existingProfile, error: existingProfileError } =
+          await supabase
+            .from('users')
+            .select('roles')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (existingProfileError) {
+          if (__DEV__) {
+            console.warn(
+              '[createUserProfile] Failed to fetch existing roles:',
+              existingProfileError.message
+            );
+          }
+        } else if (existingProfile?.roles) {
+          existingRoles = existingProfile.roles;
+          if (__DEV__) {
+            console.log(
+              `[createUserProfile] Preserving existing roles:`,
+              existingRoles
             );
           }
         }
       }
 
-      // Insert minimal required fields to avoid 400s from missing FKs or columns
+      // Insert/update user profile with all provided data
       const payload: Record<string, any> = {
         id: user.id,
         first_name: userData.first_name,
         last_name: userData.last_name,
-        roles: ['user'],
         updated_at: new Date().toISOString(),
       };
-      // Email is stored in auth.users only; do not write to public.users
 
+      // Preserve existing roles if profile exists (e.g., after linking orphaned user)
+      // Only set default 'user' role if creating a brand new profile
+      if (existingRoles && existingRoles.length > 0) {
+        payload.roles = existingRoles;
+      } else {
+        payload.roles = ['user'];
+      }
+
+      // Email is stored in auth.users only; do not write to public.users
       // phone/email removed from public.users; use auth.user for credentials
 
       if (userData.church_id) {
