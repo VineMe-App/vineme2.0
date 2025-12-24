@@ -287,8 +287,14 @@ export class AuthService {
             );
           }
         } else {
-          // Successfully linked, reload profile and return
-          return { error: null };
+          // Successfully linked, but we still need to apply the new userData fields
+          // (church_id, service_id, newcomer, onboarding_complete, etc.)
+          // Continue to the upsert below to apply these fields
+          if (__DEV__) {
+            console.log(
+              '[createUserProfile] Successfully linked orphaned user, applying new profile data...'
+            );
+          }
         }
       }
 
