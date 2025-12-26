@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.36,
     marginBottom: 17, // Figma spacing
     fontFamily: 'Figtree-Bold',
-    lineHeight: 16,
+    lineHeight: 18,
   },
   meetingDetailsContainer: {
     flexDirection: 'row',
@@ -1093,6 +1093,7 @@ const styles = StyleSheet.create({
   },
   membersSection: {
     marginBottom: 24,
+    paddingLeft: 23, // Align with Meeting details section
   },
   membersSectionHeader: {
     flexDirection: 'row',

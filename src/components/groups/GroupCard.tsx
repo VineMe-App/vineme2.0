@@ -106,7 +106,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     ? 'Your group request has been sent to church administrators for approval. They will be in touch to discuss your group.'
     : 'A member of your clergy has received your request and will be in touch to approve or discuss.';
   const showPendingBadge = isAwaitingVerification || hasCustomPending;
-  const shouldBlockNavigation = showPendingBadge;
+  // Allow navigation even with pending badge - users should be able to view group details
+  const shouldBlockNavigation = false;
   const pressAnim = React.useRef(new Animated.Value(0)).current;
 
   // Get border color based on category (matching map marker colors)
