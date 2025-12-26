@@ -362,7 +362,7 @@ export default function HomeScreen() {
                         group={request.group as any}
                         membershipStatus={null}
                         currentUserId={userProfile?.id}
-                        onPress={undefined}
+                        onPress={() => router.push(`/group/${request.group.id}`)}
                         style={{
                           width: 260,
                           minHeight: MY_GROUPS_CARD_MIN_HEIGHT,
