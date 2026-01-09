@@ -13,7 +13,6 @@ import { OptimizedImage } from '../ui/OptimizedImage';
 import { Avatar } from '../ui/Avatar';
 import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
-import { locationService } from '../../services/location';
 import { useTheme } from '../../theme/provider/useTheme';
 
 interface GroupCardProps {
@@ -71,16 +70,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     const dayName = day.charAt(0).toUpperCase() + day.slice(1);
     const timeStr = formattedTime.toLowerCase().replace(/\s/g, '');
     return `${dayName}s ${timeStr}`;
-  };
-
-  const formatLocation = (location: any) => {
-    const parsed = locationService.parseGroupLocation(location);
-    if (parsed.address && parsed.address.trim().length > 0)
-      return parsed.address;
-    if (typeof location === 'string' && location.trim().length > 0)
-      return location;
-    if (location?.room) return `Room ${location.room}`;
-    return 'Location TBD';
   };
 
   const [showPendingTip, setShowPendingTip] = React.useState(false);
@@ -312,23 +301,25 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               </View>
             )}
 
-            {/* Location */}
+            {/* Capacity */}
             <View style={[
               styles.detailRow,
               variant === 'my-groups' && styles.detailRowNoWrap
             ]}>
-              <Ionicons name="location-outline" size={16} color="#2C2235" />
+              <Ionicons
+                name={group.at_capacity ? 'close-circle-outline' : 'checkmark-circle-outline'}
+                size={16}
+                color={group.at_capacity ? '#c2410c' : '#15803d'}
+              />
               <Text
                 variant="bodySmall"
                 weight="medium"
                 style={[
-                  styles.detailText,
-                  variant === 'my-groups' && styles.detailTextMyGroups
+                  styles.capacityText,
+                  group.at_capacity && styles.capacityTextFull,
                 ]}
-                numberOfLines={variant === 'my-groups' ? 1 : 2}
-                ellipsizeMode="tail"
               >
-                {formatLocation(group.location)}
+                {group.at_capacity ? 'At capacity' : 'Open'}
               </Text>
             </View>
 
@@ -1004,22 +995,14 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     lineHeight: 18,
   },
-  fullBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#fff7ed',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fed7aa',
-  },
-  fullText: {
-    color: '#c2410c',
+  capacityText: {
+    color: '#15803d',
     fontWeight: '700',
-    fontSize: 11,
-    letterSpacing: 0.5,
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  capacityTextFull: {
+    color: '#c2410c',
   },
   descriptionText: {
     color: '#2C2235', // Figma: #2c2235
