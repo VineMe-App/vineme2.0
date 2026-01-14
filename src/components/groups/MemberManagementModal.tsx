@@ -7,6 +7,7 @@ import {
   Linking,
   Alert,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Text } from '../ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '../ui/Modal';
@@ -77,22 +78,25 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
         contactValue: value,
       });
 
-      if (type === 'phone') {
-        const url = `tel:${formatPhoneNumber(value)}`;
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert('Error', 'Unable to make phone calls on this device');
-        }
-      } else if (type === 'email') {
-        const url = `mailto:${value}`;
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert('Error', 'Unable to open email on this device');
-        }
+      const url =
+        type === 'phone' ? `tel:${formatPhoneNumber(value)}` : `mailto:${value}`;
+      try {
+        await Linking.openURL(url);
+      } catch {
+        Alert.alert(
+          'Action unavailable',
+          'Would you like to copy this contact info?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Copy',
+              onPress: async () => {
+                await Clipboard.setStringAsync(value);
+                Alert.alert('Copied', 'Contact info copied to clipboard');
+              },
+            },
+          ]
+        );
       }
     } catch (error) {
       Alert.alert(
@@ -161,22 +165,52 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
                     <Ionicons name="mail-outline" size={20} color="#007AFF" />
                     <Text style={styles.contactValue}>{contactInfo.email}</Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={async () => {
+                      await Clipboard.setStringAsync(contactInfo.email!);
+                      Alert.alert('Copied', 'Email copied to clipboard');
+                    }}
+                  >
+                    <Ionicons name="copy-outline" size={18} color="#6b7280" />
+                  </TouchableOpacity>
                 </View>
               )}
-              {contactInfo.phone_number && (
+              {(contactInfo.phone || (contactInfo as { phone_number?: string }).phone_number) && (
                 <View style={styles.contactItem}>
                   <TouchableOpacity
                     onPress={() =>
-                      contactInfo.phone_number &&
-                      handleContactPress('phone', contactInfo.phone_number)
+                      (contactInfo.phone ||
+                        (contactInfo as { phone_number?: string }).phone_number) &&
+                      handleContactPress(
+                        'phone',
+                        contactInfo.phone ||
+                          (contactInfo as { phone_number?: string }).phone_number!
+                      )
                     }
                     style={styles.contactMain}
                     disabled={initiateContactMutation.isPending}
                   >
                     <Ionicons name="call-outline" size={20} color="#007AFF" />
                     <Text style={styles.contactValue}>
-                      {contactInfo.phone_number}
+                      {contactInfo.phone ||
+                        (contactInfo as { phone_number?: string })
+                          .phone_number}
                     </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={async () => {
+                      const phone =
+                        contactInfo.phone ||
+                        (contactInfo as { phone_number?: string })
+                          .phone_number;
+                      if (!phone) return;
+                      await Clipboard.setStringAsync(phone);
+                      Alert.alert('Copied', 'Phone number copied to clipboard');
+                    }}
+                  >
+                    <Ionicons name="copy-outline" size={18} color="#6b7280" />
                   </TouchableOpacity>
                 </View>
               )}
@@ -374,8 +408,12 @@ const styles = StyleSheet.create({
   },
   contactItem: {
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   contactMain: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
@@ -383,6 +421,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+  },
+  copyButton: {
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   contactValue: {
     marginLeft: 12,
