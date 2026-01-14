@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     width: '100%',
-    marginBottom: 100, // Match other pages footer spacing
+    marginBottom: 0,
     paddingTop: 16,
   },
   footerKeyboardVisible: {
