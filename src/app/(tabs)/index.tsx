@@ -61,6 +61,7 @@ const GroupCardWithFriends: React.FC<{
   variant?: 'my-groups' | 'all-groups';
   pendingLabel?: string;
   pendingTooltip?: string;
+  showLocation?: boolean;
 }> = ({
   group,
   membershipStatus,
@@ -70,6 +71,7 @@ const GroupCardWithFriends: React.FC<{
   variant,
   pendingLabel,
   pendingTooltip,
+  showLocation,
 }) => {
   const { userProfile } = useAuthStore();
   const { data: members } = useGroupMembers(group.id);
@@ -120,6 +122,7 @@ const GroupCardWithFriends: React.FC<{
       variant={variant}
       pendingLabel={pendingLabel}
       pendingTooltip={pendingTooltip}
+      showLocation={showLocation}
       friendsCount={friendsCount}
       friendsInGroup={friendsInGroup}
       leaders={leaders}
@@ -340,6 +343,7 @@ export default function HomeScreen() {
                       marginHorizontal: 0,
                     }}
                     variant="my-groups"
+                    showLocation={false}
                   />
                 </View>
               ))}
@@ -371,6 +375,7 @@ export default function HomeScreen() {
                         pendingLabel="Join request pending"
                         pendingTooltip={message}
                         variant="my-groups"
+                        showLocation={false}
                       />
                     </View>
                   );

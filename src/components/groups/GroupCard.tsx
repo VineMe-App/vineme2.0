@@ -13,6 +13,7 @@ import { OptimizedImage } from '../ui/OptimizedImage';
 import { Avatar } from '../ui/Avatar';
 import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
+import { locationService } from '../../services/location';
 import { useTheme } from '../../theme/provider/useTheme';
 
 interface GroupCardProps {
@@ -30,6 +31,7 @@ interface GroupCardProps {
   currentUserId?: string; // ID of the current user to determine if they're the creator
   variant?: 'my-groups' | 'all-groups'; // Variant to determine padding based on page
   category?: 'service' | 'church' | 'outside'; // Color coding category
+  showLocation?: boolean;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -47,6 +49,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   pendingTooltip,
   currentUserId,
   variant = 'all-groups', // Default to 'all-groups' for backward compatibility
+  showLocation = true,
 }) => {
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
@@ -70,6 +73,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     const dayName = day.charAt(0).toUpperCase() + day.slice(1);
     const timeStr = formattedTime.toLowerCase().replace(/\s/g, '');
     return `${dayName}s ${timeStr}`;
+  };
+
+  const formatLocation = (location: any) => {
+    const parsed = locationService.parseGroupLocation(location);
+    if (parsed.address && parsed.address.trim().length > 0)
+      return parsed.address;
+    if (typeof location === 'string' && location.trim().length > 0)
+      return location;
+    if (location?.room) return `Room ${location.room}`;
+    return 'Location TBD';
   };
 
   const [showPendingTip, setShowPendingTip] = React.useState(false);
@@ -322,6 +335,28 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 {group.at_capacity ? 'At capacity' : 'Open'}
               </Text>
             </View>
+
+            {/* Location */}
+            {showLocation && (
+              <View style={[
+                styles.detailRow,
+                variant === 'my-groups' && styles.detailRowNoWrap
+              ]}>
+                <Ionicons name="location-outline" size={16} color="#2C2235" />
+                <Text
+                  variant="bodySmall"
+                  weight="medium"
+                  style={[
+                    styles.detailText,
+                    variant === 'my-groups' && styles.detailTextMyGroups
+                  ]}
+                  numberOfLines={variant === 'my-groups' ? 1 : 2}
+                  ellipsizeMode="tail"
+                >
+                  {formatLocation(group.location)}
+                </Text>
+              </View>
+            )}
 
             {/* Leader */}
             {leaders && leaders.length > 0 && (
