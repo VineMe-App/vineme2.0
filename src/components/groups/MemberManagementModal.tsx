@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '../ui/Text';
@@ -40,6 +42,10 @@ const formatPhoneNumber = (phone: string): string => {
   return phone.startsWith('+') ? phone : `+${phone}`;
 };
 
+const formatPhoneForWhatsApp = (phone: string): string => {
+  return phone.replace(/[^0-9]/g, '');
+};
+
 export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
   visible,
   member,
@@ -70,16 +76,7 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
 
   const handleContactPress = async (type: 'phone' | 'email', value: string) => {
     try {
-      const actionType = type === 'phone' ? 'call' : 'email';
-      await initiateContactMutation.mutateAsync({
-        requestId: member.id,
-        leaderId,
-        actionType,
-        contactValue: value,
-      });
-
-      const url =
-        type === 'phone' ? `tel:${formatPhoneNumber(value)}` : `mailto:${value}`;
+      const url = type === 'phone' ? `tel:${formatPhoneNumber(value)}` : `mailto:${value}`;
       try {
         await Linking.openURL(url);
       } catch {
@@ -104,6 +101,83 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
         error instanceof Error ? error.message : 'Failed to initiate contact'
       );
     }
+  };
+
+  const handlePhoneOption = async (
+    option: 'whatsapp' | 'sms' | 'call',
+    phone: string
+  ) => {
+    const actionType = option === 'call' ? 'call' : 'message';
+    try {
+      await initiateContactMutation.mutateAsync({
+        requestId: member.id,
+        leaderId,
+        actionType,
+        contactValue: phone,
+      });
+
+      const url =
+        option === 'whatsapp'
+          ? `whatsapp://send?phone=${formatPhoneForWhatsApp(phone)}`
+          : option === 'sms'
+          ? `sms:${formatPhoneNumber(phone)}`
+          : `tel:${formatPhoneNumber(phone)}`;
+
+      try {
+        await Linking.openURL(url);
+      } catch {
+        Alert.alert(
+          'Action unavailable',
+          'Would you like to copy this contact info?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Copy',
+              onPress: async () => {
+                await Clipboard.setStringAsync(phone);
+                Alert.alert('Copied', 'Contact info copied to clipboard');
+              },
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to initiate contact'
+      );
+    }
+  };
+
+  const handlePhonePress = (phone: string) => {
+    const options = ['WhatsApp', 'SMS', 'Call', 'Cancel'];
+    const cancelButtonIndex = 3;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            handlePhoneOption('whatsapp', phone);
+          } else if (buttonIndex === 1) {
+            handlePhoneOption('sms', phone);
+          } else if (buttonIndex === 2) {
+            handlePhoneOption('call', phone);
+          }
+        }
+      );
+      return;
+    }
+
+    Alert.alert('Contact via', 'Choose an option', [
+      { text: 'WhatsApp', onPress: () => handlePhoneOption('whatsapp', phone) },
+      { text: 'SMS', onPress: () => handlePhoneOption('sms', phone) },
+      { text: 'Call', onPress: () => handlePhoneOption('call', phone) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   return (
@@ -179,15 +253,15 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
               {(contactInfo.phone || (contactInfo as { phone_number?: string }).phone_number) && (
                 <View style={styles.contactItem}>
                   <TouchableOpacity
-                    onPress={() =>
-                      (contactInfo.phone ||
-                        (contactInfo as { phone_number?: string }).phone_number) &&
-                      handleContactPress(
-                        'phone',
+                    onPress={() => {
+                      const phone =
                         contactInfo.phone ||
-                          (contactInfo as { phone_number?: string }).phone_number!
-                      )
-                    }
+                        (contactInfo as { phone_number?: string })
+                          .phone_number;
+                      if (phone) {
+                        handlePhonePress(phone);
+                      }
+                    }}
                     style={styles.contactMain}
                     disabled={initiateContactMutation.isPending}
                   >
