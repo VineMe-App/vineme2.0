@@ -10,7 +10,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: 'VineMe',
     owner: 'tonaeko',
     slug: 'vineme-mobile-app',
-    version: '1.0.0',
+    version: '2.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     assetBundlePatterns: ['**/*', 'assets/fonts/*.ttf'],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.vineme.app',
+      bundleIdentifier: 'com.pilotlight.vineme',
       ...(isExpoGo
         ? {}
         : {
@@ -56,7 +56,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
-      package: 'com.vineme.app',
+      package: 'com.pilotlight.vineme',
       ...(isExpoGo
         ? {}
         : {
