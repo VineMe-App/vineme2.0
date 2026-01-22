@@ -606,7 +606,8 @@ export default function HomeScreen() {
                   <Text style={styles.emphasisText}>
                     {latestChurchRequest?.church_name || 'your church'}
                   </Text>{' '}
-                  to join VineMe. Meanwhile, add friends to see their groups.
+                  to join VineMe. {'\n'}Meanwhile, add friends to see their
+                  groups.
                 </Text>
                 <TouchableOpacity
                   style={styles.findGroupButton}
