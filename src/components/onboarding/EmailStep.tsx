@@ -140,9 +140,6 @@ export default function EmailStep({
 
           <View style={styles.inputGroup}>
             <View style={styles.inputWrapper}>
-              <Text variant="labelSmall" color="primary" style={styles.label}>
-                Enter email
-              </Text>
               <TextInput
                 style={[styles.input, error ? styles.inputError : null]}
                 value={email}

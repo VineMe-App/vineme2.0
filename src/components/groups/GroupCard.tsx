@@ -31,6 +31,7 @@ interface GroupCardProps {
   currentUserId?: string; // ID of the current user to determine if they're the creator
   variant?: 'my-groups' | 'all-groups'; // Variant to determine padding based on page
   category?: 'service' | 'church' | 'outside'; // Color coding category
+  showLocation?: boolean;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -48,6 +49,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   pendingTooltip,
   currentUserId,
   variant = 'all-groups', // Default to 'all-groups' for backward compatibility
+  showLocation = true,
 }) => {
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
@@ -312,25 +314,49 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               </View>
             )}
 
-            {/* Location */}
+            {/* Capacity */}
             <View style={[
               styles.detailRow,
               variant === 'my-groups' && styles.detailRowNoWrap
             ]}>
-              <Ionicons name="location-outline" size={16} color="#2C2235" />
+              <Ionicons
+                name={group.at_capacity ? 'close-circle-outline' : 'checkmark-circle-outline'}
+                size={16}
+                color={group.at_capacity ? '#c2410c' : '#15803d'}
+              />
               <Text
                 variant="bodySmall"
                 weight="medium"
                 style={[
-                  styles.detailText,
-                  variant === 'my-groups' && styles.detailTextMyGroups
+                  styles.capacityText,
+                  group.at_capacity && styles.capacityTextFull,
                 ]}
-                numberOfLines={variant === 'my-groups' ? 1 : 2}
-                ellipsizeMode="tail"
               >
-                {formatLocation(group.location)}
+                {group.at_capacity ? 'At capacity' : 'Open'}
               </Text>
             </View>
+
+            {/* Location */}
+            {showLocation && (
+              <View style={[
+                styles.detailRow,
+                variant === 'my-groups' && styles.detailRowNoWrap
+              ]}>
+                <Ionicons name="location-outline" size={16} color="#2C2235" />
+                <Text
+                  variant="bodySmall"
+                  weight="medium"
+                  style={[
+                    styles.detailText,
+                    variant === 'my-groups' && styles.detailTextMyGroups
+                  ]}
+                  numberOfLines={variant === 'my-groups' ? 1 : 2}
+                  ellipsizeMode="tail"
+                >
+                  {formatLocation(group.location)}
+                </Text>
+              </View>
+            )}
 
             {/* Leader */}
             {leaders && leaders.length > 0 && (
@@ -1004,22 +1030,14 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     lineHeight: 18,
   },
-  fullBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#fff7ed',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fed7aa',
-  },
-  fullText: {
-    color: '#c2410c',
+  capacityText: {
+    color: '#15803d',
     fontWeight: '700',
-    fontSize: 11,
-    letterSpacing: 0.5,
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  capacityTextFull: {
+    color: '#c2410c',
   },
   descriptionText: {
     color: '#2C2235', // Figma: #2c2235

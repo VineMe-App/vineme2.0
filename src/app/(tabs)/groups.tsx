@@ -152,6 +152,7 @@ export default function GroupsScreen() {
   const androidBottomPadding = Math.max(insets.bottom + 4, 12);
   const tabBarHeight = Platform.OS === 'ios' ? 100 : 56 + androidBottomPadding;
   const searchBarHeight = 50; // Search bar height
+  const androidSearchBarOffset = Platform.OS === 'android' ? 10 : 0;
   
   // Keyboard listeners to adjust search bar position
   useEffect(() => {
@@ -175,9 +176,9 @@ export default function GroupsScreen() {
   }, []);
 
   // Position search bar: above keyboard when open, otherwise above tab bar
-  const searchBarBottom = keyboardHeight > 0 
-    ? keyboardHeight + 8 // 8px spacing above keyboard
-    : tabBarHeight; // Above tab bar when keyboard is closed
+  const searchBarBottom = keyboardHeight > 0
+    ? keyboardHeight + 48 + androidSearchBarOffset // 8px spacing above keyboard
+    : tabBarHeight + androidSearchBarOffset; // Above tab bar when keyboard is closed
   const friendsQuery = useFriends(userProfile?.id);
   const [isLocationSearchMode, setIsLocationSearchMode] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
