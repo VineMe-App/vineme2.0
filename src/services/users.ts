@@ -20,6 +20,7 @@ export interface UpdateUserProfileData {
   first_name?: string;
   last_name?: string;
   avatar_url?: string | null;
+  bio?: string | null;
   church_id?: string;
   service_id?: string;
   cannot_find_group?: boolean;
