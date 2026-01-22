@@ -19,7 +19,7 @@ export interface MissingServiceFormData {
   serviceTime?: string;
   additionalInfo?: string;
   contactName: string;
-  contactEmail: string;
+  contactEmail?: string;
 }
 
 export interface MissingServiceModalProps {
@@ -79,14 +79,12 @@ export function MissingServiceModal({
       setValidationError('Please provide a contact name.');
       return;
     }
-    if (!contactEmail.trim()) {
-      setValidationError('Please provide a contact email.');
-      return;
-    }
-    const emailPattern = /[^\s@]+@[^\s@]+\.[^\s@]+/;
-    if (!emailPattern.test(contactEmail.trim())) {
-      setValidationError('Please enter a valid contact email.');
-      return;
+    if (contactEmail.trim()) {
+      const emailPattern = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+      if (!emailPattern.test(contactEmail.trim())) {
+        setValidationError('Please enter a valid contact email.');
+        return;
+      }
     }
 
     setValidationError(null);
@@ -98,7 +96,7 @@ export function MissingServiceModal({
       serviceTime: serviceTime.trim() || undefined,
       additionalInfo: additionalInfo.trim() || undefined,
       contactName: contactName.trim(),
-      contactEmail: contactEmail.trim(),
+      contactEmail: contactEmail.trim() || undefined,
     });
   };
 
@@ -196,7 +194,7 @@ export function MissingServiceModal({
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Best contact email</Text>
+            <Text style={styles.label}>Best contact email (if you know it!)</Text>
             <TextInput
               style={styles.input}
               value={contactEmail}
