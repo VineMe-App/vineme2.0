@@ -570,6 +570,9 @@ export default function GroupsScreen() {
     );
   };
 
+  const canShowNoGroupFits =
+    !!userProfile?.church_id && !!userProfile?.service_id;
+
   const handleNoGroupFits = () => {
     setShowNoGroupFitsModal(true);
   };
@@ -594,31 +597,33 @@ export default function GroupsScreen() {
 
   const renderListView = () => (
     <View style={styles.listViewContainer}>
-      <View
-        style={[
-          styles.noGroupFitsButtonFloating,
-          Platform.OS === 'ios'
-            ? { top: -50 + insets.top } // iOS: hover above first card (negative offset to float above)
-            : { top: 8 }, // Android: align with first card padding
-        ]}
-      >
-        <View style={styles.noGroupFitsButtonContainer}>
-          <TouchableOpacity
-            onPress={handleNoGroupFits}
-            style={styles.noGroupFitsButton}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={styles.noGroupFitsButtonText}
-              adjustsFontSizeToFit={true}
-              minimumFontScale={0.7}
-              numberOfLines={1}
+      {canShowNoGroupFits && (
+        <View
+          style={[
+            styles.noGroupFitsButtonFloating,
+            Platform.OS === 'ios'
+              ? { top: -50 + insets.top } // iOS: hover above first card (negative offset to float above)
+              : { top: 8 }, // Android: align with first card padding
+          ]}
+        >
+          <View style={styles.noGroupFitsButtonContainer}>
+            <TouchableOpacity
+              onPress={handleNoGroupFits}
+              style={styles.noGroupFitsButton}
+              activeOpacity={0.8}
             >
-              No group fits?
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={styles.noGroupFitsButtonText}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
+                numberOfLines={1}
+              >
+                No group fits?
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
       <FlatList
         data={groupsWithDistance as any}
         renderItem={renderGroupItem}
@@ -641,7 +646,7 @@ export default function GroupsScreen() {
       groups={filteredGroups}
       onGroupPress={handleGroupPress}
       isLoading={isLoading}
-      onNoGroupFits={handleNoGroupFits}
+      onNoGroupFits={canShowNoGroupFits ? handleNoGroupFits : undefined}
       distanceOrigin={distanceOrigin}
       onDistanceOriginChange={(origin) => {
         // Update distance origin when user moves the map
