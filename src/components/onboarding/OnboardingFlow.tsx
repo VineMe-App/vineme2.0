@@ -57,12 +57,45 @@ export default function OnboardingFlow() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { createUserProfile, user, signOut } = useAuthStore();
+  const { createUserProfile, user, signOut, userProfile, loadUserProfile } =
+    useAuthStore();
 
   useEffect(() => {
     // Load any existing onboarding data from storage
     loadOnboardingData();
   }, []);
+
+  useEffect(() => {
+    if (user && !userProfile) {
+      loadUserProfile();
+    }
+  }, [user, userProfile, loadUserProfile]);
+
+  useEffect(() => {
+    if (!userProfile) return;
+
+    setOnboardingData((prev) => {
+      const merged: OnboardingData = {
+        ...prev,
+        first_name: prev.first_name || userProfile.first_name || '',
+        last_name: prev.last_name || userProfile.last_name || '',
+        church_id: prev.church_id ?? userProfile.church_id ?? undefined,
+        service_id: prev.service_id ?? userProfile.service_id ?? undefined,
+        avatar_url: prev.avatar_url || userProfile.avatar_url || undefined,
+        bio: prev.bio || userProfile.bio || '',
+        group_status:
+          prev.group_status ??
+          (userProfile.newcomer === true
+            ? 'looking'
+            : userProfile.newcomer === false
+            ? 'existing'
+            : undefined),
+        requested_church: prev.requested_church,
+      };
+
+      return merged;
+    });
+  }, [userProfile]);
 
   const loadOnboardingData = async () => {
     try {

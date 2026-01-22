@@ -33,6 +33,10 @@ export default function ProfileDetailsStep({
   isLoading,
 }: OnboardingStepProps) {
   const { user } = useAuthStore();
+  const fullName = getFullName({
+    first_name: data.first_name,
+    last_name: data.last_name,
+  });
   const [bio, setBio] = useState(data.bio ?? '');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
     data.avatar_url
@@ -226,12 +230,13 @@ export default function ProfileDetailsStep({
               </Text>
             </View>
 
-            <View style={styles.avatarSection}>
-          <TouchableOpacity
-            onPress={handleChoosePhoto}
-            disabled={uploading}
-            activeOpacity={0.85}
-          >
+        <View style={styles.avatarSection}>
+          <View style={styles.avatarWrapper}>
+            <TouchableOpacity
+              onPress={handleChoosePhoto}
+              disabled={uploading}
+              activeOpacity={0.85}
+            >
             {uploading ? (
               <View style={styles.avatarLoading}>
                 <ActivityIndicator size="large" color="#2C2235" />
@@ -248,7 +253,20 @@ export default function ProfileDetailsStep({
                 <Ionicons name="add" size={48} color="#999999" />
               </View>
             )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+            {!!avatarUrl && (
+              <TouchableOpacity
+                style={styles.avatarEditButton}
+                onPress={handleChoosePhoto}
+                accessibilityLabel="Edit profile photo"
+                accessibilityRole="button"
+                activeOpacity={0.8}
+                disabled={uploading}
+              >
+                <Ionicons name="pencil-outline" size={14} color="#2C2235" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <View 
@@ -349,6 +367,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 27, // Spacing from avatar (315px) to bio label (444px) = 129px - 121px avatar - spacing
   },
+  avatarWrapper: {
+    width: 121,
+    height: 121,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   avatarContainer: {
     width: 121,
     height: 121,
@@ -377,6 +402,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAEAEA',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarEditButton: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   bioSection: {
     gap: 8, // Spacing between label and input
