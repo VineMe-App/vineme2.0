@@ -8,7 +8,7 @@ export interface MissingServiceRequestPayload {
   service_time?: string;
   additional_info?: string;
   contact_name: string;
-  contact_email: string;
+  contact_email?: string;
   requester_name?: string;
   requester_id?: string;
   requester_email?: string;
@@ -24,12 +24,19 @@ export const supportService = {
     payload: MissingServiceRequestPayload
   ): Promise<MissingServiceRequestResult> {
     try {
-      const { error } = await supabase.functions.invoke(
-        'notify-missing-service',
-        {
-          body: payload,
-        }
-      );
+      const { error } = await supabase
+        .from('new_church_requests')
+        .insert({
+          church_id: payload.church_id ?? null,
+          church_name: payload.church_name,
+          church_location: payload.church_location ?? null,
+          service_name: payload.service_name ?? null,
+          service_time: payload.service_time ?? null,
+          additional_info: payload.additional_info ?? null,
+          contact_name: payload.contact_name,
+          contact_email: payload.contact_email ?? null,
+          requester_id: payload.requester_id ?? null,
+        });
 
       if (error) {
         console.error('submitMissingServiceRequest error:', error);
