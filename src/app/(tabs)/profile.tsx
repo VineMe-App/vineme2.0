@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,6 +18,7 @@ import {
   useDeleteAccount,
   useUploadAvatar,
   useDeleteAvatar,
+  useUpdateUserProfile,
 } from '@/hooks/useUsers';
 import { useFriends } from '@/hooks/useFriendships';
 import { router } from 'expo-router';
@@ -31,16 +32,20 @@ import { setDeletionFlowActive, isDeletionFlowActive } from '@/utils/errorSuppre
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
+import { Input } from '@/components/ui/Input';
 // Admin dashboard summary moved to /admin route
 
 export default function ProfileScreen() {
   const { user, signOut, loadUserProfile } = useAuthStore();
   const { theme } = useTheme();
   const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [bioDraft, setBioDraft] = useState('');
 
   const deleteAccountMutation = useDeleteAccount();
   const uploadAvatarMutation = useUploadAvatar();
   const deleteAvatarMutation = useDeleteAvatar();
+  const updateUserProfileMutation = useUpdateUserProfile();
 
   const {
     data: userProfile,
@@ -57,6 +62,12 @@ export default function ProfileScreen() {
 
   const profileFullName = getFullName(userProfile);
   const profileShortName = getDisplayName(userProfile, { fallback: 'full' });
+
+  useEffect(() => {
+    if (!isEditingBio) {
+      setBioDraft(userProfile?.bio || '');
+    }
+  }, [userProfile?.bio, isEditingBio]);
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -187,6 +198,31 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleStartBioEdit = () => {
+    setBioDraft(userProfile?.bio || '');
+    setIsEditingBio(true);
+  };
+
+  const handleCancelBioEdit = () => {
+    setBioDraft(userProfile?.bio || '');
+    setIsEditingBio(false);
+  };
+
+  const handleSaveBio = async () => {
+    if (!user?.id) return;
+    try {
+      await updateUserProfileMutation.mutateAsync({
+        userId: user.id,
+        updates: { bio: bioDraft.trim() || null },
+      });
+      setIsEditingBio(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update bio.';
+      Alert.alert('Error', message);
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -348,10 +384,48 @@ export default function ProfileScreen() {
 
             {/* Bio Section */}
             <View style={styles.bioSection}>
-              <Text style={styles.bioTitle}>Bio</Text>
-              <Text style={styles.bioText}>
-                {userProfile.bio || 'This user has not added a bio yet.'}
-              </Text>
+              <View style={styles.bioHeader}>
+                <Text style={styles.bioTitle}>Bio</Text>
+                <TouchableOpacity
+                  style={styles.bioEditButton}
+                  onPress={isEditingBio ? handleCancelBioEdit : handleStartBioEdit}
+                  accessibilityLabel="Edit bio"
+                  accessibilityRole="button"
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="pencil-outline" size={14} color="#2C2235" />
+                </TouchableOpacity>
+              </View>
+              {isEditingBio ? (
+                <View style={styles.bioEditor}>
+                  <Input
+                    value={bioDraft}
+                    onChangeText={setBioDraft}
+                    placeholder="Share a little about yourself"
+                    placeholderTextColor="#999999"
+                    containerStyle={styles.bioInputContainer}
+                    inputStyle={styles.bioInputText}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    variant="outlined"
+                  />
+                  <View style={styles.bioActions}>
+                    <AuthButton
+                      title="Save"
+                      onPress={handleSaveBio}
+                      variant="primary"
+                      fullWidth
+                      style={styles.bioSaveButton}
+                      loading={updateUserProfileMutation.isPending}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.bioText}>
+                  {userProfile.bio || 'This user has not added a bio yet.'}
+                </Text>
+              )}
             </View>
 
             {/* Profile Info Section */}
@@ -561,6 +635,11 @@ const styles = StyleSheet.create({
     marginBottom: 28, // Figma: spacing between bio and profile info
     marginTop: 0,
   },
+  bioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   bioTitle: {
     fontSize: 16, // Figma: 16px
     fontWeight: '700', // Bold
@@ -569,12 +648,37 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginBottom: 21, // Figma: spacing between title and bio text
   },
+  bioEditButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3f4f6',
+  },
   bioText: {
     fontSize: 16, // Figma: 16px
     fontWeight: '500', // Medium
     color: '#999999', // Figma: #999999
     letterSpacing: -0.32, // Figma: -0.32px
     lineHeight: 20,
+  },
+  bioEditor: {
+    gap: 12,
+  },
+  bioInputContainer: {
+    borderRadius: 12,
+  },
+  bioInputText: {
+    fontSize: 16,
+    lineHeight: 22,
+    minHeight: 96,
+  },
+  bioActions: {
+    flexDirection: 'row',
+  },
+  bioSaveButton: {
+    marginBottom: 0,
   },
   infoSection: {
     marginBottom: 0,
