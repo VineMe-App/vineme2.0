@@ -736,6 +736,64 @@ export const triggerGroupRequestSubmittedNotification = async (
 };
 
 /**
+ * Trigger cannot find group notification (to church admins)
+ */
+export const triggerCannotFindGroupReportedNotification = async (
+  data: NotificationTriggerData['cannotFindGroupReported']
+): Promise<void> => {
+  try {
+    const { data: admins, error } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('church_id', data.churchId)
+      .eq('service_id', data.serviceId)
+      .contains('roles', ['church_admin']);
+
+    if (error) {
+      console.error('Error fetching church admins:', error);
+      return;
+    }
+
+    if (!admins || admins.length === 0) {
+      console.warn('No church admins found for cannot find group notification');
+      return;
+    }
+
+    const notifications = await Promise.all(
+      admins.map(async (admin) => {
+        const settings = await getEnhancedNotificationSettings(admin.id);
+        if (settings && !settings.group_requests) {
+          return null; // Admin has disabled group request notifications
+        }
+
+        return createNotification({
+          user_id: admin.id,
+          type: 'cannot_find_group_reported',
+          title: 'No Group Fits',
+          body: `${data.userName} reported that no group fits them.`,
+          data: {
+            userId: data.userId,
+            userName: data.userName,
+            churchId: data.churchId,
+            serviceId: data.serviceId,
+          },
+          action_url: `/admin/manage-users?userId=${data.userId}`,
+        });
+      })
+    );
+
+    console.log(
+      `Cannot find group notifications sent to ${notifications.length} admins`
+    );
+  } catch (error) {
+    console.error(
+      'Error triggering cannot find group notification:',
+      error
+    );
+  }
+};
+
+/**
  * Trigger group request approved notification
  */
 export const triggerGroupRequestApprovedNotification = async (
@@ -1112,6 +1170,8 @@ export const getAllowedNotificationTypesForUser = async (
       'join_request_received',
       'join_request_approved',
       'join_request_denied',
+      'cannot_find_group_reported',
+      'referral_received',
       'referral_accepted',
       'referral_joined_group',
       'event_reminder',
@@ -1126,9 +1186,14 @@ export const getAllowedNotificationTypesForUser = async (
   }
   // Always allow group member additions until a dedicated setting is introduced
   allowed.push('group_member_added');
-  if (settings.join_requests) allowed.push('join_request_received');
+  if (settings.join_requests) {
+    allowed.push('join_request_received', 'referral_received');
+  }
   if (settings.join_request_responses) {
     allowed.push('join_request_approved', 'join_request_denied');
+  }
+  if (settings.group_requests) {
+    allowed.push('cannot_find_group_reported');
   }
   if (settings.referral_updates) {
     allowed.push('referral_accepted', 'referral_joined_group');
