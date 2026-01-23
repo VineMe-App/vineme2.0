@@ -125,13 +125,6 @@ serve(async (req: any) => {
     const churchId = referrerData.church_id;
     const serviceId = referrerData.service_id;
 
-    if (!churchId) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Referrer has no church assigned' }),
-        { status: 200 }
-      );
-    }
-
     // Check if user already exists by email or phone
     // We need to iterate through all pages to avoid missing users beyond the first 1000
     let existingUserId: string | null = null;
