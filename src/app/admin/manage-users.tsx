@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,15 +20,25 @@ import {
   AdminLoadingList,
 } from '@/components/ui/AdminLoadingStates';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { AdminPageLayout } from '@/components/admin/AdminHeader';
 import { safeGoBack } from '@/utils/navigation';
 
 export default function ManageUsersScreen() {
   const { userProfile } = useAuthStore();
+  const { tab, filter: filterParam } = useLocalSearchParams<{
+    tab?: string;
+    filter?: string;
+  }>();
   const [filter, setFilter] = useState<'all' | 'connected' | 'unconnected' | 'needs_group_help'>(
     'all'
   );
+
+  useEffect(() => {
+    if (tab === 'needs_help' || filterParam === 'needs_group_help') {
+      setFilter('needs_group_help');
+    }
+  }, [tab, filterParam]);
 
   const {
     data: users,
@@ -102,7 +112,17 @@ export default function ManageUsersScreen() {
       case 'unconnected':
         return users.filter((u: any) => !u.is_connected);
       case 'needs_group_help':
-        return users.filter((u: any) => u.cannot_find_group === true);
+        return users
+          .filter((u: any) => u.cannot_find_group === true)
+          .sort((a: any, b: any) => {
+            const aTime = a.cannot_find_group_requested_at
+              ? new Date(a.cannot_find_group_requested_at).getTime()
+              : 0;
+            const bTime = b.cannot_find_group_requested_at
+              ? new Date(b.cannot_find_group_requested_at).getTime()
+              : 0;
+            return bTime - aTime;
+          });
       default:
         return users;
     }

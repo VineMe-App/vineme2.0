@@ -254,15 +254,6 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
             </Text>
           </View>
 
-          {user.last_activity && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Last Active:</Text>
-              <Text style={styles.detailValue}>
-                {new Date(user.last_activity).toLocaleDateString()}
-              </Text>
-            </View>
-          )}
-
           {user.cannot_find_group && user.cannot_find_group_requested_at && (
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Help Requested:</Text>

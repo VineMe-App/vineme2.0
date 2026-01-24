@@ -319,6 +319,12 @@ function getNotificationTitleAndBody(notification: Notification): {
         body: `${data.referredUserName || 'Someone'} accepted your referral`,
       };
 
+    case 'cannot_find_group_reported':
+      return {
+        title: 'No group fits',
+        body: `${data.userName || 'Someone'} reported that no group fits them`,
+      };
+
     case 'referral_joined_group':
       return {
         title: 'Referral joined group',
@@ -439,6 +445,23 @@ function getNotificationMetadata(
         const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
         avatarData = {
           name: String(data.requesterName),
+          imageUrl: finalAvatarUrl || undefined,
+        };
+      }
+      break;
+
+    case 'cannot_find_group_reported':
+      if (data.userName) {
+        const userId = data.userId as string | undefined;
+        const avatarUrl = data.userAvatar as string | undefined;
+        const userData = userId ? userAvatars[userId] : null;
+        const finalAvatarUrl =
+          avatarUrl ||
+          (userData?.avatar_url && userData.avatar_url.trim()
+            ? userData.avatar_url
+            : undefined);
+        avatarData = {
+          name: String(data.userName),
           imageUrl: finalAvatarUrl || undefined,
         };
       }
