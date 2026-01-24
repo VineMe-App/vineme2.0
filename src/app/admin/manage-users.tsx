@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,15 +20,25 @@ import {
   AdminLoadingList,
 } from '@/components/ui/AdminLoadingStates';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { AdminPageLayout } from '@/components/admin/AdminHeader';
 import { safeGoBack } from '@/utils/navigation';
 
 export default function ManageUsersScreen() {
   const { userProfile } = useAuthStore();
+  const { tab, filter: filterParam } = useLocalSearchParams<{
+    tab?: string;
+    filter?: string;
+  }>();
   const [filter, setFilter] = useState<'all' | 'connected' | 'unconnected' | 'needs_group_help'>(
     'all'
   );
+
+  useEffect(() => {
+    if (tab === 'needs_help' || filterParam === 'needs_group_help') {
+      setFilter('needs_group_help');
+    }
+  }, [tab, filterParam]);
 
   const {
     data: users,

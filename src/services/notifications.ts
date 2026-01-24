@@ -777,7 +777,7 @@ export const triggerCannotFindGroupReportedNotification = async (
             churchId: data.churchId,
             serviceId: data.serviceId,
           },
-          action_url: `/admin/manage-users?userId=${data.userId}`,
+          action_url: `/admin/manage-users?tab=needs_help&userId=${data.userId}`,
         });
       })
     );
