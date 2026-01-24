@@ -112,7 +112,17 @@ export default function ManageUsersScreen() {
       case 'unconnected':
         return users.filter((u: any) => !u.is_connected);
       case 'needs_group_help':
-        return users.filter((u: any) => u.cannot_find_group === true);
+        return users
+          .filter((u: any) => u.cannot_find_group === true)
+          .sort((a: any, b: any) => {
+            const aTime = a.cannot_find_group_requested_at
+              ? new Date(a.cannot_find_group_requested_at).getTime()
+              : 0;
+            const bTime = b.cannot_find_group_requested_at
+              ? new Date(b.cannot_find_group_requested_at).getTime()
+              : 0;
+            return bTime - aTime;
+          });
       default:
         return users;
     }
