@@ -56,7 +56,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
-      package: 'com.vineme.app',
+      package: 'com.pilotlight.vineme',
       ...(isExpoGo
         ? {}
         : {
