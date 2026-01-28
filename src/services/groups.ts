@@ -511,6 +511,7 @@ export class GroupService {
               note_type: 'member_left',
               previous_status: 'active',
               new_status: 'inactive',
+              note_text: 'Left themselves',
             },
             userId
           );
@@ -641,7 +642,8 @@ export class GroupService {
           `
           *,
           user:users(id, first_name, last_name, avatar_url, newcomer),
-          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at),
+          group_membership_notes(note_type, created_at, note_text)
         `
         )
         .eq('group_id', groupId)

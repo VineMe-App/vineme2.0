@@ -171,7 +171,8 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
                       <Text style={styles.noteText}>
                         {getNoteDescription(note)}
                       </Text>
-                      {note.note_type === 'request_archived' &&
+                      {(note.note_type === 'request_archived' ||
+                        note.note_type === 'member_left') &&
                         note.note_text?.trim() && (
                           <Text style={styles.noteSubtext}>
                             {note.note_text}
