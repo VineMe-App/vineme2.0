@@ -39,6 +39,7 @@ import {
   useGroupMembership,
   useGroupMembers,
   useGroupLeaders,
+  useFriendsInGroup,
 } from '../../hooks/useGroups';
 import { useFriends } from '../../hooks/useFriendships';
 import { useAuthStore } from '../../stores/auth';
@@ -177,24 +178,38 @@ const GroupCardWithData: React.FC<{
     canSeeMembers ? group.id : undefined
   );
   const { data: leadersData } = useGroupLeaders(group.id);
+  const { data: friendsInGroupMemberships } = useFriendsInGroup(
+    group.id,
+    userProfile?.id
+  );
   const friendsQuery = useFriends(userProfile?.id);
 
   const membershipStatus = membershipData?.membership?.role || null;
 
   const friendUsers = React.useMemo(() => {
-    if (!userProfile?.id || !friendsQuery.data || !canSeeMembers) return [];
+    if (!userProfile?.id || !friendsQuery.data) return [];
 
-    const friendIds = new Set(
-      (friendsQuery.data || [])
-        .map((f) => f.friend?.id)
-        .filter((id): id is string => !!id)
-    );
+    if (friendsInGroupMemberships && friendsInGroupMemberships.length > 0) {
+      return (friendsInGroupMemberships || [])
+        .map((m: any) => m.user)
+        .filter((user: any) => user && user.id !== userProfile.id);
+    }
 
-    return (members || [])
-      .filter((m) => m.user?.id && friendIds.has(m.user.id))
-      .map((m) => m.user)
-      .filter((user): user is NonNullable<typeof user> => !!user);
-  }, [friendsQuery.data, members, userProfile?.id]);
+    if (canSeeMembers) {
+      const friendIds = new Set(
+        (friendsQuery.data || [])
+          .map((f) => f.friend?.id)
+          .filter((id): id is string => !!id)
+      );
+
+      return (members || [])
+        .filter((m) => m.user?.id && friendIds.has(m.user.id))
+        .map((m) => m.user)
+        .filter((user): user is NonNullable<typeof user> => !!user);
+    }
+
+    return [];
+  }, [friendsQuery.data, friendsInGroupMemberships, members, userProfile?.id, canSeeMembers]);
 
   const friendsInGroup = React.useMemo(
     () => friendUsers.slice(0, 3),

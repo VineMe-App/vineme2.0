@@ -259,14 +259,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   // Friends in group - use the same logic as groups list
   const friendsInGroup = useMemo(() => {
-    if (!userProfile?.id || !friendsQuery.data || !canSeeMembers) return [];
-
-    // Get friend IDs from friendships
-    const friendIds = new Set(
-      (friendsQuery.data || [])
-        .map((f) => f.friend?.id)
-        .filter((id): id is string => !!id)
-    );
+    if (!userProfile?.id || !friendsQuery.data) return [];
 
     // If we have direct friends-in-group data, use it and extract users
     if (friendsInGroupMemberships && friendsInGroupMemberships.length > 0) {
@@ -277,6 +270,12 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
     // Fallback to filtering all members by friendship (only when allowed)
     if (canSeeMembers && allMembers && allMembers.length > 0) {
+      const friendIds = new Set(
+        (friendsQuery.data || [])
+          .map((f) => f.friend?.id)
+          .filter((id): id is string => !!id)
+      );
+
       return (allMembers || [])
         .filter(
           (m) => m.status === 'active' && m.user?.id && friendIds.has(m.user.id)
@@ -291,6 +290,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     friendsQuery.data,
     allMembers,
     userProfile?.id,
+    canSeeMembers,
   ]);
 
   // Check if user has a pending join request for this group
