@@ -313,7 +313,7 @@ export class GroupService {
         .select('id, status')
         .eq('group_id', groupId)
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       let data: any = null;
       let error: any = null;
@@ -349,7 +349,7 @@ export class GroupService {
             })
             .eq('id', existingMembership.id)
             .select()
-            .single();
+            .maybeSingle();
 
           data = updateResult.data;
           error = updateResult.error;
@@ -366,7 +366,7 @@ export class GroupService {
             joined_at: null, // Must be null for pending status (required by constraint)
           })
           .select()
-          .single();
+          .maybeSingle();
 
         data = insertResult.data;
         error = insertResult.error;
