@@ -171,6 +171,12 @@ export const MembershipNotesSection: React.FC<MembershipNotesSectionProps> = ({
                       <Text style={styles.noteText}>
                         {getNoteDescription(note)}
                       </Text>
+                      {note.note_type === 'request_archived' &&
+                        note.note_text?.trim() && (
+                          <Text style={styles.noteSubtext}>
+                            {note.note_text}
+                          </Text>
+                        )}
                       <View style={styles.noteMeta}>
                         <Text style={styles.noteAuthor}>
                           {note.created_by?.name || 'Unknown'}
@@ -320,6 +326,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1f2937',
     lineHeight: 20,
+    marginBottom: 4,
+  },
+  noteSubtext: {
+    fontSize: 12,
+    color: '#6b7280',
+    lineHeight: 18,
     marginBottom: 4,
   },
   noteMeta: {
