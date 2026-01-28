@@ -235,8 +235,10 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     group.id,
     userProfile?.id
   );
-  // Also fetch all members for friends calculation (this is public data)
-  const { data: allMembers } = useGroupMembers(group.id);
+  // Only fetch full membership list when allowed to see members
+  const { data: allMembers } = useGroupMembers(
+    canSeeMembers ? group.id : undefined
+  );
 
   const leaders = leadersData || [];
   const regularMembers = (members || []).filter(
@@ -257,7 +259,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
 
   // Friends in group - use the same logic as groups list
   const friendsInGroup = useMemo(() => {
-    if (!userProfile?.id || !friendsQuery.data) return [];
+    if (!userProfile?.id || !friendsQuery.data || !canSeeMembers) return [];
 
     // Get friend IDs from friendships
     const friendIds = new Set(
@@ -273,8 +275,8 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
         .filter((user: any) => user && user.id !== userProfile.id);
     }
 
-    // Fallback to filtering all members by friendship (same as groups list)
-    if (allMembers && allMembers.length > 0) {
+    // Fallback to filtering all members by friendship (only when allowed)
+    if (canSeeMembers && allMembers && allMembers.length > 0) {
       return (allMembers || [])
         .filter(
           (m) => m.status === 'active' && m.user?.id && friendIds.has(m.user.id)
