@@ -257,6 +257,11 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const isGroupLeader = userMembership?.role === 'leader';
   // removed duplicate isChurchAdminForService
 
+  const handleLeaderPress = (leaderId?: string) => {
+    if (!leaderId) return;
+    router.push(`/user/${leaderId}`);
+  };
+
   // Friends in group - use the same logic as groups list
   const friendsInGroup = useMemo(() => {
     if (!userProfile?.id || !friendsQuery.data) return [];
@@ -424,11 +429,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                           },
                         ]}
                       >
-                        <Avatar
-                          imageUrl={leaderUsers[0]?.avatar_url}
-                          name={leaderUsers[0]?.name || undefined}
-                          size={60}
-                        />
+                        <TouchableOpacity
+                          onPress={() => handleLeaderPress(leaderUsers[0]?.id)}
+                          activeOpacity={0.8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`View ${leaderUsers[0]?.name || 'leader'} profile`}
+                        >
+                          <Avatar
+                            imageUrl={leaderUsers[0]?.avatar_url}
+                            name={leaderUsers[0]?.name || undefined}
+                            size={60}
+                          />
+                        </TouchableOpacity>
                       </View>
                     );
                   } else if (leaderUsers.length === 2) {
@@ -446,11 +458,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                             },
                           ]}
                         >
-                          <Avatar
-                            imageUrl={leaderUsers[0]?.avatar_url}
-                            name={leaderUsers[0]?.name || undefined}
-                            size={50}
-                          />
+                          <TouchableOpacity
+                            onPress={() => handleLeaderPress(leaderUsers[0]?.id)}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`View ${leaderUsers[0]?.name || 'leader'} profile`}
+                          >
+                            <Avatar
+                              imageUrl={leaderUsers[0]?.avatar_url}
+                              name={leaderUsers[0]?.name || undefined}
+                              size={50}
+                            />
+                          </TouchableOpacity>
                         </View>
                         <View
                           style={[
@@ -462,11 +481,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                             },
                           ]}
                         >
-                          <Avatar
-                            imageUrl={leaderUsers[1]?.avatar_url}
-                            name={leaderUsers[1]?.name || undefined}
-                            size={50}
-                          />
+                          <TouchableOpacity
+                            onPress={() => handleLeaderPress(leaderUsers[1]?.id)}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`View ${leaderUsers[1]?.name || 'leader'} profile`}
+                          >
+                            <Avatar
+                              imageUrl={leaderUsers[1]?.avatar_url}
+                              name={leaderUsers[1]?.name || undefined}
+                              size={50}
+                            />
+                          </TouchableOpacity>
                         </View>
                       </View>
                     );
@@ -486,11 +512,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                               },
                             ]}
                           >
-                            <Avatar
-                              imageUrl={leaderUsers[0]?.avatar_url}
-                              name={leaderUsers[0]?.name || undefined}
-                              size={50}
-                            />
+                            <TouchableOpacity
+                              onPress={() => handleLeaderPress(leaderUsers[0]?.id)}
+                              activeOpacity={0.8}
+                              accessibilityRole="button"
+                              accessibilityLabel={`View ${leaderUsers[0]?.name || 'leader'} profile`}
+                            >
+                              <Avatar
+                                imageUrl={leaderUsers[0]?.avatar_url}
+                                name={leaderUsers[0]?.name || undefined}
+                                size={50}
+                              />
+                            </TouchableOpacity>
                           </View>
                           <View
                             style={[
@@ -502,11 +535,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                               },
                             ]}
                           >
-                            <Avatar
-                              imageUrl={leaderUsers[1]?.avatar_url}
-                              name={leaderUsers[1]?.name || undefined}
-                              size={50}
-                            />
+                            <TouchableOpacity
+                              onPress={() => handleLeaderPress(leaderUsers[1]?.id)}
+                              activeOpacity={0.8}
+                              accessibilityRole="button"
+                              accessibilityLabel={`View ${leaderUsers[1]?.name || 'leader'} profile`}
+                            >
+                              <Avatar
+                                imageUrl={leaderUsers[1]?.avatar_url}
+                                name={leaderUsers[1]?.name || undefined}
+                                size={50}
+                              />
+                            </TouchableOpacity>
                           </View>
                         </View>
                         <View style={[styles.pyramidRow, { marginTop: -8 }]}>
@@ -521,11 +561,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                               },
                             ]}
                           >
-                            <Avatar
-                              imageUrl={leaderUsers[2]?.avatar_url}
-                              name={leaderUsers[2]?.name || undefined}
-                              size={50}
-                            />
+                            <TouchableOpacity
+                              onPress={() => handleLeaderPress(leaderUsers[2]?.id)}
+                              activeOpacity={0.8}
+                              accessibilityRole="button"
+                              accessibilityLabel={`View ${leaderUsers[2]?.name || 'leader'} profile`}
+                            >
+                              <Avatar
+                                imageUrl={leaderUsers[2]?.avatar_url}
+                                name={leaderUsers[2]?.name || undefined}
+                                size={50}
+                              />
+                            </TouchableOpacity>
                           </View>
                         </View>
                       </View>
@@ -550,11 +597,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                                 },
                               ]}
                             >
-                              <Avatar
-                                imageUrl={leader?.avatar_url}
-                                name={leader?.name || undefined}
-                                size={50}
-                              />
+                              <TouchableOpacity
+                                onPress={() => handleLeaderPress(leader?.id)}
+                                activeOpacity={0.8}
+                                accessibilityRole="button"
+                                accessibilityLabel={`View ${leader?.name || 'leader'} profile`}
+                              >
+                                <Avatar
+                                  imageUrl={leader?.avatar_url}
+                                  name={leader?.name || undefined}
+                                  size={50}
+                                />
+                              </TouchableOpacity>
                             </View>
                           ))}
                         </View>
@@ -576,11 +630,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                                   },
                                 ]}
                               >
-                                <Avatar
-                                  imageUrl={leader?.avatar_url}
-                                  name={leader?.name || undefined}
-                                  size={50}
-                                />
+                                <TouchableOpacity
+                                  onPress={() => handleLeaderPress(leader?.id)}
+                                  activeOpacity={0.8}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`View ${leader?.name || 'leader'} profile`}
+                                >
+                                  <Avatar
+                                    imageUrl={leader?.avatar_url}
+                                    name={leader?.name || undefined}
+                                    size={50}
+                                  />
+                                </TouchableOpacity>
                               </View>
                             ))
                           ) : (
@@ -598,11 +659,18 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                                   },
                                 ]}
                               >
-                                <Avatar
-                                  imageUrl={leaderUsers[2]?.avatar_url}
-                                  name={leaderUsers[2]?.name || undefined}
-                                  size={50}
-                                />
+                                <TouchableOpacity
+                                  onPress={() => handleLeaderPress(leaderUsers[2]?.id)}
+                                  activeOpacity={0.8}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`View ${leaderUsers[2]?.name || 'leader'} profile`}
+                                >
+                                  <Avatar
+                                    imageUrl={leaderUsers[2]?.avatar_url}
+                                    name={leaderUsers[2]?.name || undefined}
+                                    size={50}
+                                  />
+                                </TouchableOpacity>
                               </View>
                               <View
                                 style={[
