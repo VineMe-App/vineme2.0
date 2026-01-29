@@ -49,8 +49,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           }),
       // Configure FCM for Android push notifications (optional)
       // Provide via EAS file env var GOOGLE_SERVICES_JSON when ready
-      ...(process.env.GOOGLE_SERVICES_JSON
-        ? { googleServicesFile: process.env.GOOGLE_SERVICES_JSON }
+      ...(process.env.GOOGLE_SERVICES_JSON_2
+        ? { googleServicesFile: process.env.GOOGLE_SERVICES_JSON_2 }
         : {}),
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
