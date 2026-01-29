@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,7 @@ import { OptimizedImage } from '../components/ui/OptimizedImage';
 import { GroupPlaceholderImage } from '../components/ui/GroupPlaceholderImage';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { safeGoBack } from '@/utils/navigation';
+import { AuthLoadingAnimation } from '../components/auth/AuthLoadingAnimation';
 
 const COUNTRIES: Country[] = [
   { name: 'United Kingdom', code: '+44', flag: '🇬🇧' },
@@ -69,6 +70,7 @@ export default function ReferralPage() {
 
   // Fetch group data if groupId is provided
   const { data: group, isLoading: groupLoading } = useGroup(groupId);
+  const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
 
   const formConfig = useMemo(
     () =>
@@ -147,6 +149,7 @@ export default function ReferralPage() {
 
   const handleSubmit = useCallback(
     async (values: Record<string, any>) => {
+      setIsSubmittingReferral(true);
       try {
         if (!userProfile?.id) {
           Alert.alert(
@@ -198,6 +201,8 @@ export default function ReferralPage() {
             ? error.message
             : 'Failed to send referral. Please try again.'
         );
+      } finally {
+        setIsSubmittingReferral(false);
       }
     },
     [userProfile?.id, groupId, isGroupReferral, router]
@@ -504,6 +509,15 @@ export default function ReferralPage() {
           <SubmitButton onSubmit={handleSubmit} />
         </Form>
       </ScrollView>
+
+      {isSubmittingReferral && (
+        <View style={styles.submittingOverlay} pointerEvents="auto">
+          <View style={styles.submittingBackdrop} />
+          <View style={styles.submittingContent}>
+            <AuthLoadingAnimation />
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -582,7 +596,7 @@ const SubmitButton: React.FC<{
       activeOpacity={0.8}
     >
       <Text style={styles.submitButtonText}>
-        {isSubmitting ? 'Submitting...' : 'Submit request'}
+        {isSubmitting ? 'Submitting...' : 'Submit referral'}
       </Text>
     </TouchableOpacity>
   );
@@ -925,5 +939,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Figtree-Bold',
     fontWeight: 'bold',
+  },
+  submittingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 50,
+  },
+  submittingBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  submittingContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    borderRadius: 16,
   },
 });
