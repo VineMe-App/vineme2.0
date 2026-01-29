@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router, useNavigation } from 'expo-router';
@@ -27,6 +29,94 @@ import { getDisplayName, getFullName } from '@/utils/name';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
 import { GroupPlaceholderImage } from '@/components/ui/GroupPlaceholderImage';
+
+const formatJoinDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `Joined in ${month} ${year}`;
+};
+
+const ProfileGroupCard: React.FC<{
+  membership: any;
+  canNavigate: boolean;
+}> = ({ membership, canNavigate }) => {
+  const pressAnim = React.useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = React.useCallback(() => {
+    if (canNavigate) return;
+    Animated.timing(pressAnim, {
+      toValue: 1,
+      duration: 120,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [canNavigate, pressAnim]);
+
+  const handlePressOut = React.useCallback(() => {
+    if (canNavigate) return;
+    Animated.timing(pressAnim, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [canNavigate, pressAnim]);
+
+  const pulseOpacity = pressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.18],
+  });
+
+  return (
+    <TouchableOpacity
+      style={styles.groupCardWrapper}
+      onPress={
+        canNavigate && membership.group?.id
+          ? () => router.push(`/group/${membership.group.id}`)
+          : undefined
+      }
+      activeOpacity={0.7}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      {!canNavigate && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFillObject as any,
+            styles.groupCardPulse,
+            { opacity: pulseOpacity },
+          ]}
+        />
+      )}
+      <View style={styles.groupCard}>
+        <View style={styles.groupCardImageContainer}>
+          {membership.group?.image_url ? (
+            <OptimizedImage
+              source={{ uri: membership.group.image_url }}
+              style={styles.groupCardImage}
+              containerStyle={styles.groupCardImageContainer}
+              quality="medium"
+              lazy={true}
+              resizeMode="cover"
+            />
+          ) : (
+            <GroupPlaceholderImage style={styles.groupCardImage} />
+          )}
+        </View>
+        <View style={styles.groupCardContent}>
+          <Text style={styles.groupCardTitle} numberOfLines={2}>
+            {membership.group?.title || 'Unknown Group'}
+          </Text>
+          <Text style={styles.groupJoinDate}>
+            {formatJoinDate(membership.joined_at)}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export default function OtherUserProfileScreen() {
   const [imageModalVisible, setImageModalVisible] = useState(false);
@@ -68,6 +158,12 @@ export default function OtherUserProfileScreen() {
   }, [fromNotification, friendshipStatusQuery.refetch]);
 
   // Filter memberships based on visibility rules
+  const isViewerAdmin =
+    currentUserProfile?.roles?.includes('church_admin') ||
+    currentUserProfile?.roles?.includes('superadmin');
+  const isFriend = friendshipStatusQuery.data?.status === 'accepted';
+  const canNavigateGroups = isSelf || isViewerAdmin || isFriend;
+
   const visibleMemberships = useMemo(() => {
     if (!memberships || memberships.length === 0) return [];
 
@@ -82,14 +178,6 @@ export default function OtherUserProfileScreen() {
     if (isSelf) return activeInActiveGroups;
 
     // Check if viewer is admin or clergy (church_admin or superadmin)
-    const isViewerAdmin =
-      currentUserProfile?.roles?.includes('church_admin') ||
-      currentUserProfile?.roles?.includes('superadmin');
-
-    // Check if viewer is friends with profile owner
-    const isFriend =
-      friendshipStatusQuery.data?.status === 'accepted';
-
     // If viewer is admin/clergy or friend, show all active memberships in active groups
     if (isViewerAdmin || isFriend) {
       return activeInActiveGroups;
@@ -102,8 +190,8 @@ export default function OtherUserProfileScreen() {
   }, [
     memberships,
     isSelf,
-    currentUserProfile?.roles,
-    friendshipStatusQuery.data?.status,
+    isViewerAdmin,
+    isFriend,
   ]);
   const profileFullName = getFullName(profile);
   const profileShortName = getDisplayName(profile, { fallback: 'full' });
@@ -172,13 +260,6 @@ export default function OtherUserProfileScreen() {
       month: '2-digit',
       year: 'numeric',
     });
-  };
-
-  const formatJoinDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const month = date.toLocaleDateString('en-US', { month: 'long' });
-    const year = date.getFullYear();
-    return `Joined in ${month} ${year}`;
   };
 
   const ActionButton = () => {
@@ -377,39 +458,11 @@ export default function OtherUserProfileScreen() {
               <View style={styles.groupsSection}>
                 <Text style={styles.groupsTitle}>Groups</Text>
                 {visibleMemberships.map((m: any) => (
-                  <TouchableOpacity
+                  <ProfileGroupCard
                     key={m.id}
-                    style={styles.groupCardWrapper}
-                    onPress={() =>
-                      m.group?.id && router.push(`/group/${m.group.id}`)
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.groupCard}>
-                      <View style={styles.groupCardImageContainer}>
-                        {m.group?.image_url ? (
-                          <OptimizedImage
-                            source={{ uri: m.group.image_url }}
-                            style={styles.groupCardImage}
-                            containerStyle={styles.groupCardImageContainer}
-                            quality="medium"
-                            lazy={true}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <GroupPlaceholderImage style={styles.groupCardImage} />
-                        )}
-                      </View>
-                      <View style={styles.groupCardContent}>
-                        <Text style={styles.groupCardTitle} numberOfLines={2}>
-                        {m.group?.title || 'Unknown Group'}
-                      </Text>
-                        <Text style={styles.groupJoinDate}>
-                          {formatJoinDate(m.joined_at)}
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
+                    membership={m}
+                    canNavigate={canNavigateGroups}
+                  />
                 ))}
               </View>
             )}
@@ -611,6 +664,10 @@ const styles = StyleSheet.create({
   },
   groupCardWrapper: {
     marginBottom: 16,
+  },
+  groupCardPulse: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
   },
   groupCard: {
     flexDirection: 'row',
