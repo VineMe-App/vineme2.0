@@ -492,7 +492,7 @@ export class GroupService {
 
       const { error } = await supabase
         .from('group_memberships')
-        .update({ status: 'inactive' })
+        .update({ status: 'inactive', role: 'member' })
         .eq('group_id', groupId)
         .eq('user_id', userId);
 
