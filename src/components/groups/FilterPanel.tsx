@@ -14,6 +14,7 @@ import { useTheme } from '../../theme/provider/useTheme';
 interface FilterPanelProps {
   isVisible: boolean;
   onClose: () => void;
+  canFilterByChurch: boolean;
 }
 
 const MEETING_DAYS = [
@@ -29,6 +30,7 @@ const MEETING_DAYS = [
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   isVisible,
   onClose,
+  canFilterByChurch,
 }) => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -37,6 +39,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setMeetingDays,
     setOnlyWithFriends,
     setHideFullGroups,
+    setOnlyMyChurch,
     clearFilters,
   } = useGroupFiltersStore();
 
@@ -70,12 +73,17 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setTempFilters({ ...tempFilters, hideFullGroups: !tempFilters.hideFullGroups });
   };
 
+  const handleOnlyMyChurchToggle = () => {
+    setTempFilters({ ...tempFilters, onlyMyChurch: !tempFilters.onlyMyChurch });
+  };
+
   const handleReset = () => {
     setTempFilters({
       meetingDays: [],
       searchQuery: '',
       onlyWithFriends: false,
       hideFullGroups: false,
+      onlyMyChurch: false,
     });
     clearFilters();
   };
@@ -85,6 +93,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     setMeetingDays(tempFilters.meetingDays);
     setOnlyWithFriends(tempFilters.onlyWithFriends);
     setHideFullGroups(tempFilters.hideFullGroups);
+    setOnlyMyChurch(tempFilters.onlyMyChurch);
     onClose();
   };
 
@@ -191,6 +200,30 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               </TouchableOpacity>
             </View>
           </View>
+
+          {canFilterByChurch && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Church</Text>
+              <View style={styles.buttonGrid}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    tempFilters.onlyMyChurch && styles.filterButtonActive,
+                  ]}
+                  onPress={handleOnlyMyChurchToggle}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      tempFilters.onlyMyChurch && styles.filterButtonTextActive,
+                    ]}
+                  >
+                    Only my church
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </ScrollView>
 
         {/* Action Buttons */}
