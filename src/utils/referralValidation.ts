@@ -14,6 +14,7 @@ export interface ReferralFormData {
   lastName?: string;
   groupId?: string;
   referrerId?: string;
+  isExistingMember?: boolean;
 }
 
 export interface ReferralRateLimitInfo {
@@ -394,6 +395,7 @@ export function sanitizeReferralInput(
     lastName: data.lastName?.trim().substring(0, 50),
     groupId: data.groupId, // Include groupId
     referrerId: data.referrerId, // Include referrerId
+    isExistingMember: data.isExistingMember,
   };
 }
 

@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  Switch,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -135,6 +137,10 @@ export default function ReferralPage() {
           initialValue: '',
           rules: { maxLength: 500 },
         },
+        isExistingMember: {
+          initialValue: false,
+          rules: {},
+        },
       }) as const,
     []
   );
@@ -162,6 +168,9 @@ export default function ReferralPage() {
             : undefined,
           lastName: values.lastName
             ? String(values.lastName).trim()
+            : undefined,
+          isExistingMember: isGroupReferral
+            ? Boolean(values.isExistingMember)
             : undefined,
         };
 
@@ -460,6 +469,30 @@ export default function ReferralPage() {
               </View>
             )}
           </FormField>
+
+          {/* Footer Note */}
+          {isGroupReferral && (
+            <FormField name="isExistingMember">
+              {({ value, onChange }) => (
+                <View style={styles.fieldContainer}>
+                  <View style={styles.existingMemberRow}>
+                    <Text style={styles.existingMemberLabel} numberOfLines={1}>
+                      Is this person already in a group / leading a group?
+                    </Text>
+                    <Switch
+                      value={Boolean(value)}
+                      onValueChange={onChange}
+                      trackColor={{ false: '#EAEAEA', true: '#2C2235' }}
+                      thumbColor="#FFFFFF"
+                      ios_backgroundColor="#EAEAEA"
+                      accessibilityLabel="Existing member toggle"
+                      style={styles.existingMemberSwitch}
+                    />
+                  </View>
+                </View>
+              )}
+            </FormField>
+          )}
 
           {/* Footer Note */}
           <Text style={styles.footerNote}>
@@ -833,6 +866,25 @@ const styles = StyleSheet.create({
     fontFamily: 'Figtree-Medium',
     fontWeight: '500',
     marginTop: 8,
+  },
+  existingMemberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 6,
+  },
+  existingMemberLabel: {
+    flex: 1,
+    fontSize: Platform.OS === 'android' ? 11 : 12,
+    letterSpacing: -0.24,
+    lineHeight: Platform.OS === 'android' ? 14 : 16,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Regular',
+    flexShrink: 1,
+  },
+  existingMemberSwitch: {
+    transform: [{ scale: Platform.OS === 'android' ? 1.2 : 1 }],
   },
   errorText: {
     fontSize: 12,
