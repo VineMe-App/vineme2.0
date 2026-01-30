@@ -27,6 +27,7 @@ export interface CreateReferralData {
   lastName?: string;
   groupId?: string;
   referrerId: string;
+  isExistingMember?: boolean;
 }
 
 export interface ReferralError {
@@ -485,6 +486,7 @@ export class ReferralService {
         note: data.note,
         referrerId: data.referrerId,
         groupId: data.groupId,
+        isExistingMember: data.isExistingMember,
       };
 
       console.log(
