@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 import { authService } from './auth';
-import { triggerReferralAcceptedNotification } from './notifications';
 import type {
   GroupReferralWithDetails,
   GeneralReferralWithDetails,
@@ -17,7 +16,6 @@ import {
   referralRateLimiter,
   createReferralErrorMessage,
 } from '../utils/referralValidation';
-import { getFullName } from '../utils/name';
 
 export interface CreateReferralData {
   email: string;
@@ -27,6 +25,7 @@ export interface CreateReferralData {
   lastName?: string;
   groupId?: string;
   referrerId: string;
+  isExistingMember?: boolean;
 }
 
 export interface ReferralError {
@@ -243,26 +242,6 @@ export class ReferralService {
       const userId = accountResult.userId;
       const warnings = this.formatWarnings(accountResult.warnings);
 
-      // Trigger referral accepted notification to referrer
-      try {
-        // Try to obtain referred user's name
-        const { data: referredUser } = await supabase
-          .from('users')
-          .select('id, first_name, last_name')
-          .eq('id', userId)
-          .single();
-        await triggerReferralAcceptedNotification({
-          referrerId: data.referrerId,
-          referredUserId: userId,
-          referredUserName:
-            getFullName(referredUser) ||
-            data.firstName ||
-            data.email.split('@')[0],
-        });
-      } catch (e) {
-        if (__DEV__) console.warn('Referral accepted notification failed', e);
-      }
-
       return {
         success: true,
         userId,
@@ -311,25 +290,6 @@ export class ReferralService {
 
       const userId = accountResult.userId;
       const warnings = this.formatWarnings(accountResult.warnings);
-
-      // Trigger referral accepted notification to referrer
-      try {
-        const { data: referredUser } = await supabase
-          .from('users')
-          .select('id, first_name, last_name')
-          .eq('id', userId)
-          .single();
-        await triggerReferralAcceptedNotification({
-          referrerId: data.referrerId,
-          referredUserId: userId,
-          referredUserName:
-            getFullName(referredUser) ||
-            data.firstName ||
-            data.email.split('@')[0],
-        });
-      } catch (e) {
-        if (__DEV__) console.warn('Referral accepted notification failed', e);
-      }
 
       return {
         success: true,
@@ -485,6 +445,7 @@ export class ReferralService {
         note: data.note,
         referrerId: data.referrerId,
         groupId: data.groupId,
+        isExistingMember: data.isExistingMember,
       };
 
       console.log(

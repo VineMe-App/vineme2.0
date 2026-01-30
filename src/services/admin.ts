@@ -5,7 +5,7 @@ import {
   triggerGroupRequestDeniedNotification,
   triggerJoinRequestApprovedNotification,
   triggerJoinRequestDeniedNotification,
-  triggerReferralJoinedGroupNotification,
+  triggerReferralAcceptedNotification,
 } from './notifications';
 import { getFullName } from '../utils/name';
 import {
@@ -747,21 +747,25 @@ export class GroupAdminService {
             approvedByName: approverName,
           });
 
-          // Check for referral linking this user and group
-          const { data: groupReferral } = await supabase
+          // Check for referrals linking this user and group
+          const { data: groupReferrals } = await supabase
             .from('referrals')
             .select('referred_by_user_id')
             .eq('referred_user_id', userRes.data.id)
-            .eq('group_id', groupRes.data.id)
-            .maybeSingle();
-          if (groupReferral?.referred_by_user_id) {
-            await triggerReferralJoinedGroupNotification({
-              referrerId: groupReferral.referred_by_user_id,
-              referredUserId: userRes.data.id,
-              referredUserName: requesterName || 'A member',
-              groupId: groupRes.data.id,
-              groupTitle: groupRes.data.title,
-            });
+            .eq('group_id', groupRes.data.id);
+          if (groupReferrals && groupReferrals.length > 0) {
+            await Promise.all(
+              groupReferrals
+                .map((referral) => referral.referred_by_user_id)
+                .filter(Boolean)
+                .map((referrerId) =>
+                  triggerReferralAcceptedNotification({
+                    referrerId,
+                    referredUserId: userRes.data.id,
+                    referredUserName: requesterName || 'A member',
+                  })
+                )
+            );
           }
         }
       } catch (e) {

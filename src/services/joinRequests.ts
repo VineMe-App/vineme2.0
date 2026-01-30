@@ -5,6 +5,7 @@ import {
   triggerJoinRequestApprovedNotification,
   triggerJoinRequestDeniedNotification,
   triggerJoinRequestReceivedNotification,
+  triggerReferralAcceptedNotification,
 } from './notifications';
 import { getFullName } from '../utils/name';
 import type {
@@ -479,6 +480,31 @@ export class JoinRequestService {
             requesterId: userRes.data.id,
             approvedByName,
           });
+
+          const { data: referrals } = await supabase
+            .from('referrals')
+            .select('referred_by_user_id')
+            .eq('referred_user_id', membershipRecord.user_id)
+            .eq('group_id', membershipRecord.group_id);
+
+          if (referrals && referrals.length > 0) {
+            const referredUserName =
+              getFullName(userRes.data) ||
+              undefined;
+
+            await Promise.all(
+              referrals
+                .map((referral) => referral.referred_by_user_id)
+                .filter(Boolean)
+                .map((referrerId) =>
+                  triggerReferralAcceptedNotification({
+                    referrerId,
+                    referredUserId: membershipRecord.user_id,
+                    referredUserName: referredUserName || 'A member',
+                  })
+                )
+            );
+          }
         }
       } catch (e) {
         if (__DEV__) console.warn('Failed to trigger approval notification', e);
