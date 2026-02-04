@@ -39,7 +39,7 @@ export class JoinRequestService {
         .select('id, status')
         .eq('group_id', requestData.group_id)
         .eq('user_id', requestData.user_id)
-        .single();
+        .maybeSingle();
 
       let data: any = null;
       let error: any = null;
@@ -76,7 +76,7 @@ export class JoinRequestService {
             })
             .eq('id', existingMembership.id)
             .select()
-            .single();
+            .maybeSingle();
 
           data = updateResult.data;
           error = updateResult.error;
@@ -121,7 +121,7 @@ export class JoinRequestService {
             //contact_consent: requestData.contact_consent || false,
           })
           .select()
-          .single();
+          .maybeSingle();
 
         data = insertResult.data;
         error = insertResult.error;

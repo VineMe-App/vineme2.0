@@ -13,6 +13,7 @@ import { OptimizedImage } from '../ui/OptimizedImage';
 import { Avatar } from '../ui/Avatar';
 import { GroupPlaceholderImage } from '../ui/GroupPlaceholderImage';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { locationService } from '../../services/location';
 import { useTheme } from '../../theme/provider/useTheme';
 
@@ -54,6 +55,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   // Guard against null/undefined groups coming from callers
   if (!group) return null;
 
+  const router = useRouter();
   const { theme } = useTheme();
 
   const churchName = group?.church?.name?.trim();
@@ -96,6 +98,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     if (!currentUserId || !leaders) return false;
     return leaders.some((leader) => leader.id === currentUserId);
   }, [currentUserId, leaders]);
+
+  const handleLeaderPress = (leader?: User) => {
+    if (!leader?.id) return;
+    router.push(`/user/${leader.id}`);
+  };
   
   const badgeLabel = hasCustomPending
     ? pendingLabel || 'Join request pending'
@@ -439,11 +446,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   },
                 ]}
               >
-                <Avatar
-                  imageUrl={leaders[0].avatar_url}
-                  name={leaders[0].name || undefined}
-                  size={60}
-                />
+                <TouchableOpacity
+                  onPress={() => handleLeaderPress(leaders[0])}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${leaders[0].name || 'leader'} profile`}
+                >
+                  <Avatar
+                    imageUrl={leaders[0].avatar_url}
+                    name={leaders[0].name || undefined}
+                    size={60}
+                  />
+                </TouchableOpacity>
               </View>
             ) : leaders.length === 2 ? (
               // Two leaders - side by side positioning
@@ -459,11 +473,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                     },
                   ]}
                 >
-                  <Avatar
-                    imageUrl={leaders[0].avatar_url}
-                    name={leaders[0].name || undefined}
-                    size={50}
-                  />
+                  <TouchableOpacity
+                    onPress={() => handleLeaderPress(leaders[0])}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${leaders[0].name || 'leader'} profile`}
+                  >
+                    <Avatar
+                      imageUrl={leaders[0].avatar_url}
+                      name={leaders[0].name || undefined}
+                      size={50}
+                    />
+                  </TouchableOpacity>
                 </View>
                 <View
                   style={[
@@ -475,11 +496,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                     },
                   ]}
                 >
-                  <Avatar
-                    imageUrl={leaders[1].avatar_url}
-                    name={leaders[1].name || undefined}
-                    size={50}
-                  />
+                  <TouchableOpacity
+                    onPress={() => handleLeaderPress(leaders[1])}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${leaders[1].name || 'leader'} profile`}
+                  >
+                    <Avatar
+                      imageUrl={leaders[1].avatar_url}
+                      name={leaders[1].name || undefined}
+                      size={50}
+                    />
+                  </TouchableOpacity>
                 </View>
               </View>
             ) : leaders.length === 3 ? (
@@ -497,11 +525,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                       },
                     ]}
                   >
-                    <Avatar
-                      imageUrl={leaders[0].avatar_url}
-                      name={leaders[0].name || undefined}
-                      size={50}
-                    />
+                    <TouchableOpacity
+                      onPress={() => handleLeaderPress(leaders[0])}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View ${leaders[0].name || 'leader'} profile`}
+                    >
+                      <Avatar
+                        imageUrl={leaders[0].avatar_url}
+                        name={leaders[0].name || undefined}
+                        size={50}
+                      />
+                    </TouchableOpacity>
                   </View>
                   <View
                     style={[
@@ -513,11 +548,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                       },
                     ]}
                   >
-                    <Avatar
-                      imageUrl={leaders[1].avatar_url}
-                      name={leaders[1].name || undefined}
-                      size={50}
-                    />
+                    <TouchableOpacity
+                      onPress={() => handleLeaderPress(leaders[1])}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View ${leaders[1].name || 'leader'} profile`}
+                    >
+                      <Avatar
+                        imageUrl={leaders[1].avatar_url}
+                        name={leaders[1].name || undefined}
+                        size={50}
+                      />
+                    </TouchableOpacity>
                   </View>
                 </View>
                 <View style={[styles.pyramidRow, { marginTop: -8 }]}>
@@ -532,11 +574,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                       },
                     ]}
                   >
-                    <Avatar
-                      imageUrl={leaders[2].avatar_url}
-                      name={leaders[2].name || undefined}
-                      size={50}
-                    />
+                    <TouchableOpacity
+                      onPress={() => handleLeaderPress(leaders[2])}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View ${leaders[2].name || 'leader'} profile`}
+                    >
+                      <Avatar
+                        imageUrl={leaders[2].avatar_url}
+                        name={leaders[2].name || undefined}
+                        size={50}
+                      />
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
@@ -559,11 +608,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                         },
                       ]}
                     >
-                      <Avatar
-                        imageUrl={leader.avatar_url}
-                        name={leader.name || undefined}
-                        size={50}
-                      />
+                      <TouchableOpacity
+                        onPress={() => handleLeaderPress(leader)}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View ${leader.name || 'leader'} profile`}
+                      >
+                        <Avatar
+                          imageUrl={leader.avatar_url}
+                          name={leader.name || undefined}
+                          size={50}
+                        />
+                      </TouchableOpacity>
                     </View>
                   ))}
                 </View>
@@ -585,11 +641,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                           },
                         ]}
                       >
-                        <Avatar
-                          imageUrl={leader.avatar_url}
-                          name={leader.name || undefined}
-                          size={50}
-                        />
+                        <TouchableOpacity
+                          onPress={() => handleLeaderPress(leader)}
+                          activeOpacity={0.8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`View ${leader.name || 'leader'} profile`}
+                        >
+                          <Avatar
+                            imageUrl={leader.avatar_url}
+                            name={leader.name || undefined}
+                            size={50}
+                          />
+                        </TouchableOpacity>
                       </View>
                     ))
                   ) : (
@@ -607,11 +670,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                           },
                         ]}
                       >
-                        <Avatar
-                          imageUrl={leaders[2].avatar_url}
-                          name={leaders[2].name || undefined}
-                          size={50}
-                        />
+                        <TouchableOpacity
+                          onPress={() => handleLeaderPress(leaders[2])}
+                          activeOpacity={0.8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`View ${leaders[2].name || 'leader'} profile`}
+                        >
+                          <Avatar
+                            imageUrl={leaders[2].avatar_url}
+                            name={leaders[2].name || undefined}
+                            size={50}
+                          />
+                        </TouchableOpacity>
                       </View>
                       <View
                         style={[

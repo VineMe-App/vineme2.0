@@ -425,41 +425,35 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
             {membersLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <ScrollView
-                style={styles.membersScrollView}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.membersList}>
-                  {regularMembers.map((member) => (
-                    <TouchableOpacity
-                      key={member.id}
-                      style={styles.memberItem}
-                      onPress={() => handleMemberClick(member)}
-                      activeOpacity={0.7}
-                    >
-                      <Avatar
-                        size={40}
-                        imageUrl={member.user?.avatar_url}
-                        name={member.user?.name || 'Unknown'}
-                      />
-                      <View style={styles.memberInfo}>
-                        <Text style={styles.memberName}>
-                          {member.user?.name || 'Unknown'}
-                        </Text>
-                        <Text style={styles.memberJoinDate}>
-                          Joined{' '}
-                          {new Date(member.joined_at).toLocaleDateString()}
-                        </Text>
-                      </View>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={20}
-                        color="#9ca3af"
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
+              <View style={styles.membersList}>
+                {regularMembers.map((member) => (
+                  <TouchableOpacity
+                    key={member.id}
+                    style={styles.memberItem}
+                    onPress={() => handleMemberClick(member)}
+                    activeOpacity={0.7}
+                  >
+                    <Avatar
+                      size={40}
+                      imageUrl={member.user?.avatar_url}
+                      name={member.user?.name || 'Unknown'}
+                    />
+                    <View style={styles.memberInfo}>
+                      <Text style={styles.memberName}>
+                        {member.user?.name || 'Unknown'}
+                      </Text>
+                      <Text style={styles.memberJoinDate}>
+                        Joined {new Date(member.joined_at).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color="#9ca3af"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
             )}
           </View>
         </>
@@ -631,9 +625,6 @@ const styles = StyleSheet.create({
   },
   membersList: {
     gap: 8,
-  },
-  membersScrollView: {
-    maxHeight: 200,
   },
   memberItem: {
     flexDirection: 'row',

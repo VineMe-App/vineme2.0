@@ -54,6 +54,17 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
     });
   };
 
+  const getLatestMemberLeftNote = (notes?: Array<{ note_type?: string; created_at?: string; note_text?: string | null }>) => {
+    if (!notes || notes.length === 0) return null;
+    const memberLeftNotes = notes.filter((note) => note.note_type === 'member_left');
+    if (memberLeftNotes.length === 0) return null;
+    return memberLeftNotes.sort((a, b) => {
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime;
+    })[0];
+  };
+
   const currentData =
     activeTab === 'requests' ? archivedRequests : inactiveMembers;
 
@@ -138,6 +149,11 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             {currentData.map((item) => {
               const fullName = getFullName(item.user);
               const isExpanded = expandedItemId === item.id;
+              const leftNote = getLatestMemberLeftNote(
+                item.group_membership_notes
+              );
+              const leftOnDate =
+                leftNote?.created_at || item.joined_at || item.created_at;
 
               return (
                 <View key={item.id} style={styles.itemContainer}>
@@ -157,8 +173,10 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
                       </Text>
                       <Text style={styles.itemDate}>
                         {activeTab === 'requests'
-                          ? `Request created: ${formatDate(item.joined_at)}`
-                          : `Left on: ${formatDate(item.joined_at)}`}
+                          ? `Request created: ${formatDate(
+                              item.created_at || item.joined_at
+                            )}`
+                          : `Left on: ${formatDate(leftOnDate)}`}
                       </Text>
                       {activeTab === 'members' && (
                         <Badge variant="secondary" style={styles.roleBadge}>
