@@ -274,7 +274,7 @@ serve(async (req: any) => {
           
           // If user doesn't have an email, link the referral email to their account
           if (!emailToUse && payload.email) {
-            const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
+            const redirectUrl = `https://vineme.app/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
             // Update user email via admin API
             const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
               email: payload.email,
@@ -305,7 +305,7 @@ serve(async (req: any) => {
             }
           } else if (emailToUse && !existingAuthUser.user.email_confirmed_at) {
             // User has email but it's not verified - send verification email
-            const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToUse)}`;
+            const redirectUrl = `https://vineme.app/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToUse)}`;
             // Use resend to actually send the email
             const { error: resendError } = await supabase.auth.resend({
               type: 'signup',
@@ -339,7 +339,7 @@ serve(async (req: any) => {
       // Invite new user via Supabase's built-in invitation system
       const normalizedPhone = normalizePhone(payload.phone);
       // Use the HTTPS redirect URL for email verification
-      const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
+      const redirectUrl = `https://vineme.app/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
       const { data: authData, error: authError } =
         await supabase.auth.admin.inviteUserByEmail(payload.email, {
           data: {
