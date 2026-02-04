@@ -37,6 +37,15 @@ const formatJoinDate = (dateString: string) => {
   return `Joined in ${month} ${year}`;
 };
 
+const formatMemberSince = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
+
 const ProfileGroupCard: React.FC<{
   membership: any;
   canNavigate: boolean;
@@ -118,6 +127,142 @@ const ProfileGroupCard: React.FC<{
   );
 };
 
+interface ActionButtonProps {
+  isSelf: boolean;
+  friendshipStatus: any;
+  targetUserId: string | undefined;
+  profileShortName: string;
+  profileFullName: string;
+  onRemoveFriend: () => void;
+  onAddFriend: () => void;
+  acceptFriendRequest: any;
+  acceptRejected: any;
+  sendFriendRequest: any;
+  removeFriend: any;
+  refetchStatus: () => void;
+}
+
+const ActionButton: React.FC<ActionButtonProps> = ({
+  isSelf,
+  friendshipStatus,
+  targetUserId,
+  onRemoveFriend,
+  onAddFriend,
+  acceptFriendRequest,
+  acceptRejected,
+  sendFriendRequest,
+  removeFriend,
+  refetchStatus,
+}) => {
+  if (isSelf) return null;
+
+  const { status, direction, friendshipId } = friendshipStatus || {};
+  const isIncoming = direction === 'incoming';
+  const loading =
+    friendshipStatus?.isLoading ||
+    sendFriendRequest.isPending ||
+    acceptFriendRequest.isPending ||
+    removeFriend.isPending ||
+    acceptRejected.isPending;
+
+  if (loading) {
+    return (
+      <View style={styles.addFriendButton}>
+        <Ionicons name="person-add-outline" size={24} color="#FF0083" />
+        <Text style={styles.addFriendText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  const handleAccept = () => {
+    if (friendshipId) {
+      acceptFriendRequest.mutate(friendshipId, {
+        onSuccess: refetchStatus,
+        onError: (e: any) => Alert.alert('Error', e.message),
+      });
+    }
+  };
+
+  const handleAcceptRejected = () => {
+    if (targetUserId) {
+      acceptRejected.mutate(targetUserId, {
+        onSuccess: refetchStatus,
+        onError: (e: any) => Alert.alert('Error', e.message),
+      });
+    }
+  };
+
+  switch (status) {
+    case 'accepted':
+      return (
+        <TouchableOpacity
+          style={styles.addFriendButton}
+          onPress={onRemoveFriend}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="person-remove-outline" size={24} color="#FF0083" />
+          <Text style={styles.addFriendText}>Remove friend</Text>
+        </TouchableOpacity>
+      );
+
+    case 'pending':
+      if (isIncoming && friendshipId) {
+        return (
+          <TouchableOpacity
+            style={styles.addFriendButton}
+            onPress={handleAccept}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="person-add-outline" size={24} color="#FF0083" />
+            <Text style={styles.addFriendText}>Accept friend request</Text>
+          </TouchableOpacity>
+        );
+      }
+      return (
+        <View style={styles.addFriendButton}>
+          <Ionicons name="person-add-outline" size={24} color="#999999" />
+          <Text style={[styles.addFriendText, { color: '#999999' }]}>
+            Request pending
+          </Text>
+        </View>
+      );
+
+    case 'rejected':
+      if (isIncoming) {
+        return (
+          <TouchableOpacity
+            style={styles.addFriendButton}
+            onPress={handleAcceptRejected}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="person-add-outline" size={24} color="#FF0083" />
+            <Text style={styles.addFriendText}>Add friend</Text>
+          </TouchableOpacity>
+        );
+      }
+      return (
+        <View style={styles.addFriendButton}>
+          <Ionicons name="person-add-outline" size={24} color="#999999" />
+          <Text style={[styles.addFriendText, { color: '#999999' }]}>
+            Request rejected
+          </Text>
+        </View>
+      );
+
+    default:
+      return (
+        <TouchableOpacity
+          style={styles.addFriendButton}
+          onPress={onAddFriend}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="person-add-outline" size={24} color="#FF0083" />
+          <Text style={styles.addFriendText}>Add friend</Text>
+        </TouchableOpacity>
+      );
+  }
+};
+
 export default function OtherUserProfileScreen() {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const navigation = useNavigation();
@@ -145,50 +290,49 @@ export default function OtherUserProfileScreen() {
   const acceptRejected = useAcceptRejectedFriendRequest();
 
   const isSelf = user?.id && targetUserId === user.id;
-  const fromNotification =
-    (params?.fromNotification &&
-      (Array.isArray(params.fromNotification)
-        ? params.fromNotification[0]
-        : params.fromNotification)) === '1';
+  const fromNotification = useMemo(() => {
+    const value = params?.fromNotification;
+    return (Array.isArray(value) ? value[0] : value) === '1';
+  }, [params?.fromNotification]);
 
   useEffect(() => {
     if (fromNotification) {
       friendshipStatusQuery.refetch();
     }
-  }, [fromNotification, friendshipStatusQuery.refetch]);
+  }, [fromNotification]);
 
   // Filter memberships based on visibility rules
-  const isViewerAdmin =
-    currentUserProfile?.roles?.includes('church_admin') ||
-    currentUserProfile?.roles?.includes('superadmin');
-  const isFriend = friendshipStatusQuery.data?.status === 'accepted';
-  const isSameChurch =
-    profile?.church?.id &&
-    currentUserProfile?.church?.id &&
-    profile.church.id === currentUserProfile.church.id;
-  const canNavigateGroups = isSelf || isViewerAdmin || isFriend || isSameChurch;
+  const isViewerAdmin = useMemo(
+    () =>
+      currentUserProfile?.roles?.includes('church_admin') ||
+      currentUserProfile?.roles?.includes('superadmin'),
+    [currentUserProfile?.roles]
+  );
 
-  console.info('OJ canNavigateGroups:', canNavigateGroups);
-  console.info('OJ isSelf:', isSelf);
-  console.info('OJ isViewerAdmin:', isViewerAdmin);
-  console.info('OJ isFriend:', isFriend);
+  const isFriend = friendshipStatusQuery.data?.status === 'accepted';
+
+  const isSameChurch = useMemo(
+    () =>
+      Boolean(
+        profile?.church?.id &&
+          currentUserProfile?.church?.id &&
+          profile.church.id === currentUserProfile.church.id
+      ),
+    [profile?.church?.id, currentUserProfile?.church?.id]
+  );
+
+  const canNavigateGroups = isSelf || isViewerAdmin || isFriend || isSameChurch;
   
   const visibleMemberships = useMemo(() => {
-    if (!memberships || memberships.length === 0) return [];
+    if (!memberships?.length) return [];
 
-    // Filter to only show active memberships in active groups
-    // (gm.status = 'active' AND g.status = 'approved')
+    // Filter to only show active memberships in approved groups
     const activeInActiveGroups = memberships.filter(
-      (m: any) =>
-        m.status === 'active' && m.group?.status === 'approved'
+      (m: any) => m.status === 'active' && m.group?.status === 'approved'
     );
 
-    // If viewing own profile, show all active memberships in active groups
-    if (isSelf) return activeInActiveGroups;
-
-    // Check if viewer is admin or clergy (church_admin or superadmin)
-    // If viewer is admin/clergy or friend, show all active memberships in active groups
-    if (isViewerAdmin || isFriend) {
+    // Show all if viewing own profile, admin, or friend
+    if (isSelf || isViewerAdmin || isFriend) {
       return activeInActiveGroups;
     }
 
@@ -196,16 +340,14 @@ export default function OtherUserProfileScreen() {
     return activeInActiveGroups.filter(
       (m: any) => m.role === 'leader' || m.role === 'admin'
     );
-  }, [
-    memberships,
-    isSelf,
-    isViewerAdmin,
-    isFriend,
-  ]);
-  const profileFullName = getFullName(profile);
-  const profileShortName = getDisplayName(profile, { fallback: 'full' });
+  }, [memberships, isSelf, isViewerAdmin, isFriend]);
+  const profileFullName = useMemo(() => getFullName(profile), [profile]);
+  const profileShortName = useMemo(
+    () => getDisplayName(profile, { fallback: 'full' }),
+    [profile]
+  );
 
-  const handleAddFriend = () => {
+  const handleAddFriend = useCallback(() => {
     if (!targetUserId || !profileFullName) return;
     Alert.alert(
       'Add Friend',
@@ -222,9 +364,9 @@ export default function OtherUserProfileScreen() {
         },
       ]
     );
-  };
+  }, [targetUserId, profileFullName, profileShortName, sendFriendRequest]);
 
-  const handleRemoveFriend = () => {
+  const handleRemoveFriend = useCallback(() => {
     if (!targetUserId) return;
     Alert.alert(
       'Remove Friend',
@@ -242,11 +384,11 @@ export default function OtherUserProfileScreen() {
         },
       ]
     );
-  };
+  }, [targetUserId, removeFriend]);
 
-  const handleAvatarPress = () => {
+  const handleAvatarPress = useCallback(() => {
     setImageModalVisible(true);
-  };
+  }, []);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -254,120 +396,11 @@ export default function OtherUserProfileScreen() {
     } else {
       router.push('/(tabs)');
     }
-  }, [navigation, router]);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerShown: false, // Remove header completely
-    });
   }, [navigation]);
 
-  const formatMemberSince = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
-  const ActionButton = () => {
-    if (isSelf) return null;
-
-    const statusDetails = friendshipStatusQuery.data;
-    const status = statusDetails?.status;
-    const isIncoming = statusDetails?.direction === 'incoming';
-    const loading =
-      friendshipStatusQuery.isLoading ||
-      sendFriendRequest.isPending ||
-      acceptFriendRequest.isPending ||
-      removeFriend.isPending ||
-      acceptRejected.isPending;
-    const pendingFriendshipId = friendshipStatusQuery.data?.friendshipId;
-    
-    if (loading) {
-      return (
-        <View style={styles.addFriendButton}>
-          <Ionicons name="person-add-outline" size={24} color="#FF0083" />
-          <Text style={styles.addFriendText}>Loading...</Text>
-        </View>
-      );
-    }
-
-    switch (status) {
-      case 'accepted':
-        return (
-          <TouchableOpacity
-            style={styles.addFriendButton}
-            onPress={handleRemoveFriend}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="person-remove-outline" size={24} color="#FF0083" />
-            <Text style={styles.addFriendText}>Remove friend</Text>
-          </TouchableOpacity>
-        );
-      case 'pending':
-        if (isIncoming && pendingFriendshipId) {
-          return (
-            <TouchableOpacity
-              style={styles.addFriendButton}
-              onPress={() =>
-                acceptFriendRequest.mutate(pendingFriendshipId, {
-                  onSuccess: () => friendshipStatusQuery.refetch(),
-                  onError: (e) => Alert.alert('Error', e.message),
-                })
-              }
-              activeOpacity={0.7}
-            >
-              <Ionicons name="person-add-outline" size={24} color="#FF0083" />
-              <Text style={styles.addFriendText}>Accept friend request</Text>
-            </TouchableOpacity>
-          );
-        }
-        return (
-          <View style={styles.addFriendButton}>
-            <Ionicons name="person-add-outline" size={24} color="#999999" />
-            <Text style={[styles.addFriendText, { color: '#999999' }]}>Request pending</Text>
-          </View>
-        );
-      case 'rejected':
-        if (isIncoming) {
-          return (
-            <TouchableOpacity
-              style={styles.addFriendButton}
-              onPress={() =>
-                targetUserId &&
-                acceptRejected.mutate(targetUserId, {
-                  onSuccess: () => friendshipStatusQuery.refetch(),
-                  onError: (e) => Alert.alert('Error', e.message),
-                })
-              }
-              activeOpacity={0.7}
-            >
-              <Ionicons name="person-add-outline" size={24} color="#FF0083" />
-              <Text style={styles.addFriendText}>Add friend</Text>
-            </TouchableOpacity>
-          );
-        }
-        return (
-          <View style={styles.addFriendButton}>
-            <Ionicons name="person-add-outline" size={24} color="#999999" />
-            <Text style={[styles.addFriendText, { color: '#999999' }]}>Request pending</Text>
-          </View>
-        );
-      default:
-        return (
-          <TouchableOpacity
-            style={styles.addFriendButton}
-            onPress={handleAddFriend}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="person-add-outline" size={24} color="#FF0083" />
-            <Text style={styles.addFriendText}>Add friend</Text>
-          </TouchableOpacity>
-        );
-    }
-  };
+  useEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
 
   if (!targetUserId) {
     return (
@@ -439,7 +472,23 @@ export default function OtherUserProfileScreen() {
               <Text style={styles.name}>
                 {profileFullName || profileShortName || 'User'}
               </Text>
-              <ActionButton />
+              <ActionButton
+                isSelf={isSelf}
+                friendshipStatus={{
+                  ...friendshipStatusQuery.data,
+                  isLoading: friendshipStatusQuery.isLoading,
+                }}
+                targetUserId={targetUserId}
+                profileShortName={profileShortName}
+                profileFullName={profileFullName}
+                onRemoveFriend={handleRemoveFriend}
+                onAddFriend={handleAddFriend}
+                acceptFriendRequest={acceptFriendRequest}
+                acceptRejected={acceptRejected}
+                sendFriendRequest={sendFriendRequest}
+                removeFriend={removeFriend}
+                refetchStatus={friendshipStatusQuery.refetch}
+              />
             </View>
 
             {/* Bio Section */}
@@ -531,17 +580,17 @@ export default function OtherUserProfileScreen() {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
+const InfoRow: React.FC<{ label: string; value: string }> = React.memo(
+  ({ label, value }) => (
     <>
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
+      <View style={styles.infoRow}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
       <View style={styles.divider} />
     </>
-  );
-}
+  )
+);
 
 const styles = StyleSheet.create({
   container: {
