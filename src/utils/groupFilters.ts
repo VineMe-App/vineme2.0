@@ -63,6 +63,7 @@ export const getActiveFiltersCount = (filters: GroupFilters): number => {
   if (filters.searchQuery.trim().length > 0) count++;
   if (filters.onlyWithFriends) count++;
   if (filters.hideFullGroups) count++;
+  if (filters.onlyMyChurch) count++;
 
   return count;
 };

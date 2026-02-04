@@ -369,6 +369,21 @@ export default function GroupsScreen() {
     ? refetchChurchGroups
     : refetchFriendGroups;
 
+  const isLeaderOfApprovedGroup = useMemo(() => {
+    if (!userProfile?.id || !allGroups?.length) return false;
+    return allGroups.some((group) =>
+      (group.memberships || []).some(
+        (membership: any) =>
+          membership.user_id === userProfile.id &&
+          membership.role === 'leader' &&
+          membership.status === 'active'
+      )
+    );
+  }, [allGroups, userProfile?.id]);
+
+  const canFilterByChurch =
+    !!userProfile?.church_id && (isChurchAdmin || isLeaderOfApprovedGroup);
+
   const groupsWithVisibility = useMemo(() => {
     if (!allGroups) return [];
 
@@ -444,6 +459,9 @@ export default function GroupsScreen() {
   const filteredGroups = useMemo(() => {
     if (!groupsWithVisibility) return [];
     let base = applyGroupFilters(groupsWithVisibility, filters);
+    if (filters.onlyMyChurch && userProfile?.church_id) {
+      base = base.filter((group) => group.church_id === userProfile.church_id);
+    }
     if (filters.onlyWithFriends) {
       base = base.filter((g) =>
         (g.memberships || []).some(
@@ -452,7 +470,7 @@ export default function GroupsScreen() {
       );
     }
     return base;
-  }, [groupsWithVisibility, filters, friendIds]);
+  }, [groupsWithVisibility, filters, friendIds, userProfile?.church_id]);
 
   // Sorted groups with computed distance and friend counts
   const groupsWithDistance = useMemo(() => {
@@ -1041,6 +1059,7 @@ export default function GroupsScreen() {
       <FilterPanel
         isVisible={showFilterPanel}
         onClose={() => setShowFilterPanel(false)}
+        canFilterByChurch={canFilterByChurch}
       />
 
       {/* No Group Fits Modal */}
