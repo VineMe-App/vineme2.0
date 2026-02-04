@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Text } from '../ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal } from '../ui/Modal';
@@ -39,6 +42,10 @@ const formatPhoneNumber = (phone: string): string => {
   return phone.startsWith('+') ? phone : `+${phone}`;
 };
 
+const formatPhoneForWhatsApp = (phone: string): string => {
+  return phone.replace(/[^0-9]/g, '');
+};
+
 export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
   visible,
   member,
@@ -69,30 +76,24 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
 
   const handleContactPress = async (type: 'phone' | 'email', value: string) => {
     try {
-      const actionType = type === 'phone' ? 'call' : 'email';
-      await initiateContactMutation.mutateAsync({
-        requestId: member.id,
-        leaderId,
-        actionType,
-        contactValue: value,
-      });
-
-      if (type === 'phone') {
-        const url = `tel:${formatPhoneNumber(value)}`;
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert('Error', 'Unable to make phone calls on this device');
-        }
-      } else if (type === 'email') {
-        const url = `mailto:${value}`;
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert('Error', 'Unable to open email on this device');
-        }
+      const url = type === 'phone' ? `tel:${formatPhoneNumber(value)}` : `mailto:${value}`;
+      try {
+        await Linking.openURL(url);
+      } catch {
+        Alert.alert(
+          'Action unavailable',
+          'Would you like to copy this contact info?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Copy',
+              onPress: async () => {
+                await Clipboard.setStringAsync(value);
+                Alert.alert('Copied', 'Contact info copied to clipboard');
+              },
+            },
+          ]
+        );
       }
     } catch (error) {
       Alert.alert(
@@ -100,6 +101,83 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
         error instanceof Error ? error.message : 'Failed to initiate contact'
       );
     }
+  };
+
+  const handlePhoneOption = async (
+    option: 'whatsapp' | 'sms' | 'call',
+    phone: string
+  ) => {
+    const actionType = option === 'call' ? 'call' : 'message';
+    try {
+      await initiateContactMutation.mutateAsync({
+        requestId: member.id,
+        leaderId,
+        actionType,
+        contactValue: phone,
+      });
+
+      const url =
+        option === 'whatsapp'
+          ? `whatsapp://send?phone=${formatPhoneForWhatsApp(phone)}`
+          : option === 'sms'
+          ? `sms:${formatPhoneNumber(phone)}`
+          : `tel:${formatPhoneNumber(phone)}`;
+
+      try {
+        await Linking.openURL(url);
+      } catch {
+        Alert.alert(
+          'Action unavailable',
+          'Would you like to copy this contact info?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Copy',
+              onPress: async () => {
+                await Clipboard.setStringAsync(phone);
+                Alert.alert('Copied', 'Contact info copied to clipboard');
+              },
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to initiate contact'
+      );
+    }
+  };
+
+  const handlePhonePress = (phone: string) => {
+    const options = ['WhatsApp', 'SMS', 'Call', 'Cancel'];
+    const cancelButtonIndex = 3;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            handlePhoneOption('whatsapp', phone);
+          } else if (buttonIndex === 1) {
+            handlePhoneOption('sms', phone);
+          } else if (buttonIndex === 2) {
+            handlePhoneOption('call', phone);
+          }
+        }
+      );
+      return;
+    }
+
+    Alert.alert('Contact via', 'Choose an option', [
+      { text: 'WhatsApp', onPress: () => handlePhoneOption('whatsapp', phone) },
+      { text: 'SMS', onPress: () => handlePhoneOption('sms', phone) },
+      { text: 'Call', onPress: () => handlePhoneOption('call', phone) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   return (
@@ -161,22 +239,52 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
                     <Ionicons name="mail-outline" size={20} color="#007AFF" />
                     <Text style={styles.contactValue}>{contactInfo.email}</Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={async () => {
+                      await Clipboard.setStringAsync(contactInfo.email!);
+                      Alert.alert('Copied', 'Email copied to clipboard');
+                    }}
+                  >
+                    <Ionicons name="copy-outline" size={18} color="#6b7280" />
+                  </TouchableOpacity>
                 </View>
               )}
-              {contactInfo.phone_number && (
+              {(contactInfo.phone || (contactInfo as { phone_number?: string }).phone_number) && (
                 <View style={styles.contactItem}>
                   <TouchableOpacity
-                    onPress={() =>
-                      contactInfo.phone_number &&
-                      handleContactPress('phone', contactInfo.phone_number)
-                    }
+                    onPress={() => {
+                      const phone =
+                        contactInfo.phone ||
+                        (contactInfo as { phone_number?: string })
+                          .phone_number;
+                      if (phone) {
+                        handlePhonePress(phone);
+                      }
+                    }}
                     style={styles.contactMain}
                     disabled={initiateContactMutation.isPending}
                   >
                     <Ionicons name="call-outline" size={20} color="#007AFF" />
                     <Text style={styles.contactValue}>
-                      {contactInfo.phone_number}
+                      {contactInfo.phone ||
+                        (contactInfo as { phone_number?: string })
+                          .phone_number}
                     </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={async () => {
+                      const phone =
+                        contactInfo.phone ||
+                        (contactInfo as { phone_number?: string })
+                          .phone_number;
+                      if (!phone) return;
+                      await Clipboard.setStringAsync(phone);
+                      Alert.alert('Copied', 'Phone number copied to clipboard');
+                    }}
+                  >
+                    <Ionicons name="copy-outline" size={18} color="#6b7280" />
                   </TouchableOpacity>
                 </View>
               )}
@@ -374,8 +482,12 @@ const styles = StyleSheet.create({
   },
   contactItem: {
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   contactMain: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
@@ -383,6 +495,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+  },
+  copyButton: {
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   contactValue: {
     marginLeft: 12,
