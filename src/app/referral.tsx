@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  Switch,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +34,7 @@ import { OptimizedImage } from '../components/ui/OptimizedImage';
 import { GroupPlaceholderImage } from '../components/ui/GroupPlaceholderImage';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { safeGoBack } from '@/utils/navigation';
+import { AuthLoadingAnimation } from '../components/auth/AuthLoadingAnimation';
 
 const COUNTRIES: Country[] = [
   { name: 'United Kingdom', code: '+44', flag: '🇬🇧' },
@@ -67,6 +70,7 @@ export default function ReferralPage() {
 
   // Fetch group data if groupId is provided
   const { data: group, isLoading: groupLoading } = useGroup(groupId);
+  const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
 
   const formConfig = useMemo(
     () =>
@@ -135,12 +139,17 @@ export default function ReferralPage() {
           initialValue: '',
           rules: { maxLength: 500 },
         },
+        isExistingMember: {
+          initialValue: false,
+          rules: {},
+        },
       }) as const,
     []
   );
 
   const handleSubmit = useCallback(
     async (values: Record<string, any>) => {
+      setIsSubmittingReferral(true);
       try {
         if (!userProfile?.id) {
           Alert.alert(
@@ -162,6 +171,9 @@ export default function ReferralPage() {
             : undefined,
           lastName: values.lastName
             ? String(values.lastName).trim()
+            : undefined,
+          isExistingMember: isGroupReferral
+            ? Boolean(values.isExistingMember)
             : undefined,
         };
 
@@ -189,6 +201,8 @@ export default function ReferralPage() {
             ? error.message
             : 'Failed to send referral. Please try again.'
         );
+      } finally {
+        setIsSubmittingReferral(false);
       }
     },
     [userProfile?.id, groupId, isGroupReferral, router]
@@ -462,6 +476,30 @@ export default function ReferralPage() {
           </FormField>
 
           {/* Footer Note */}
+          {isGroupReferral && (
+            <FormField name="isExistingMember">
+              {({ value, onChange }) => (
+                <View style={styles.fieldContainer}>
+                  <View style={styles.existingMemberRow}>
+                    <Text style={styles.existingMemberLabel} numberOfLines={1}>
+                      Is this person already in a group / leading a group?
+                    </Text>
+                    <Switch
+                      value={Boolean(value)}
+                      onValueChange={onChange}
+                      trackColor={{ false: '#EAEAEA', true: '#2C2235' }}
+                      thumbColor="#FFFFFF"
+                      ios_backgroundColor="#EAEAEA"
+                      accessibilityLabel="Existing member toggle"
+                      style={styles.existingMemberSwitch}
+                    />
+                  </View>
+                </View>
+              )}
+            </FormField>
+          )}
+
+          {/* Footer Note */}
           <Text style={styles.footerNote}>
             By submitting a referral, you confirm that you have permission to
             share this person's contact information.
@@ -471,6 +509,15 @@ export default function ReferralPage() {
           <SubmitButton onSubmit={handleSubmit} />
         </Form>
       </ScrollView>
+
+      {isSubmittingReferral && (
+        <View style={styles.submittingOverlay} pointerEvents="auto">
+          <View style={styles.submittingBackdrop} />
+          <View style={styles.submittingContent}>
+            <AuthLoadingAnimation />
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -549,7 +596,7 @@ const SubmitButton: React.FC<{
       activeOpacity={0.8}
     >
       <Text style={styles.submitButtonText}>
-        {isSubmitting ? 'Submitting...' : 'Submit request'}
+        {isSubmitting ? 'Submitting...' : 'Submit referral'}
       </Text>
     </TouchableOpacity>
   );
@@ -834,6 +881,25 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 8,
   },
+  existingMemberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 6,
+  },
+  existingMemberLabel: {
+    flex: 1,
+    fontSize: Platform.OS === 'android' ? 11 : 12,
+    letterSpacing: -0.24,
+    lineHeight: Platform.OS === 'android' ? 14 : 16,
+    color: '#2C2235',
+    fontFamily: 'Figtree-Regular',
+    flexShrink: 1,
+  },
+  existingMemberSwitch: {
+    transform: [{ scale: Platform.OS === 'android' ? 1.2 : 1 }],
+  },
   errorText: {
     fontSize: 12,
     color: '#FF0083',
@@ -873,5 +939,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Figtree-Bold',
     fontWeight: 'bold',
+  },
+  submittingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 50,
+  },
+  submittingBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  submittingContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    borderRadius: 16,
   },
 });
