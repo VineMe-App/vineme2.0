@@ -32,7 +32,7 @@ import { GroupPlaceholderImage } from '@/components/ui/GroupPlaceholderImage';
 
 const formatJoinDate = (dateString: string) => {
   const date = new Date(dateString);
-  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const month = date.toLocaleDateString('en-GB', { month: 'long' });
   const year = date.getFullYear();
   return `Joined in ${month} ${year}`;
 };
@@ -162,8 +162,17 @@ export default function OtherUserProfileScreen() {
     currentUserProfile?.roles?.includes('church_admin') ||
     currentUserProfile?.roles?.includes('superadmin');
   const isFriend = friendshipStatusQuery.data?.status === 'accepted';
-  const canNavigateGroups = isSelf || isViewerAdmin || isFriend;
+  const isSameChurch =
+    profile?.church?.id &&
+    currentUserProfile?.church?.id &&
+    profile.church.id === currentUserProfile.church.id;
+  const canNavigateGroups = isSelf || isViewerAdmin || isFriend || isSameChurch;
 
+  console.info('OJ canNavigateGroups:', canNavigateGroups);
+  console.info('OJ isSelf:', isSelf);
+  console.info('OJ isViewerAdmin:', isViewerAdmin);
+  console.info('OJ isFriend:', isFriend);
+  
   const visibleMemberships = useMemo(() => {
     if (!memberships || memberships.length === 0) return [];
 
