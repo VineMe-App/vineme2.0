@@ -29,8 +29,10 @@ import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '@/services/auth';
+import { supabase } from '@/services/supabase';
 
 export default function CommunicationAndSecurityScreen() {
   const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
@@ -241,9 +243,6 @@ export default function CommunicationAndSecurityScreen() {
     const loadPendingEmail = async () => {
       // First check query params (from deep link)
       if (params.email) {
-        const decodedEmail = decodeURIComponent(params.email as string);
-        setNewEmail(decodedEmail);
-        setEmailStep('enter-email');
         // Clear the email param from URL after reading it
         router.setParams({ email: undefined });
         // Also clear from AsyncStorage if it exists
@@ -264,8 +263,6 @@ export default function CommunicationAndSecurityScreen() {
         // Check AsyncStorage for pending email verification
         const storedEmail = await AsyncStorage.getItem('pending_email_verification');
         if (storedEmail) {
-          setNewEmail(storedEmail);
-          setEmailStep('enter-email');
           await AsyncStorage.removeItem('pending_email_verification');
           
           // Force refresh the auth user to get updated email
@@ -284,6 +281,25 @@ export default function CommunicationAndSecurityScreen() {
     };
     loadPendingEmail();
   }, [params.email, refetchUserProfile, loadUserProfile]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const refreshAuthUser = async () => {
+        const { data } = await supabase.auth.getUser();
+        const refreshedUser = data?.user ?? null;
+        if (!isActive) return;
+        if (refreshedUser) {
+          useAuthStore.setState({ user: refreshedUser });
+        }
+        await Promise.all([refetchUserProfile(), loadUserProfile()]);
+      };
+      refreshAuthUser();
+      return () => {
+        isActive = false;
+      };
+    }, [refetchUserProfile, loadUserProfile])
+  );
 
   const handleLinkEmail = async () => {
     if (!newEmail.trim())
@@ -567,7 +583,7 @@ export default function CommunicationAndSecurityScreen() {
                   </View>
                   <View style={styles.actionButton}>
                     <Button
-                      title="Send Code"
+                      title="Send Request"
                       onPress={handleLinkEmail}
                       loading={isLoading}
                     />
@@ -580,7 +596,7 @@ export default function CommunicationAndSecurityScreen() {
           {/* Phone */}
           <View style={[styles.credBlock, { marginTop: 16 }]}>
             <View style={styles.labelValueRow}>
-              <Text style={styles.label}>Contact Details</Text>
+              <Text style={styles.label}>Phone</Text>
               {currentPhone ? (
                 <Text style={styles.currentValue} numberOfLines={1} ellipsizeMode="tail">
                   {currentPhone}
@@ -698,6 +714,7 @@ export default function CommunicationAndSecurityScreen() {
           </TouchableOpacity>
         </Card>
       </ScrollView>
+
     </SafeAreaView>
   );
 }
