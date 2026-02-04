@@ -6,6 +6,7 @@ import {
   Alert,
   Linking,
   Platform,
+  ActionSheetIOS,
 } from 'react-native';
 // expo-clipboard is optional in dev client; gate usage to avoid native module errors
 // Lazy load to prevent module initialization errors at load time
@@ -57,6 +58,10 @@ interface JoinRequestCardProps {
 // Helper function to ensure phone number has + prefix
 const formatPhoneNumber = (phone: string): string => {
   return phone.startsWith('+') ? phone : `+${phone}`;
+};
+
+const formatPhoneForWhatsApp = (phone: string): string => {
+  return phone.replace(/[^0-9]/g, '');
 };
 
 export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
@@ -310,6 +315,93 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
     }
   };
 
+  const handlePhoneOption = async (
+    option: 'whatsapp' | 'sms' | 'call',
+    phone: string
+  ) => {
+    try {
+      await initiateContactMutation.mutateAsync({
+        requestId: request.id,
+        leaderId,
+        actionType: option === 'call' ? 'call' : 'message',
+        contactValue: phone,
+      });
+
+      const url =
+        option === 'whatsapp'
+          ? `whatsapp://send?phone=${formatPhoneForWhatsApp(phone)}`
+          : option === 'sms'
+          ? `sms:${formatPhoneNumber(phone)}`
+          : `tel:${formatPhoneNumber(phone)}`;
+
+      try {
+        await Linking.openURL(url);
+      } catch {
+        const clipboard = getClipboard();
+        if (!clipboard) {
+          Alert.alert(
+            'Not Available',
+            'Clipboard functionality is not available on this device.'
+          );
+          return;
+        }
+        Alert.alert(
+          'Action unavailable',
+          'Would you like to copy this contact info?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Copy',
+              onPress: async () => {
+                await clipboard.setStringAsync(phone);
+                Alert.alert('Copied', 'Phone number copied to clipboard');
+              },
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Contact action error:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'Failed to contact user'
+      );
+    }
+  };
+
+  const handlePhonePress = (phone: string) => {
+    const options = ['WhatsApp', 'SMS', 'Call', 'Cancel'];
+    const cancelButtonIndex = 3;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            handlePhoneOption('whatsapp', phone);
+          } else if (buttonIndex === 1) {
+            handlePhoneOption('sms', phone);
+          } else if (buttonIndex === 2) {
+            handlePhoneOption('call', phone);
+          }
+        }
+      );
+      return;
+    }
+
+    Alert.alert('Contact via', 'Choose an option', [
+      { text: 'WhatsApp', onPress: () => handlePhoneOption('whatsapp', phone) },
+      { text: 'SMS', onPress: () => handlePhoneOption('sms', phone) },
+      { text: 'Call', onPress: () => handlePhoneOption('call', phone) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const isProcessing =
     approveRequestMutation.isPending ||
     archiveRequestMutation.isPending ||
@@ -472,8 +564,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
               <TouchableOpacity
                 onPress={() => {
                   if (!contactInfo.phone) return;
-                  const formattedPhone = formatPhoneNumber(contactInfo.phone);
-                  handleContactPress('phone', formattedPhone);
+                  handlePhonePress(contactInfo.phone);
                 }}
                 style={styles.contactMain}
                 disabled={initiateContactMutation.isPending}

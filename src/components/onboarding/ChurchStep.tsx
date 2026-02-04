@@ -66,6 +66,15 @@ export default function ChurchStep({
   }, []);
 
   useEffect(() => {
+    if (data.church_id && data.church_id !== selectedChurchId) {
+      setSelectedChurchId(data.church_id);
+    }
+    if (data.service_id && data.service_id !== selectedServiceId) {
+      setSelectedServiceId(data.service_id);
+    }
+  }, [data.church_id, data.service_id]);
+
+  useEffect(() => {
     if (selectedChurchId) {
       loadServices(selectedChurchId);
     } else {
@@ -178,6 +187,10 @@ export default function ChurchStep({
   const handleNext = () => {
     if (selectedChurchId && selectedServiceId) {
       onNext({ church_id: selectedChurchId, service_id: selectedServiceId });
+      return;
+    }
+    if (data.requested_church) {
+      onNext({ requested_church: true });
     }
   };
 
@@ -235,7 +248,16 @@ export default function ChurchStep({
       submissionMode === 'church'
         ? "Thanks for letting us know about your church. We'll reach out and add it soon."
         : "Thanks! We'll review the service details and let you know when it's available.",
-      [{ text: 'OK' }]
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            if (submissionMode === 'church') {
+              onNext({ requested_church: true });
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -274,8 +296,7 @@ export default function ChurchStep({
             ) : services.length > 0 ? (
               <>
                 <Text style={styles.serviceLabel}>
-                  <Text style={styles.serviceLabelBold}>Which service you attend regularly?</Text>
-                  <Text style={styles.serviceLabelLight}> (Select all that applies:)</Text>
+                  <Text style={styles.serviceLabelBold}>Which service do you attend regularly?</Text>
                 </Text>
                 {services.map((svc) => {
                   const isServiceSelected = selectedServiceId === svc.id;
@@ -427,74 +448,76 @@ export default function ChurchStep({
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+      <View style={styles.header}>
+        <AppText variant="h4" weight="extraBold" align="center" style={styles.title}>
+          Select your church
+        </AppText>
+        <AppText
+          variant="bodyLarge"
+          color="primary"
+          align="center"
+          style={styles.subtitle}
         >
-          <View style={styles.header}>
-            <AppText variant="h4" weight="extraBold" align="center" style={styles.title}>
-              Select your church
-            </AppText>
-            <AppText
-              variant="bodyLarge"
-              color="primary"
-              align="center"
-              style={styles.subtitle}
-            >
-              This helps us show you relevant groups and events
-            </AppText>
-          </View>
-
-          <View style={styles.churchesList}>
-            {churches.map((church) => (
-              <View key={church.id}>{renderChurchItem({ item: church })}</View>
-            ))}
-          </View>
-
-          <TouchableOpacity
-            style={styles.missingChurchButton}
-            onPress={() => handleOpenMissingServiceModal('church')}
-            disabled={missingServiceSubmitting}
-            activeOpacity={0.85}
-          >
-            <View style={styles.missingChurchTextGroup}>
-              <AppText variant="body" weight="bold" style={styles.missingChurchTitle}>
-                Can&apos;t find your church?
-              </AppText>
-              <AppText variant="bodySmall" style={styles.missingChurchSubtitle}>
-                Share the details of your church with us and we&apos;ll add it to VineMe.
-              </AppText>
-            </View>
-            <View style={styles.missingChurchIcon}>
-              <Text style={styles.missingChurchIconText}>+</Text>
-            </View>
-          </TouchableOpacity>
-          {missingServiceSubmitted &&
-            missingServiceLastMode === 'church' && (
-              <Text style={styles.missingChurchNotice}>
-                We&apos;re on it! We&apos;ll reach out soon about adding
-                this church.
-              </Text>
-            )}
-          {missingServiceRequestError &&
-            missingServiceLastMode === 'church' &&
-            !showMissingServiceModal && (
-              <Text style={styles.serviceInlineError}>
-                {missingServiceRequestError}
-              </Text>
-            )}
-        </ScrollView>
+          This helps us show you relevant groups
+        </AppText>
       </View>
+
+      <ScrollView
+        style={styles.listScroll}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.churchesList}>
+          {churches.map((church) => (
+            <View key={church.id}>{renderChurchItem({ item: church })}</View>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={styles.missingChurchButton}
+          onPress={() => handleOpenMissingServiceModal('church')}
+          disabled={missingServiceSubmitting}
+          activeOpacity={0.85}
+        >
+          <View style={styles.missingChurchTextGroup}>
+            <AppText variant="body" weight="bold" style={styles.missingChurchTitle}>
+              Can&apos;t find your church?
+            </AppText>
+            <AppText variant="bodySmall" style={styles.missingChurchSubtitle}>
+              Share the details of your church with us and we&apos;ll add it to VineMe.
+            </AppText>
+          </View>
+          <View style={styles.missingChurchIcon}>
+            <Text style={styles.missingChurchIconText}>+</Text>
+          </View>
+        </TouchableOpacity>
+        {missingServiceSubmitted &&
+          missingServiceLastMode === 'church' && (
+            <Text style={styles.missingChurchNotice}>
+              We&apos;re on it! We&apos;ll reach out soon about adding
+              this church.
+            </Text>
+          )}
+        {missingServiceRequestError &&
+          missingServiceLastMode === 'church' &&
+          !showMissingServiceModal && (
+            <Text style={styles.serviceInlineError}>
+              {missingServiceRequestError}
+            </Text>
+          )}
+      </ScrollView>
 
       <View style={styles.footer}>
         <AuthButton
           title="Next"
           onPress={handleNext}
           loading={isLoading}
-          disabled={!selectedChurchId || !selectedServiceId || isLoading}
+          disabled={
+            isLoading ||
+            ((!selectedChurchId || !selectedServiceId) &&
+              !data.requested_church)
+          }
           fullWidth={false}
           style={styles.nextButton}
         />
@@ -548,7 +571,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: 53, // Figma: left 53px
+    paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 32,
   },
@@ -594,14 +617,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  content: {
+  listScroll: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
+  listContent: {
+    paddingBottom: 24,
   },
   header: {
     alignItems: 'center',
@@ -620,7 +640,7 @@ const styles = StyleSheet.create({
     fontSize: 16, // Figma: 16px
     lineHeight: 22, // Figma: 22px
     letterSpacing: -0.32, // Figma: -0.32px
-    maxWidth: 260, // Figma: 260px
+    maxWidth: 320,
     marginTop: 0,
   },
   churchesList: {
@@ -638,7 +658,7 @@ const styles = StyleSheet.create({
     height: 50, // Figma: 50px
     paddingHorizontal: 24, // Figma: 80px - 56px = 24px
     backgroundColor: '#FFFFFF',
-    width: 287, // Figma: 287px
+    width: '100%',
   },
   churchName: {
     fontSize: 16, // Figma: 16px
@@ -656,7 +676,7 @@ const styles = StyleSheet.create({
     borderColor: '#F10078', // Figma: pink border when expanded
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
-    width: 287, // Figma: 287px
+    width: '100%',
     minHeight: 190, // Figma: 190px
     overflow: 'hidden',
   },
@@ -793,7 +813,7 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     width: '100%',
-    marginBottom: 100, // Match NameStep and EmailStep
+    marginBottom: 0,
     paddingTop: 16,
   },
   nextButton: {
@@ -899,8 +919,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(241, 0, 120, 0.01)', // Figma: rgba(241,0,120,0.01)
     flexDirection: 'row',
     alignItems: 'center',
-    width: 287, // Figma: 287px
-    marginBottom: 32, // Space before footer
+    width: '100%',
+    marginBottom: 24,
   },
   missingChurchTitle: {
     color: '#2C2235',

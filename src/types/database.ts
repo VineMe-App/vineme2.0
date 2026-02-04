@@ -182,6 +182,7 @@ export interface Ticket {
 export interface GroupMembershipWithUser extends GroupMembership {
   user?: User;
   referral?: Referral;
+  group_membership_notes?: GroupMembershipNote[];
 }
 
 export interface GroupJoinRequestWithUser extends GroupJoinRequest {

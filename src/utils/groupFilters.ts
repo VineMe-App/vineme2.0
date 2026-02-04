@@ -23,8 +23,19 @@ export const applyGroupFilters = (
     // Apply search query filter
     if (filters.searchQuery.trim().length > 0) {
       const searchTerm = filters.searchQuery.toLowerCase().trim();
+      const leaderNames = (group.memberships || [])
+        .filter((membership) => membership.role === 'leader' && membership.user)
+        .map((membership) => {
+          const user = membership.user;
+          return (
+            user?.name ||
+            `${user?.first_name || ''} ${user?.last_name || ''}`.trim()
+          );
+        })
+        .filter((name) => name && name.length > 0)
+        .join(' ');
       const searchableText =
-        `${group.title} ${group.description}`.toLowerCase();
+        `${group.title} ${group.description} ${leaderNames} ${group.meeting_day}`.toLowerCase();
 
       if (!searchableText.includes(searchTerm)) {
         return false;
@@ -52,6 +63,7 @@ export const getActiveFiltersCount = (filters: GroupFilters): number => {
   if (filters.searchQuery.trim().length > 0) count++;
   if (filters.onlyWithFriends) count++;
   if (filters.hideFullGroups) count++;
+  if (filters.onlyMyChurch) count++;
 
   return count;
 };

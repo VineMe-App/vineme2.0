@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { View, StyleSheet, SafeAreaView, StatusBar, Linking } from 'react-native';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';
@@ -40,7 +40,28 @@ export default function WelcomeScreen() {
         </View>
 
         <Text style={styles.footerText}>
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          By continuing, you agree to our{' '}
+          <Text
+            style={styles.footerLink}
+            onPress={() =>
+              Linking.openURL(
+                'https://hexagonal-aunt-16f.notion.site/VineMe-T-Cs-40a1160f674f4e87837f70e8513b558a'
+              )
+            }
+          >
+            Terms of Service
+          </Text>{' '}
+          and{' '}
+          <Text
+            style={styles.footerLink}
+            onPress={() =>
+              Linking.openURL(
+                'https://hexagonal-aunt-16f.notion.site/VineMe-Privacy-Policy-1b7eccb261fd4a4fa053f8c5d09bd7ca'
+              )
+            }
+          >
+            Privacy Policy
+          </Text>
         </Text>
       </View>
     </SafeAreaView>
@@ -88,5 +109,11 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     maxWidth: 278,
     includeFontPadding: false,
+  },
+  footerLink: {
+    color: '#FF0083',
+    fontWeight: '400',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });

@@ -21,6 +21,7 @@ interface CreateReferredUserPayload {
   note?: string;
   referrerId?: string;
   groupId?: string;
+  isExistingMember?: boolean;
 }
 
 function buildFullName(firstName?: string, lastName?: string): string {
@@ -66,6 +67,7 @@ serve(async (req: any) => {
     
     // Parse payload first to get referrerId
     const payload = (await req.json()) as CreateReferredUserPayload;
+    const isExistingMember = Boolean(payload?.isExistingMember);
     
     if (!payload?.email || typeof payload.email !== 'string') {
       return new Response(
@@ -124,13 +126,6 @@ serve(async (req: any) => {
 
     const churchId = referrerData.church_id;
     const serviceId = referrerData.service_id;
-
-    if (!churchId) {
-      return new Response(
-        JSON.stringify({ ok: false, error: 'Referrer has no church assigned' }),
-        { status: 200 }
-      );
-    }
 
     // Check if user already exists by email or phone
     // We need to iterate through all pages to avoid missing users beyond the first 1000
@@ -433,7 +428,7 @@ serve(async (req: any) => {
         id: userId,
         first_name: payload.firstName || null,
         last_name: payload.lastName || null,
-        newcomer: true,
+        newcomer: !isExistingMember,
         onboarding_complete: false,
         roles: ['user'],
         church_id: churchId,
@@ -486,6 +481,9 @@ serve(async (req: any) => {
       }
       if (!existingProfile.service_id && serviceId) {
         updates.service_id = serviceId;
+      }
+      if (isExistingMember && existingProfile.newcomer === true) {
+        updates.newcomer = false;
       }
       if (Object.keys(updates).length > 0) {
         updates.updated_at = new Date().toISOString();

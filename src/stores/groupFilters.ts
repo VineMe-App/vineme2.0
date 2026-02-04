@@ -6,6 +6,7 @@ export interface GroupFilters {
   searchQuery: string;
   onlyWithFriends: boolean;
   hideFullGroups: boolean;
+  onlyMyChurch: boolean;
 }
 
 interface GroupFiltersState {
@@ -14,6 +15,7 @@ interface GroupFiltersState {
   setSearchQuery: (query: string) => void;
   setOnlyWithFriends: (only: boolean) => void;
   setHideFullGroups: (hide: boolean) => void;
+  setOnlyMyChurch: (only: boolean) => void;
   clearFilters: () => void;
   resetFilters: () => void;
 }
@@ -23,6 +25,7 @@ const defaultFilters: GroupFilters = {
   searchQuery: '',
   onlyWithFriends: false,
   hideFullGroups: false,
+  onlyMyChurch: false,
 };
 
 export const useGroupFiltersStore = create<GroupFiltersState>()(
@@ -48,6 +51,11 @@ export const useGroupFiltersStore = create<GroupFiltersState>()(
       setHideFullGroups: (hide: boolean) =>
         set((state) => ({
           filters: { ...state.filters, hideFullGroups: hide },
+        })),
+
+      setOnlyMyChurch: (only: boolean) =>
+        set((state) => ({
+          filters: { ...state.filters, onlyMyChurch: only },
         })),
 
       clearFilters: () =>
