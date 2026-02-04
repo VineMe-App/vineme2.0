@@ -37,6 +37,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           }),
     },
     android: {
+      permissions: ['com.google.android.gms.permission.AD_ID'],
       versionCode: 53,
       ...(isExpoGo
         ? {}
