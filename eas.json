@@ -24,7 +24,6 @@
       }
     },
     "production": {
-      "workflow": "managed",
       "distribution": "store",
       "autoIncrement": true
     }
