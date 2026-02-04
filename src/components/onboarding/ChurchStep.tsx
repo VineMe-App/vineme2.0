@@ -178,6 +178,10 @@ export default function ChurchStep({
   const handleNext = () => {
     if (selectedChurchId && selectedServiceId) {
       onNext({ church_id: selectedChurchId, service_id: selectedServiceId });
+      return;
+    }
+    if (data.requested_church) {
+      onNext({ requested_church: true });
     }
   };
 
@@ -235,7 +239,16 @@ export default function ChurchStep({
       submissionMode === 'church'
         ? "Thanks for letting us know about your church. We'll reach out and add it soon."
         : "Thanks! We'll review the service details and let you know when it's available.",
-      [{ text: 'OK' }]
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            if (submissionMode === 'church') {
+              onNext({ requested_church: true });
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -491,7 +504,11 @@ export default function ChurchStep({
           title="Next"
           onPress={handleNext}
           loading={isLoading}
-          disabled={!selectedChurchId || !selectedServiceId || isLoading}
+          disabled={
+            isLoading ||
+            ((!selectedChurchId || !selectedServiceId) &&
+              !data.requested_church)
+          }
           fullWidth={false}
           style={styles.nextButton}
         />

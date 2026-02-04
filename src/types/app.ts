@@ -26,6 +26,7 @@ export interface OnboardingData {
   group_status?: 'existing' | 'looking';
   avatar_url?: string;
   bio?: string;
+  requested_church?: boolean;
 }
 
 export interface OnboardingStep {
