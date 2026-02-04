@@ -72,7 +72,7 @@ export default function ChurchStep({
     if (data.service_id && data.service_id !== selectedServiceId) {
       setSelectedServiceId(data.service_id);
     }
-  }, [data.church_id, data.service_id, selectedChurchId, selectedServiceId]);
+  }, [data.church_id, data.service_id]);
 
   useEffect(() => {
     if (selectedChurchId) {
