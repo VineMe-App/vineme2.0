@@ -14,7 +14,7 @@ When users click the verification link in their email, it needs to:
 You need to host the following files on your domain:
 
 ### 1. Email Verification Redirect Page
-**Location:** `https://vineme.app/auth/verify-email.html` (or `verify-email` without extension if your server supports it)
+**Location:** `https://vineme.app/verify-email.html` (or `verify-email` without extension if your server supports it)
 
 **File:** `public/auth/verify-email.html` (included in this repo)
 
@@ -101,7 +101,7 @@ This page:
 3. **Test accessibility:**
    - Visit `https://vineme.app/.well-known/apple-app-site-association` - should return JSON
    - Visit `https://vineme.app/.well-known/assetlinks.json` - should return JSON
-   - Visit `https://vineme.app/auth/verify-email` - should show redirect page
+   - Visit `https://vineme.app/verify-email` - should show redirect page
 
 ### Option 2: Netlify (Recommended - Free & Easy)
 
@@ -175,7 +175,7 @@ After hosting the files, configure Supabase:
 
 1. Go to **Supabase Dashboard** → **Authentication** → **URL Configuration**
 2. Add to **Redirect URLs**:
-   - `https://vineme.app/auth/verify-email`
+   - `https://vineme.app/verify-email`
    - `https://www.vineme.app/auth/verify-email` (if using www subdomain)
 3. Save changes
 
@@ -191,7 +191,7 @@ After hosting the files, configure Supabase:
    ```
 
 2. **Test redirect page:**
-   - Visit `https://vineme.app/auth/verify-email?access_token=test&refresh_token=test&redirect=/profile/communication&email=test@example.com`
+   - Visit `https://vineme.app/verify-email?access_token=test&refresh_token=test&redirect=/profile/communication&email=test@example.com`
    - Should show loading spinner and attempt to open app
 
 3. **Test email verification:**

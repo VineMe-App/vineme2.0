@@ -293,8 +293,8 @@ export default function CommunicationAndSecurityScreen() {
     const emailToLink = newEmail.trim();
     // Store the email in AsyncStorage so we can pre-fill it after verification
     await AsyncStorage.setItem('pending_email_verification', emailToLink);
-    // Use default Supabase redirect URL (https://vineme.app/auth/verify-email)
-    const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToLink)}`;
+    // Use default Supabase redirect URL (https://vineme.app/verify-email)
+    const redirectUrl = `https://vineme.app/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToLink)}`;
     const result = await linkEmail(emailToLink, { emailRedirectTo: redirectUrl });
     if (result.success) {
       setEmailStep('idle');

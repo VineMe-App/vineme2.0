@@ -48,7 +48,7 @@ After making changes:
 
 1. Send a test verification email
 2. Check the email link - it should either:
-   - Go directly to `https://vineme.app/auth/verify-email?access_token=...` (if tracking disabled)
+   - Go directly to `https://vineme.app/verify-email?access_token=...` (if tracking disabled)
    - Or go through the tracking URL and then redirect properly (if using Option 3)
 
 3. The link should open the VineMe app with all parameters preserved
