@@ -10,7 +10,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: 'VineMe',
     owner: 'tonaeko',
     slug: 'vineme-mobile-app',
-    version: '2.0.0',
+    version: '2.0.1',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -37,6 +37,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           }),
     },
     android: {
+      versionCode: 53,
       ...(isExpoGo
         ? {}
         : {
