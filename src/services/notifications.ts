@@ -235,6 +235,7 @@ export const unregisterFromPushNotifications = async (
     if (error) {
       console.error('Error removing push token:', error);
     }
+    await AsyncStorage.removeItem(STORAGE_KEYS.PUSH_TOKEN);
   } catch (error) {
     console.error('Error unregistering from push notifications:', error);
   }
@@ -786,10 +787,7 @@ export const triggerCannotFindGroupReportedNotification = async (
       `Cannot find group notifications sent to ${notifications.length} admins`
     );
   } catch (error) {
-    console.error(
-      'Error triggering cannot find group notification:',
-      error
-    );
+    console.error('Error triggering cannot find group notification:', error);
   }
 };
 
@@ -884,13 +882,13 @@ export const triggerJoinRequestReceivedNotification = async (
           body: `${data.requesterName} wants to join "${data.groupTitle}"`,
           data: {
             groupId: data.groupId,
-        groupTitle: data.groupTitle,
-        requesterId: data.requesterId,
-        requesterName: data.requesterName,
-      },
-      action_url: `/group-management/${data.groupId}?tab=requests`,
-    });
-  })
+            groupTitle: data.groupTitle,
+            requesterId: data.requesterId,
+            requesterName: data.requesterName,
+          },
+          action_url: `/group-management/${data.groupId}?tab=requests`,
+        });
+      })
     );
 
     console.log(
