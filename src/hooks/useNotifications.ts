@@ -81,7 +81,7 @@ export const useNotifications = () => {
         unregisterFromPushNotifications(user.id);
       }
     };
-  }, [user?.id, onboardingCompleted]);
+  }, [user?.id, onboardingCompleted, hasPushToken]);
 
   // Set up notification listeners
   useEffect(() => {
