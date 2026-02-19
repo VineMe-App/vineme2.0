@@ -53,7 +53,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ? { googleServicesFile: process.env.GOOGLE_SERVICES_JSON_2 }
         : {}),
       adaptiveIcon: {
-        foregroundImage: './assets/icon.png',
+        foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
       package: 'com.pilotlight.vineme',
