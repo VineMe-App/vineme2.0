@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Text } from '../../components/ui/Text';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
@@ -63,6 +64,8 @@ export default function VerifyEmailScreen() {
         }
         await initialize();
 
+        await AsyncStorage.setItem('email_linked_success', '1');
+
         // Show success message briefly before redirecting
         setTimeout(() => {
           if (redirectPath === '/profile/communication' && email) {
@@ -70,9 +73,24 @@ export default function VerifyEmailScreen() {
               pathname: '/(tabs)/profile/communication',
               params: { email: encodeURIComponent(email) },
             });
-          } else {
-            router.replace('/(auth)/onboarding');
+            return;
           }
+
+          if (
+            redirectPath === '/' ||
+            redirectPath === '/(tabs)' ||
+            redirectPath === '/home'
+          ) {
+            router.replace('/(tabs)');
+            return;
+          }
+
+          if (redirectPath) {
+            router.replace(redirectPath);
+            return;
+          }
+
+          router.replace('/(auth)/onboarding');
         }, 2000);
       } else {
         setIsVerifying(false);
