@@ -727,7 +727,7 @@ export class GroupCreationService {
         .select('id, status, role')
         .eq('group_id', groupId)
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       let data: any = null;
       let error: any = null;
@@ -761,7 +761,7 @@ export class GroupCreationService {
             })
             .eq('id', existingMembership.id)
             .select()
-            .single();
+            .maybeSingle();
 
           data = updateResult.data;
           error = updateResult.error;
@@ -804,7 +804,7 @@ export class GroupCreationService {
             status: 'pending',
           })
           .select()
-          .single();
+          .maybeSingle();
 
         data = insertResult.data;
         error = insertResult.error;

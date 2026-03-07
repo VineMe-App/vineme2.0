@@ -142,7 +142,156 @@ export class AuthService {
   }
 
   /**
+   * Find and link orphaned user profile by name
+   * Returns the orphaned user ID if found, null otherwise
+   */
+  private async findOrphanedUserByName(
+    first_name?: string,
+    last_name?: string,
+    email?: string,
+    phone?: string
+  ): Promise<string | null> {
+    if (!first_name && !last_name && !email && !phone) {
+      return null;
+    }
+
+    try {
+      // Use RPC function to find orphaned users by name/email/phone
+      const { data: orphanedUsers, error } = await supabase.rpc(
+        'find_orphaned_user_by_name',
+        {
+          p_first_name: first_name?.trim() || null,
+          p_last_name: last_name?.trim() || null,
+          p_email: email?.trim().toLowerCase() || null,
+          p_phone: phone?.trim() || null,
+        }
+      );
+
+      if (error) {
+        // Function doesn't exist or other error - gracefully skip orphaned user linking
+        if (__DEV__) {
+          if (error.message?.includes('does not exist') || error.message?.includes('function')) {
+            console.log(
+              '[createUserProfile] find_orphaned_user_by_name function not available (migration may not be applied)'
+            );
+          } else {
+            console.log(
+              '[createUserProfile] Error finding orphaned user:',
+              error.message
+            );
+          }
+        }
+        return null;
+      }
+
+      // RPC returned results
+      if (orphanedUsers && orphanedUsers.length > 0) {
+        return orphanedUsers[0].id;
+      }
+
+      return null;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('[createUserProfile] Error finding orphaned user:', error);
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Link existing orphaned user data to new auth user
+   * Transfers all related data (memberships, friendships, etc.) to the new user ID
+   * Returns the orphaned user's roles if they existed
+   * 
+   * Handles two scenarios:
+   * 1. Orphaned public.users (no auth.users) - transfers all data from old_user_id to new_user_id
+   * 2. Orphaned auth.users (no public.users) - no data to transfer, just use the auth.users id
+   */
+  private async linkOrphanedUserData(
+    oldUserId: string,
+    newUserId: string
+  ): Promise<{ error: Error | null; roles?: string[] }> {
+    try {
+      // Check if oldUserId exists in public.users (orphaned public.users scenario)
+      const { data: orphanedUser, error: fetchError } = await supabase
+        .from('users')
+        .select('roles')
+        .eq('id', oldUserId)
+        .maybeSingle();
+
+      // If oldUserId doesn't exist in public.users, it's an orphaned auth.users
+      // In this case, we just need to use the auth.users id (oldUserId) directly
+      // No data transfer needed since there's no public.users data
+      if (!orphanedUser && !fetchError) {
+        // Orphaned auth.users - no public.users data to transfer
+        // The new signup will create a public.users record with new_user_id
+        // We can't transfer anything, so just return success
+        if (__DEV__) {
+          console.log(
+            '[createUserProfile] Orphaned auth.users found (no public.users), no data to transfer'
+          );
+        }
+        return { error: null };
+      }
+
+      const orphanedRoles = orphanedUser?.roles || null;
+
+      if (__DEV__ && orphanedRoles) {
+        console.log(
+          `[createUserProfile] Found orphaned user roles:`,
+          orphanedRoles
+        );
+      }
+
+      // Use RPC function to transfer all user data from orphaned public.users
+      const { data, error } = await supabase.rpc('link_orphaned_user', {
+        old_user_id: oldUserId,
+        new_user_id: newUserId,
+      });
+
+      if (error) {
+        // Function doesn't exist or other error - gracefully skip linking
+        if (__DEV__) {
+          if (error.message?.includes('does not exist') || error.message?.includes('function')) {
+            console.warn(
+              '[createUserProfile] link_orphaned_user function not available (migration may not be applied)'
+            );
+          } else {
+            console.warn(
+              '[createUserProfile] RPC link_orphaned_user failed:',
+              error.message
+            );
+          }
+        }
+        return { error: new Error(error.message) };
+      }
+
+      if (data?.success) {
+        if (__DEV__) {
+          console.log(
+            `[createUserProfile] Successfully linked orphaned user ${oldUserId} to ${newUserId}`
+          );
+        }
+        return { error: null, roles: orphanedRoles || undefined };
+      }
+
+      return { error: new Error(data?.message || 'Failed to link user data') };
+    } catch (error) {
+      if (__DEV__) {
+        console.error('[createUserProfile] Error linking orphaned user:', error);
+      }
+      return {
+        error:
+          error instanceof Error
+            ? error
+            : new Error('Failed to link orphaned user data'),
+      };
+    }
+  }
+
+  /**
    * Create user profile after successful sign up
+   * Automatically links to existing orphaned user profiles by name/email/phone
    */
   async createUserProfile(userData: {
     first_name?: string;
@@ -160,16 +309,104 @@ export class AuthService {
         return { error: new Error('No authenticated user') };
       }
 
-      // Insert minimal required fields to avoid 400s from missing FKs or columns
+      // Check for orphaned user with matching name/email/phone
+      const orphanedUserId = await this.findOrphanedUserByName(
+        userData.first_name,
+        userData.last_name,
+        user.email || undefined,
+        user.phone || undefined
+      );
+
+      let orphanedRoles: string[] | null = null;
+
+      if (orphanedUserId) {
+        if (__DEV__) {
+          console.log(
+            `[createUserProfile] Found orphaned user ${orphanedUserId}, attempting to link...`
+          );
+        }
+
+        // Try to link the orphaned user data to the new auth user
+        const linkResult = await this.linkOrphanedUserData(
+          orphanedUserId,
+          user.id
+        );
+
+        if (linkResult.error) {
+          // If linking fails, continue with new profile creation
+          if (__DEV__) {
+            console.warn(
+              '[createUserProfile] Failed to link orphaned user, creating new profile'
+            );
+          }
+        } else {
+          // Successfully linked, preserve the orphaned user's roles
+          orphanedRoles = linkResult.roles || null;
+          if (__DEV__) {
+            console.log(
+              '[createUserProfile] Successfully linked orphaned user, applying new profile data...'
+            );
+            if (orphanedRoles) {
+              console.log(
+                `[createUserProfile] Preserving orphaned user roles:`,
+                orphanedRoles
+              );
+            }
+          }
+        }
+      }
+
+      // Fetch existing roles to preserve elevated permissions (church_admin, superadmin)
+      // Check both: orphaned user roles (from link) and existing profile roles
+      let existingRoles: string[] | null = null;
+
+      // First, use roles from orphaned user if we just linked
+      if (orphanedRoles) {
+        existingRoles = orphanedRoles;
+      } else {
+        // Otherwise, check if profile already exists
+        const { data: existingProfile, error: existingProfileError } =
+          await supabase
+            .from('users')
+            .select('roles')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (existingProfileError) {
+          if (__DEV__) {
+            console.warn(
+              '[createUserProfile] Failed to fetch existing roles:',
+              existingProfileError.message
+            );
+          }
+        } else if (existingProfile?.roles) {
+          existingRoles = existingProfile.roles;
+          if (__DEV__) {
+            console.log(
+              `[createUserProfile] Preserving existing roles:`,
+              existingRoles
+            );
+          }
+        }
+      }
+
+      // Insert/update user profile with all provided data
       const payload: Record<string, any> = {
         id: user.id,
         first_name: userData.first_name,
         last_name: userData.last_name,
-        roles: ['user'],
         updated_at: new Date().toISOString(),
       };
-      // Email is stored in auth.users only; do not write to public.users
 
+      // Preserve existing roles if profile exists (e.g., after linking orphaned user)
+      // Only set default 'user' role if creating a brand new profile
+      if (existingRoles && existingRoles.length > 0) {
+        payload.roles = existingRoles;
+      } else {
+        payload.roles = ['user'];
+      }
+
+      // Email is stored in auth.users only; do not write to public.users
       // phone/email removed from public.users; use auth.user for credentials
 
       if (userData.church_id) {

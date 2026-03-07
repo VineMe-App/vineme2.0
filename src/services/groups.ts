@@ -313,7 +313,7 @@ export class GroupService {
         .select('id, status')
         .eq('group_id', groupId)
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       let data: any = null;
       let error: any = null;
@@ -349,7 +349,7 @@ export class GroupService {
             })
             .eq('id', existingMembership.id)
             .select()
-            .single();
+            .maybeSingle();
 
           data = updateResult.data;
           error = updateResult.error;
@@ -366,7 +366,7 @@ export class GroupService {
             joined_at: null, // Must be null for pending status (required by constraint)
           })
           .select()
-          .single();
+          .maybeSingle();
 
         data = insertResult.data;
         error = insertResult.error;
@@ -492,7 +492,7 @@ export class GroupService {
 
       const { error } = await supabase
         .from('group_memberships')
-        .update({ status: 'inactive' })
+        .update({ status: 'inactive', role: 'member' })
         .eq('group_id', groupId)
         .eq('user_id', userId);
 
@@ -511,6 +511,7 @@ export class GroupService {
               note_type: 'member_left',
               previous_status: 'active',
               new_status: 'inactive',
+              note_text: 'Left themselves',
             },
             userId
           );
@@ -641,7 +642,8 @@ export class GroupService {
           `
           *,
           user:users(id, first_name, last_name, avatar_url, newcomer),
-          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at)
+          referral:referrals(id, group_id, church_id, note, referred_by_user_id, created_at),
+          group_membership_notes(note_type, created_at, note_text)
         `
         )
         .eq('group_id', groupId)

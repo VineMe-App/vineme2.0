@@ -16,6 +16,8 @@ export type NotificationType =
   | 'join_request_approved'
   | 'join_request_denied'
   | 'group_member_added' // missing
+  | 'cannot_find_group_reported'
+  | 'referral_received'
   | 'referral_accepted'
   | 'referral_joined_group'
   | 'event_reminder';
@@ -99,7 +101,24 @@ export interface NotificationTriggerData {
     deniedByName: string;
   };
 
+  cannotFindGroupReported: {
+    userId: string;
+    userName: string;
+    churchId: string;
+    serviceId: string;
+  };
+
   // Referral notifications
+  referralReceived: {
+    groupId: string;
+    groupTitle: string;
+    referredUserId: string;
+    referredUserName: string;
+    referrerId: string;
+    referrerName: string;
+    leaderIds: string[];
+  };
+
   referralAccepted: {
     referrerId: string;
     referredUserId: string;

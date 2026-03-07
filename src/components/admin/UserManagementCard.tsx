@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +39,14 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
   const [contactLoaded, setContactLoaded] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
 
+  const formatPhoneNumber = (phone: string): string => {
+    return phone.startsWith('+') ? phone : `+${phone}`;
+  };
+
+  const formatPhoneForWhatsApp = (phone: string): string => {
+    return phone.replace(/[^0-9]/g, '');
+  };
+
   const handleContactPress = async (type: 'email' | 'phone', value: string) => {
     const url = type === 'email' ? `mailto:${value}` : `tel:${value}`;
     try {
@@ -57,6 +67,67 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
         ]
       );
     }
+  };
+
+  const handlePhoneOption = async (
+    option: 'whatsapp' | 'sms' | 'call',
+    phone: string
+  ) => {
+    const url =
+      option === 'whatsapp'
+        ? `whatsapp://send?phone=${formatPhoneForWhatsApp(phone)}`
+        : option === 'sms'
+        ? `sms:${formatPhoneNumber(phone)}`
+        : `tel:${formatPhoneNumber(phone)}`;
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        'Action unavailable',
+        'Would you like to copy this contact info?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Copy',
+            onPress: async () => {
+              await Clipboard.setStringAsync(phone);
+              Alert.alert('Copied', 'Contact info copied to clipboard');
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  const handlePhonePress = (phone: string) => {
+    const options = ['WhatsApp', 'SMS', 'Call', 'Cancel'];
+    const cancelButtonIndex = 3;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            handlePhoneOption('whatsapp', phone);
+          } else if (buttonIndex === 1) {
+            handlePhoneOption('sms', phone);
+          } else if (buttonIndex === 2) {
+            handlePhoneOption('call', phone);
+          }
+        }
+      );
+      return;
+    }
+
+    Alert.alert('Contact via', 'Choose an option', [
+      { text: 'WhatsApp', onPress: () => handlePhoneOption('whatsapp', phone) },
+      { text: 'SMS', onPress: () => handlePhoneOption('sms', phone) },
+      { text: 'Call', onPress: () => handlePhoneOption('call', phone) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const loadContactInfo = async () => {
@@ -254,15 +325,6 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
             </Text>
           </View>
 
-          {user.last_activity && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Last Active:</Text>
-              <Text style={styles.detailValue}>
-                {new Date(user.last_activity).toLocaleDateString()}
-              </Text>
-            </View>
-          )}
-
           {user.cannot_find_group && user.cannot_find_group_requested_at && (
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Help Requested:</Text>
@@ -342,9 +404,7 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
                     <View style={styles.contactItem}>
                       <TouchableOpacity
                         style={styles.contactMain}
-                          onPress={() =>
-                            handleContactPress('phone', contactInfo.phone!)
-                          }
+                        onPress={() => handlePhonePress(contactInfo.phone!)}
                       >
                         <Text style={styles.contactLabel}>Phone</Text>
                         <Text style={styles.contactValue}>

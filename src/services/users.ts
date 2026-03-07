@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { permissionService } from './permissions';
 import type { DatabaseUser, UserWithDetails } from '../types/database';
 import { getFullName } from '../utils/name';
+import { triggerCannotFindGroupReportedNotification } from './notifications';
 
 // Conditionally import FileSystem - not available in Expo Go
 // Using legacy API to avoid deprecation warnings
@@ -20,6 +21,7 @@ export interface UpdateUserProfileData {
   first_name?: string;
   last_name?: string;
   avatar_url?: string | null;
+  bio?: string | null;
   church_id?: string;
   service_id?: string;
   cannot_find_group?: boolean;
@@ -215,6 +217,23 @@ export class UserService {
         };
       }
 
+      let existingProfile: {
+        cannot_find_group?: boolean;
+        first_name?: string | null;
+        last_name?: string | null;
+        church_id?: string | null;
+        service_id?: string | null;
+      } | null = null;
+
+      if (updates.cannot_find_group === true) {
+        const { data: currentProfile } = await supabase
+          .from('users')
+          .select('cannot_find_group, first_name, last_name, church_id, service_id')
+          .eq('id', userId)
+          .maybeSingle();
+        existingProfile = currentProfile || null;
+      }
+
       const payload: Record<string, any> = {
         ...updates,
         updated_at: new Date().toISOString(),
@@ -238,6 +257,22 @@ export class UserService {
 
       if (error) {
         return { data: null, error: new Error(error.message) };
+      }
+
+      if (
+        updates.cannot_find_group === true &&
+        !existingProfile?.cannot_find_group &&
+        existingProfile?.church_id &&
+        existingProfile?.service_id
+      ) {
+        const userName =
+          getFullName(existingProfile) || 'A member';
+        await triggerCannotFindGroupReportedNotification({
+          userId,
+          userName,
+          churchId: existingProfile.church_id,
+          serviceId: existingProfile.service_id,
+        });
       }
 
       return { data, error: null };

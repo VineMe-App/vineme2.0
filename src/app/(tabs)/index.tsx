@@ -27,6 +27,8 @@ import { useTheme } from '@/theme/provider/useTheme';
 import { formatServiceTime } from '@/utils/helpers';
 import { NotificationIconWithBadge } from '@/components/ui/NotificationIconWithBadge';
 import { useNotificationBadge } from '@/hooks/useNotifications';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/services/supabase';
 
 const formatNameList = (names: string[]): string => {
   const filtered = names.filter((name) => name && name.trim().length > 0);
@@ -61,6 +63,7 @@ const GroupCardWithFriends: React.FC<{
   variant?: 'my-groups' | 'all-groups';
   pendingLabel?: string;
   pendingTooltip?: string;
+  showLocation?: boolean;
 }> = ({
   group,
   membershipStatus,
@@ -70,6 +73,7 @@ const GroupCardWithFriends: React.FC<{
   variant,
   pendingLabel,
   pendingTooltip,
+  showLocation,
 }) => {
   const { userProfile } = useAuthStore();
   const { data: members } = useGroupMembers(group.id);
@@ -120,6 +124,7 @@ const GroupCardWithFriends: React.FC<{
       variant={variant}
       pendingLabel={pendingLabel}
       pendingTooltip={pendingTooltip}
+      showLocation={showLocation}
       friendsCount={friendsCount}
       friendsInGroup={friendsInGroup}
       leaders={leaders}
@@ -131,6 +136,8 @@ const GroupCardWithFriends: React.FC<{
 export default function HomeScreen() {
   const { user, userProfile, loadUserProfile } = useAuthStore();
   const { theme } = useTheme();
+  const hasChurchAndService =
+    !!userProfile?.church_id && !!userProfile?.service_id;
 
   // Get user's church ID for filtering data
   // const churchId = userProfile?.church_id; // Events disabled - keeping for future use
@@ -169,6 +176,29 @@ export default function HomeScreen() {
 
   // Get notification badge count
   const { count: unreadCount } = useNotificationBadge(userId);
+
+  const { data: latestChurchRequest } = useQuery({
+    queryKey: ['new-church-request', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('new_church_requests')
+        .select('church_name, created_at')
+        .eq('requester_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('Failed to load latest church request:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!user?.id && !hasChurchAndService,
+    staleTime: 30000,
+  });
 
   const handleNotificationPress = () => {
     router.push('/notifications');
@@ -231,95 +261,99 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Church + Service Card - Updated to match Figma */}
-        <View style={styles.header}>
-          <ChurchAdminOnly
-            fallback={
-              <View style={styles.churchCard}>
-                <Image
-                  source={require('../../../assets/01e701d86580946700145dd8be461b7d683806db.png')}
-                  style={styles.locationIcon}
-                  resizeMode="contain"
-                />
-                <View style={styles.churchCardContent}>
-                  {userProfile?.church?.name && (
-                    <Text
-                      variant="body"
-                      weight="medium"
-                      style={styles.churchName}
-                      numberOfLines={1}
-                    >
-                      {userProfile.church.name}
-                    </Text>
-                  )}
-                  {userProfile?.service && (
-                    <Text
-                      variant="bodySmall"
-                      color="secondary"
-                      style={styles.serviceTime}
-                      numberOfLines={1}
-                    >
-                      {formatServiceTime(userProfile.service)}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            }
-          >
-            <TouchableOpacity
-              style={styles.churchCard}
-              onPress={() => router.push('/admin')}
-              activeOpacity={0.8}
-            >
-              <Image
-                source={require('../../../assets/01e701d86580946700145dd8be461b7d683806db.png')}
-                style={styles.locationIcon}
-                resizeMode="contain"
-              />
-              <View style={styles.churchCardContent}>
-                {userProfile?.church?.name && (
-                  <Text
-                    variant="body"
-                    weight="medium"
-                    style={styles.churchName}
-                    numberOfLines={1}
-                  >
-                    {userProfile.church.name}
-                  </Text>
-                )}
-                {userProfile?.service && (
-                  <Text
-                    variant="bodySmall"
-                    color="secondary"
-                    style={styles.serviceTime}
-                    numberOfLines={1}
-                  >
-                    {formatServiceTime(userProfile.service)}
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          </ChurchAdminOnly>
-        </View>
-
-        {/* My Groups Section */}
-        <View style={[styles.section, styles.sectionSpacing]}>
-          <View style={styles.sectionHeader}>
-            <Text variant="h4" weight="black" style={styles.sectionTitle}>
-              My Groups
-            </Text>
-            {showGroupCards && (
-              <TouchableOpacity onPress={() => router.push('/(tabs)/groups')}>
-                <Text
-                  variant="bodyLarge"
-                  color="primary"
-                  style={styles.seeAllText}
+        {hasChurchAndService ? (
+          <>
+            {/* Church + Service Card - Updated to match Figma */}
+            <View style={styles.header}>
+              <ChurchAdminOnly
+                fallback={
+                  <View style={styles.churchCard}>
+                    <Image
+                      source={require('../../../assets/01e701d86580946700145dd8be461b7d683806db.png')}
+                      style={styles.locationIcon}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.churchCardContent}>
+                      {userProfile?.church?.name && (
+                        <Text
+                          variant="body"
+                          weight="medium"
+                          style={styles.churchName}
+                          numberOfLines={1}
+                        >
+                          {userProfile.church.name}
+                        </Text>
+                      )}
+                      {userProfile?.service && (
+                        <Text
+                          variant="bodySmall"
+                          color="secondary"
+                          style={styles.serviceTime}
+                          numberOfLines={1}
+                        >
+                          {formatServiceTime(userProfile.service)}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                }
+              >
+                <TouchableOpacity
+                  style={styles.churchCard}
+                  onPress={() => router.push('/admin')}
+                  activeOpacity={0.8}
                 >
-                  See All
+                  <Image
+                    source={require('../../../assets/01e701d86580946700145dd8be461b7d683806db.png')}
+                    style={styles.locationIcon}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.churchCardContent}>
+                    {userProfile?.church?.name && (
+                      <Text
+                        variant="body"
+                        weight="medium"
+                        style={styles.churchName}
+                        numberOfLines={1}
+                      >
+                        {userProfile.church.name}
+                      </Text>
+                    )}
+                    {userProfile?.service && (
+                      <Text
+                        variant="bodySmall"
+                        color="secondary"
+                        style={styles.serviceTime}
+                        numberOfLines={1}
+                      >
+                        {formatServiceTime(userProfile.service)}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </ChurchAdminOnly>
+            </View>
+
+            {/* My Groups Section */}
+            <View style={[styles.section, styles.sectionSpacing]}>
+              <View style={styles.sectionHeader}>
+                <Text variant="h4" weight="black" style={styles.sectionTitle}>
+                  My Groups
                 </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+                {showGroupCards && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/(tabs)/groups')}
+                  >
+                    <Text
+                      variant="bodyLarge"
+                      color="primary"
+                      style={styles.seeAllText}
+                    >
+                      See All
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
           {showGroupCards ? (
             <ScrollView
@@ -340,6 +374,7 @@ export default function HomeScreen() {
                       marginHorizontal: 0,
                     }}
                     variant="my-groups"
+                    showLocation={false}
                   />
                 </View>
               ))}
@@ -371,6 +406,7 @@ export default function HomeScreen() {
                         pendingLabel="Join request pending"
                         pendingTooltip={message}
                         variant="my-groups"
+                        showLocation={false}
                       />
                     </View>
                   );
@@ -547,6 +583,60 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+          </>
+        ) : (
+          <View style={[styles.section, styles.sectionSpacing]}>
+            <View style={styles.emptyStateContainer}>
+              <View style={styles.emptyStateCard}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={28}
+                  color="#22c55e"
+                  style={styles.emptyStateIcon}
+                />
+                <Text
+                  variant="body"
+                  weight="bold"
+                  style={styles.emptyStateTitle}
+                >
+                  Thank you for downloading VineMe
+                </Text>
+                <Text
+                  variant="body"
+                  weight="normal"
+                  style={styles.emptyStateSubtitle}
+                >
+                  To keep everyone safe, groups are only visible within your
+                  church or your friend network. We’re contacting{' '}
+                  <Text style={styles.emphasisText}>
+                    {latestChurchRequest?.church_name || 'your church'}
+                  </Text>{' '}
+                  to join VineMe. {'\n'}Meanwhile, add friends to see their
+                  groups.
+                </Text>
+                <TouchableOpacity
+                  style={styles.findGroupButton}
+                  onPress={() => router.push('/friends')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="people-outline"
+                    size={18}
+                    color="#FFFFFF"
+                    style={styles.searchIcon}
+                  />
+                  <Text
+                    variant="body"
+                    weight="bold"
+                    style={styles.findGroupButtonText}
+                  >
+                    Find friends
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
@@ -749,6 +839,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emptyStateIcon: {
+    marginBottom: 16,
+  },
   emptyStateTitle: {
     color: '#FFFFFF',
     fontSize: 20, // Figma: 20px
@@ -766,6 +859,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     fontWeight: '400', // Regular
+  },
+  emphasisText: {
+    color: '#FFFFFF',
+    fontStyle: 'italic',
   },
   findGroupButton: {
     flexDirection: 'row',
