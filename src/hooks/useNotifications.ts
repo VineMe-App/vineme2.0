@@ -49,22 +49,30 @@ export const useNotifications = () => {
   const router = useRouter();
   const { user, userProfile } = useAuthStore();
   const queryClient = useQueryClient();
-  const notificationListener = useRef<Notifications.Subscription | undefined>(undefined);
-  const responseListener = useRef<Notifications.Subscription | undefined>(undefined);
+  const notificationListener = useRef<Notifications.Subscription | undefined>(
+    undefined
+  );
+  const responseListener = useRef<Notifications.Subscription | undefined>(
+    undefined
+  );
   const [onboardingCompleted, setOnboardingCompleted] = useState<
     boolean | null
   >(null);
+  const [hasPushToken, setHasPushToken] = useState<boolean | null>(null);
 
   // Load onboarding completion flag
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED)
       .then((v) => setOnboardingCompleted(v === 'true'))
       .catch(() => setOnboardingCompleted(false));
+    AsyncStorage.getItem(STORAGE_KEYS.PUSH_TOKEN)
+      .then((v) => setHasPushToken(!!v))
+      .catch(() => setHasPushToken(false));
   }, []);
 
   // Register for notifications when user is authenticated
   useEffect(() => {
-    if (user?.id && onboardingCompleted) {
+    if (user?.id && (onboardingCompleted || hasPushToken === false)) {
       registerForPushNotifications(user.id);
     }
 
@@ -73,7 +81,7 @@ export const useNotifications = () => {
         unregisterFromPushNotifications(user.id);
       }
     };
-  }, [user?.id, onboardingCompleted]);
+  }, [user?.id, onboardingCompleted, hasPushToken]);
 
   // Set up notification listeners
   useEffect(() => {
@@ -267,15 +275,21 @@ export const useEnhancedNotifications = (userId?: string) => {
     isLoading: isLoadingNotifications,
     error: notificationsError,
     refetch: refetchNotifications,
-  } = useInfiniteQuery<{
-    notifications: Notification[];
-    hasMore: boolean;
-    total: number;
-  }, Error, {
-    notifications: Notification[];
-    hasMore: boolean;
-    total: number;
-  }, (string | undefined)[], number>({
+  } = useInfiniteQuery<
+    {
+      notifications: Notification[];
+      hasMore: boolean;
+      total: number;
+    },
+    Error,
+    {
+      notifications: Notification[];
+      hasMore: boolean;
+      total: number;
+    },
+    (string | undefined)[],
+    number
+  >({
     queryKey: ['notifications', 'list', userId],
     queryFn: ({ pageParam }: { pageParam: number }) =>
       getUserNotificationsPaginatedWithSettings({
