@@ -111,7 +111,6 @@ export interface NotificationTriggerData {
   // Referral notifications
   referralReceived: {
     groupId: string;
-    groupTitle: string;
     referredUserId: string;
     referredUserName: string;
     referrerId: string;
@@ -123,6 +122,9 @@ export interface NotificationTriggerData {
     referrerId: string;
     referredUserId: string;
     referredUserName: string;
+    approvedByName: string;
+    groupTitle: string;
+    groupId: string;
   };
 
   referralJoinedGroup: {

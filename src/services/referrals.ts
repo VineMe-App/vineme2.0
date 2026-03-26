@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
 import { authService } from './auth';
-import { triggerReferralAcceptedNotification } from './notifications';
+import {
+  triggerNewGroupReferralReceivedNotification,
+  triggerReferralAcceptedNotification,
+} from './notifications';
 import type {
   GroupReferralWithDetails,
   GeneralReferralWithDetails,
@@ -110,9 +113,8 @@ export class ReferralService {
       };
 
       // Check rate limiting with the resolved referrer
-      const rateLimitCheck = referralRateLimiter.canMakeReferral(
-        effectiveReferrerId
-      );
+      const rateLimitCheck =
+        referralRateLimiter.canMakeReferral(effectiveReferrerId);
       if (!rateLimitCheck.allowed) {
         return {
           success: false,
@@ -244,26 +246,6 @@ export class ReferralService {
       const userId = accountResult.userId;
       const warnings = this.formatWarnings(accountResult.warnings);
 
-      // Trigger referral accepted notification to referrer
-      try {
-        // Try to obtain referred user's name
-        const { data: referredUser } = await supabase
-          .from('users')
-          .select('id, first_name, last_name')
-          .eq('id', userId)
-          .single();
-        await triggerReferralAcceptedNotification({
-          referrerId: data.referrerId,
-          referredUserId: userId,
-          referredUserName:
-            getFullName(referredUser) ||
-            data.firstName ||
-            data.email.split('@')[0],
-        });
-      } catch (e) {
-        if (__DEV__) console.warn('Referral accepted notification failed', e);
-      }
-
       return {
         success: true,
         userId,
@@ -276,11 +258,12 @@ export class ReferralService {
       if (error?.errorCode === 'DUPLICATE_REFERRAL') {
         return {
           success: false,
-          error: error.message || 'This person has already been referred by you.',
+          error:
+            error.message || 'This person has already been referred by you.',
           errorDetails: error.errorDetails,
         };
       }
-      
+
       const appError = handleSupabaseError(error as Error);
       return {
         success: false,
@@ -313,21 +296,46 @@ export class ReferralService {
       const userId = accountResult.userId;
       const warnings = this.formatWarnings(accountResult.warnings);
 
-      // Trigger referral accepted notification to referrer
+      // Trigger referral recieved notification to group leaders
       try {
         const { data: referredUser } = await supabase
           .from('users')
           .select('id, first_name, last_name')
           .eq('id', userId)
           .single();
-        await triggerReferralAcceptedNotification({
-          referrerId: data.referrerId,
-          referredUserId: userId,
-          referredUserName:
-            getFullName(referredUser) ||
-            data.firstName ||
-            data.email.split('@')[0],
-        });
+
+        const { data: referrerUserData } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('id', data.referrerId)
+          .single();
+
+        const { data: allLeaders } = await supabase
+          .from('group_memberships')
+          .select('user_id')
+          .eq('group_id', data.groupId)
+          .eq('role', 'leader')
+          .eq('status', 'active');
+
+        if (allLeaders?.length) {
+          const allLeaderUserIds: string[] = allLeaders.map(
+            ({ user_id }) => user_id
+          );
+          await triggerNewGroupReferralReceivedNotification({
+            groupId: data.groupId!,
+            leaderIds: allLeaderUserIds,
+            referrerId: data.referrerId,
+            referrerName:
+              getFullName(referrerUserData) ||
+              referrerUserData?.first_name ||
+              'a member',
+            referredUserId: userId,
+            referredUserName:
+              getFullName(referredUser) ||
+              data.firstName ||
+              data.email.split('@')[0],
+          });
+        }
       } catch (e) {
         if (__DEV__) console.warn('Referral accepted notification failed', e);
       }
@@ -345,11 +353,13 @@ export class ReferralService {
       if (error?.errorCode === 'DUPLICATE_REFERRAL') {
         return {
           success: false,
-          error: error.message || 'This person has already been referred to this group by you.',
+          error:
+            error.message ||
+            'This person has already been referred to this group by you.',
           errorDetails: error.errorDetails,
         };
       }
-      
+
       const appError = handleSupabaseError(error as Error);
       return {
         success: false,
@@ -540,16 +550,22 @@ export class ReferralService {
           'Full edge function response:',
           JSON.stringify(result, null, 2)
         );
-        
+
         // Check for duplicate referral error
-        if (result?.errorCode === 'DUPLICATE_REFERRAL' || result?.error === 'DUPLICATE_REFERRAL') {
+        if (
+          result?.errorCode === 'DUPLICATE_REFERRAL' ||
+          result?.error === 'DUPLICATE_REFERRAL'
+        ) {
           const error = new Error(
-            result?.message || 'This person has already been referred to this group by you.'
+            result?.message ||
+              'This person has already been referred to this group by you.'
           );
           (error as any).errorCode = 'DUPLICATE_REFERRAL';
           (error as any).errorDetails = {
             type: 'duplicate',
-            message: result?.message || 'This person has already been referred to this group by you.',
+            message:
+              result?.message ||
+              'This person has already been referred to this group by you.',
             retryable: false,
             suggestions: [
               'Check if they already have an account',
@@ -559,7 +575,7 @@ export class ReferralService {
           };
           throw error;
         }
-        
+
         return null;
       }
 
@@ -773,7 +789,9 @@ export class ReferralService {
       (topReferrers || []).forEach((item) => {
         const existing = referrerMap.get(item.referred_by_user_id);
         // Handle case where referrer might be an array (Supabase type inference) or single object
-        const referrer = Array.isArray(item.referrer) ? item.referrer[0] : item.referrer;
+        const referrer = Array.isArray(item.referrer)
+          ? item.referrer[0]
+          : item.referrer;
         referrerMap.set(item.referred_by_user_id, {
           name: getFullName(referrer) || 'Unknown',
           count: (existing?.count || 0) + 1,

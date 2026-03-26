@@ -5,6 +5,7 @@ import {
   triggerJoinRequestApprovedNotification,
   triggerJoinRequestDeniedNotification,
   triggerJoinRequestReceivedNotification,
+  triggerNewGroupReferralAcceptedNotification,
 } from './notifications';
 import { getFullName } from '../utils/name';
 import type {
@@ -368,7 +369,7 @@ export class JoinRequestService {
       // Find pending membership by id (treat requestId as membership id)
       const { data: membershipRecord, error: requestError } = await supabase
         .from('group_memberships')
-        .select('id, group_id, user_id, status, journey_status')
+        .select('id, group_id, user_id, status, journey_status, referral_id')
         .eq('id', requestId)
         .eq('status', 'pending')
         .single();
@@ -479,6 +480,27 @@ export class JoinRequestService {
             requesterId: userRes.data.id,
             approvedByName,
           });
+
+          if (membershipRecord.referral_id) {
+            const { data: referralData } = await supabase
+              .from('referrals')
+              .select('referred_by_user_id')
+              .eq('id', membershipRecord.referral_id)
+              .single();
+
+            const referredUserName = getFullName(userRes.data);
+
+            if (referralData) {
+              await triggerNewGroupReferralAcceptedNotification({
+                referrerId: referralData.referred_by_user_id,
+                referredUserId: userRes.data.id,
+                referredUserName,
+                approvedByName,
+                groupTitle: groupRes.data.title,
+                groupId: groupRes.data.id,
+              });
+            }
+          }
         }
       } catch (e) {
         if (__DEV__) console.warn('Failed to trigger approval notification', e);
