@@ -1028,6 +1028,46 @@ export const triggerReferralJoinedGroupNotification = async (
   }
 };
 
+export const triggerNewGroupReferralReceivedNotification = async (
+  data: NotificationTriggerData['referralReceived']
+): Promise<void> => {
+  data.leaderIds.forEach(async (leaderId) => {
+    if (leaderId) {
+      await createNotification({
+        user_id: leaderId,
+        type: 'referral_received',
+        title: 'Group referral received',
+        body: `${data.referredUserName} has been referred to join your group by ${data.referrerName}`,
+        data: {
+          referredUserId: data.referredUserId,
+          referredUserName: data.referredUserName,
+          referrerName: data.referrerName,
+          groupId: data.groupId,
+        },
+        action_url: `/group/${data.groupId}`,
+      });
+    }
+  });
+};
+
+export const triggerNewGroupReferralAcceptedNotification = async (
+  data: NotificationTriggerData['referralAccepted']
+): Promise<void> => {
+  await createNotification({
+    user_id: data.referrerId,
+    type: 'referral_accepted',
+    title: 'Group referral accepted',
+    body: `${data.referredUserName} has been accepted to join ${data.groupTitle || 'your group'} by ${data.approvedByName}`,
+    data: {
+      referredUserId: data.referredUserId,
+      referredUserName: data.referredUserName,
+      approvedByName: data.approvedByName,
+      groupId: data.groupId,
+    },
+    action_url: `/group/${data.groupId}`,
+  });
+};
+
 /**
  * Enhanced notification service methods for hooks
  */
