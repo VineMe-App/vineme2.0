@@ -34,6 +34,7 @@ export interface Church {
   email?: string;
   website?: string;
   logo_url?: string;
+  visible?: boolean;
   created_at: string;
   updated_at?: string;
 }

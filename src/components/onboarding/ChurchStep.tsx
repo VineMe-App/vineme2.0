@@ -25,6 +25,7 @@ import { AuthButton } from '@/components/auth/AuthButton';
 import { Text as AppText } from '@/components/ui/Text';
 
 const REQUESTED_CHURCH_ID = 'c7796e35-ebf2-460a-a2a3-9e1c053b4561';
+const REQUESTED_SERVICE_ID = '49189600-7dd7-42bf-af05-4f12f2458493';
 
 export default function ChurchStep({
   data,
@@ -100,7 +101,7 @@ export default function ChurchStep({
       }
 
       if (churchData) {
-        setChurches(churchData);
+        setChurches(churchData.filter((church) => church.visible === true));
       }
     } catch {
       setError('Failed to load churches. Please try again.');
@@ -177,6 +178,7 @@ export default function ChurchStep({
       onNext({
         requested_church: true,
         church_id: REQUESTED_CHURCH_ID,
+        service_id: REQUESTED_SERVICE_ID,
         group_status: 'existing',
       });
     }
@@ -223,6 +225,7 @@ export default function ChurchStep({
       first_name: data.first_name?.trim() || undefined,
       last_name: data.last_name?.trim() || undefined,
       church_id: REQUESTED_CHURCH_ID,
+      service_id: REQUESTED_SERVICE_ID,
       newcomer: false,
       roles: ['user', 'church_admin'],
     });
@@ -250,6 +253,7 @@ export default function ChurchStep({
             onNext({
               requested_church: true,
               church_id: REQUESTED_CHURCH_ID,
+              service_id: REQUESTED_SERVICE_ID,
               group_status: 'existing',
             });
           },
@@ -411,9 +415,6 @@ export default function ChurchStep({
     );
   };
 
-  const noServicesAvailable =
-    !!selectedChurchId && !servicesLoading && services.length === 0;
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -520,12 +521,6 @@ export default function ChurchStep({
             Back
           </AppText>
         </TouchableOpacity>
-        {noServicesAvailable && (
-          <Text style={styles.serviceRequiredNotice}>
-            A service is required to finish onboarding. Once a service is
-            available, come back to continue.
-          </Text>
-        )}
       </View>
       <MissingServiceModal
         isVisible={showMissingServiceModal}
@@ -781,13 +776,6 @@ const styles = StyleSheet.create({
     color: '#999999', // Figma: #999999
     fontSize: 16, // Figma: 16px
     letterSpacing: -0.8, // Figma: -0.8px
-  },
-  serviceRequiredNotice: {
-    marginTop: 12,
-    textAlign: 'center',
-    color: '#d73a49',
-    fontSize: 14,
-    lineHeight: 20,
   },
   infoBanner: {
     marginTop: 16,

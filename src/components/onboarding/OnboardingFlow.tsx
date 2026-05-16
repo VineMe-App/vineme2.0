@@ -20,6 +20,7 @@ import GroupStatusStep from './GroupStatusStep';
 import ProfileDetailsStep from './ProfileDetailsStep';
 
 const REQUESTED_CHURCH_ID = 'c7796e35-ebf2-460a-a2a3-9e1c053b4561';
+const REQUESTED_SERVICE_ID = '49189600-7dd7-42bf-af05-4f12f2458493';
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   { id: 'name', title: 'Your Name', component: NameStep },
@@ -211,7 +212,7 @@ export default function OnboardingFlow() {
         first_name: data.first_name?.trim() || undefined,
         last_name: data.last_name?.trim() || undefined,
         church_id: requestedChurch ? REQUESTED_CHURCH_ID : data.church_id,
-        service_id: data.service_id,
+        service_id: requestedChurch ? REQUESTED_SERVICE_ID : data.service_id,
         newcomer: isLookingForGroup, // remain newcomer if looking for a group
         roles: requestedChurch ? ['user', 'church_admin'] : undefined,
         onboarding_complete: true, // explicitly mark onboarding complete
