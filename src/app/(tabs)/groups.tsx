@@ -29,17 +29,10 @@ import {
   useGroupMembers,
   useGroupLeaders,
   useFriendsInGroup,
-  useAllApprovedGroups,
-  useIsGroupLeader,
 } from '../../hooks/useGroups';
 import { useAuthStore, useGroupFiltersStore } from '../../stores';
 import { useErrorHandler, useLoadingState } from '../../hooks';
-import {
-  ErrorMessage,
-  EmptyState,
-  Modal,
-  Button,
-} from '../../components/ui';
+import { ErrorMessage, EmptyState, Modal, Button } from '../../components/ui';
 import { AuthLoadingAnimation } from '../../components/auth/AuthLoadingAnimation';
 import { useUpdateUserProfile } from '../../hooks/useUsers';
 import {
@@ -151,13 +144,13 @@ export default function GroupsScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  
+
   // Calculate tab bar height to position search bar correctly (no gap above tab bar)
   const androidBottomPadding = Math.max(insets.bottom + 4, 12);
   const tabBarHeight = Platform.OS === 'ios' ? 100 : 56 + androidBottomPadding;
   const searchBarHeight = 50; // Search bar height
   const androidSearchBarOffset = Platform.OS === 'android' ? 10 : 0;
-  
+
   // Keyboard listeners to adjust search bar position
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
@@ -180,9 +173,10 @@ export default function GroupsScreen() {
   }, []);
 
   // Position search bar: above keyboard when open, otherwise above tab bar
-  const searchBarBottom = keyboardHeight > 0
-    ? keyboardHeight + 48 + androidSearchBarOffset // 8px spacing above keyboard
-    : tabBarHeight + androidSearchBarOffset; // Above tab bar when keyboard is closed
+  const searchBarBottom =
+    keyboardHeight > 0
+      ? keyboardHeight + 48 + androidSearchBarOffset // 8px spacing above keyboard
+      : tabBarHeight + androidSearchBarOffset; // Above tab bar when keyboard is closed
   const friendsQuery = useFriends(userProfile?.id);
   const [isLocationSearchMode, setIsLocationSearchMode] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
@@ -240,31 +234,12 @@ export default function GroupsScreen() {
     }
   }, [sortBy, isLocationSearchMode, currentView]);
 
-  const isChurchAdmin = userProfile?.roles?.includes('church_admin') ?? false;
-
-  // Check if user is a group leader (of any group)
-  const { data: isGroupLeaderCheck, isLoading: isLoadingLeaderCheck } =
-    useIsGroupLeader(userProfile?.id);
-  const isGroupLeader = isGroupLeaderCheck ?? false;
-
-  // Both church admins and group leaders should see all groups
-  const shouldFetchAllGroups = isChurchAdmin || isGroupLeader;
-
   const {
     data: churchGroups,
     isLoading: isLoadingChurchGroups,
     error: churchGroupsError,
     refetch: refetchChurchGroups,
-  } = useGroupsByChurch(
-    !shouldFetchAllGroups ? userProfile?.church_id : undefined
-  );
-
-  const {
-    data: adminGroups,
-    isLoading: isLoadingAdminGroups,
-    error: adminGroupsError,
-    refetch: refetchAdminGroups,
-  } = useAllApprovedGroups(shouldFetchAllGroups);
+  } = useGroupsByChurch(userProfile?.church_id);
 
   const friendIds = useMemo(
     () =>
@@ -275,12 +250,9 @@ export default function GroupsScreen() {
       ),
     [friendsQuery.data]
   );
-  const friendIdsArray = useMemo(
-    () => Array.from(friendIds),
-    [friendIds]
-  );
+  const friendIdsArray = useMemo(() => Array.from(friendIds), [friendIds]);
   const shouldFetchFriendGroups =
-    !shouldFetchAllGroups && !userProfile?.church_id;
+    !!userProfile?.id && friendIdsArray.length > 0;
 
   const {
     data: friendGroups,
@@ -332,57 +304,58 @@ export default function GroupsScreen() {
 
       if (groupsError) throw groupsError;
 
-      return (
-        (groups || []).map((group) => ({
-          ...group,
-          member_count:
-            group.memberships?.filter((m: any) => m.status === 'active')
-              .length || 0,
-        })) as GroupWithDetails[]
-      );
+      return (groups || []).map((group) => ({
+        ...group,
+        member_count:
+          group.memberships?.filter((m: any) => m.status === 'active').length ||
+          0,
+      })) as GroupWithDetails[];
     },
-    enabled: shouldFetchFriendGroups && !!userProfile?.id,
+    enabled: shouldFetchFriendGroups,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 
-  const allGroups = shouldFetchAllGroups
-    ? adminGroups
-    : userProfile?.church_id
-    ? churchGroups
-    : friendGroups;
+  const allGroups = useMemo(() => {
+    if (userProfile?.church_id && !churchGroups) return undefined;
+    if (!userProfile?.church_id && shouldFetchFriendGroups && !friendGroups) {
+      return undefined;
+    }
+
+    const groupsById = new Map<string, GroupWithDetails>();
+
+    if (userProfile?.church_id) {
+      (churchGroups || []).forEach((group) => groupsById.set(group.id, group));
+    }
+
+    (friendGroups || []).forEach((group) => groupsById.set(group.id, group));
+
+    return Array.from(groupsById.values());
+  }, [
+    churchGroups,
+    friendGroups,
+    shouldFetchFriendGroups,
+    userProfile?.church_id,
+  ]);
   const isLoading =
-    isLoadingLeaderCheck ||
-    (shouldFetchAllGroups
-      ? isLoadingAdminGroups
-      : userProfile?.church_id
-      ? isLoadingChurchGroups
-      : isLoadingFriendGroups);
-  const error = shouldFetchAllGroups
-    ? adminGroupsError
-    : userProfile?.church_id
-    ? churchGroupsError
-    : friendGroupsError;
-  const refetch = shouldFetchAllGroups
-    ? refetchAdminGroups
-    : userProfile?.church_id
-    ? refetchChurchGroups
-    : refetchFriendGroups;
+    (!!userProfile?.church_id && isLoadingChurchGroups) ||
+    (shouldFetchFriendGroups && isLoadingFriendGroups);
+  const error = churchGroupsError || friendGroupsError;
+  const refetch = async () => {
+    const queries = [];
 
-  const isLeaderOfApprovedGroup = useMemo(() => {
-    if (!userProfile?.id || !allGroups?.length) return false;
-    return allGroups.some((group) =>
-      (group.memberships || []).some(
-        (membership: any) =>
-          membership.user_id === userProfile.id &&
-          membership.role === 'leader' &&
-          membership.status === 'active'
-      )
-    );
-  }, [allGroups, userProfile?.id]);
+    if (userProfile?.church_id) {
+      queries.push(refetchChurchGroups());
+    }
 
-  const canFilterByChurch =
-    !!userProfile?.church_id && (isChurchAdmin || isLeaderOfApprovedGroup);
+    if (shouldFetchFriendGroups) {
+      queries.push(refetchFriendGroups());
+    }
+
+    await Promise.all(queries);
+  };
+
+  const canFilterByChurch = !!userProfile?.church_id;
 
   const groupsWithVisibility = useMemo(() => {
     if (!allGroups) return [];
@@ -395,65 +368,48 @@ export default function GroupsScreen() {
         __isGreyedOut?: boolean;
         __category?: 'service' | 'church' | 'outside';
       })[]
-    >(
-      (acc, group) => {
-        const isInUserChurch =
-          !!userChurchId && group.church_id === userChurchId;
-        const isInUserService =
-          !!userServiceId && group.service_id === userServiceId;
-        const friendInGroup = (group.memberships || []).some(
-          (membership: any) =>
-            membership.status === 'active' && friendIds.has(membership.user_id)
-        );
+    >((acc, group) => {
+      const isInUserChurch = !!userChurchId && group.church_id === userChurchId;
+      const isInUserService =
+        !!userServiceId && group.service_id === userServiceId;
+      const friendInGroup = (group.memberships || []).some(
+        (membership: any) =>
+          membership.status === 'active' && friendIds.has(membership.user_id)
+      );
 
-        let include = false;
-        let isGreyedOut = false;
-        let category: 'service' | 'church' | 'outside' = 'outside';
+      let include = false;
+      let isGreyedOut = false;
+      let category: 'service' | 'church' | 'outside' = 'outside';
 
-        // Determine category for color coding
-        if (isInUserService) {
-          category = 'service';
-        } else if (isInUserChurch) {
-          category = 'church';
-        } else {
-          category = 'outside';
-        }
+      // Determine category for color coding
+      if (isInUserService) {
+        category = 'service';
+      } else if (isInUserChurch) {
+        category = 'church';
+      } else {
+        category = 'outside';
+      }
 
-        // Church admins and group leaders can see ALL groups
-        if (isChurchAdmin || isGroupLeader) {
-          include = true;
-          // Grey out groups outside their church
-          isGreyedOut = userChurchId
-            ? group.church_id !== userChurchId
-            : false;
-        } else {
-          // Regular users can see:
-          // 1. All groups in their church (not just their service)
-          // 2. Groups where their friends are members (greyed out if not in their church)
-          if (isInUserChurch) {
-            include = true;
-          } else if (friendInGroup) {
-            include = true;
-            isGreyedOut = true;
-          }
-        }
+      // Everyone can see approved groups in their church, plus approved
+      // groups where active friends are members.
+      if (isInUserChurch) {
+        include = true;
+      } else if (friendInGroup) {
+        include = true;
+        isGreyedOut = true;
+      }
 
-        if (include) {
-          acc.push({ ...group, __isGreyedOut: isGreyedOut, __category: category });
-        }
+      if (include) {
+        acc.push({
+          ...group,
+          __isGreyedOut: isGreyedOut,
+          __category: category,
+        });
+      }
 
-        return acc;
-      },
-      []
-    );
-  }, [
-    allGroups,
-    friendIds,
-    isChurchAdmin,
-    isGroupLeader,
-    userProfile?.church_id,
-    userProfile?.service_id,
-  ]);
+      return acc;
+    }, []);
+  }, [allGroups, friendIds, userProfile?.church_id, userProfile?.service_id]);
 
   // Apply filters to groups (including "only with friends")
   const filteredGroups = useMemo(() => {
@@ -585,7 +541,6 @@ export default function GroupsScreen() {
             : userProfile?.church_id
               ? 'There are no Bible study groups available in your church yet.'
               : 'Your church is not on VineMe yet. Add friends to see their groups.'
-              
         }
       />
     );
@@ -739,8 +694,14 @@ export default function GroupsScreen() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.figmaIconButton}
-            onPress={() => handleViewChange(currentView === 'map' ? 'list' : 'map')}
-            accessibilityLabel={currentView === 'map' ? 'Switch to list view' : 'Switch to map view'}
+            onPress={() =>
+              handleViewChange(currentView === 'map' ? 'list' : 'map')
+            }
+            accessibilityLabel={
+              currentView === 'map'
+                ? 'Switch to list view'
+                : 'Switch to map view'
+            }
           >
             <View
               style={[
@@ -818,7 +779,6 @@ export default function GroupsScreen() {
         </View>
       </View>
 
-
       {showSortOptions && (
         <View
           style={[
@@ -848,11 +808,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="text-outline"
               size={20}
-              color={
-                sortBy === 'alphabetical'
-                  ? '#FF0083'
-                  : '#2C2235'
-              }
+              color={sortBy === 'alphabetical' ? '#FF0083' : '#2C2235'}
             />
             <Text
               variant="body"
@@ -885,9 +841,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="navigate-outline"
               size={20}
-              color={
-                sortBy === 'distance' ? '#FF0083' : '#2C2235'
-              }
+              color={sortBy === 'distance' ? '#FF0083' : '#2C2235'}
             />
             <Text
               variant="body"
@@ -923,9 +877,7 @@ export default function GroupsScreen() {
             <Ionicons
               name="people-outline"
               size={20}
-              color={
-                sortBy === 'friends' ? '#FF0083' : '#2C2235'
-              }
+              color={sortBy === 'friends' ? '#FF0083' : '#2C2235'}
             />
             <Text
               variant="body"
@@ -1023,16 +975,15 @@ export default function GroupsScreen() {
               Visibility rules
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Members see groups in their own service. Groups with your
-              friends outside the service appear in grey.
+              • People with a church see every approved group in their church.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Group leaders see every group in their church plus grey markers
-              for friend groups in other churches.
+              • Everyone also sees approved groups where active friends are
+              members, even when those groups are in another church.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Church admins see every approved group. Groups outside your
-              church are tinted grey for context.
+              • People without a church only see approved groups where active
+              friends are members.
             </Text>
           </View>
 
@@ -1041,16 +992,15 @@ export default function GroupsScreen() {
               Helpful tips
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Use filters and search to narrow by day or friends in
-              a group.
+              • Use filters and search to narrow by day or friends in a group.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
               • Switch to the map to browse by location and tap pins for quick
               access to the group card.
             </Text>
             <Text variant="body" style={styles.infoModalBullet}>
-              • Grey groups are outside your immediate scope but include
-              friends—reach out if you&apos;re interested.
+              • Grey groups are outside your church but include friends—reach
+              out if you&apos;re interested.
             </Text>
           </View>
         </View>
@@ -1154,7 +1104,13 @@ const GroupItemWithMembership: React.FC<{
     }
 
     return [];
-  }, [friendsQuery.data, friendsInGroupMemberships, members, userProfile?.id, canSeeMembers]);
+  }, [
+    friendsQuery.data,
+    friendsInGroupMemberships,
+    members,
+    userProfile?.id,
+    canSeeMembers,
+  ]);
 
   const friendsInGroup = React.useMemo(
     () => friendUsers.slice(0, 3),
