@@ -259,6 +259,7 @@ export const useEnhancedNotifications = (userId?: string) => {
     data: unreadCount,
     isLoading: isLoadingCount,
     error: countError,
+    refetch: refetchCount,
   } = useQuery({
     queryKey: ['notifications', 'count', userId, { read: false }],
     queryFn: () => getNotificationCountWithSettings(userId!, { read: false }),
@@ -311,6 +312,7 @@ export const useEnhancedNotifications = (userId?: string) => {
     data: unreadNotifications,
     isLoading: isLoadingUnread,
     error: unreadError,
+    refetch: refetchUnreadNotifications,
   } = useQuery({
     queryKey: ['notifications', 'unread', userId],
     queryFn: () => getUnreadNotificationsWithSettings(userId!),
@@ -531,11 +533,13 @@ export const useEnhancedNotifications = (userId?: string) => {
     notificationsData?.pages.flatMap((page) => page.notifications) || [];
 
   // Refresh all notification data
-  const refreshNotifications = useCallback(() => {
-    queryClient.invalidateQueries({
-      queryKey: ['notifications', userId],
-    });
-  }, [queryClient, userId]);
+  const refreshNotifications = useCallback(async () => {
+    await Promise.all([
+      refetchNotifications(),
+      refetchCount(),
+      refetchUnreadNotifications(),
+    ]);
+  }, [refetchNotifications, refetchCount, refetchUnreadNotifications]);
 
   return {
     // Data

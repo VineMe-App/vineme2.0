@@ -35,6 +35,10 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
 }) => {
   const { theme } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [groupBy, setGroupBy] = useState<'none' | 'type' | 'date'>('none');
 
   const {
     notifications: allNotifications,
@@ -165,12 +169,6 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
     };
     return order[dateKey as keyof typeof order] ?? 5;
   };
-
-  // Local state for UI interactions
-  const [showFilters, setShowFilters] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [groupBy, setGroupBy] = useState<'none' | 'type' | 'date'>('none');
 
   // Handle scroll to load more notifications
   const handleScroll = useCallback(
