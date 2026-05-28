@@ -57,18 +57,18 @@ serve(async (req: any) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     // Create client to verify user session
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: { Authorization: authHeader },
       },
     });
-    
+
     // Parse payload first to get referrerId
     const payload = (await req.json()) as CreateReferredUserPayload;
     const isExistingMember = Boolean(payload?.isExistingMember);
-    
+
     if (!payload?.email || typeof payload.email !== 'string') {
       return new Response(
         JSON.stringify({ ok: false, error: 'Email is required' }),
@@ -82,30 +82,36 @@ serve(async (req: any) => {
         { status: 200 }
       );
     }
-    
+
     // Verify the user is authenticated
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await userClient.auth.getUser();
+
     if (authError || !user) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Unauthorized - authentication required' }),
+        JSON.stringify({
+          ok: false,
+          error: 'Unauthorized - authentication required',
+        }),
         { status: 401 }
       );
     }
-    
+
     // Ensure the authenticated user is the referrer
     if (user.id !== payload.referrerId) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Unauthorized - referrer ID mismatch' }),
+        JSON.stringify({
+          ok: false,
+          error: 'Unauthorized - referrer ID mismatch',
+        }),
         { status: 403 }
       );
     }
-    
+
     // Create service role client for admin operations
-    const supabase = createClient(
-      supabaseUrl,
-      supabaseServiceKey
-    );
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get referrer's church info first
     const { data: referrerData, error: referrerError } = await supabase
@@ -136,42 +142,42 @@ serve(async (req: any) => {
     const findUserByEmail = async (email: string): Promise<any | null> => {
       let page = 1;
       const perPage = 1000;
-      
+
       while (true) {
         try {
           const { data, error } = await supabase.auth.admin.listUsers({
             page,
             perPage,
           });
-          
+
           if (error) {
             console.log(`Error listing users page ${page}:`, error.message);
             break;
           }
-          
+
           if (!data?.users || data.users.length === 0) {
             // No more users to check
             break;
           }
-          
+
           // Search for matching email in current page
           const match = data.users.find((user: any) => user.email === email);
           if (match) {
             return match;
           }
-          
+
           // If we got fewer users than perPage, we've reached the last page
           if (data.users.length < perPage) {
             break;
           }
-          
+
           page++;
         } catch (e) {
           console.log(`Exception listing users page ${page}:`, e);
           break;
         }
       }
-      
+
       return null;
     };
 
@@ -181,27 +187,27 @@ serve(async (req: any) => {
       if (!normalizedPhone) {
         return null;
       }
-      
+
       let page = 1;
       const perPage = 1000;
-      
+
       while (true) {
         try {
           const { data, error } = await supabase.auth.admin.listUsers({
             page,
             perPage,
           });
-          
+
           if (error) {
             console.log(`Error listing users page ${page}:`, error.message);
             break;
           }
-          
+
           if (!data?.users || data.users.length === 0) {
             // No more users to check
             break;
           }
-          
+
           // Search for matching phone in current page
           const match = data.users.find((user: any) => {
             const userPhone = normalizePhone(user.phone);
@@ -210,23 +216,23 @@ serve(async (req: any) => {
               userPhone === normalizedPhone || userMetaPhone === normalizedPhone
             );
           });
-          
+
           if (match) {
             return match;
           }
-          
+
           // If we got fewer users than perPage, we've reached the last page
           if (data.users.length < perPage) {
             break;
           }
-          
+
           page++;
         } catch (e) {
           console.log(`Exception listing users page ${page}:`, e);
           break;
         }
       }
-      
+
       return null;
     };
 
@@ -265,28 +271,33 @@ serve(async (req: any) => {
       userId = existingUserId;
       reusedExistingUser = true;
       console.log('Reusing existing user:', userId);
-      
+
       // Send verification/referral email to existing user
       try {
-        const { data: existingAuthUser } = await supabase.auth.admin.getUserById(userId);
+        const { data: existingAuthUser } =
+          await supabase.auth.admin.getUserById(userId);
         if (existingAuthUser?.user) {
           let emailToUse = existingAuthUser.user.email;
-          
+
           // If user doesn't have an email, link the referral email to their account
           if (!emailToUse && payload.email) {
-            const redirectUrl = `https://vineme.app/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
+            const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
             // Update user email via admin API
-            const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
-              email: payload.email,
-            });
-            
+            const { error: updateError } =
+              await supabase.auth.admin.updateUserById(userId, {
+                email: payload.email,
+              });
+
             if (updateError) {
-              console.log('Failed to link email to existing user:', updateError.message);
+              console.log(
+                'Failed to link email to existing user:',
+                updateError.message
+              );
               // Continue without email - referral will still be created
             } else {
               emailToUse = payload.email;
               console.log('Linked referral email to existing user account');
-              
+
               // Manually send verification email since admin API doesn't auto-send
               const { error: resendError } = await supabase.auth.resend({
                 type: 'signup',
@@ -295,9 +306,12 @@ serve(async (req: any) => {
                   emailRedirectTo: redirectUrl,
                 },
               });
-              
+
               if (resendError) {
-                console.log('Failed to send verification email after linking:', resendError.message);
+                console.log(
+                  'Failed to send verification email after linking:',
+                  resendError.message
+                );
                 // Non-fatal error - email was linked but verification email failed
               } else {
                 console.log('Sent verification email to newly linked email');
@@ -305,7 +319,7 @@ serve(async (req: any) => {
             }
           } else if (emailToUse && !existingAuthUser.user.email_confirmed_at) {
             // User has email but it's not verified - send verification email
-            const redirectUrl = `https://vineme.app/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToUse)}`;
+            const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToUse)}`;
             // Use resend to actually send the email
             const { error: resendError } = await supabase.auth.resend({
               type: 'signup',
@@ -314,21 +328,30 @@ serve(async (req: any) => {
                 emailRedirectTo: redirectUrl,
               },
             });
-            
+
             if (resendError) {
-              console.log('Failed to send verification email to existing user:', resendError.message);
+              console.log(
+                'Failed to send verification email to existing user:',
+                resendError.message
+              );
               // Non-fatal error - continue without sending email
             } else {
-              console.log('Sent verification email to existing unverified user');
+              console.log(
+                'Sent verification email to existing unverified user'
+              );
             }
           } else if (emailToUse && existingAuthUser.user.email_confirmed_at) {
             // Email is already verified - send a referral notification email
             // Note: This would require a custom email template or notification system
             // For now, we'll just log that the user was referred
-            console.log(`User ${userId} was referred but email is already verified. Referral notification could be sent to ${emailToUse}`);
+            console.log(
+              `User ${userId} was referred but email is already verified. Referral notification could be sent to ${emailToUse}`
+            );
             // TODO: Implement referral notification email for verified users
           } else {
-            console.log('Existing user has no email and could not link referral email - no email sent');
+            console.log(
+              'Existing user has no email and could not link referral email - no email sent'
+            );
           }
         }
       } catch (e) {
@@ -339,7 +362,7 @@ serve(async (req: any) => {
       // Invite new user via Supabase's built-in invitation system
       const normalizedPhone = normalizePhone(payload.phone);
       // Use the HTTPS redirect URL for email verification
-      const redirectUrl = `https://vineme.app/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
+      const redirectUrl = `https://vineme.app/auth/verify-email?redirect=/profile/communication&email=${encodeURIComponent(payload.email)}`;
       const { data: authData, error: authError } =
         await supabase.auth.admin.inviteUserByEmail(payload.email, {
           data: {
@@ -379,9 +402,10 @@ serve(async (req: any) => {
 
       // Update the user to set the phone field for proper phone authentication
       if (normalizedPhone) {
-        const { error: phoneUpdateError } = await supabase.auth.admin.updateUserById(userId, {
-          phone: normalizedPhone,
-        });
+        const { error: phoneUpdateError } =
+          await supabase.auth.admin.updateUserById(userId, {
+            phone: normalizedPhone,
+          });
 
         if (phoneUpdateError) {
           console.log('Failed to update user phone:', phoneUpdateError.message);
@@ -402,9 +426,12 @@ serve(async (req: any) => {
             redirectTo: redirectUrl,
           },
         });
-        
+
         if (resendError) {
-          console.log('Failed to send verification email:', resendError.message);
+          console.log(
+            'Failed to send verification email:',
+            resendError.message
+          );
           // Non-fatal error - inviteUserByEmail should have sent an email already
         } else {
           console.log('Sent verification email to new user');
@@ -515,7 +542,8 @@ serve(async (req: any) => {
             ok: false,
             error: 'DUPLICATE_REFERRAL',
             errorCode: 'DUPLICATE_REFERRAL',
-            message: 'This person has already been referred to this group by you.',
+            message:
+              'This person has already been referred to this group by you.',
           }),
           { status: 200 }
         );
@@ -526,7 +554,8 @@ serve(async (req: any) => {
             ok: false,
             error: 'DUPLICATE_REFERRAL',
             errorCode: 'DUPLICATE_REFERRAL',
-            message: 'This person has already been referred to this group by someone else.',
+            message:
+              'This person has already been referred to this group by someone else.',
           }),
           { status: 200 }
         );
@@ -558,7 +587,8 @@ serve(async (req: any) => {
             ok: false,
             error: 'DUPLICATE_REFERRAL',
             errorCode: 'DUPLICATE_REFERRAL',
-            message: 'This person has already been referred to this group by you.',
+            message:
+              'This person has already been referred to this group by you.',
           }),
           { status: 200 }
         );
@@ -605,6 +635,110 @@ serve(async (req: any) => {
         }
       } else {
         console.log('User already a member of this group');
+      }
+    }
+
+    if (payload.groupId && membershipCreated) {
+      try {
+        const [groupRes, referredRes, referrerRes, leadersRes] =
+          await Promise.all([
+            supabase
+              .from('groups')
+              .select('title')
+              .eq('id', payload.groupId)
+              .single(),
+            supabase
+              .from('users')
+              .select('first_name, last_name')
+              .eq('id', userId)
+              .single(),
+            supabase
+              .from('users')
+              .select('first_name, last_name')
+              .eq('id', payload.referrerId)
+              .single(),
+            supabase
+              .from('group_memberships')
+              .select('user_id')
+              .eq('group_id', payload.groupId)
+              .eq('role', 'leader')
+              .eq('status', 'active'),
+          ]);
+
+        const groupTitle = groupRes.data?.title || 'a group';
+        const referredName =
+          buildFullName(
+            referredRes.data?.first_name,
+            referredRes.data?.last_name
+          ) ||
+          payload.firstName ||
+          payload.email.split('@')[0] ||
+          'A member';
+        const referrerName =
+          buildFullName(
+            referrerRes.data?.first_name,
+            referrerRes.data?.last_name
+          ) || 'Someone';
+
+        const leaderIds = (leadersRes.data || [])
+          .map((leader: { user_id?: string }) => leader.user_id)
+          .filter((id: string | undefined): id is string => Boolean(id));
+
+        if (leaderIds.length > 0) {
+          const { data: leaderSettings } = await supabase
+            .from('user_notification_settings')
+            .select('user_id, join_requests')
+            .in('user_id', leaderIds);
+          const disabledLeaderIds = new Set(
+            (leaderSettings || [])
+              .filter((setting) => setting.join_requests === false)
+              .map((setting) => setting.user_id)
+          );
+
+          const recipients = leaderIds.filter(
+            (leaderId) => !disabledLeaderIds.has(leaderId)
+          );
+
+          const now = new Date().toISOString();
+          const notifications = recipients.map((leaderId) => ({
+            user_id: leaderId,
+            type: 'referral_received',
+            title: 'New Referral',
+            body: `${referredName} has been referred to your group by ${referrerName}`,
+            data: {
+              groupId: payload.groupId,
+              groupTitle,
+              referredUserId: userId,
+              referredUserName: referredName,
+              referrerId: payload.referrerId,
+              referrerName,
+            },
+            action_url: `/group-management/${payload.groupId}?tab=requests`,
+            expires_at: null,
+            read: false,
+            created_at: now,
+            updated_at: now,
+          }));
+
+          if (notifications.length > 0) {
+            const { error: notificationError } = await supabase
+              .from('notifications')
+              .insert(notifications);
+
+            if (notificationError) {
+              throw notificationError;
+            }
+          }
+
+          console.log(
+            `Referral notifications sent to ${recipients.length} leaders`
+          );
+        }
+      } catch (notifyError) {
+        console.log(
+          'Failed to trigger referral received notifications:',
+          notifyError
+        );
       }
     }
 
