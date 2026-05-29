@@ -299,6 +299,7 @@ export class AuthService {
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
+    roles?: string[];
     onboarding_complete?: boolean;
     avatar_url?: string;
     bio?: string;
@@ -400,7 +401,9 @@ export class AuthService {
 
       // Preserve existing roles if profile exists (e.g., after linking orphaned user)
       // Only set default 'user' role if creating a brand new profile
-      if (existingRoles && existingRoles.length > 0) {
+      if (userData.roles && userData.roles.length > 0) {
+        payload.roles = userData.roles;
+      } else if (existingRoles && existingRoles.length > 0) {
         payload.roles = existingRoles;
       } else {
         payload.roles = ['user'];

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -10,9 +9,9 @@ import {
 } from 'react-native';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export interface MissingServiceFormData {
-  churchId?: string;
   churchName: string;
   churchLocation?: string;
   serviceName?: string;
@@ -25,25 +24,19 @@ export interface MissingServiceFormData {
 export interface MissingServiceModalProps {
   isVisible: boolean;
   onClose: () => void;
-  initialChurchId?: string;
-  initialChurchName?: string;
   isSubmitting: boolean;
   onSubmit: (form: MissingServiceFormData) => void;
   error?: string | null;
-  mode: 'church' | 'service';
 }
 
 export function MissingServiceModal({
   isVisible,
   onClose,
-  initialChurchId,
-  initialChurchName,
   isSubmitting,
   onSubmit,
   error,
-  mode,
 }: MissingServiceModalProps) {
-  const [churchName, setChurchName] = useState(initialChurchName || '');
+  const [churchName, setChurchName] = useState('');
   const [churchLocation, setChurchLocation] = useState('');
   const [serviceName, setServiceName] = useState('');
   const [serviceTime, setServiceTime] = useState('');
@@ -53,13 +46,8 @@ export function MissingServiceModal({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isVisible) {
-      setChurchName(initialChurchName || '');
-    }
-  }, [initialChurchName, isVisible, mode]);
-
-  useEffect(() => {
     if (!isVisible) {
+      setChurchName('');
       setChurchLocation('');
       setServiceName('');
       setServiceTime('');
@@ -79,17 +67,17 @@ export function MissingServiceModal({
       setValidationError('Please provide a contact name.');
       return;
     }
-    if (contactEmail.trim()) {
-      const emailPattern = /[^\s@]+@[^\s@]+\.[^\s@]+/;
-      if (!emailPattern.test(contactEmail.trim())) {
-        setValidationError('Please enter a valid contact email.');
-        return;
-      }
+    if (!contactEmail.trim()) {
+      setValidationError('Please provide a contact email.');
+      return;
+    }
+    if (!isContactEmailValid) {
+      setValidationError('Please enter a valid contact email.');
+      return;
     }
 
     setValidationError(null);
     onSubmit({
-      churchId: initialChurchId,
       churchName: churchName.trim(),
       churchLocation: churchLocation.trim() || undefined,
       serviceName: serviceName.trim() || undefined,
@@ -105,12 +93,68 @@ export function MissingServiceModal({
     [validationError, error]
   );
 
-  const title =
-    mode === 'church' ? 'Request New Church' : 'Request New Service';
-  const description =
-    mode === 'church'
-      ? "Let us know about the church or campus you're part of. Share the details below and we'll reach out to get it added."
-      : "We'll let the VineMe team know about this missing service. Share as much detail as you can and we'll reach out soon.";
+  const isContactEmailValid = useMemo(() => {
+    const trimmedEmail = contactEmail.trim();
+    if (!trimmedEmail) return false;
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(trimmedEmail);
+  }, [contactEmail]);
+
+  const canSubmit = useMemo(
+    () =>
+      Boolean(churchName.trim()) &&
+      Boolean(contactName.trim()) &&
+      isContactEmailValid,
+    [churchName, contactName, isContactEmailValid]
+  );
+  const submitButtonStyle = useMemo(
+    () =>
+      StyleSheet.flatten([
+        styles.submitButton,
+        !canSubmit && styles.submitButtonDisabled,
+      ]),
+    [canSubmit]
+  );
+
+  const title = 'Tell us about your church';
+  const renderInput = ({
+    label,
+    required,
+    multiline,
+    ...inputProps
+  }: React.ComponentProps<typeof Input> & {
+    label: string;
+    required?: boolean;
+    multiline?: boolean;
+  }) => (
+    <View style={styles.fieldContainer}>
+      <Text style={styles.inputLabel}>
+        {label}
+        {required ? <Text style={styles.requiredAsterisk}>*</Text> : null}
+      </Text>
+      <View
+        style={[
+          styles.inputBorderWrapper,
+          multiline && styles.textAreaBorderWrapper,
+        ]}
+      >
+        <Input
+          {...inputProps}
+          multiline={multiline}
+          placeholderTextColor="#999999"
+          containerStyle={styles.inputContainerOverride}
+          inputStyle={StyleSheet.flatten([
+            styles.textInput,
+            multiline && styles.textAreaInput,
+          ])}
+          variant="outlined"
+          scrollEnabled={false}
+          textAlignVertical={multiline ? 'top' : undefined}
+        />
+      </View>
+    </View>
+  );
 
   return (
     <Modal
@@ -118,145 +162,163 @@ export function MissingServiceModal({
       onClose={onClose}
       title={title}
       variant="bottom-sheet"
-      scrollable
+      scrollable={false}
       size="large"
+      contentStyle={styles.modalContent}
+      bodyStyle={styles.modalBody}
+      headerStyle={styles.modalHeader}
+      titleTextStyle={styles.modalTitle}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={64}
+        style={styles.keyboardAvoidingView}
       >
         <ScrollView
+          style={styles.scrollView}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.description}>{description}</Text>
+          <Text style={styles.description}>
+            We&apos;d love to get your church on VineMe. Tell us about your
+            church and then take a look around with a{' '}
+            <Text style={styles.descriptionBold}>demo church</Text> to get a
+            feel for how VineMe works.
+          </Text>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Church name</Text>
-            <TextInput
-              style={styles.input}
-              value={churchName}
-              onChangeText={setChurchName}
-              placeholder="Church name"
-              placeholderTextColor="#666"
-            />
-          </View>
+          {renderInput({
+            label: 'Church name',
+            required: true,
+            value: churchName,
+            onChangeText: setChurchName,
+            placeholder: 'Church name',
+          })}
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Location (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={churchLocation}
-              onChangeText={setChurchLocation}
-              placeholder="Location or postcode"
-              placeholderTextColor="#666"
-            />
-          </View>
-
-          {mode === 'church' && (
-            <Text style={styles.sectionLabel}>
-              Service details (optional, if known)
-            </Text>
-          )}
+          {renderInput({
+            label: 'Location',
+            value: churchLocation,
+            onChangeText: setChurchLocation,
+            placeholder: 'Location or postcode',
+          })}
 
           <View style={styles.fieldRow}>
-            <View style={[styles.fieldGroup, styles.flexHalf]}>
-              <Text style={styles.label}>Service name (optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={serviceName}
-                onChangeText={setServiceName}
-                placeholder="Service name"
-                placeholderTextColor="#666"
-              />
+            <View style={styles.flexHalf}>
+              {renderInput({
+                label: 'Service name',
+                value: serviceName,
+                onChangeText: setServiceName,
+                placeholder: 'Optional',
+              })}
             </View>
-            <View style={[styles.fieldGroup, styles.flexHalf]}>
-              <Text style={styles.label}>Typical time (optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={serviceTime}
-                onChangeText={setServiceTime}
-                placeholder="e.g. Sundays 5pm"
-                placeholderTextColor="#666"
-              />
+            <View style={styles.flexHalf}>
+              {renderInput({
+                label: 'Service time',
+                value: serviceTime,
+                onChangeText: setServiceTime,
+                placeholder: 'e.g. 5pm',
+              })}
             </View>
           </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Best contact name</Text>
-            <TextInput
-              style={styles.input}
-              value={contactName}
-              onChangeText={setContactName}
-              placeholder="Who should we follow up with?"
-              placeholderTextColor="#666"
-            />
-          </View>
+          {renderInput({
+            label: 'Best contact name',
+            required: true,
+            value: contactName,
+            onChangeText: setContactName,
+            placeholder: 'Who should we follow up with?',
+          })}
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Best contact email (if you know it!)</Text>
-            <TextInput
-              style={styles.input}
-              value={contactEmail}
-              onChangeText={setContactEmail}
-              placeholder="name@example.com"
-              placeholderTextColor="#666"
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
+          {renderInput({
+            label: 'Best contact email',
+            required: true,
+            value: contactEmail,
+            onChangeText: setContactEmail,
+            placeholder: 'name@example.com',
+            autoCapitalize: 'none',
+            autoCorrect: false,
+            keyboardType: 'email-address',
+          })}
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>
-              Anything else we should know? (optional)
-            </Text>
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              value={additionalInfo}
-              onChangeText={setAdditionalInfo}
-              placeholder="Add context or questions"
-              placeholderTextColor="#666"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
-
-          {showError ? <Text style={styles.errorText}>{showError}</Text> : null}
-
-          <View style={styles.actions}>
-            <Button
-              title="Cancel"
-              onPress={onClose}
-              variant="ghost"
-              disabled={isSubmitting}
-            />
-            <Button
-              title="Send request"
-              onPress={handleSubmit}
-              loading={isSubmitting}
-              variant="primary"
-            />
-          </View>
+          {renderInput({
+            label: 'Anything else?',
+            value: additionalInfo,
+            onChangeText: setAdditionalInfo,
+            placeholder:
+              'Optional - anything that would help when we reach out',
+            multiline: true,
+            numberOfLines: 3,
+          })}
         </ScrollView>
+        <View style={styles.footer}>
+          {showError ? <Text style={styles.errorText}>{showError}</Text> : null}
+          <Button
+            title="Submit"
+            onPress={handleSubmit}
+            loading={isSubmitting}
+            variant="primary"
+            disabled={!canSubmit || isSubmitting}
+            style={submitButtonStyle}
+            textStyle={styles.submitButtonText}
+          />
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalContent: {
+    width: '92%',
+    alignSelf: 'center',
+    height: '88%',
+    maxHeight: '88%',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  modalBody: {
+    flex: 1,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  modalHeader: {
+    paddingHorizontal: 16,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontFamily: 'Figtree-Bold',
+    fontWeight: '700',
+    color: '#2C2235',
+    letterSpacing: -0.44,
+    lineHeight: 26,
+    paddingLeft: 0,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
   content: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    gap: 16,
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 8,
   },
   description: {
-    fontSize: 15,
-    color: '#444',
-    lineHeight: 22,
+    fontSize: 14,
+    fontFamily: 'Figtree-Regular',
+    fontWeight: '400',
+    color: '#2C2235',
+    letterSpacing: -0.28,
+    lineHeight: 20,
+    marginBottom: 24,
   },
-  fieldGroup: {
-    gap: 6,
+  descriptionBold: {
+    fontFamily: 'Figtree-Bold',
+    fontWeight: '700',
   },
   fieldRow: {
     flexDirection: 'row',
@@ -264,37 +326,93 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontFamily: 'Figtree-Medium',
+    fontWeight: '500',
+    color: '#2C2235',
+    letterSpacing: -0.26,
+    lineHeight: 18,
+    marginBottom: 10,
   },
   flexHalf: {
     flex: 1,
   },
-  label: {
+  fieldContainer: {
+    marginBottom: 10,
+  },
+  inputLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontFamily: 'Figtree-Medium',
+    fontWeight: '500',
+    color: '#2C2235',
+    letterSpacing: -0.28,
+    lineHeight: 15,
+    marginBottom: 11,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d8d8d8',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  requiredAsterisk: {
+    color: '#FF0083',
+  },
+  inputBorderWrapper: {
+    borderWidth: 2,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    overflow: 'hidden',
+    minHeight: 50,
+    backgroundColor: '#FFFFFF',
+  },
+  textAreaBorderWrapper: {
+    minHeight: 104,
+  },
+  inputContainerOverride: {
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  textInput: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 17,
     fontSize: 16,
-    backgroundColor: '#fbfbfb',
+    fontFamily: 'Figtree-Medium',
+    fontWeight: '500',
+    color: '#2C2235',
+    letterSpacing: -0.32,
+    lineHeight: 24,
+    minHeight: 50,
   },
-  multiline: {
-    minHeight: 96,
+  textAreaInput: {
+    minHeight: 104,
+    paddingTop: 19,
+    paddingBottom: 19,
   },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 8,
+  footer: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 28,
+    backgroundColor: '#FFFFFF',
+  },
+  submitButton: {
+    width: 278,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#2C2235',
+    borderColor: '#2C2235',
+    alignSelf: 'center',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#D8D8D8',
+    borderColor: '#D8D8D8',
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontFamily: 'Figtree-Bold',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   errorText: {
-    color: '#d73a49',
-    fontSize: 14,
+    fontSize: 12,
+    color: '#FF0083',
+    marginTop: 4,
+    marginBottom: 8,
+    textAlign: 'center',
+    fontFamily: 'Figtree-Regular',
   },
 });

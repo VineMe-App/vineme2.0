@@ -4,10 +4,15 @@ import { ConfigContext, ExpoConfig } from 'expo/config';
 // Set USE_EXPO_GO=false or leave unset to use development build (full native support)
 const isExpoGo = process.env.USE_EXPO_GO === 'true';
 
+// Set APP_VARIANT=development to build the dev variant with a separate
+// bundle ID / package name, so dev and prod can coexist on the same device.
+// This is set automatically by the "development" profile in eas.json.
+const isDev = process.env.APP_VARIANT === 'development';
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   const baseConfig: ExpoConfig = {
     ...config,
-    name: 'VineMe',
+    name: isDev ? 'VineMe (Dev)' : 'VineMe',
     owner: 'tonaeko',
     slug: 'vineme-mobile-app',
     version: '2.0.2',
@@ -22,7 +27,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     assetBundlePatterns: ['**/*', 'assets/fonts/*.ttf'],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.pilotlight.vineme',
+      bundleIdentifier: isDev
+        ? 'com.pilotlight.vineme.dev'
+        : 'com.pilotlight.vineme',
       ...(isExpoGo
         ? {}
         : {
@@ -56,7 +63,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
-      package: 'com.pilotlight.vineme',
+      package: isDev ? 'com.pilotlight.vineme.dev' : 'com.pilotlight.vineme',
       ...(isExpoGo
         ? {}
         : {

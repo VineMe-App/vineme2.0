@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  FlatList,
   Alert,
   ScrollView,
 } from 'react-native';
@@ -25,11 +24,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Text as AppText } from '@/components/ui/Text';
 
+const REQUESTED_CHURCH_ID = 'c7796e35-ebf2-460a-a2a3-9e1c053b4561';
+const REQUESTED_SERVICE_ID = '49189600-7dd7-42bf-af05-4f12f2458493';
+
 export default function ChurchStep({
   data,
   onNext,
   onBack,
-  canGoBack,
   isLoading,
 }: OnboardingStepProps) {
   const [churches, setChurches] = useState<Church[]>([]);
@@ -49,17 +50,10 @@ export default function ChurchStep({
   const [missingServiceRequestError, setMissingServiceRequestError] = useState<
     string | null
   >(null);
-  const [missingServiceSubmitted, setMissingServiceSubmitted] = useState(false);
-  const [missingServiceMode, setMissingServiceMode] = useState<
-    'church' | 'service'
-  >('service');
-  const [missingServiceLastMode, setMissingServiceLastMode] = useState<
-    'church' | 'service' | null
-  >(null);
   const [serviceAdmins, setServiceAdmins] = useState<User[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
 
-  const { user } = useAuthStore();
+  const { user, createUserProfile } = useAuthStore();
 
   useEffect(() => {
     loadChurches();
@@ -81,12 +75,9 @@ export default function ChurchStep({
       setServices([]);
       setSelectedServiceId(undefined);
       setServicesLoading(false);
-      if (missingServiceLastMode !== 'church') {
-        setMissingServiceSubmitted(false);
-      }
       setMissingServiceRequestError(null);
     }
-  }, [selectedChurchId, missingServiceLastMode]);
+  }, [selectedChurchId]);
 
   useEffect(() => {
     if (selectedServiceId) {
@@ -110,7 +101,7 @@ export default function ChurchStep({
       }
 
       if (churchData) {
-        setChurches(churchData);
+        setChurches(churchData.filter((church) => church.visible === true));
       }
     } catch {
       setError('Failed to load churches. Please try again.');
@@ -168,18 +159,12 @@ export default function ChurchStep({
       setSelectedServiceId(undefined);
       setServices([]);
       setServicesLoading(false);
-      if (missingServiceLastMode !== 'church') {
-        setMissingServiceSubmitted(false);
-      }
       setMissingServiceRequestError(null);
     } else {
       setSelectedChurchId(churchId);
       setSelectedServiceId(undefined);
       setServices([]);
       setServicesLoading(true);
-      if (missingServiceLastMode !== 'church') {
-        setMissingServiceSubmitted(false);
-      }
       setMissingServiceRequestError(null);
     }
   };
@@ -190,12 +175,16 @@ export default function ChurchStep({
       return;
     }
     if (data.requested_church) {
-      onNext({ requested_church: true });
+      onNext({
+        requested_church: true,
+        church_id: REQUESTED_CHURCH_ID,
+        service_id: REQUESTED_SERVICE_ID,
+        group_status: 'existing',
+      });
     }
   };
 
-  const handleOpenMissingServiceModal = (mode: 'church' | 'service') => {
-    setMissingServiceMode(mode);
+  const handleOpenMissingServiceModal = () => {
     setMissingServiceRequestError(null);
     setShowMissingServiceModal(true);
   };
@@ -207,10 +196,7 @@ export default function ChurchStep({
     setMissingServiceRequestError(null);
 
     const result = await supportService.submitMissingServiceRequest({
-      church_id:
-        missingServiceMode === 'service'
-          ? (form.churchId ?? selectedChurchId)
-          : form.churchId,
+      church_id: undefined,
       church_name: form.churchName,
       church_location: form.churchLocation,
       service_name: form.serviceName,
@@ -235,26 +221,41 @@ export default function ChurchStep({
       return;
     }
 
-    const submissionMode = missingServiceMode;
+    const profileUpdated = await createUserProfile({
+      first_name: data.first_name?.trim() || undefined,
+      last_name: data.last_name?.trim() || undefined,
+      church_id: REQUESTED_CHURCH_ID,
+      service_id: REQUESTED_SERVICE_ID,
+      newcomer: false,
+      roles: ['user', 'church_admin'],
+    });
+
+    if (!profileUpdated) {
+      setMissingServiceRequestError(
+        useAuthStore.getState().error ||
+          'Church request submitted, but we could not update your profile. Please try again.'
+      );
+      setMissingServiceSubmitting(false);
+      return;
+    }
 
     setMissingServiceSubmitting(false);
     setMissingServiceRequestError(null);
-    setMissingServiceSubmitted(true);
-    setMissingServiceLastMode(submissionMode);
     setShowMissingServiceModal(false);
 
     Alert.alert(
       'Request received',
-      submissionMode === 'church'
-        ? "Thanks for letting us know about your church. We'll reach out and add it soon."
-        : "Thanks! We'll review the service details and let you know when it's available.",
+      "Thanks for letting us know about your church. We'll reach out and add it soon.",
       [
         {
           text: 'OK',
           onPress: () => {
-            if (submissionMode === 'church') {
-              onNext({ requested_church: true });
-            }
+            onNext({
+              requested_church: true,
+              church_id: REQUESTED_CHURCH_ID,
+              service_id: REQUESTED_SERVICE_ID,
+              group_status: 'existing',
+            });
           },
         },
       ]
@@ -274,9 +275,7 @@ export default function ChurchStep({
               disabled={isLoading}
               activeOpacity={0.85}
             >
-              <Text style={styles.churchNameExpanded}>
-                {item.name}
-              </Text>
+              <Text style={styles.churchNameExpanded}>{item.name}</Text>
               <Ionicons
                 name="chevron-down"
                 size={24}
@@ -286,120 +285,116 @@ export default function ChurchStep({
             </TouchableOpacity>
 
             <View style={styles.serviceSection}>
-            {servicesLoading ? (
-              <View style={styles.serviceLoading}>
-                <LoadingSpinner size="small" />
-                <Text style={styles.serviceLoadingText}>
-                  Loading services...
-                </Text>
-              </View>
-            ) : services.length > 0 ? (
-              <>
-                <Text style={styles.serviceLabel}>
-                  <Text style={styles.serviceLabelBold}>Which service do you attend regularly?</Text>
-                </Text>
-                {services.map((svc) => {
-                  const isServiceSelected = selectedServiceId === svc.id;
-                  // Format service name with time (e.g., "Sunday Morning 10:30")
-                  const serviceDisplayName = svc.name || `${svc.day_of_week || ''} ${svc.start_time || ''}`.trim();
-
-                  const handleServiceToggle = () => {
-                    // Toggle: if clicking the same service, uncheck it; otherwise select it
-                    setSelectedServiceId(prevId => prevId === svc.id ? undefined : svc.id);
-                  };
-
-                  return (
-                    <TouchableOpacity
-                      key={svc.id}
-                      style={styles.serviceCheckboxRow}
-                      onPress={handleServiceToggle}
-                      disabled={isLoading}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={styles.serviceCheckboxLabel}>
-                        {serviceDisplayName}
-                      </Text>
-                      <View style={[styles.serviceCheckbox, isServiceSelected && styles.serviceCheckboxChecked]}>
-                        {isServiceSelected && (
-                          <Text style={styles.serviceCheckmark}>✓</Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </>
-            ) : (
-              <View style={styles.serviceEmptyContainer}>
-                <Text style={styles.serviceEmptyText}>
-                  This church hasn&apos;t added any services yet.
-                </Text>
-                <Text style={styles.serviceEmptyHelpText}>
-                  You&apos;ll need to select a service to continue onboarding.
-                  Please choose a different church for now or request this
-                  service so we can add it.
-                </Text>
-                <TouchableOpacity
-                  style={styles.serviceEmptyRequestButton}
-                  onPress={() => handleOpenMissingServiceModal('service')}
-                  disabled={missingServiceSubmitting}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.serviceEmptyRequestTitle}>
-                    Request a service
+              {servicesLoading ? (
+                <View style={styles.serviceLoading}>
+                  <LoadingSpinner size="small" />
+                  <Text style={styles.serviceLoadingText}>
+                    Loading services...
                   </Text>
-                  <Text style={styles.serviceEmptyRequestSubtitle}>
-                    Tell us the service details and we&apos;ll reach out when it&apos;s
-                    available.
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {selectedServiceId && (
-              <View style={styles.adminDisclosureContainer}>
-                <Text style={styles.adminDisclosureTitle}>
-                  📋 Privacy Notice
-                </Text>
-                <Text style={styles.adminDisclosureText}>
-                  Your contact details (name, email, and phone) will be visible
-                  to the church admins for this service. This helps them support
-                  you and connect you with relevant groups.
-                </Text>
-
-                {adminsLoading ? (
-                  <View style={styles.adminsLoading}>
-                    <LoadingSpinner size="small" />
-                    <Text style={styles.adminsLoadingText}>
-                      Loading admins...
+                </View>
+              ) : services.length > 0 ? (
+                <>
+                  <Text style={styles.serviceLabel}>
+                    <Text style={styles.serviceLabelBold}>
+                      Which service do you attend regularly?
                     </Text>
-                  </View>
-                ) : serviceAdmins.length > 0 ? (
-                  <>
-                    <Text style={styles.adminListTitle}>Church Admins:</Text>
-                    <View style={styles.adminsList}>
-                      {serviceAdmins.map((admin) => (
-                        <View key={admin.id} style={styles.adminItem}>
-                          <Avatar
-                            imageUrl={admin.avatar_url}
-                            name={getFullName(admin)}
-                            size={32}
-                          />
-                          <Text style={styles.adminName}>
-                            {getDisplayName(admin, { fallback: 'full' })}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  </>
-                ) : (
-                  <Text style={styles.noAdminsText}>
-                    No admins assigned to this service yet.
                   </Text>
-                )}
-              </View>
-            )}
+                  {services.map((svc) => {
+                    const isServiceSelected = selectedServiceId === svc.id;
+                    // Format service name with time (e.g., "Sunday Morning 10:30")
+                    const serviceDisplayName =
+                      svc.name ||
+                      `${svc.day_of_week || ''} ${svc.start_time || ''}`.trim();
+
+                    const handleServiceToggle = () => {
+                      // Toggle: if clicking the same service, uncheck it; otherwise select it
+                      setSelectedServiceId((prevId) =>
+                        prevId === svc.id ? undefined : svc.id
+                      );
+                    };
+
+                    return (
+                      <TouchableOpacity
+                        key={svc.id}
+                        style={styles.serviceCheckboxRow}
+                        onPress={handleServiceToggle}
+                        disabled={isLoading}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={styles.serviceCheckboxLabel}>
+                          {serviceDisplayName}
+                        </Text>
+                        <View
+                          style={[
+                            styles.serviceCheckbox,
+                            isServiceSelected && styles.serviceCheckboxChecked,
+                          ]}
+                        >
+                          {isServiceSelected && (
+                            <Text style={styles.serviceCheckmark}>✓</Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </>
+              ) : (
+                <View style={styles.serviceEmptyContainer}>
+                  <Text style={styles.serviceEmptyText}>
+                    This church hasn&apos;t added any services yet.
+                  </Text>
+                  <Text style={styles.serviceEmptyHelpText}>
+                    You&apos;ll need to select a service to continue onboarding.
+                    Please choose a different church for now.
+                  </Text>
+                </View>
+              )}
+
+              {selectedServiceId && (
+                <View style={styles.adminDisclosureContainer}>
+                  <Text style={styles.adminDisclosureTitle}>
+                    📋 Privacy Notice
+                  </Text>
+                  <Text style={styles.adminDisclosureText}>
+                    Your contact details (name, email, and phone) will be
+                    visible to the church admins for this service. This helps
+                    them support you and connect you with relevant groups.
+                  </Text>
+
+                  {adminsLoading ? (
+                    <View style={styles.adminsLoading}>
+                      <LoadingSpinner size="small" />
+                      <Text style={styles.adminsLoadingText}>
+                        Loading admins...
+                      </Text>
+                    </View>
+                  ) : serviceAdmins.length > 0 ? (
+                    <>
+                      <Text style={styles.adminListTitle}>Church Admins:</Text>
+                      <View style={styles.adminsList}>
+                        {serviceAdmins.map((admin) => (
+                          <View key={admin.id} style={styles.adminItem}>
+                            <Avatar
+                              imageUrl={admin.avatar_url}
+                              name={getFullName(admin)}
+                              size={32}
+                            />
+                            <Text style={styles.adminName}>
+                              {getDisplayName(admin, { fallback: 'full' })}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </>
+                  ) : (
+                    <Text style={styles.noAdminsText}>
+                      No admins assigned to this service yet.
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
-        </View>
         ) : (
           <TouchableOpacity
             style={styles.churchField}
@@ -407,9 +402,7 @@ export default function ChurchStep({
             disabled={isLoading}
             activeOpacity={0.85}
           >
-            <Text style={styles.churchName}>
-              {item.name}
-            </Text>
+            <Text style={styles.churchName}>{item.name}</Text>
             <Ionicons
               name="chevron-down"
               size={24}
@@ -421,9 +414,6 @@ export default function ChurchStep({
       </View>
     );
   };
-
-  const noServicesAvailable =
-    !!selectedChurchId && !servicesLoading && services.length === 0;
 
   if (loading) {
     return (
@@ -449,7 +439,12 @@ export default function ChurchStep({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <AppText variant="h4" weight="extraBold" align="center" style={styles.title}>
+        <AppText
+          variant="h4"
+          weight="extraBold"
+          align="center"
+          style={styles.title}
+        >
           Select your church
         </AppText>
         <AppText
@@ -476,36 +471,32 @@ export default function ChurchStep({
 
         <TouchableOpacity
           style={styles.missingChurchButton}
-          onPress={() => handleOpenMissingServiceModal('church')}
+          onPress={handleOpenMissingServiceModal}
           disabled={missingServiceSubmitting}
           activeOpacity={0.85}
         >
           <View style={styles.missingChurchTextGroup}>
-            <AppText variant="body" weight="bold" style={styles.missingChurchTitle}>
-              Can&apos;t find your church?
+            <AppText
+              variant="body"
+              weight="bold"
+              style={styles.missingChurchTitle}
+            >
+              Church not on VineMe yet?
             </AppText>
             <AppText variant="bodySmall" style={styles.missingChurchSubtitle}>
-              Share the details of your church with us and we&apos;ll add it to VineMe.
+              Tell us about your church, and we'll set you up with a demo church
+              so you can explore.
             </AppText>
           </View>
           <View style={styles.missingChurchIcon}>
             <Text style={styles.missingChurchIconText}>+</Text>
           </View>
         </TouchableOpacity>
-        {missingServiceSubmitted &&
-          missingServiceLastMode === 'church' && (
-            <Text style={styles.missingChurchNotice}>
-              We&apos;re on it! We&apos;ll reach out soon about adding
-              this church.
-            </Text>
-          )}
-        {missingServiceRequestError &&
-          missingServiceLastMode === 'church' &&
-          !showMissingServiceModal && (
-            <Text style={styles.serviceInlineError}>
-              {missingServiceRequestError}
-            </Text>
-          )}
+        {missingServiceRequestError && !showMissingServiceModal && (
+          <Text style={styles.serviceInlineError}>
+            {missingServiceRequestError}
+          </Text>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -521,27 +512,15 @@ export default function ChurchStep({
           fullWidth={false}
           style={styles.nextButton}
         />
-        <TouchableOpacity onPress={onBack} accessibilityRole="button" style={styles.backButton}>
+        <TouchableOpacity
+          onPress={onBack}
+          accessibilityRole="button"
+          style={styles.backButton}
+        >
           <AppText variant="body" align="center" style={styles.backText}>
             Back
           </AppText>
         </TouchableOpacity>
-        {noServicesAvailable && (
-          <Text style={styles.serviceRequiredNotice}>
-            A service is required to finish onboarding. Once a service is
-            available, come back to continue.
-          </Text>
-        )}
-        {selectedChurchId &&
-          !selectedServiceId &&
-          !noServicesAvailable &&
-          missingServiceSubmitted &&
-          missingServiceLastMode === 'service' && (
-            <Text style={styles.pendingNotice}>
-              We&apos;ll email you when the service is ready. You can close the
-              app and return later.
-            </Text>
-          )}
       </View>
       <MissingServiceModal
         isVisible={showMissingServiceModal}
@@ -550,18 +529,9 @@ export default function ChurchStep({
             setShowMissingServiceModal(false);
           }
         }}
-        initialChurchId={
-          missingServiceMode === 'service' ? selectedChurchId : undefined
-        }
-        initialChurchName={
-          missingServiceMode === 'service'
-            ? churches.find((c) => c.id === selectedChurchId)?.name || ''
-            : undefined
-        }
         isSubmitting={missingServiceSubmitting}
         onSubmit={handleSubmitMissingService}
         error={missingServiceRequestError}
-        mode={missingServiceMode}
       />
     </View>
   );
@@ -790,26 +760,6 @@ const styles = StyleSheet.create({
     color: '#4d6aa7',
     lineHeight: 19,
   },
-  serviceEmptyRequestButton: {
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#4d6aa7',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(77, 106, 167, 0.08)',
-    gap: 4,
-  },
-  serviceEmptyRequestTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2C2235',
-  },
-  serviceEmptyRequestSubtitle: {
-    fontSize: 13,
-    color: '#2C2235',
-    lineHeight: 18,
-  },
   footer: {
     alignItems: 'center',
     width: '100%',
@@ -826,20 +776,6 @@ const styles = StyleSheet.create({
     color: '#999999', // Figma: #999999
     fontSize: 16, // Figma: 16px
     letterSpacing: -0.8, // Figma: -0.8px
-  },
-  pendingNotice: {
-    marginTop: 12,
-    textAlign: 'center',
-    color: '#4d6aa7',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  serviceRequiredNotice: {
-    marginTop: 12,
-    textAlign: 'center',
-    color: '#d73a49',
-    fontSize: 14,
-    lineHeight: 20,
   },
   infoBanner: {
     marginTop: 16,

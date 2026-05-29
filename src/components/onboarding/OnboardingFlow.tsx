@@ -19,6 +19,9 @@ import ChurchStep from './ChurchStep';
 import GroupStatusStep from './GroupStatusStep';
 import ProfileDetailsStep from './ProfileDetailsStep';
 
+const REQUESTED_CHURCH_ID = 'c7796e35-ebf2-460a-a2a3-9e1c053b4561';
+const REQUESTED_SERVICE_ID = '49189600-7dd7-42bf-af05-4f12f2458493';
+
 const ONBOARDING_STEPS: OnboardingStep[] = [
   { id: 'name', title: 'Your Name', component: NameStep },
   {
@@ -88,8 +91,8 @@ export default function OnboardingFlow() {
           (userProfile.newcomer === true
             ? 'looking'
             : userProfile.newcomer === false
-            ? 'existing'
-            : undefined),
+              ? 'existing'
+              : undefined),
         requested_church: prev.requested_church,
       };
 
@@ -140,8 +143,7 @@ export default function OnboardingFlow() {
     if (currentStepIndex === ONBOARDING_STEPS.length - 1) {
       await completeOnboarding(updatedData);
     } else {
-      // Move to next step
-      setCurrentStepIndex((prev) => prev + 1);
+      setCurrentStepIndex((prev) => getNextStepIndex(prev, updatedData));
     }
   };
 
@@ -155,7 +157,35 @@ export default function OnboardingFlow() {
       return;
     }
 
-    setCurrentStepIndex((prev) => prev - 1);
+    setCurrentStepIndex((prev) => getPreviousStepIndex(prev, onboardingData));
+  };
+
+  const getNextStepIndex = (
+    fromIndex: number,
+    data: OnboardingData
+  ): number => {
+    const nextIndex = fromIndex + 1;
+    const nextStep = ONBOARDING_STEPS[nextIndex];
+
+    if (data.requested_church && nextStep?.id === 'group-status') {
+      return nextIndex + 1;
+    }
+
+    return nextIndex;
+  };
+
+  const getPreviousStepIndex = (
+    fromIndex: number,
+    data: OnboardingData
+  ): number => {
+    const previousIndex = fromIndex - 1;
+    const previousStep = ONBOARDING_STEPS[previousIndex];
+
+    if (data.requested_church && previousStep?.id === 'group-status') {
+      return previousIndex - 1;
+    }
+
+    return previousIndex;
   };
 
   const completeOnboarding = async (data: OnboardingData) => {
@@ -173,14 +203,18 @@ export default function OnboardingFlow() {
           hasUser: !!user,
         });
       // Compute newcomer based on group status: if looking -> newcomer stays true; if existing -> false.
-      const isLookingForGroup = data.group_status === 'looking';
+      const requestedChurch = data.requested_church === true;
+      const isLookingForGroup = requestedChurch
+        ? false
+        : data.group_status === 'looking';
       // Create user profile in database AFTER we have an email (EmailStep links auth.user)
       const success = await createUserProfile({
         first_name: data.first_name?.trim() || undefined,
         last_name: data.last_name?.trim() || undefined,
-        church_id: data.church_id,
-        service_id: data.service_id,
+        church_id: requestedChurch ? REQUESTED_CHURCH_ID : data.church_id,
+        service_id: requestedChurch ? REQUESTED_SERVICE_ID : data.service_id,
         newcomer: isLookingForGroup, // remain newcomer if looking for a group
+        roles: requestedChurch ? ['user', 'church_admin'] : undefined,
         onboarding_complete: true, // explicitly mark onboarding complete
         avatar_url: data.avatar_url,
         bio: data.bio?.trim() ? data.bio.trim() : undefined,

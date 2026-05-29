@@ -42,6 +42,7 @@ interface AuthState {
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
+    roles?: string[];
     onboarding_complete?: boolean;
   }) => Promise<boolean>;
   clearError: () => void;
@@ -203,7 +204,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       // Set flag to suppress expected post-sign-out errors
       setDeletionFlowActive(true);
-      
+
       const { error } = await authService.signOut();
 
       if (error) {
@@ -218,7 +219,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         error: null,
       });
-      
+
       // Reset flag after a short delay to allow queries to complete
       setTimeout(() => setDeletionFlowActive(false), 2000);
     } catch (error) {
@@ -281,6 +282,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     church_id?: string;
     service_id?: string;
     newcomer?: boolean;
+    roles?: string[];
     onboarding_complete?: boolean;
     avatar_url?: string;
     bio?: string;
