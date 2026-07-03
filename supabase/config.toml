@@ -1,0 +1,21 @@
+project_id = "vineme2"
+
+[analytics]
+enabled = false
+
+[auth]
+enable_signup = true
+
+[auth.sms]
+enable_signup = true
+
+[auth.sms.twilio]
+enabled = true
+account_sid = "fake_sid"
+message_service_sid = "fake_service_sid"
+auth_token = "fake_token"
+
+[auth.sms.test_otp]
+# Map fake phone numbers to fixed OTPs
+"+447712345678" = "123456"
+"+447712345679" = "123456"
