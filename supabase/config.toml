@@ -27,15 +27,15 @@ import_map = "./functions/create-referred-user/deno.json"
 
 [functions.delete-auth-user]
 enabled = true
-entrypoint = ".functions/delete-auth-user/index.ts"
+entrypoint = "./functions/delete-auth-user/index.ts"
 import_map = "./functions/delete-auth-user/deno.json"
 
 [functions.notify-missing-service]
 enabled = true
-entrypoint = ".functions/notify-missing-service/index.ts"
+entrypoint = "./functions/notify-missing-service/index.ts"
 import_map = "./functions/notify-missing-service/deno.json"
 
 [functions.push-notify-2]
 enabled = true
-entrypoint = ".functions/push-notify/index.ts"
+entrypoint = "./functions/push-notify/index.ts"
 import_map = "./functions/push-notify/deno.json"
