@@ -1526,7 +1526,7 @@ CREATE OR REPLACE TRIGGER "create_user_notification_settings" AFTER INSERT ON "p
 
 
 
-CREATE OR REPLACE TRIGGER "push_notifications" AFTER INSERT ON "public"."notifications" FOR EACH ROW EXECUTE FUNCTION "supabase_functions"."http_request"('https://knwlfuysipixbwuzvyen.supabase.co/functions/v1/push-notify-2', 'POST', '{"Content-type":"application/json","Authorization":"Bearer " || current_setting(''app.settings.sb_secret_key'')}', '{}', '1000');
+-- CREATE OR REPLACE TRIGGER "push_notifications" AFTER INSERT ON "public"."notifications" FOR EACH ROW EXECUTE FUNCTION "supabase_functions"."http_request"('https://knwlfuysipixbwuzvyen.supabase.co/functions/v1/push-notify-2', 'POST', '{"Content-type":"application/json","Authorization":"Bearer " || current_setting(''app.settings.sb_secret_key'')}', '{}', '1000');
 
 
 
