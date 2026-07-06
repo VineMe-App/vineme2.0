@@ -270,6 +270,16 @@ export function AdminDashboardSummary({
             />
           )}
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => router.push('/admin/churchsuite')}
+        >
+          <View style={styles.buttonContent}>
+            <Ionicons name="sync-outline" size={20} color="#007AFF" />
+            <Text style={styles.buttonText}>ChurchSuite</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Stats Section */}

@@ -1,0 +1,11 @@
+services:
+  churchsuite-mock:
+    image: node:20-alpine
+    command: node /app/mocks/churchsuite/server.js
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+    ports:
+      - "8030:8030"
+    environment:
+      CHURCHSUITE_MOCK_PORT: 8030

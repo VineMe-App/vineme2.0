@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: vineme-churchsuite-mock
+    runtime: python
+    plan: free
+    buildCommand: ""
+    startCommand: "python3 mocks/churchsuite/server.py"
+    healthCheckPath: /__mock/health
+    envVars:
+      - key: CHURCHSUITE_MOCK_HOST
+        value: 0.0.0.0
