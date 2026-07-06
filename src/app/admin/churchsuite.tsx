@@ -29,7 +29,7 @@ const SubmitButton: React.FC<{
     <Button
       onPress={handlePress}
       disabled={isSubmitting}
-      title={isSubmitting ? 'Submitting...' : 'Submit referral'}
+      title={isSubmitting ? 'Saving...' : 'Save'}
     />
   );
 };
@@ -68,6 +68,7 @@ const ChurchsuiteAdminScreen = () => {
         },
       }
     );
+    console.log(data, error);
   };
   return (
     <ChurchAdminOnly>

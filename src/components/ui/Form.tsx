@@ -260,7 +260,7 @@ export const FormField: React.FC<FormFieldProps> = ({ name, children }) => {
 
   const handleChange = useCallback(
     (value: any) => {
-      setValue(name, value);
+      setValue(name, value.nativeEvent);
     },
     [name, setValue]
   );
