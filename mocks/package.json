@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "scripts": {
+    "prestart2": "npm install",
+    "start": "filename-basepath src -p 8029"
+  },
+  "dependencies": {
+    "@totallymoney/filename-basepath": "^0.1.0",
+    "body-parser": "^1.20.3",
+    "ejs": "^5.0.2",
+    "express": "^5.2.1",
+    "uuid": "^11.0.3"
+  },
+  "volta": {
+    "node": "22.4.0"
+  }
+}
