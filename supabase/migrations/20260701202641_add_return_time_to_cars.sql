@@ -1,0 +1,1 @@
+ALTER TABLE focus_festival.cars ADD COLUMN IF NOT EXISTS return_time TIMESTAMP WITH TIME ZONE;
