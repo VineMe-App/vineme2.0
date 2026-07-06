@@ -1,0 +1,24 @@
+services:
+  churchsuite:
+    image: stoplight/prism:5.14.3
+    command: mock -h 0.0.0.0 https://assets.churchsuite.com/openapi/latest/openapi.json
+    ports:
+      - "8030:4010"
+
+  mocks:
+    image: node:20-alpine
+    command: npm run start
+    volumes:
+      - ./mocks:/mocks
+    working_dir: /mocks
+    ports:
+      - "8029:8029"
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT
+
+networks:
+  default:
+    name: supabase_network_vineme2
+    external: true
