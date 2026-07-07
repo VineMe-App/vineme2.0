@@ -42,7 +42,7 @@ async function run() {
   assert(tokenResult.body.access_token, 'Expected access token in response');
 
   const existing = await request(
-    '/addressbook/contacts?email=grace.taylor@example.com'
+    `/addressbook/contacts?email=${encodeURIComponent('grace.taylor@example.com')}`
   );
   assert(existing.response.ok, 'Expected contact search to succeed');
   assert(existing.body.data.length === 1, 'Expected one email match');
@@ -51,7 +51,9 @@ async function run() {
     'Expected seeded contact to match'
   );
 
-  const duplicate = await request('/addressbook/contacts?q=shared@example.com');
+  const duplicate = await request(
+    `/addressbook/contacts?q=${encodeURIComponent('shared@example.com')}`
+  );
   assert(duplicate.response.ok, 'Expected duplicate search to succeed');
   assert(
     duplicate.body.data.length === 2,
