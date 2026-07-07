@@ -65,6 +65,24 @@ free web service.
    CHURCHSUITE_MOCK_API_KEY=<same shared secret>
    ```
 
+## App Test-Only Guard
+
+The VineMe onboarding integration only calls ChurchSuite for explicitly allowed
+test email domains. Configure this in the app build environment:
+
+```text
+EXPO_PUBLIC_CHURCHSUITE_TEST_EMAIL_DOMAINS=example.com
+```
+
+Multiple domains can be comma-separated:
+
+```text
+EXPO_PUBLIC_CHURCHSUITE_TEST_EMAIL_DOMAINS=example.com,test.vineme.app
+```
+
+If the value is empty or missing, onboarding skips ChurchSuite linking for all
+users. This keeps real signups from being sent to the mock by default.
+
 ## Start With Node
 
 ```bash

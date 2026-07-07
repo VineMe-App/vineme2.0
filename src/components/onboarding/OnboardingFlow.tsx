@@ -230,10 +230,14 @@ export default function OnboardingFlow() {
       }
 
       const churchId = requestedChurch ? REQUESTED_CHURCH_ID : data.church_id;
-      if (churchId) {
+      const churchSuiteEmail = data.email || user.email || undefined;
+      if (
+        churchId &&
+        churchSuiteIntegrationService.shouldLinkContact(churchSuiteEmail)
+      ) {
         churchSuiteIntegrationService
           .linkContact({
-            email: data.email || user.email || undefined,
+            email: churchSuiteEmail,
             phone: user.phone || undefined,
             firstName: data.first_name?.trim() || undefined,
             lastName: data.last_name?.trim() || undefined,
@@ -254,6 +258,10 @@ export default function OnboardingFlow() {
               );
             }
           });
+      } else if (__DEV__) {
+        console.log(
+          '[Onboarding] Skipping ChurchSuite link for non-test email domain'
+        );
       }
 
       // Save onboarding completion status locally (legacy local gate; server flag is source of truth)

@@ -25,10 +25,38 @@ export interface LinkChurchSuiteContactResult {
   error?: string;
 }
 
+const allowedTestDomains = (
+  process.env.EXPO_PUBLIC_CHURCHSUITE_TEST_EMAIL_DOMAINS || ''
+)
+  .split(',')
+  .map((domain) => domain.trim().toLowerCase())
+  .filter(Boolean);
+
+function isAllowedTestEmail(email?: string): boolean {
+  if (!email || allowedTestDomains.length === 0) return false;
+
+  const normalizedEmail = email.trim().toLowerCase();
+  return allowedTestDomains.some((domain) => {
+    const normalizedDomain = domain.startsWith('@') ? domain.slice(1) : domain;
+    return normalizedEmail.endsWith(`@${normalizedDomain}`);
+  });
+}
+
 export class ChurchSuiteIntegrationService {
+  shouldLinkContact(email?: string): boolean {
+    return isAllowedTestEmail(email);
+  }
+
   async linkContact(
     input: LinkChurchSuiteContactInput
   ): Promise<LinkChurchSuiteContactResult> {
+    if (!this.shouldLinkContact(input.email)) {
+      return {
+        ok: true,
+        reason: 'Skipped ChurchSuite linking for non-test email domain',
+      };
+    }
+
     const { data, error } =
       await supabase.functions.invoke<LinkChurchSuiteContactResult>(
         'link-churchsuite-contact',
