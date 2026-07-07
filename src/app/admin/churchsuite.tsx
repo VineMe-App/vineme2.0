@@ -15,6 +15,8 @@ import {
   ChurchSuiteContact,
   ChurchSuiteMockService,
 } from '@/services/churchsuiteMock';
+import { supabase } from '@/services/supabase';
+import { useAuthStore } from '@/stores/auth';
 
 const DEFAULT_MOCK_URL =
   process.env.EXPO_PUBLIC_CHURCHSUITE_MOCK_URL || 'http://127.0.0.1:8030';
@@ -28,6 +30,17 @@ const scenarioOptions = [
 ] as const;
 
 type Scenario = (typeof scenarioOptions)[number];
+
+interface ChurchSuiteLinkRow {
+  id: string;
+  user_id: string;
+  churchsuite_contact_id?: string | null;
+  match_status: string;
+  match_reason?: string | null;
+  matched_by?: string[] | null;
+  last_error?: string | null;
+  updated_at?: string | null;
+}
 
 function ContactCard({
   contact,
@@ -82,10 +95,12 @@ function ContactCard({
 }
 
 export default function ChurchSuiteAdminScreen() {
+  const { userProfile } = useAuthStore();
   const [mockUrl, setMockUrl] = useState(DEFAULT_MOCK_URL);
   const [query, setQuery] = useState('grace.taylor@example.com');
   const [scenario, setScenario] = useState<Scenario>('normal');
   const [contacts, setContacts] = useState<ChurchSuiteContact[]>([]);
+  const [linkRows, setLinkRows] = useState<ChurchSuiteLinkRow[]>([]);
   const [status, setStatus] = useState<string>('Not checked yet');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -167,6 +182,37 @@ export default function ChurchSuiteAdminScreen() {
       setError(err instanceof Error ? err.message : 'Update failed');
     } finally {
       setUpdatingContactId(null);
+    }
+  };
+
+  const handleLoadLinkStatuses = async () => {
+    if (!userProfile?.church_id) {
+      setError('No church ID found for current admin');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data, error: linkError } = await supabase
+        .from('churchsuite_contact_links')
+        .select(
+          'id, user_id, churchsuite_contact_id, match_status, match_reason, matched_by, last_error, updated_at'
+        )
+        .eq('church_id', userProfile.church_id)
+        .order('updated_at', { ascending: false })
+        .limit(20);
+
+      if (linkError) {
+        throw new Error(linkError.message);
+      }
+
+      setLinkRows((data || []) as ChurchSuiteLinkRow[]);
+      setStatus(`Loaded ${(data || []).length} ChurchSuite link status row(s)`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load link statuses');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -303,6 +349,44 @@ export default function ChurchSuiteAdminScreen() {
         )}
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>VineMe link status</Text>
+          <Text style={styles.helpText}>
+            This reads the Supabase link table. Ambiguous matches should appear
+            as manual_review for pastoral/admin follow-up.
+          </Text>
+          <Button
+            title="Load link statuses"
+            onPress={handleLoadLinkStatuses}
+            loading={isLoading}
+            variant="secondary"
+          />
+          {linkRows.map((row) => (
+            <View key={row.id} style={styles.linkStatusCard}>
+              <View style={styles.contactHeader}>
+                <View style={styles.contactTitleGroup}>
+                  <Text style={styles.contactName}>{row.match_status}</Text>
+                  <Text style={styles.contactId}>User: {row.user_id}</Text>
+                </View>
+                <View style={[styles.statusPill, styles.neutralPill]}>
+                  <Text style={styles.neutralPillText}>
+                    {row.churchsuite_contact_id || 'No contact linked'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.detailText}>
+                Reason: {row.match_reason || 'No reason recorded'}
+              </Text>
+              <Text style={styles.detailText}>
+                Matched by: {(row.matched_by || []).join(', ') || 'None'}
+              </Text>
+              {row.last_error ? (
+                <Text style={styles.errorText}>Last error: {row.last_error}</Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Results</Text>
           {isLoading && contacts.length === 0 ? (
             <View style={styles.loadingRow}>
@@ -436,6 +520,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
+    backgroundColor: '#f9fafb',
+  },
+  linkStatusCard: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
     backgroundColor: '#f9fafb',
   },
   contactHeader: {
