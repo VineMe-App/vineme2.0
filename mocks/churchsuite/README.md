@@ -59,7 +59,11 @@ free web service.
    python3 mocks/churchsuite/smoke_test.py
    ```
 
-8. If Supabase Edge Functions call this mock, set the same secret in Supabase:
+8. If Supabase Edge Functions call this mock, set these secrets in Supabase:
+
+   ```text
+   CHURCHSUITE_MOCK_API_URL=https://YOUR-RENDER-URL.onrender.com
+   ```
 
    ```text
    CHURCHSUITE_MOCK_API_KEY=<same shared secret>

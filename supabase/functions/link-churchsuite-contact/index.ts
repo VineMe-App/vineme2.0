@@ -34,7 +34,9 @@ type MatchStatus =
   | 'pending_retry'
   | 'sync_failed';
 
-const CHURCHSUITE_API_URL =
+const CHURCHSUITE_MOCK_API_URL =
+  Deno.env.get('CHURCHSUITE_MOCK_API_URL') ||
+  // Backwards-compatible fallback while older environments are renamed.
   Deno.env.get('CHURCHSUITE_API_URL') ||
   'https://vineme-churchsuite-mock.onrender.com';
 const CHURCHSUITE_MOCK_API_KEY = Deno.env.get('CHURCHSUITE_MOCK_API_KEY');
@@ -112,7 +114,7 @@ async function fetchChurchSuiteContacts(
   queryParam: 'email' | 'mobile' | 'q',
   value: string
 ): Promise<ChurchSuiteContact[]> {
-  const url = new URL('/addressbook/contacts', CHURCHSUITE_API_URL);
+  const url = new URL('/addressbook/contacts', CHURCHSUITE_MOCK_API_URL);
   url.searchParams.set(queryParam, value);
 
   const response = await fetch(url.toString(), {
@@ -134,7 +136,7 @@ async function createChurchSuiteContact(payload: {
   firstName?: string;
   lastName?: string;
 }): Promise<ChurchSuiteContact> {
-  const url = new URL('/addressbook/contacts', CHURCHSUITE_API_URL);
+  const url = new URL('/addressbook/contacts', CHURCHSUITE_MOCK_API_URL);
   const response = await fetch(url.toString(), {
     method: 'POST',
     headers: {
