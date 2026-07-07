@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 const baseUrl = process.env.CHURCHSUITE_MOCK_URL || 'http://127.0.0.1:8030';
+const mockApiKey = process.env.CHURCHSUITE_MOCK_API_KEY;
 
 async function request(path, options = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers: {
       'content-type': 'application/json',
+      ...(mockApiKey ? { 'x-mock-api-key': mockApiKey } : {}),
       ...(options.headers || {}),
     },
   });

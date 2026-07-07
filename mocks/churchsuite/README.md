@@ -31,22 +31,38 @@ free web service.
 1. Push this branch to GitHub.
 2. In Render, create a new Blueprint or Web Service from the GitHub repo.
 3. Use the `render.yaml` settings if Render detects them.
-4. The start command should be:
+4. Set a secret environment variable in Render:
+
+   ```text
+   CHURCHSUITE_MOCK_API_KEY=<long random shared secret>
+   ```
+
+   `/__mock/health` stays public for Render health checks. All other endpoints
+   require this value in the `x-mock-api-key` header.
+5. The start command should be:
 
    ```bash
    python3 mocks/churchsuite/server.py
    ```
 
-5. After deploy, test the public URL:
+6. After deploy, test the public health URL:
 
    ```bash
    curl https://YOUR-RENDER-URL.onrender.com/__mock/health
    ```
 
-6. Run the smoke test against the hosted mock:
+7. Run the smoke test against the hosted mock:
 
    ```bash
-   CHURCHSUITE_MOCK_URL=https://YOUR-RENDER-URL.onrender.com python3 mocks/churchsuite/smoke_test.py
+   CHURCHSUITE_MOCK_URL=https://YOUR-RENDER-URL.onrender.com \
+   CHURCHSUITE_MOCK_API_KEY=<same shared secret> \
+   python3 mocks/churchsuite/smoke_test.py
+   ```
+
+8. If Supabase Edge Functions call this mock, set the same secret in Supabase:
+
+   ```text
+   CHURCHSUITE_MOCK_API_KEY=<same shared secret>
    ```
 
 ## Start With Node

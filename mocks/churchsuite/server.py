@@ -14,6 +14,7 @@ PORT = int(os.environ.get("PORT") or os.environ.get("CHURCHSUITE_MOCK_PORT", "80
 HOST = os.environ.get("CHURCHSUITE_MOCK_HOST") or (
     "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"
 )
+MOCK_API_KEY = os.environ.get("CHURCHSUITE_MOCK_API_KEY")
 TOKEN_TTL_SECONDS = 3600
 
 SEED_CONTACTS = [
@@ -130,7 +131,7 @@ class ChurchSuiteMockHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header(
             "Access-Control-Allow-Headers",
-            "authorization, content-type, x-mock-scenario",
+            "authorization, content-type, x-mock-scenario, x-mock-api-key",
         )
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
         self.end_headers()
@@ -145,6 +146,17 @@ class ChurchSuiteMockHandler(BaseHTTPRequestHandler):
 
     def active_scenario(self):
         return self.headers.get("x-mock-scenario") or SCENARIO
+
+    def has_mock_access(self):
+        if not MOCK_API_KEY:
+            return True
+        return self.headers.get("x-mock-api-key") == MOCK_API_KEY
+
+    def require_mock_access(self):
+        if self.has_mock_access():
+            return False
+        self.send_json(401, {"error": "mock_unauthorized", "message": "Missing or invalid mock API key"})
+        return True
 
     def maybe_scenario_response(self):
         scenario = self.active_scenario()
@@ -180,6 +192,8 @@ class ChurchSuiteMockHandler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/addressbook/contacts":
+            if self.require_mock_access():
+                return
             if self.maybe_scenario_response():
                 return
             matches = find_contacts(query)
@@ -194,6 +208,8 @@ class ChurchSuiteMockHandler(BaseHTTPRequestHandler):
 
         match = re.match(r"^/addressbook/contacts/([^/]+)$", parsed.path)
         if match:
+            if self.require_mock_access():
+                return
             if self.maybe_scenario_response():
                 return
             contact_id = match.group(1)
@@ -212,18 +228,24 @@ class ChurchSuiteMockHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
 
         if parsed.path == "/__mock/reset":
+            if self.require_mock_access():
+                return
             CONTACTS = deepcopy(SEED_CONTACTS)
             SCENARIO = "normal"
             self.send_json(200, {"ok": True, "contacts": len(CONTACTS)})
             return
 
         if parsed.path == "/__mock/scenario":
+            if self.require_mock_access():
+                return
             body = self.read_json()
             SCENARIO = body.get("scenario") or "normal"
             self.send_json(200, {"ok": True, "scenario": SCENARIO})
             return
 
         if parsed.path == "/oauth2/token":
+            if self.require_mock_access():
+                return
             if self.maybe_scenario_response():
                 return
             self.send_json(
@@ -238,6 +260,8 @@ class ChurchSuiteMockHandler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/addressbook/contacts":
+            if self.require_mock_access():
+                return
             if self.maybe_scenario_response():
                 return
             body = self.read_json()
@@ -263,6 +287,9 @@ class ChurchSuiteMockHandler(BaseHTTPRequestHandler):
         match = re.match(r"^/addressbook/contacts/([^/]+)$", parsed.path)
         if not match:
             self.send_json(404, {"error": "not_found", "message": f"No mock route for PATCH {parsed.path}"})
+            return
+
+        if self.require_mock_access():
             return
 
         if self.maybe_scenario_response():

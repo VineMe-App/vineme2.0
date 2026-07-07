@@ -37,6 +37,7 @@ type MatchStatus =
 const CHURCHSUITE_API_URL =
   Deno.env.get('CHURCHSUITE_API_URL') ||
   'https://vineme-churchsuite-mock.onrender.com';
+const CHURCHSUITE_MOCK_API_KEY = Deno.env.get('CHURCHSUITE_MOCK_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -114,7 +115,11 @@ async function fetchChurchSuiteContacts(
   const url = new URL('/addressbook/contacts', CHURCHSUITE_API_URL);
   url.searchParams.set(queryParam, value);
 
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    headers: CHURCHSUITE_MOCK_API_KEY
+      ? { 'x-mock-api-key': CHURCHSUITE_MOCK_API_KEY }
+      : {},
+  });
   if (!response.ok) {
     throw new Error(`ChurchSuite search failed (${response.status})`);
   }
@@ -134,6 +139,9 @@ async function createChurchSuiteContact(payload: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(CHURCHSUITE_MOCK_API_KEY
+        ? { 'x-mock-api-key': CHURCHSUITE_MOCK_API_KEY }
+        : {}),
     },
     body: JSON.stringify({
       first_name: payload.firstName || '',

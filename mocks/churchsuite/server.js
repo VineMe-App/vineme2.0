@@ -4,6 +4,7 @@ const http = require('node:http');
 const { randomUUID } = require('node:crypto');
 
 const PORT = Number(process.env.CHURCHSUITE_MOCK_PORT || 8030);
+const MOCK_API_KEY = process.env.CHURCHSUITE_MOCK_API_KEY;
 const TOKEN_TTL_SECONDS = 3600;
 
 const seedContacts = [
@@ -105,7 +106,7 @@ function sendJson(res, status, body) {
     'content-type': 'application/json',
     'access-control-allow-origin': '*',
     'access-control-allow-headers':
-      'authorization, content-type, x-mock-scenario',
+      'authorization, content-type, x-mock-scenario, x-mock-api-key',
     'access-control-allow-methods': 'GET, POST, PATCH, OPTIONS',
   });
   res.end(JSON.stringify(body, null, 2));
@@ -134,6 +135,20 @@ function readJson(req) {
 
 function requestScenario(req) {
   return req.headers['x-mock-scenario'] || scenario;
+}
+
+function hasMockAccess(req) {
+  if (!MOCK_API_KEY) return true;
+  return req.headers['x-mock-api-key'] === MOCK_API_KEY;
+}
+
+function requireMockAccess(req, res) {
+  if (hasMockAccess(req)) return false;
+  sendJson(res, 401, {
+    error: 'mock_unauthorized',
+    message: 'Missing or invalid mock API key',
+  });
+  return true;
 }
 
 function maybeScenarioResponse(req, res) {
@@ -214,6 +229,7 @@ async function handleRequest(req, res) {
   }
 
   if (url.pathname === '/__mock/reset' && req.method === 'POST') {
+    if (requireMockAccess(req, res)) return;
     contacts = clone(seedContacts);
     scenario = 'normal';
     sendJson(res, 200, { ok: true, contacts: contacts.length });
@@ -221,6 +237,7 @@ async function handleRequest(req, res) {
   }
 
   if (url.pathname === '/__mock/scenario' && req.method === 'POST') {
+    if (requireMockAccess(req, res)) return;
     const body = await readJson(req);
     scenario = body.scenario || 'normal';
     sendJson(res, 200, { ok: true, scenario });
@@ -228,6 +245,7 @@ async function handleRequest(req, res) {
   }
 
   if (url.pathname === '/oauth2/token' && req.method === 'POST') {
+    if (requireMockAccess(req, res)) return;
     if (maybeScenarioResponse(req, res)) return;
 
     sendJson(res, 200, {
@@ -240,6 +258,7 @@ async function handleRequest(req, res) {
   }
 
   if (url.pathname === '/addressbook/contacts' && req.method === 'GET') {
+    if (requireMockAccess(req, res)) return;
     if (maybeScenarioResponse(req, res)) return;
 
     const matches = searchContacts(url.searchParams);
@@ -254,6 +273,7 @@ async function handleRequest(req, res) {
   }
 
   if (url.pathname === '/addressbook/contacts' && req.method === 'POST') {
+    if (requireMockAccess(req, res)) return;
     if (maybeScenarioResponse(req, res)) return;
 
     const body = await readJson(req);
@@ -276,6 +296,7 @@ async function handleRequest(req, res) {
 
   const contactMatch = url.pathname.match(/^\/addressbook\/contacts\/([^/]+)$/);
   if (contactMatch && req.method === 'GET') {
+    if (requireMockAccess(req, res)) return;
     if (maybeScenarioResponse(req, res)) return;
 
     const contact = contacts.find((item) => item.id === contactMatch[1]);
@@ -292,6 +313,7 @@ async function handleRequest(req, res) {
   }
 
   if (contactMatch && req.method === 'PATCH') {
+    if (requireMockAccess(req, res)) return;
     if (maybeScenarioResponse(req, res)) return;
 
     const contact = contacts.find((item) => item.id === contactMatch[1]);

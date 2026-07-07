@@ -52,7 +52,17 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export class ChurchSuiteMockService {
-  constructor(private readonly baseUrl: string) {}
+  constructor(
+    private readonly baseUrl: string,
+    private readonly apiKey?: string
+  ) {}
+
+  private getHeaders(extra?: Record<string, string>): Record<string, string> {
+    return {
+      ...(this.apiKey ? { 'x-mock-api-key': this.apiKey } : {}),
+      ...(extra || {}),
+    };
+  }
 
   async health(): Promise<{ ok: boolean; scenario: string; contacts: number }> {
     const response = await fetch(`${trimTrailingSlash(this.baseUrl)}/__mock/health`);
@@ -70,7 +80,7 @@ export class ChurchSuiteMockService {
 
     const response = await fetch(
       `${trimTrailingSlash(this.baseUrl)}/addressbook/contacts?q=${encodeURIComponent(query)}`,
-      { headers }
+      { headers: this.getHeaders(headers) }
     );
     return parseResponse(response);
   }
@@ -83,7 +93,7 @@ export class ChurchSuiteMockService {
       {
         method: 'POST',
         headers: {
-          'content-type': 'application/json',
+          ...this.getHeaders({ 'content-type': 'application/json' }),
         },
         body: JSON.stringify(input),
       }
@@ -100,7 +110,7 @@ export class ChurchSuiteMockService {
       {
         method: 'PATCH',
         headers: {
-          'content-type': 'application/json',
+          ...this.getHeaders({ 'content-type': 'application/json' }),
         },
         body: JSON.stringify({ vulnerable }),
       }

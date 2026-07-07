@@ -9,11 +9,14 @@ from urllib.error import HTTPError
 
 
 BASE_URL = os.environ.get("CHURCHSUITE_MOCK_URL", "http://127.0.0.1:8030")
+MOCK_API_KEY = os.environ.get("CHURCHSUITE_MOCK_API_KEY")
 
 
 def call(path, method="GET", body=None, headers=None):
     data = None
     merged_headers = {"content-type": "application/json"}
+    if MOCK_API_KEY:
+        merged_headers["x-mock-api-key"] = MOCK_API_KEY
     if headers:
         merged_headers.update(headers)
     if body is not None:

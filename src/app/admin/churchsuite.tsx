@@ -20,6 +20,7 @@ import { useAuthStore } from '@/stores/auth';
 
 const DEFAULT_MOCK_URL =
   process.env.EXPO_PUBLIC_CHURCHSUITE_MOCK_URL || 'http://127.0.0.1:8030';
+const MOCK_API_KEY = process.env.EXPO_PUBLIC_CHURCHSUITE_MOCK_API_KEY;
 
 const scenarioOptions = [
   'normal',
@@ -113,7 +114,7 @@ export default function ChurchSuiteAdminScreen() {
   });
 
   const churchSuite = useMemo(
-    () => new ChurchSuiteMockService(mockUrl),
+    () => new ChurchSuiteMockService(mockUrl, MOCK_API_KEY),
     [mockUrl]
   );
 
