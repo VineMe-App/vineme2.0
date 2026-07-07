@@ -53,13 +53,13 @@ async function run() {
     'Expected seeded contact to match'
   );
 
-  const duplicate = await request(
+  const sharedEmail = await request(
     `/addressbook/contacts?q=${encodeURIComponent('shared@example.com')}`
   );
-  assert(duplicate.response.ok, 'Expected duplicate search to succeed');
+  assert(sharedEmail.response.ok, 'Expected shared email search to succeed');
   assert(
-    duplicate.body.data.length === 2,
-    'Expected duplicate email fixture to return two matches'
+    sharedEmail.body.data.length === 2,
+    'Expected shared email fixture to return two matches'
   );
 
   const created = await request('/addressbook/contacts', {

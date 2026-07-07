@@ -111,7 +111,9 @@ Supported scenarios:
 
 The fixture includes:
 
-- One normal existing contact.
+- Several existing contacts with names, email addresses, and UK mobile numbers.
 - One contact with `custom_fields.vulnerable = true`.
-- Duplicate email contacts to force a manual-review matching case.
-- A local UK phone normalization case for `077...` numbers.
+- Two contacts that share `shared@example.com`, so the integration can be
+  tested against a multi-result search.
+- A local UK phone normalization case for `077...` numbers when creating new
+  contacts.

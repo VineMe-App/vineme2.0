@@ -61,11 +61,11 @@ def main():
     expect(len(existing["data"]) == 1, "email search should return one contact")
     expect(existing["data"][0]["id"] == "cs-contact-existing-1", "seed contact should match")
 
-    status, duplicate = call(
+    status, shared_email = call(
         f"/addressbook/contacts?q={quote('shared@example.com')}"
     )
-    expect(status == 200, "duplicate search should succeed")
-    expect(len(duplicate["data"]) == 2, "duplicate fixture should return two matches")
+    expect(status == 200, "shared email search should succeed")
+    expect(len(shared_email["data"]) == 2, "shared email fixture should return two matches")
 
     status, created = call(
         "/addressbook/contacts",

@@ -29,7 +29,7 @@ const seedContacts = [
     vulnerable: true,
   },
   {
-    id: 'cs-contact-duplicate-email',
+    id: 'cs-contact-existing-3',
     first_name: 'Alex',
     last_name: 'Reed',
     email: 'shared@example.com',
@@ -39,7 +39,7 @@ const seedContacts = [
     vulnerable: false,
   },
   {
-    id: 'cs-contact-duplicate-phone',
+    id: 'cs-contact-existing-4',
     first_name: 'Avery',
     last_name: 'Reed',
     email: 'avery.reed@example.com',
@@ -49,7 +49,7 @@ const seedContacts = [
     vulnerable: false,
   },
   {
-    id: 'cs-contact-shared-email',
+    id: 'cs-contact-existing-5',
     first_name: 'Jordan',
     last_name: 'Lee',
     email: 'shared@example.com',

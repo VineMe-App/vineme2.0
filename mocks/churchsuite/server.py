@@ -39,7 +39,7 @@ SEED_CONTACTS = [
         "vulnerable": True,
     },
     {
-        "id": "cs-contact-duplicate-email",
+        "id": "cs-contact-existing-3",
         "first_name": "Alex",
         "last_name": "Reed",
         "email": "shared@example.com",
@@ -49,7 +49,7 @@ SEED_CONTACTS = [
         "vulnerable": False,
     },
     {
-        "id": "cs-contact-shared-email",
+        "id": "cs-contact-existing-4",
         "first_name": "Jordan",
         "last_name": "Lee",
         "email": "shared@example.com",
