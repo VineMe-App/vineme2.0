@@ -160,6 +160,9 @@ CONTACT_VIEWER_HTML = """<!doctype html>
     .error {
       color: #b42318;
     }
+    .hidden {
+      display: none;
+    }
     .meta {
       display: flex;
       gap: 12px;
@@ -237,7 +240,7 @@ CONTACT_VIEWER_HTML = """<!doctype html>
         <h1>VineMe Fake ChurchSuite</h1>
         <p>Development-only contact viewer. Contacts are stored in server memory and reset on redeploy/restart.</p>
       </div>
-      <div>
+      <div id="sessionActions" class="hidden">
         <button class="secondary" id="refreshButton">Refresh contacts</button>
         <button class="secondary" id="logoutButton">Log out</button>
       </div>
@@ -253,7 +256,7 @@ CONTACT_VIEWER_HTML = """<!doctype html>
       <div class="status" id="status">Log in with an allowed email address to view protected contacts.</div>
     </section>
 
-    <section>
+    <section id="contactsSection" class="hidden">
       <div class="meta">
         <span class="pill" id="countPill">Contacts: unknown</span>
         <span class="pill">API: /addressbook/contacts</span>
@@ -288,6 +291,8 @@ CONTACT_VIEWER_HTML = """<!doctype html>
     const statusEl = document.getElementById("status");
     const bodyEl = document.getElementById("contactsBody");
     const countPill = document.getElementById("countPill");
+    const sessionActions = document.getElementById("sessionActions");
+    const contactsSection = document.getElementById("contactsSection");
 
     emailInput.value = localStorage.getItem("vinemeMockUiEmail") || "";
 
@@ -347,6 +352,8 @@ CONTACT_VIEWER_HTML = """<!doctype html>
         }
 
         const contacts = Array.isArray(payload.data) ? payload.data : [];
+        sessionActions.classList.remove("hidden");
+        contactsSection.classList.remove("hidden");
         countPill.textContent = `Contacts: ${contacts.length}`;
 
         if (contacts.length === 0) {
@@ -373,6 +380,8 @@ CONTACT_VIEWER_HTML = """<!doctype html>
 
         setStatus(`Loaded ${contacts.length} contact(s). Refresh after app signups to see new mock contacts.`);
       } catch (error) {
+        sessionActions.classList.add("hidden");
+        contactsSection.classList.add("hidden");
         countPill.textContent = "Contacts: unavailable";
         bodyEl.innerHTML = '<tr><td colspan="7">Unable to load contacts.</td></tr>';
         setStatus(error.message || "Unable to load contacts. You may need to log in again.", true);
@@ -393,6 +402,8 @@ CONTACT_VIEWER_HTML = """<!doctype html>
         method: "POST",
         credentials: "same-origin",
       });
+      sessionActions.classList.add("hidden");
+      contactsSection.classList.add("hidden");
       bodyEl.innerHTML = '<tr><td colspan="7">No contacts loaded yet.</td></tr>';
       countPill.textContent = "Contacts: unknown";
       setStatus("Logged out.");
