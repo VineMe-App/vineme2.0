@@ -11,3 +11,7 @@ services:
         value: 0.0.0.0
       - key: CHURCHSUITE_MOCK_API_KEY
         sync: false
+      - key: CHURCHSUITE_MOCK_UI_ALLOWED_EMAILS
+        value: mlange2@mit.edu,oliver.youle@gmail.com
+      - key: CHURCHSUITE_MOCK_UI_PASSWORD
+        sync: false

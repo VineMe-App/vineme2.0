@@ -39,19 +39,28 @@ free web service.
 
    `/__mock/health` stays public for Render health checks. All other endpoints
    require this value in the `x-mock-api-key` header.
-5. The start command should be:
+5. Set browser UI access variables in Render:
+
+   ```text
+   CHURCHSUITE_MOCK_UI_ALLOWED_EMAILS=mlange2@mit.edu,oliver.youle@gmail.com
+   CHURCHSUITE_MOCK_UI_PASSWORD=<separate shared UI password>
+   ```
+
+   The UI password is only for the mini browser viewer. Keep
+   `CHURCHSUITE_MOCK_API_KEY` for Supabase/server-to-server calls.
+6. The start command should be:
 
    ```bash
    python3 mocks/churchsuite/server.py
    ```
 
-6. After deploy, test the public health URL:
+7. After deploy, test the public health URL:
 
    ```bash
    curl https://YOUR-RENDER-URL.onrender.com/__mock/health
    ```
 
-7. Run the smoke test against the hosted mock:
+8. Run the smoke test against the hosted mock:
 
    ```bash
    CHURCHSUITE_MOCK_URL=https://YOUR-RENDER-URL.onrender.com \
@@ -59,7 +68,17 @@ free web service.
    python3 mocks/churchsuite/smoke_test.py
    ```
 
-8. If Supabase Edge Functions call this mock, set these secrets in Supabase:
+Open the hosted URL in a browser to view the mini contact UI:
+
+```text
+https://YOUR-RENDER-URL.onrender.com
+```
+
+Log in with one of the allowed email addresses and the UI password. The UI
+lists all contacts currently in the fake ChurchSuite server memory, including
+contacts created by app signup tests since the last Render restart/redeploy/reset.
+
+9. If Supabase Edge Functions call this mock, set these secrets in Supabase:
 
    ```text
    CHURCHSUITE_MOCK_API_URL=https://YOUR-RENDER-URL.onrender.com
