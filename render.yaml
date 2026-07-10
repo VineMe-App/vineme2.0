@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: vineme-churchsuite-mock
+    runtime: python
+    plan: free
+    buildCommand: ""
+    startCommand: "python3 mocks/churchsuite/server.py"
+    healthCheckPath: /__mock/health
+    envVars:
+      - key: CHURCHSUITE_MOCK_HOST
+        value: 0.0.0.0
+      - key: CHURCHSUITE_MOCK_API_KEY
+        sync: false
+      - key: CHURCHSUITE_MOCK_UI_ALLOWED_EMAILS
+        value: mlange2@mit.edu,oliver.youle@gmail.com
+      - key: CHURCHSUITE_MOCK_UI_PASSWORD
+        sync: false

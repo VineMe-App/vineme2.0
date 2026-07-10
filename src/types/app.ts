@@ -21,6 +21,7 @@ export interface SignUpCredentials {
 export interface OnboardingData {
   first_name: string;
   last_name: string;
+  email?: string;
   church_id?: string;
   service_id?: string;
   group_status?: 'existing' | 'looking';

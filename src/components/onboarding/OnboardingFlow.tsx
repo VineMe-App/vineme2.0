@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import type { OnboardingData, OnboardingStep } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { STORAGE_KEYS } from '@/utils/constants';
+import { churchSuiteIntegrationService } from '@/services/churchsuiteIntegration';
 
 import NameStep from './NameStep';
 import EmailStep from './EmailStep';
@@ -226,6 +227,41 @@ export default function OnboardingFlow() {
         setError('Failed to create user profile. Please try again.');
         setIsLoading(false);
         return;
+      }
+
+      const churchId = requestedChurch ? REQUESTED_CHURCH_ID : data.church_id;
+      const churchSuiteEmail = data.email || user.email || undefined;
+      if (
+        churchId &&
+        churchSuiteIntegrationService.shouldLinkContact(churchSuiteEmail)
+      ) {
+        churchSuiteIntegrationService
+          .linkContact({
+            email: churchSuiteEmail,
+            phone: user.phone || undefined,
+            firstName: data.first_name?.trim() || undefined,
+            lastName: data.last_name?.trim() || undefined,
+            churchId,
+          })
+          .then((result) => {
+            if (__DEV__) {
+              console.log('[Onboarding] ChurchSuite link result:', result);
+            }
+          })
+          .catch((churchSuiteError) => {
+            // ChurchSuite sync must not block signup; the Edge Function records
+            // retry/manual-review state when it can.
+            if (__DEV__) {
+              console.warn(
+                '[Onboarding] ChurchSuite link failed:',
+                churchSuiteError
+              );
+            }
+          });
+      } else if (__DEV__) {
+        console.log(
+          '[Onboarding] Skipping ChurchSuite link for non-test email domain'
+        );
       }
 
       // Save onboarding completion status locally (legacy local gate; server flag is source of truth)
