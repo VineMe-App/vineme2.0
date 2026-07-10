@@ -14,7 +14,8 @@
         "simulator": false
       },
       "env": {
-        "APP_VARIANT": "development"
+        "APP_VARIANT": "development",
+        "EXPO_PUBLIC_CHURCHSUITE_TEST_EMAIL_DOMAINS": "example.com"
       }
     },
     "preview": {
@@ -24,6 +25,9 @@
       },
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_CHURCHSUITE_TEST_EMAIL_DOMAINS": "example.com"
       }
     },
     "production": {
