@@ -13,9 +13,9 @@ CREATE TABLE churchsuite_connections (
 
 ALTER TABLE churchsuite_connections ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow church admins to read churchsuite connections" ON "public"."churchsuite_connections" FOR SELECT USING ((EXISTS ( SELECT 1
+CREATE POLICY "Allow church admins to read their own churchsuite connection" ON "public"."churchsuite_connections" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."users" "admin"
-  WHERE (("admin"."id" = "auth"."uid"()) AND ("admin"."roles" @> ARRAY['church_admin'::"text"])))));
+  WHERE (("admin"."id" = "auth"."uid"()) AND ("admin"."roles" @> ARRAY['church_admin'::"text"]) AND ("admin"."church_id" = "churchsuite_connections"."church_id")))));
 ;
 CREATE POLICY "Church admins can create new churchsuite connections" ON "public"."churchsuite_connections" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."users" "admin"
