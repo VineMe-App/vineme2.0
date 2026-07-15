@@ -1,4 +1,4 @@
-import { StyleSheet, TextInputChangeEvent } from 'react-native';
+import { Alert, StyleSheet, TextInputChangeEvent } from 'react-native';
 import {
   Button,
   ChurchAdminOnly,
@@ -11,8 +11,8 @@ import {
 import { AdminPageLayout } from '@/components/admin/AdminHeader';
 import Text from '@/components/ui/Text';
 import { View } from 'react-native';
-import { useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme/provider/useTheme';
@@ -20,8 +20,9 @@ import { formatDateTime } from '@/utils/helpers';
 
 const SubmitButton: React.FC<{
   onSubmit: (values: Record<string, any>) => void | Promise<void>;
-}> = ({ onSubmit }) => {
-  const { validateForm, values, isSubmitting } = useFormContext();
+  isSubmitting: boolean;
+}> = ({ onSubmit, isSubmitting }) => {
+  const { validateForm, values } = useFormContext();
   const handlePress = useCallback(() => {
     const ok = validateForm();
     if (!ok) return;
@@ -41,10 +42,14 @@ const SubmitButton: React.FC<{
 const ChurchsuiteAdminScreen = () => {
   const { userProfile } = useAuthStore();
   const { theme } = useTheme();
+  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const connectionQueryKey = ['churchsuite-connection', userProfile?.church_id];
 
   const { data: existingConnection, isLoading: isLoadingConnection } =
     useQuery({
-      queryKey: ['churchsuite-connection', userProfile?.church_id],
+      queryKey: connectionQueryKey,
       queryFn: async () => {
         const { data, error } = await supabase
           .from('churchsuite_connections')
@@ -79,14 +84,27 @@ const ChurchsuiteAdminScreen = () => {
     const { text: clientId } = values.clientId;
     const { text: secret } = values.secret;
 
-    const { data, error } = await supabase.rpc(
-      'create_churchsuite_connection',
-      {
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.rpc('create_churchsuite_connection', {
         p_identifier: clientId,
         p_secret: secret,
-      }
-    );
-    console.log(data, error);
+      });
+
+      if (error) throw error;
+
+      await queryClient.invalidateQueries({ queryKey: connectionQueryKey });
+    } catch (err) {
+      console.log(err)
+      Alert.alert(
+        'Something went wrong',
+        err instanceof Error
+          ? err.message
+          : 'Could not save the ChurchSuite connection.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   return (
     <ChurchAdminOnly>
@@ -95,7 +113,9 @@ const ChurchsuiteAdminScreen = () => {
         subtitle="View ChurchSuite connection settings"
       >
         <View style={styles.container}>
-          <Text>Here you can connect your ChurchSuite account.</Text>
+          <Text color="secondary" style={styles.intro}>
+            Here you can connect your ChurchSuite account.
+          </Text>
           {isLoadingConnection ? null : existingConnection ? (
             <View
               style={[
@@ -114,31 +134,50 @@ const ChurchsuiteAdminScreen = () => {
               </Text>
             </View>
           ) : (
-            <Form config={formConfig} onSubmit={handleSubmit}>
-              <FormField name="clientId">
-                {({ value, error, onChange, onBlur }) => (
-                  <Input
-                    label="Client ID"
-                    value={value}
-                    onChange={onChange}
-                    onBlur={onBlur}
-                    error={error}
-                  />
-                )}
-              </FormField>
-              <FormField name="secret">
-                {({ value, error, onChange, onBlur }) => (
-                  <Input
-                    label="Client Secret"
-                    value={value}
-                    onChange={onChange}
-                    onBlur={onBlur}
-                    error={error}
-                  />
-                )}
-              </FormField>
-              <SubmitButton onSubmit={handleSubmit} />
-            </Form>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.surface.primary,
+                  borderColor: theme.colors.border.primary,
+                },
+              ]}
+            >
+              <Form
+                config={formConfig}
+                onSubmit={handleSubmit}
+                style={styles.form}
+              >
+                <FormField name="clientId">
+                  {({ value, error, onChange, onBlur }) => (
+                    <Input
+                      label="Client ID"
+                      value={value}
+                      onChange={onChange}
+                      onBlur={onBlur}
+                      error={error}
+                      containerStyle={styles.field}
+                    />
+                  )}
+                </FormField>
+                <FormField name="secret">
+                  {({ value, error, onChange, onBlur }) => (
+                    <Input
+                      label="Client Secret"
+                      value={value}
+                      onChange={onChange}
+                      onBlur={onBlur}
+                      error={error}
+                      containerStyle={styles.field}
+                    />
+                  )}
+                </FormField>
+                <SubmitButton
+                  onSubmit={handleSubmit}
+                  isSubmitting={isSubmitting}
+                />
+              </Form>
+            </View>
           )}
         </View>
       </AdminPageLayout>
@@ -149,9 +188,23 @@ const ChurchsuiteAdminScreen = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
+    gap: 16,
+  },
+  intro: {
+    marginBottom: 0,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 20,
+  },
+  form: {
+    gap: 16,
+  },
+  field: {
+    marginBottom: 0,
   },
   notice: {
-    marginTop: 16,
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
