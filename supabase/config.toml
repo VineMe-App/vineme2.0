@@ -40,7 +40,3 @@ enabled = true
 entrypoint = "./functions/push-notify/index.ts"
 import_map = "./functions/push-notify/deno.json"
 
-[functions.store-churchsuite-connection]
-enabled = true
-entrypoint = "./functions/store-churchsuite-connection/index.ts"
-import_map = "./functions/store-churchsuite-connection/deno.json"

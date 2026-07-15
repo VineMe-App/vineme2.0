@@ -79,14 +79,11 @@ const ChurchsuiteAdminScreen = () => {
     const { text: clientId } = values.clientId;
     const { text: secret } = values.secret;
 
-    const { data, error } = await supabase.functions.invoke(
-      'store-churchsuite-connection',
+    const { data, error } = await supabase.rpc(
+      'create_churchsuite_connection',
       {
-        body: {
-          church_id: userProfile?.church_id,
-          client_id: clientId,
-          client_secret: secret,
-        },
+        p_identifier: clientId,
+        p_secret: secret,
       }
     );
     console.log(data, error);
