@@ -59,13 +59,6 @@ export default function AdminLayout() {
               title: 'Notifications',
             }}
           />
-          <Stack.Screen
-            name="churchsuite"
-            options={{
-              headerShown: false,
-              title: 'ChurchSuite',
-            }}
-          />
         </Stack>
       </AdminErrorBoundary>
     </ChurchAdminOnly>
