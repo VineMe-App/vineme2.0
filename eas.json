@@ -32,10 +32,7 @@
     },
     "production": {
       "distribution": "store",
-      "autoIncrement": true,
-      "env": {
-        "EXPO_PUBLIC_CHURCHSUITE_TEST_EMAIL_DOMAINS": "example.com"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
