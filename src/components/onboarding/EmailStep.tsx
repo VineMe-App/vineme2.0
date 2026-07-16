@@ -90,7 +90,7 @@ export default function EmailStep({
         }
       }
 
-      onNext({ email: normalizedEmail });
+      onNext({});
     } catch (err: any) {
       setError(err?.message || 'Failed to save email. Please try again.');
     }
