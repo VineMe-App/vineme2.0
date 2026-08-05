@@ -33,6 +33,8 @@ Deno.serve(async (req) => {
     );
   }
 
+  const credentials = btoa(`${data.identifier}:${data.secret}`);
+
   const response = await fetch(`${CHURCHSUITE_AUTH_API_URL}/oauth2/token`, {
     headers: {
       'content-type': 'application/json',
@@ -41,9 +43,10 @@ Deno.serve(async (req) => {
     method: 'POST',
     body: JSON.stringify({
       grant_type: 'client_credentials',
-      scope: 'full_access',
+      scope: 'addressbook.read',
     }),
   });
+console.log(response)
 
   const authData = await response.json();
 
