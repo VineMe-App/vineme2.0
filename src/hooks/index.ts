@@ -51,6 +51,7 @@ export {
   friendshipKeys,
 } from './useFriendships';
 export { useNetworkStatus } from './useNetworkStatus';
+export { useFeatureFlag, featureFlagKeys } from './useFeatureFlag';
 export { useAsyncOperation } from './useAsyncOperation';
 export {
   useAdminAsyncOperation,
