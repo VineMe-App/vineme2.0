@@ -17,6 +17,7 @@ import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme/provider/useTheme';
 import { formatDateTime } from '@/utils/helpers';
+import { useFeatureFlag } from '@/hooks';
 
 const SubmitButton: React.FC<{
   onSubmit: (values: Record<string, any>) => void | Promise<void>;
@@ -44,11 +45,12 @@ const ChurchsuiteAdminScreen = () => {
   const { theme } = useTheme();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isChurchsuiteEnabled = useFeatureFlag('churchsuite');
 
   const connectionQueryKey = ['churchsuite-connection', userProfile?.church_id];
 
-  const { data: existingConnection, isLoading: isLoadingConnection } =
-    useQuery({
+  const { data: existingConnection, isLoading: isLoadingConnection } = useQuery(
+    {
       queryKey: connectionQueryKey,
       queryFn: async () => {
         const { data, error } = await supabase
@@ -61,7 +63,8 @@ const ChurchsuiteAdminScreen = () => {
         return data;
       },
       enabled: !!userProfile?.church_id,
-    });
+    }
+  );
 
   const formConfig: FormConfig = {
     secret: {
@@ -95,7 +98,7 @@ const ChurchsuiteAdminScreen = () => {
 
       await queryClient.invalidateQueries({ queryKey: connectionQueryKey });
     } catch (err) {
-      console.log(err)
+      console.log(err);
       Alert.alert(
         'Something went wrong',
         err instanceof Error
@@ -106,7 +109,7 @@ const ChurchsuiteAdminScreen = () => {
       setIsSubmitting(false);
     }
   };
-  return (
+  return isChurchsuiteEnabled ? (
     <ChurchAdminOnly>
       <AdminPageLayout
         title="ChurchSuite connection"
@@ -128,9 +131,9 @@ const ChurchsuiteAdminScreen = () => {
             >
               <Text style={{ color: theme.colors.info[700] }}>
                 A ChurchSuite connection was added on{' '}
-                {formatDateTime(existingConnection.created_at)}. To protect
-                the existing credentials, they can't be viewed or overwritten
-                here. Contact support if you need to change them.
+                {formatDateTime(existingConnection.created_at)}. To protect the
+                existing credentials, they can't be viewed or overwritten here.
+                Contact support if you need to change them.
               </Text>
             </View>
           ) : (
@@ -182,7 +185,7 @@ const ChurchsuiteAdminScreen = () => {
         </View>
       </AdminPageLayout>
     </ChurchAdminOnly>
-  );
+  ) : null;
 };
 
 const styles = StyleSheet.create({

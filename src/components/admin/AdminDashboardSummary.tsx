@@ -21,6 +21,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { useFeatureFlag } from '@/hooks';
 
 interface AdminDashboardSummaryProps {
   onRefresh?: () => void;
@@ -107,6 +108,8 @@ export function AdminDashboardSummary({
     isLoading: isLoadingRequests,
     refetch: refetchRequests,
   } = useRequestsStats();
+
+  const isChurchsuiteEnabled = useFeatureFlag('churchsuite');
 
   const notificationCounts = {
     group_requests: groupsStats?.pending || 0,
@@ -271,15 +274,17 @@ export function AdminDashboardSummary({
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('/admin/churchsuite')}
-        >
-          <View style={styles.buttonContent}>
-            <Ionicons name="mail-outline" size={20} color="#007AFF" />
-            <Text style={styles.buttonText}>ChurchSuite</Text>
-          </View>
-        </TouchableOpacity>
+        {isChurchsuiteEnabled ? (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/admin/churchsuite')}
+          >
+            <View style={styles.buttonContent}>
+              <Ionicons name="mail-outline" size={20} color="#007AFF" />
+              <Text style={styles.buttonText}>ChurchSuite</Text>
+            </View>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {/* Stats Section */}
