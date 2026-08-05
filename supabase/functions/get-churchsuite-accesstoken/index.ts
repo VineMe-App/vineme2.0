@@ -37,16 +37,15 @@ Deno.serve(async (req) => {
 
   const response = await fetch(`${CHURCHSUITE_AUTH_API_URL}/oauth2/token`, {
     headers: {
-      'content-type': 'application/x-www-form-urlencoded',
+      'content-type': 'application/json',
       Authorization: `Basic ${credentials}`,
     },
     method: 'POST',
     body: JSON.stringify({
       grant_type: 'client_credentials',
-      scope: 'addressbook.read',
+      scope: 'user addressbook.read',
     }),
   });
-console.log(response)
 
   const authData = await response.json();
 
