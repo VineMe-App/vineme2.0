@@ -109,7 +109,7 @@ export function AdminDashboardSummary({
     refetch: refetchRequests,
   } = useRequestsStats();
 
-  const isChurchsuiteEnabled = useFeatureFlag('churchsuite');
+  const { isFeatureEnabled: isChurchsuiteEnabled } = useFeatureFlag('churchsuite');
 
   const notificationCounts = {
     group_requests: groupsStats?.pending || 0,

@@ -45,7 +45,7 @@ const ChurchsuiteAdminScreen = () => {
   const { theme } = useTheme();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isChurchsuiteEnabled = useFeatureFlag('churchsuite');
+  const { isFeatureEnabled: isChurchsuiteEnabled } = useFeatureFlag('churchsuite');
 
   const connectionQueryKey = ['churchsuite-connection', userProfile?.church_id];
 
