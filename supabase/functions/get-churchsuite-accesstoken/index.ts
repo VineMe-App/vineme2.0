@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
 
   const response = await fetch(`${CHURCHSUITE_AUTH_API_URL}/oauth2/token`, {
     headers: {
-      'content-type': 'application/json',
+      'content-type': 'application/x-www-form-urlencoded',
       Authorization: `Basic ${credentials}`,
     },
     method: 'POST',
