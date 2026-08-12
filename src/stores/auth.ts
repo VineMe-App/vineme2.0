@@ -44,6 +44,7 @@ interface AuthState {
     newcomer?: boolean;
     roles?: string[];
     onboarding_complete?: boolean;
+    churchsuite_id?: string;
   }) => Promise<boolean>;
   clearError: () => void;
   initialize: () => Promise<void>;
@@ -286,6 +287,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     onboarding_complete?: boolean;
     avatar_url?: string;
     bio?: string;
+    churchsuite_id?: string;
   }): Promise<boolean> => {
     set({ isLoading: true, error: null });
 

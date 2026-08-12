@@ -27,6 +27,7 @@ export interface OnboardingData {
   avatar_url?: string;
   bio?: string;
   requested_church?: boolean;
+  churchsuiteUserId?: string;
 }
 
 export interface OnboardingStep {

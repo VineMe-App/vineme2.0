@@ -169,8 +169,33 @@ export default function ChurchStep({
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (selectedChurchId && selectedServiceId) {
+      if (user?.phone) {
+        setLoading(true);
+        const { data: csData, error } = await supabase.functions.invoke(
+          'get-churchsuite-contact',
+          {
+            body: { church_id: selectedChurchId, mobileNumber: user?.phone },
+          }
+        );
+        console.log('csData', csData);
+        //handle error
+        if (csData?.data) {
+          const churchsuiteUserData = csData.data[0]; // in theory just 1 result
+          onNext({
+            churchsuiteUserId: churchsuiteUserData.id,
+            first_name: churchsuiteUserData.first_name,
+            last_name: churchsuiteUserData.last_name,
+            church_id: selectedChurchId,
+            service_id: selectedServiceId,
+            avatar_url: churchsuiteUserData.image.small,
+          }); // email?
+          setLoading(false);
+          return;
+        }
+      }
+
       onNext({ church_id: selectedChurchId, service_id: selectedServiceId });
       return;
     }
@@ -345,8 +370,23 @@ export default function ChurchStep({
                   </Text>
                   <Text style={styles.serviceEmptyHelpText}>
                     You&apos;ll need to select a service to continue onboarding.
-                    Please choose a different church for now.
+                    Please choose a different church for now or request this
+                    service so we can add it.
                   </Text>
+                  <TouchableOpacity
+                    style={styles.serviceEmptyRequestButton}
+                    onPress={() => handleOpenMissingServiceModal('service')}
+                    disabled={missingServiceSubmitting}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.serviceEmptyRequestTitle}>
+                      Request a service
+                    </Text>
+                    <Text style={styles.serviceEmptyRequestSubtitle}>
+                      Tell us the service details and we&apos;ll reach out when
+                      it&apos;s available.
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
 

@@ -170,7 +170,10 @@ export class AuthService {
       if (error) {
         // Function doesn't exist or other error - gracefully skip orphaned user linking
         if (__DEV__) {
-          if (error.message?.includes('does not exist') || error.message?.includes('function')) {
+          if (
+            error.message?.includes('does not exist') ||
+            error.message?.includes('function')
+          ) {
             console.log(
               '[createUserProfile] find_orphaned_user_by_name function not available (migration may not be applied)'
             );
@@ -192,7 +195,10 @@ export class AuthService {
       return null;
     } catch (error) {
       if (__DEV__) {
-        console.error('[createUserProfile] Error finding orphaned user:', error);
+        console.error(
+          '[createUserProfile] Error finding orphaned user:',
+          error
+        );
       }
       return null;
     }
@@ -202,7 +208,7 @@ export class AuthService {
    * Link existing orphaned user data to new auth user
    * Transfers all related data (memberships, friendships, etc.) to the new user ID
    * Returns the orphaned user's roles if they existed
-   * 
+   *
    * Handles two scenarios:
    * 1. Orphaned public.users (no auth.users) - transfers all data from old_user_id to new_user_id
    * 2. Orphaned auth.users (no public.users) - no data to transfer, just use the auth.users id
@@ -252,7 +258,10 @@ export class AuthService {
       if (error) {
         // Function doesn't exist or other error - gracefully skip linking
         if (__DEV__) {
-          if (error.message?.includes('does not exist') || error.message?.includes('function')) {
+          if (
+            error.message?.includes('does not exist') ||
+            error.message?.includes('function')
+          ) {
             console.warn(
               '[createUserProfile] link_orphaned_user function not available (migration may not be applied)'
             );
@@ -278,7 +287,10 @@ export class AuthService {
       return { error: new Error(data?.message || 'Failed to link user data') };
     } catch (error) {
       if (__DEV__) {
-        console.error('[createUserProfile] Error linking orphaned user:', error);
+        console.error(
+          '[createUserProfile] Error linking orphaned user:',
+          error
+        );
       }
       return {
         error:
@@ -303,6 +315,7 @@ export class AuthService {
     onboarding_complete?: boolean;
     avatar_url?: string;
     bio?: string;
+    churchsuite_id: string;
   }): Promise<{ error: Error | null }> {
     try {
       const user = await this.getCurrentUser();
@@ -429,6 +442,27 @@ export class AuthService {
       }
       if (userData.bio) {
         payload.bio = userData.bio;
+      }
+      if (userData.churchsuite_id) {
+        payload.churchsuite_id = userData;
+      } else {
+        const doesChurchHaveChurchsuiteConnection = await supabase
+          .from('churchsuite_connections')
+          .select('id, access_token, access_token_expires_at')
+          .eq('church_id', userData.church_id)
+          .single();
+        if (doesChurchHaveChurchsuiteConnection) {
+          const { data: csData, error } = await supabase.functions.invoke(
+            'create_churchsuite_contact',
+            {
+              body: {
+                ...userData,
+                email: user.email,
+                phone: user.phone,
+              },
+            }
+          );
+        }
       }
 
       const { error } = await supabase.from('users').upsert(payload, {
@@ -791,10 +825,12 @@ export class AuthService {
         };
       }
 
+      console.log('phone', phone);
       const { error } = await supabase.auth.signInWithOtp({
         phone,
         options: { shouldCreateUser: true },
       });
+      console.log('signupWithPhone', error);
 
       if (error) {
         return { success: false, error: error.message };
@@ -843,7 +879,7 @@ export class AuthService {
           return {
             success: false,
             error:
-              "There is no account linked to this phone number, please sign up to create an account.",
+              'There is no account linked to this phone number, please sign up to create an account.',
             userNotFound: true,
           };
         }
@@ -870,7 +906,7 @@ export class AuthService {
   ): Promise<{ success: boolean; error?: string; userNotFound?: boolean }> {
     try {
       console.log('[AuthService] Attempting to send magic link to:', email);
-      
+
       // Allow email login via magic link (no email signups)
       const { data, error } = await supabase.auth.signInWithOtp({
         email,
@@ -887,17 +923,21 @@ export class AuthService {
           name: error.name,
           email,
         });
-        
+
         const msg = error.message.toLowerCase();
-        
+
         // Check for email service configuration issues (500 errors)
-        if (error.status === 500 && msg.includes('error sending magic link email')) {
+        if (
+          error.status === 500 &&
+          msg.includes('error sending magic link email')
+        ) {
           return {
             success: false,
-            error: 'Email service is not configured. Please check Supabase SMTP settings in the dashboard.',
+            error:
+              'Email service is not configured. Please check Supabase SMTP settings in the dashboard.',
           };
         }
-        
+
         // Check if user not found
         if (
           msg.includes('user not found') ||
@@ -933,12 +973,13 @@ export class AuthService {
     } catch (error) {
       console.error('[AuthService] Exception caught in signInWithEmail:', {
         error,
-        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        errorType:
+          error instanceof Error ? error.constructor.name : typeof error,
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         email,
       });
-      
+
       return {
         success: false,
         error:
@@ -986,6 +1027,7 @@ export class AuthService {
 
       const { data, error } = await supabase.auth.verifyOtp(verifyOptions);
 
+      console.log(error);
       if (error) {
         return { success: false, error: error.message };
       }
@@ -1016,7 +1058,7 @@ export class AuthService {
    * Link email to existing phone-authenticated user
    * Updates the current authenticated user's email address.
    * Supabase automatically sends a verification email to the new address.
-   * 
+   *
    * Note: The redirect URL for email verification is configured at the project level
    * in Supabase dashboard. If a custom redirect URL is needed, it should be configured
    * in the Supabase project settings (Authentication > URL Configuration).
@@ -1035,7 +1077,10 @@ export class AuthService {
       const updateOptions = redirectUrl
         ? { emailRedirectTo: redirectUrl }
         : undefined;
-      const { error } = await supabase.auth.updateUser({ email }, updateOptions);
+      const { error } = await supabase.auth.updateUser(
+        { email },
+        updateOptions
+      );
 
       if (error) {
         // Normalize and classify common failure modes for better UX
@@ -1053,7 +1098,11 @@ export class AuthService {
             error: 'This email is already in use by another account.',
           };
         }
-        if (msg.includes('maximum credits exceeded') || msg.includes('insufficient') || msg.includes('rate limit')) {
+        if (
+          msg.includes('maximum credits exceeded') ||
+          msg.includes('insufficient') ||
+          msg.includes('rate limit')
+        ) {
           return {
             success: false,
             error:
@@ -1069,14 +1118,18 @@ export class AuthService {
         if (user) {
           // Fetch existing roles so that we don't accidentally strip elevated permissions
           let existingRoles: string[] | null = null;
-          const { data: existingProfiles, error: existingProfileError } = await supabase
-            .from('users')
-            .select('roles')
-            .eq('id', user.id)
-            .limit(1);
+          const { data: existingProfiles, error: existingProfileError } =
+            await supabase
+              .from('users')
+              .select('roles')
+              .eq('id', user.id)
+              .limit(1);
 
           if (existingProfileError) {
-            console.warn('Failed to fetch existing roles before marketing opt-in upsert:', existingProfileError);
+            console.warn(
+              'Failed to fetch existing roles before marketing opt-in upsert:',
+              existingProfileError
+            );
           } else if (existingProfiles && existingProfiles.length > 0) {
             existingRoles = existingProfiles[0]?.roles || null;
           }
@@ -1102,7 +1155,10 @@ export class AuthService {
             });
 
           if (profileError) {
-            console.error('Failed to update marketing preference:', profileError);
+            console.error(
+              'Failed to update marketing preference:',
+              profileError
+            );
             // Don't fail the entire operation if marketing preference update fails
             // Email linking succeeded, which is the primary operation
           }
@@ -1169,7 +1225,10 @@ export class AuthService {
       }
 
       if (!data?.session?.user) {
-        return { success: false, error: 'Failed to verify email. Invalid session.' };
+        return {
+          success: false,
+          error: 'Failed to verify email. Invalid session.',
+        };
       }
 
       // Store session securely
@@ -1183,15 +1242,18 @@ export class AuthService {
 
       // Refresh the user to ensure we have the latest data including verified email
       // Sometimes the session user might not have the email immediately after verification
-      const { data: { user: refreshedUser } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user: refreshedUser },
+      } = await supabase.auth.getUser();
+
       // Email is now verified in Supabase auth
       // The email is stored in auth.users.email, not in public.users table
       return { success: true, user: refreshedUser || data.session.user };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to verify email',
+        error:
+          error instanceof Error ? error.message : 'Failed to verify email',
       };
     }
   }
