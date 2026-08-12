@@ -23,16 +23,16 @@ const REQUESTED_CHURCH_ID = 'c7796e35-ebf2-460a-a2a3-9e1c053b4561';
 const REQUESTED_SERVICE_ID = '49189600-7dd7-42bf-af05-4f12f2458493';
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
+  {
+    id: 'church',
+    title: 'Select Church',
+    component: ChurchStep,
+  },
   { id: 'name', title: 'Your Name', component: NameStep },
   {
     id: 'email',
     title: 'Your Email',
     component: EmailStep,
-  },
-  {
-    id: 'church',
-    title: 'Select Church',
-    component: ChurchStep,
   },
   {
     id: 'group-status',
@@ -218,6 +218,7 @@ export default function OnboardingFlow() {
         onboarding_complete: true, // explicitly mark onboarding complete
         avatar_url: data.avatar_url,
         bio: data.bio?.trim() ? data.bio.trim() : undefined,
+        churchsuite_id: data.churchsuiteUserId,
       });
 
       if (!success) {

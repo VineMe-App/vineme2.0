@@ -106,7 +106,12 @@ export default function NameStep({
         >
           {!isKeyboardVisible && (
             <View style={styles.header}>
-              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+              <Text
+                variant="h4"
+                weight="extraBold"
+                align="center"
+                style={styles.title}
+              >
                 What's your name?
               </Text>
               <Text
@@ -115,13 +120,19 @@ export default function NameStep({
                 align="center"
                 style={styles.subtitle}
               >
-                Share your first and last name so your church community can recognize you.
+                Share your first and last name so your church community can
+                recognize you.
               </Text>
             </View>
           )}
           {isKeyboardVisible && (
             <View style={styles.keyboardHeader}>
-              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+              <Text
+                variant="h4"
+                weight="extraBold"
+                align="center"
+                style={styles.title}
+              >
                 What's your name?
               </Text>
               <Text
@@ -130,10 +141,19 @@ export default function NameStep({
                 align="center"
                 style={styles.subtitle}
               >
-                Share your first and last name so your church community can recognize you.
+                Share your first and last name so your church community can
+                recognize you.
               </Text>
             </View>
           )}
+          {data.churchsuiteUserId ? (
+            <View style={styles.churchsuiteDataMessageContainer}>
+              <Text variant="label" color="primary" style={styles.label}>
+                We found the following data from your church's ChurchSuite
+                database. Please verify it's correct.
+              </Text>
+            </View>
+          ) : null}
 
           <View style={styles.inputGroup}>
             <View style={styles.inputWrapper}>
@@ -141,7 +161,10 @@ export default function NameStep({
                 First name
               </Text>
               <TextInput
-                style={[styles.input, firstNameError ? styles.inputError : null]}
+                style={[
+                  styles.input,
+                  firstNameError ? styles.inputError : null,
+                ]}
                 value={firstName}
                 onChangeText={handleFirstChange}
                 placeholder="First name"
@@ -152,7 +175,11 @@ export default function NameStep({
                 maxLength={50}
               />
               {firstNameError && (
-                <Text variant="bodySmall" color="error" style={styles.errorText}>
+                <Text
+                  variant="bodySmall"
+                  color="error"
+                  style={styles.errorText}
+                >
                   {firstNameError}
                 </Text>
               )}
@@ -174,7 +201,11 @@ export default function NameStep({
                 maxLength={50}
               />
               {lastNameError && (
-                <Text variant="bodySmall" color="error" style={styles.errorText}>
+                <Text
+                  variant="bodySmall"
+                  color="error"
+                  style={styles.errorText}
+                >
                   {lastNameError}
                 </Text>
               )}
@@ -314,5 +345,15 @@ const styles = StyleSheet.create({
     color: '#999999', // Figma: #999999
     fontSize: 16, // Figma: 16px
     letterSpacing: -0.8, // Figma: -0.8px
+  },
+  churchsuiteDataMessageContainer: {
+    backgroundColor: '#fff8e5',
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#ffd966',
+    borderRadius: 12,
+    marginLeft: 16,
+    marginRight: 16,
+    marginBottom: 16,
   },
 });
