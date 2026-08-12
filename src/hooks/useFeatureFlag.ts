@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase';
 
+type FeatureFlags = 'churchsuite';
+
 export const featureFlagKeys = {
   all: ['featureFlags'] as const,
   detail: (flagName: string) => [...featureFlagKeys.all, flagName] as const,
@@ -16,7 +18,7 @@ const FLAG_NOT_FOUND_MESSAGE = 'feature flag not found';
  * Resolves to `false` rather than throwing when the flag doesn't exist yet,
  * so callers can treat "not rolled out" the same as "off".
  */
-export function useFeatureFlag(flagName: string) {
+export function useFeatureFlag(flagName: FeatureFlags) {
   const query = useQuery({
     queryKey: featureFlagKeys.detail(flagName),
     queryFn: async () => {
