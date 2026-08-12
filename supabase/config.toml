@@ -40,9 +40,17 @@ enabled = true
 entrypoint = "./functions/push-notify/index.ts"
 import_map = "./functions/push-notify/deno.json"
 
-
 [functions.get-churchsuite-sites]
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/get-churchsuite-sites/index.ts"
 import_map = "./functions/get-churchsuite-sites/deno.json"
+
+[functions.create-churchsuite-contact]
+enabled = true
+# Called only by the Postgres trigger (see
+# supabase/migrations/20260812221500_churchsuite_contact_sync_trigger.sql), not by any
+# authenticated frontend user, so it verifies its own shared secret instead of a user JWT.
+verify_jwt = false
+entrypoint = "./functions/create-churchsuite-contact/index.ts"
+import_map = "./functions/create-churchsuite-contact/deno.json"
