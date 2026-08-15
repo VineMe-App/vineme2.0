@@ -13,6 +13,23 @@ BEGIN
   END IF;
 END $$;
 
+-- Base URL for edge function calls made from DB triggers. Defaults to production here;
+-- supabase/seed.sql overwrites this to the local functions gateway on `supabase db
+-- reset`/`supabase start`, since prod and local can't share one hardcoded URL in a
+-- migration that runs identically in both places.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM vault.decrypted_secrets WHERE name = 'edge_functions_base_url'
+  ) THEN
+    PERFORM vault.create_secret(
+      'https://knwlfuysipixbwuzvyen.supabase.co/functions/v1',
+      'edge_functions_base_url',
+      'Base URL DB triggers use to reach edge functions - overridden locally in seed.sql'
+    );
+  END IF;
+END $$;
+
 CREATE OR REPLACE FUNCTION "public"."trigger_sync_churchsuite_contact"()
 RETURNS "trigger"
 LANGUAGE "plpgsql"
@@ -21,13 +38,18 @@ SET "search_path" TO 'public'
 AS $$
 DECLARE
   v_secret text;
+  v_base_url text;
 BEGIN
   SELECT decrypted_secret INTO v_secret
   FROM vault.decrypted_secrets
   WHERE name = 'edge_fn_webhook_secret';
 
+  SELECT decrypted_secret INTO v_base_url
+  FROM vault.decrypted_secrets
+  WHERE name = 'edge_functions_base_url';
+
   PERFORM net.http_post(
-    url := 'https://knwlfuysipixbwuzvyen.supabase.co/functions/v1/create-churchsuite-contact',
+    url := v_base_url || '/create-churchsuite-contact',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || v_secret

@@ -23,7 +23,9 @@ Deno.serve(async (req) => {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const { id, church_id } = (await req.json()) as WebhookPayload;
+  const rawBody = await req.text();
+  console.log('raw body:', JSON.stringify(rawBody));
+  const { id, church_id } = JSON.parse(rawBody) as WebhookPayload;
 
   if (!id || !church_id) {
     return Response.json({
@@ -190,6 +192,7 @@ async function getValidAccessToken(
 }
 
 async function findChurchsuiteContact(accessToken: string, query: string) {
+console.log('looking up user...', query)
   const response = await fetch(
     `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/contacts?q=${encodeURIComponent(query)}`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
