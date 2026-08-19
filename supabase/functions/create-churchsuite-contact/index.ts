@@ -24,7 +24,6 @@ Deno.serve(async (req) => {
   }
 
   const rawBody = await req.text();
-  console.log('raw body:', JSON.stringify(rawBody));
   const { id, church_id } = JSON.parse(rawBody) as WebhookPayload;
 
   if (!id || !church_id) {
@@ -69,7 +68,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  const { email, phone } = authUserData.user;
+  const { new_email: email, phone } = authUserData.user;
 
   if (!email || !email.toLowerCase().endsWith(ALLOWED_EMAIL_DOMAIN)) {
     return Response.json({
@@ -89,9 +88,10 @@ Deno.serve(async (req) => {
   try {
     const accessToken = await getValidAccessToken(supabase, church_id);
 
+    const normalisedPhone = phone.replace('44', '0')
     const existingContact = await findChurchsuiteContact(
       accessToken,
-      phone || email!
+      normalisedPhone || email!
     );
 
     const churchsuiteContactId = existingContact
@@ -154,8 +154,9 @@ async function getValidAccessToken(
   }
 
   const credentials = btoa(`${secret.identifier}:${secret.secret}`);
+  const CHURCHSUITE_AUTH_API_URL = Deno.env.get('CHURCHSUITE_AUTH_API_URL');
   const tokenResponse = await fetch(
-    `${Deno.env.get('CHURCHSUITE_AUTH_API_URL')}/oauth2/token`,
+    `${CHURCHSUITE_AUTH_API_URL}/oauth2/token`,
     {
       method: 'POST',
       headers: {
@@ -164,7 +165,8 @@ async function getValidAccessToken(
       },
       body: JSON.stringify({
         grant_type: 'client_credentials',
-        scope: 'full_access',
+        //scope: 'user addressbook.read addressbook.write',
+        scope: 'addressbook.read addressbook.write',
       }),
     }
   );
@@ -192,7 +194,6 @@ async function getValidAccessToken(
 }
 
 async function findChurchsuiteContact(accessToken: string, query: string) {
-console.log('looking up user...', query)
   const response = await fetch(
     `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/contacts?q=${encodeURIComponent(query)}`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -229,8 +230,10 @@ async function createChurchsuiteContact(
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        firstname: contact.first_name,
-        surname: contact.last_name,
+        all_sites: true,
+        site_ids: [],
+        first_name: contact.first_name,
+        last_name: contact.last_name,
         email: contact.email,
         mobile: contact.phone,
       }),
@@ -242,7 +245,7 @@ async function createChurchsuiteContact(
   }
 
   const data = await response.json();
-  return data.id;
+  return data.data.id;
 }
 
 /* This function is invoked by a Postgres trigger (AFTER INSERT / AFTER UPDATE OF
