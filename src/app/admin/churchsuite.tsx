@@ -11,14 +11,23 @@ import {
 import { AdminPageLayout } from '@/components/admin/AdminHeader';
 import Text from '@/components/ui/Text';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import { Select, SelectOption } from '@/components/ui/Select';
 import { View } from 'react-native';
-import { useCallback, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase';
 import { useAuthStore } from '@/stores/auth';
 import { useTheme } from '@/theme/provider/useTheme';
-import { formatDateTime } from '@/utils/helpers';
+import { formatDateTime, formatTime } from '@/utils/helpers';
 import { useFeatureFlag } from '@/hooks';
+
+interface ServiceListItem {
+  id: string;
+  name: string;
+  day_of_week: string;
+  start_time: string;
+  churchsuite_site_id: string | null;
+}
 
 const SubmitButton: React.FC<{
   onSubmit: (values: Record<string, any>) => void | Promise<void>;
@@ -48,7 +57,8 @@ const ChurchsuiteAdminScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { isFeatureEnabled: isChurchsuiteEnabled } = useFeatureFlag('churchsuite');
+  const { isFeatureEnabled: isChurchsuiteEnabled } =
+    useFeatureFlag('churchsuite');
 
   const connectionQueryKey = ['churchsuite-connection', userProfile?.church_id];
 
@@ -68,6 +78,108 @@ const ChurchsuiteAdminScreen = () => {
       enabled: !!userProfile?.church_id,
     }
   );
+
+  const { data: services, isLoading: isLoadingServices } = useQuery({
+    queryKey: ['church-services', userProfile?.church_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('services')
+        .select('id, name, day_of_week, start_time, churchsuite_site_id')
+        .eq('church_id', userProfile!.church_id)
+        .order('name');
+
+      if (error) throw error;
+      return data as ServiceListItem[];
+    },
+    enabled: !!userProfile?.church_id && !!existingConnection,
+  });
+
+  const {
+    data: sites,
+    isLoading: isLoadingSites,
+    error: sitesError,
+  } = useQuery({
+    queryKey: ['churchsuite-sites', userProfile?.church_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<{
+        sites: { id: string; name: string }[];
+      }>('get-churchsuite-sites');
+
+      if (error) throw error;
+      return data?.sites ?? [];
+    },
+    enabled: !!userProfile?.church_id && !!existingConnection,
+  });
+
+  const siteOptions: SelectOption[] = (sites ?? []).map((site) => ({
+    label: site.name,
+    value: site.id,
+  }));
+
+  const linkSiteMutation = useMutation({
+    mutationFn: async ({
+      serviceId,
+      churchsuiteSiteId,
+    }: {
+      serviceId: string;
+      churchsuiteSiteId: string;
+    }) => {
+      const { error } = await supabase.rpc('link_service_to_churchsuite_site', {
+        p_service_id: serviceId,
+        p_churchsuite_site_id: churchsuiteSiteId,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['church-services', userProfile?.church_id],
+      });
+    },
+    onError: (err) => {
+      Alert.alert(
+        'Something went wrong',
+        err instanceof Error
+          ? err.message
+          : 'Could not link this service to a ChurchSuite site.'
+      );
+    },
+  });
+
+  const handleLinkSite = useCallback(
+    (serviceId: string, option: SelectOption) => {
+      linkSiteMutation.mutate({
+        serviceId,
+        churchsuiteSiteId: String(option.value),
+      });
+    },
+    [linkSiteMutation]
+  );
+
+  // When ChurchSuite only has one site, there's nothing to choose - link any
+  // unlinked service to it automatically instead of making an admin pick it.
+  const autoLinkedServiceIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!sites || sites.length !== 1 || !services) return;
+
+    const [onlySite] = sites;
+
+    services.forEach((service) => {
+      if (
+        service.churchsuite_site_id ||
+        autoLinkedServiceIds.current.has(service.id)
+      ) {
+        return;
+      }
+
+      autoLinkedServiceIds.current.add(service.id);
+      linkSiteMutation.mutate({
+        serviceId: service.id,
+        churchsuiteSiteId: onlySite.id,
+      });
+    });
+  }, [sites, services, linkSiteMutation]);
 
   const formConfig: FormConfig = {
     secret: {
@@ -168,6 +280,73 @@ const ChurchsuiteAdminScreen = () => {
                 style={styles.disconnectButton}
               />
             </View>
+          ) : null}
+          {existingConnection ? (
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.surface.primary,
+                  borderColor: theme.colors.border.primary,
+                },
+              ]}
+            >
+              <Text style={styles.sectionTitle}>Services</Text>
+              {isLoadingServices ? (
+                <Text color="secondary">Loading services...</Text>
+              ) : services && services.length > 0 ? (
+                <View style={styles.serviceList}>
+                  {services.map((service) => (
+                    <View
+                      key={service.id}
+                      style={[
+                        styles.serviceRow,
+                        { borderColor: theme.colors.border.secondary },
+                      ]}
+                    >
+                      <Text>{service.name}</Text>
+                      <Text color="secondary" variant="bodySmall">
+                        {service.day_of_week}
+                        {service.start_time
+                          ? ` · ${formatTime(service.start_time)}`
+                          : ''}
+                      </Text>
+                      {sitesError ? (
+                        <Text color="error" variant="bodySmall">
+                          Could not load ChurchSuite sites:{' '}
+                          {sitesError instanceof Error
+                            ? sitesError.message
+                            : 'Unknown error'}
+                        </Text>
+                      ) : (
+                        <Select
+                          label="ChurchSuite site"
+                          placeholder={
+                            isLoadingSites ? 'Loading sites...' : 'Not linked'
+                          }
+                          options={siteOptions}
+                          value={service.churchsuite_site_id ?? undefined}
+                          disabled={
+                            isLoadingSites ||
+                            (linkSiteMutation.isPending &&
+                              linkSiteMutation.variables?.serviceId ===
+                                service.id)
+                          }
+                          onSelect={(option) =>
+                            handleLinkSite(service.id, option)
+                          }
+                          style={styles.siteSelect}
+                        />
+                      )}
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text color="secondary">
+                  No services found for this church.
+                </Text>
+              )}
+            </View>
           ) : (
             <View
               style={[
@@ -263,6 +442,21 @@ const styles = StyleSheet.create({
   },
   disconnectButton: {
     alignSelf: 'flex-start',
+  },
+  sectionTitle: {
+    marginBottom: 12,
+  },
+  serviceList: {
+    gap: 12,
+  },
+  serviceRow: {
+    borderTopWidth: 1,
+    paddingTop: 12,
+    gap: 2,
+  },
+  siteSelect: {
+    marginTop: 4,
+    marginBottom: 0,
   },
 });
 
