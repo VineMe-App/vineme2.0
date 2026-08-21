@@ -10,6 +10,7 @@ import {
 } from '@/components';
 import { AdminPageLayout } from '@/components/admin/AdminHeader';
 import Text from '@/components/ui/Text';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { View } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -45,6 +46,8 @@ const ChurchsuiteAdminScreen = () => {
   const { theme } = useTheme();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { isFeatureEnabled: isChurchsuiteEnabled } = useFeatureFlag('churchsuite');
 
   const connectionQueryKey = ['churchsuite-connection', userProfile?.church_id];
@@ -109,6 +112,29 @@ const ChurchsuiteAdminScreen = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.rpc('delete_churchsuite_connection');
+
+      if (error) throw error;
+
+      await queryClient.invalidateQueries({ queryKey: connectionQueryKey });
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      console.log(err);
+      Alert.alert(
+        'Something went wrong',
+        err instanceof Error
+          ? err.message
+          : 'Could not delete the ChurchSuite connection.'
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return isChurchsuiteEnabled ? (
     <ChurchAdminOnly>
       <AdminPageLayout
@@ -133,8 +159,14 @@ const ChurchsuiteAdminScreen = () => {
                 A ChurchSuite connection was added on{' '}
                 {formatDateTime(existingConnection.created_at)}. To protect the
                 existing credentials, they can't be viewed or overwritten here.
-                Contact support if you need to change them.
+                To change, disconnect and add the new credentials.
               </Text>
+              <Button
+                title="Disconnect"
+                variant="danger"
+                onPress={() => setShowDeleteConfirm(true)}
+                style={styles.disconnectButton}
+              />
             </View>
           ) : (
             <View
@@ -183,6 +215,22 @@ const ChurchsuiteAdminScreen = () => {
             </View>
           )}
         </View>
+        <ConfirmationDialog
+          visible={showDeleteConfirm}
+          title="Disconnect ChurchSuite"
+          message="Are you sure you want to remove this church's ChurchSuite connection?"
+          details={[
+            'Stored ChurchSuite credentials will be permanently deleted',
+            'Automatic ChurchSuite contact syncing will stop for this church',
+            "You'll need to reconnect with new credentials to use ChurchSuite again",
+          ]}
+          confirmText="Disconnect"
+          confirmVariant="danger"
+          isDestructive
+          isLoading={isDeleting}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       </AdminPageLayout>
     </ChurchAdminOnly>
   ) : null;
@@ -211,6 +259,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
+    gap: 12,
+  },
+  disconnectButton: {
+    alignSelf: 'flex-start',
   },
 });
 
