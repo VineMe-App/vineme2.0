@@ -26,7 +26,6 @@ export default function VerifyOtpScreen() {
 
   const phoneOrEmail = (params.phoneOrEmail as string) || '';
   const type = (params.type as 'sms' | 'email') || 'sms';
-  const onSuccessRoute = (params.onSuccessRoute as string) || '/(auth)/onboarding-loader';
   const resendFunction = params.resendFunction as 'signUpWithPhone' | 'signInWithPhone' | 'signInWithEmail' | undefined;
 
   const [code, setCode] = useState('');
@@ -60,9 +59,11 @@ export default function VerifyOtpScreen() {
 
     const result = await verifyOtp(phoneOrEmail, code, type);
 
-    if (result.success) {
-      router.replace(onSuccessRoute as any);
-    } else {
+    // Navigation after success is handled centrally by the root layout's auth-state
+    // effect (src/app/_layout.tsx), which reacts to `user`/`userProfile` - it's already
+    // fired (or is about to) by the time this resolves. Navigating here too just races
+    // it and double-mounts the destination screen.
+    if (!result.success) {
       Alert.alert('Verification Failed', result.error || 'Invalid code');
     }
   };

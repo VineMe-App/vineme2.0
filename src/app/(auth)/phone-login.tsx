@@ -78,7 +78,6 @@ export default function PhoneLoginScreen() {
             params: {
               phoneOrEmail: phone,
               type: 'sms',
-              onSuccessRoute: '/(tabs)',
               resendFunction: 'signInWithPhone',
             },
           });
@@ -104,7 +103,6 @@ export default function PhoneLoginScreen() {
           params: {
             phoneOrEmail: trimmedEmail,
             type: 'email',
-            onSuccessRoute: '/(tabs)',
             resendFunction: 'signInWithEmail',
           },
         });

@@ -81,7 +81,6 @@ export default function PhoneSignUpScreen() {
           params: {
             phoneOrEmail: phone,
             type: 'sms',
-            onSuccessRoute: '/(auth)/onboarding-loader',
             resendFunction: 'signUpWithPhone',
           },
         });
