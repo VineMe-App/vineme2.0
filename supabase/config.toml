@@ -54,3 +54,8 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/create-churchsuite-contact/index.ts"
 import_map = "./functions/create-churchsuite-contact/deno.json"
+
+[functions.list-churchsuite-vineme-contacts]
+enabled = true
+entrypoint = "./functions/list-churchsuite-vineme-contacts/index.ts"
+import_map = "./functions/list-churchsuite-vineme-contacts/deno.json"

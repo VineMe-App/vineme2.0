@@ -9,6 +9,10 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 // ready to run for every church, not just internal @vineme.app accounts.
 const ALLOWED_EMAIL_DOMAIN = '@vineme.app';
 
+// Tag applied to every contact this app creates, so ChurchSuite admins can see (and filter
+// on, via GET /addressbook/contacts?tag_ids[]=) which contacts originated from VineMe.
+const VINEME_TAG_NAME = 'VineMe';
+
 interface WebhookPayload {
   id: string;
   church_id: string;
@@ -88,7 +92,7 @@ Deno.serve(async (req) => {
   try {
     const accessToken = await getValidAccessToken(supabase, church_id);
 
-    const normalisedPhone = phone.replace('44', '0')
+    const normalisedPhone = phone.replace('44', '0');
     const existingContact = await findChurchsuiteContact(
       accessToken,
       normalisedPhone || email!
@@ -108,10 +112,34 @@ Deno.serve(async (req) => {
       .update({ churchsuite_id: String(churchsuiteContactId) })
       .eq('id', id);
 
+    // Only tag contacts we actually created - a matched existing contact predates
+    // (and wasn't created by) VineMe, so it shouldn't be marked as such. Tagging is
+    // supplementary to the churchsuite_id link above, so failures here are logged but
+    // don't fail the request.
+    let tagError: string | null = null;
+    if (!existingContact) {
+      try {
+        const vinemeTagId = await ensureVinemeTagId(
+          supabase,
+          accessToken,
+          church_id
+        );
+        await tagChurchsuiteContact(
+          accessToken,
+          churchsuiteContactId,
+          vinemeTagId
+        );
+      } catch (err) {
+        tagError = err instanceof Error ? err.message : String(err);
+        console.error('create-churchsuite-contact tag error:', err);
+      }
+    }
+
     return Response.json({
       ok: true,
       churchsuite_id: churchsuiteContactId,
       created: !existingContact,
+      ...(tagError ? { tag_error: tagError } : {}),
     });
   } catch (err) {
     console.error('create-churchsuite-contact error:', err);
@@ -193,6 +221,113 @@ async function getValidAccessToken(
   return authData.access_token;
 }
 
+async function ensureVinemeTagId(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  accessToken: string,
+  churchId: string
+): Promise<number> {
+  const { data: connection, error } = await supabase
+    .from('churchsuite_connections')
+    .select('vineme_tag_id')
+    .eq('church_id', churchId)
+    .single();
+
+  if (error || !connection) {
+    throw new Error(`No ChurchSuite connection found for church ${churchId}`);
+  }
+
+  if (connection.vineme_tag_id) {
+    return connection.vineme_tag_id;
+  }
+
+  const tagId = await findOrCreateVinemeTag(accessToken);
+
+  await supabase
+    .from('churchsuite_connections')
+    .update({ vineme_tag_id: tagId })
+    .eq('church_id', churchId);
+
+  return tagId;
+}
+
+async function findOrCreateVinemeTag(accessToken: string): Promise<number> {
+  const createResponse = await fetch(
+    `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ name: VINEME_TAG_NAME }),
+    }
+  );
+
+  if (createResponse.ok) {
+    const data = await createResponse.json();
+    return data.data.id;
+  }
+
+  // 409 means a tag with this name already exists (e.g. created by an earlier call, or
+  // manually by an admin) - look it up instead of failing.
+  if (createResponse.status === 409) {
+    const searchResponse = await fetch(
+      `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags?q=${encodeURIComponent(VINEME_TAG_NAME)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+
+    if (!searchResponse.ok) {
+      throw new Error(
+        `ChurchSuite tag lookup failed: ${searchResponse.status}`
+      );
+    }
+
+    const searchData = await searchResponse.json();
+    const existing = (searchData.data ?? []).find(
+      (tag: { name: string }) => tag.name === VINEME_TAG_NAME
+    );
+
+    if (existing) {
+      return existing.id;
+    }
+
+    throw new Error(
+      'ChurchSuite tag creation conflicted but no matching tag was found'
+    );
+  }
+
+  throw new Error(`ChurchSuite tag creation failed: ${createResponse.status}`);
+}
+
+async function tagChurchsuiteContact(
+  accessToken: string,
+  contactId: number,
+  tagId: number
+): Promise<void> {
+  const response = await fetch(
+    `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tag_resources`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        person: { type: 'addressbook_contact', id: contactId },
+        tag_id: tagId,
+      }),
+    }
+  );
+
+  // 409 means the contact is already tagged - treat as success.
+  if (!response.ok && response.status !== 409) {
+    throw new Error(
+      `ChurchSuite tag resource creation failed: ${response.status}`
+    );
+  }
+}
+
 async function findChurchsuiteContact(accessToken: string, query: string) {
   const response = await fetch(
     `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/contacts?q=${encodeURIComponent(query)}`,
@@ -236,6 +371,14 @@ async function createChurchsuiteContact(
         last_name: contact.last_name,
         email: contact.email,
         mobile: contact.phone,
+        communication: {
+          general_email: false,
+          general_sms: false,
+          phone: false,
+          post: false,
+          rota_email: false,
+          rota_sms: false,
+        },
       }),
     }
   );
@@ -258,4 +401,9 @@ async function createChurchsuiteContact(
      --header 'Authorization: Bearer <CHURCHSUITE_WEBHOOK_SECRET>' \
      --header 'Content-Type: application/json' \
      --data '{"id":"<user-uuid>","church_id":"<church-uuid>"}'
+
+   Newly-created contacts are tagged "VineMe" in ChurchSuite (creating the tag on first
+   use, and caching its ID on churchsuite_connections.vineme_tag_id). Admins can list
+   them via GET /addressbook/contacts?tag_ids[]=<vineme_tag_id> - see the
+   list-churchsuite-vineme-contacts function.
 */

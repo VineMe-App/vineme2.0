@@ -12,6 +12,7 @@ import { AdminPageLayout } from '@/components/admin/AdminHeader';
 import Text from '@/components/ui/Text';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { Select, SelectOption } from '@/components/ui/Select';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { View } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,6 +28,15 @@ interface ServiceListItem {
   day_of_week: string;
   start_time: string;
   churchsuite_site_id: string | null;
+}
+
+interface ChurchsuiteVinemeContact {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  mobile: string | null;
+  created_at: string | null;
 }
 
 const SubmitButton: React.FC<{
@@ -107,6 +117,33 @@ const ChurchsuiteAdminScreen = () => {
 
       if (error) throw error;
       return data?.sites ?? [];
+    },
+    enabled: !!userProfile?.church_id && !!existingConnection,
+  });
+
+  const vinemeContactsQueryKey = [
+    'churchsuite-vineme-contacts',
+    userProfile?.church_id,
+  ];
+
+  const {
+    data: vinemeContacts,
+    isLoading: isLoadingVinemeContacts,
+    error: vinemeContactsError,
+    refetch: refetchVinemeContacts,
+  } = useQuery({
+    queryKey: vinemeContactsQueryKey,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke(
+        'list-churchsuite-vineme-contacts',
+        { body: { church_id: userProfile!.church_id } }
+      );
+
+      if (error) throw error;
+      if (!data?.ok)
+        throw new Error(data?.error || 'Failed to load ChurchSuite contacts');
+
+      return data.contacts as ChurchsuiteVinemeContact[];
     },
     enabled: !!userProfile?.church_id && !!existingConnection,
   });
@@ -393,6 +430,57 @@ const ChurchsuiteAdminScreen = () => {
               </Form>
             </View>
           )}
+
+          {existingConnection && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Users created by VineMe</Text>
+              {isLoadingVinemeContacts ? (
+                <Text color="secondary">Loading...</Text>
+              ) : vinemeContactsError ? (
+                <ErrorMessage
+                  error={vinemeContactsError as Error}
+                  onRetry={() => refetchVinemeContacts()}
+                />
+              ) : !vinemeContacts || vinemeContacts.length === 0 ? (
+                <Text color="secondary">
+                  No contacts have been created via VineMe yet.
+                </Text>
+              ) : (
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: theme.colors.surface.primary,
+                      borderColor: theme.colors.border.primary,
+                    },
+                  ]}
+                >
+                  {vinemeContacts.map((contact, index) => (
+                    <View
+                      key={contact.id}
+                      style={[
+                        styles.contactRow,
+                        index > 0 && {
+                          borderTopWidth: 1,
+                          borderTopColor: theme.colors.border.primary,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.contactName}>
+                        {contact.first_name} {contact.last_name}
+                      </Text>
+                      <Text color="secondary" style={styles.contactMeta}>
+                        {contact.email || contact.mobile || 'No contact info'}
+                        {contact.created_at
+                          ? ` • Added ${formatDateTime(contact.created_at)}`
+                          : ''}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
         </View>
         <ConfirmationDialog
           visible={showDeleteConfirm}
@@ -457,6 +545,24 @@ const styles = StyleSheet.create({
   siteSelect: {
     marginTop: 4,
     marginBottom: 0,
+  },
+  section: {
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  contactRow: {
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    gap: 2,
+  },
+  contactName: {
+    fontWeight: '600',
+  },
+  contactMeta: {
+    fontSize: 13,
   },
 });
 
