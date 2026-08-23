@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
 
   const { data: profile, error: profileError } = await supabase
     .from('users')
-    .select('first_name, last_name, churchsuite_id')
+    .select('first_name, last_name, churchsuite_id, service_id')
     .eq('id', id)
     .maybeSingle();
 
@@ -90,13 +90,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const accessToken = await getValidAccessToken(supabase, church_id);
+    const accessTokenData = await getChurchsuiteAccessToken(supabase, church_id, ['addressbook.read', 'addressbook.write']);
+    const { access_token: accessToken } = accessTokenData
 
     const normalisedPhone = phone.replace('44', '0');
     const existingContact = await findChurchsuiteContact(
       accessToken,
       normalisedPhone || email!
     );
+
+    const { data: serviceData } = existingContact
+      ? { data: null }
+      : await supabase
+          .from('services')
+          .select('churchsuite_site_id')
+          .eq('id', profile.service_id)
+          .single();
 
     const churchsuiteContactId = existingContact
       ? existingContact.id
@@ -105,6 +114,7 @@ Deno.serve(async (req) => {
           last_name: profile.last_name,
           email,
           phone,
+          site_id: serviceData.churchsuite_site_id
         });
 
     await supabase
@@ -149,77 +159,6 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-async function getValidAccessToken(
-  // deno-lint-ignore no-explicit-any
-  supabase: any,
-  churchId: string
-): Promise<string> {
-  const { data: connection, error } = await supabase
-    .from('churchsuite_connections')
-    .select('access_token, access_token_expires_at')
-    .eq('church_id', churchId)
-    .single();
-
-  if (error || !connection) {
-    throw new Error(`No ChurchSuite connection found for church ${churchId}`);
-  }
-
-  const isExpired =
-    !connection.access_token_expires_at ||
-    new Date(connection.access_token_expires_at) <= new Date();
-
-  if (connection.access_token && !isExpired) {
-    return connection.access_token;
-  }
-
-  const { data: secret, error: secretError } = await supabase
-    .rpc('get_churchsuite_secret', { p_church_id: churchId })
-    .maybeSingle();
-
-  if (secretError || !secret) {
-    throw new Error(`No ChurchSuite credentials found for church ${churchId}`);
-  }
-
-  const credentials = btoa(`${secret.identifier}:${secret.secret}`);
-  const CHURCHSUITE_AUTH_API_URL = Deno.env.get('CHURCHSUITE_AUTH_API_URL');
-  const tokenResponse = await fetch(
-    `${CHURCHSUITE_AUTH_API_URL}/oauth2/token`,
-    {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        Authorization: `Basic ${credentials}`,
-      },
-      body: JSON.stringify({
-        grant_type: 'client_credentials',
-        //scope: 'user addressbook.read addressbook.write',
-        scope: 'addressbook.read addressbook.write',
-      }),
-    }
-  );
-
-  if (!tokenResponse.ok) {
-    throw new Error(
-      `Failed to fetch ChurchSuite access token: ${tokenResponse.status}`
-    );
-  }
-
-  const authData = await tokenResponse.json();
-  const expiresAt = authData.expires_in
-    ? new Date(Date.now() + authData.expires_in * 1000).toISOString()
-    : null;
-
-  await supabase
-    .from('churchsuite_connections')
-    .update({
-      access_token: authData.access_token,
-      access_token_expires_at: expiresAt,
-    })
-    .eq('church_id', churchId);
-
-  return authData.access_token;
-}
 
 async function ensureVinemeTagId(
   // deno-lint-ignore no-explicit-any
@@ -354,6 +293,7 @@ async function createChurchsuiteContact(
     last_name?: string | null;
     email?: string;
     phone?: string;
+    site_id: string
   }
 ) {
   const response = await fetch(
@@ -365,8 +305,7 @@ async function createChurchsuiteContact(
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        all_sites: true,
-        site_ids: [],
+        site_ids: [contact.site_id],
         first_name: contact.first_name,
         last_name: contact.last_name,
         email: contact.email,

@@ -25,6 +25,23 @@ export async function getChurchsuiteAccessToken(
 ): Promise<ChurchsuiteAccessToken> {
   const CHURCHSUITE_AUTH_API_URL = Deno.env.get('CHURCHSUITE_AUTH_API_URL');
 
+  /* const { data: connection, error } = await supabase
+    .from('churchsuite_connections')
+    .select('access_token, access_token_expires_at')
+    .eq('church_id', churchId)
+    .single();
+
+  if (error || !connection) {
+    throw new Error(`No ChurchSuite connection found for church ${churchId}`);
+  }
+  const isExpired =
+    !connection.access_token_expires_at ||
+    new Date(connection.access_token_expires_at) <= new Date();
+
+  if (connection.access_token && !isExpired) {
+    return connection.access_token;
+  } */
+
   const { data, error } = await supabaseAdmin
     .rpc('get_churchsuite_secret', { p_church_id: churchId })
     .maybeSingle();
@@ -54,6 +71,19 @@ export async function getChurchsuiteAccessToken(
   if (!response.ok) {
     throw new Error(`ChurchSuite token request failed (${response.status})`);
   }
+
+  /* code to store token in db. also would need to score scope
+  const expiresAt = authData.expires_in
+    ? new Date(Date.now() + authData.expires_in * 1000).toISOString()
+    : null;
+
+  await supabase
+    .from('churchsuite_connections')
+    .update({
+      access_token: authData.access_token,
+      access_token_expires_at: expiresAt,
+    })
+    .eq('church_id', churchId); */
 
   return response.json();
 }
