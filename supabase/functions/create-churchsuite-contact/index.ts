@@ -29,8 +29,6 @@ Deno.serve(async (req) => {
 
   const rawBody = await req.text();
   const { id, church_id } = JSON.parse(rawBody) as WebhookPayload;
-console.log(rawBody, id, church_id)
-
   if (!id || !church_id) {
     return Response.json({
       ok: true,
@@ -74,7 +72,6 @@ console.log(rawBody, id, church_id)
   }
 
   const { new_email: email, phone } = authUserData.user;
-console.log(email, phone)
 
   if (!email || !email.toLowerCase().endsWith(ALLOWED_EMAIL_DOMAIN)) {
     return Response.json({
@@ -100,7 +97,6 @@ console.log(email, phone)
       accessToken,
       normalisedPhone || email!
     );
-console.log(normalisedPhone, email, profile)
 
     const { data: serviceData } = existingContact
       ? { data: null }
@@ -109,7 +105,6 @@ console.log(normalisedPhone, email, profile)
           .select('churchsuite_site_id')
           .eq('id', profile.service_id)
           .maybeSingle();
-console.log('serviceData', serviceData)
 
     const churchsuiteContactId = existingContact
       ? existingContact.id
@@ -221,7 +216,6 @@ async function createChurchsuiteContact(
     site_id?: string
   }
 ) {
-console.log('contact info to create', contact)
   const siteInfo = contact.site_id
   ? { all_sites: false, site_ids: [contact.site_id]}
   : { all_sites: true, site_ids: [] }
@@ -250,9 +244,7 @@ console.log('contact info to create', contact)
       }),
     }
   );
-console.log(response)
   const data = await response.json();
-console.log(data)
 
   if (!response.ok) {
     throw new Error(`ChurchSuite contact creation failed: ${response.status}`);
