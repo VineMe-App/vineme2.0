@@ -30,3 +30,12 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Even though the function checks caller identity itself, only grant
+-- EXECUTE to authenticated users - anon has no legitimate reason to call
+-- it, and the default privileges for this project grant EXECUTE on new
+-- functions to anon and authenticated alike.
+REVOKE EXECUTE ON FUNCTION link_service_to_churchsuite_site(uuid, text)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION link_service_to_churchsuite_site(uuid, text)
+  TO authenticated;
