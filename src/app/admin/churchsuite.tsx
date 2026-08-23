@@ -13,7 +13,7 @@ import Text from '@/components/ui/Text';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { Select, SelectOption } from '@/components/ui/Select';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { View } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase';
@@ -241,12 +241,17 @@ const ChurchsuiteAdminScreen = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.rpc('create_churchsuite_connection', {
-        p_identifier: clientId,
-        p_secret: secret,
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'create-churchsuite-connection',
+        { body: { identifier: clientId, secret } }
+      );
 
       if (error) throw error;
+      if (!data?.ok) {
+        throw new Error(
+          data?.error || 'Could not save the ChurchSuite connection.'
+        );
+      }
 
       await queryClient.invalidateQueries({ queryKey: connectionQueryKey });
     } catch (err) {
@@ -290,7 +295,7 @@ const ChurchsuiteAdminScreen = () => {
         title="ChurchSuite connection"
         subtitle="View ChurchSuite connection settings"
       >
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
           <Text color="secondary" style={styles.intro}>
             Here you can connect your ChurchSuite account.
           </Text>
@@ -432,56 +437,53 @@ const ChurchsuiteAdminScreen = () => {
           )}
 
           {existingConnection && (
-            <View style={styles.section}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.surface.primary,
+                  borderColor: theme.colors.border.primary,
+                },
+              ]}
+            >
               <Text style={styles.sectionTitle}>Users created by VineMe</Text>
               {isLoadingVinemeContacts ? (
                 <Text color="secondary">Loading...</Text>
               ) : vinemeContactsError ? (
                 <ErrorMessage
                   error={vinemeContactsError as Error}
-                  onRetry={() => refetchVinemeContacts()}
                 />
               ) : !vinemeContacts || vinemeContacts.length === 0 ? (
                 <Text color="secondary">
                   No contacts have been created via VineMe yet.
                 </Text>
               ) : (
-                <View
-                  style={[
-                    styles.card,
-                    {
-                      backgroundColor: theme.colors.surface.primary,
-                      borderColor: theme.colors.border.primary,
-                    },
-                  ]}
-                >
-                  {vinemeContacts.map((contact, index) => (
-                    <View
-                      key={contact.id}
-                      style={[
-                        styles.contactRow,
-                        index > 0 && {
-                          borderTopWidth: 1,
-                          borderTopColor: theme.colors.border.primary,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.contactName}>
-                        {contact.first_name} {contact.last_name}
-                      </Text>
-                      <Text color="secondary" style={styles.contactMeta}>
-                        {contact.email || contact.mobile || 'No contact info'}
-                        {contact.created_at
-                          ? ` • Added ${formatDateTime(contact.created_at)}`
-                          : ''}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
+                vinemeContacts.map((contact) => (
+                  <View
+                    key={contact.id}
+                    style={[
+                      styles.contactRow,
+                      {
+                        borderTopWidth: 1,
+                        borderTopColor: theme.colors.border.secondary,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.contactName}>
+                      {contact.first_name} {contact.last_name}
+                    </Text>
+                    <Text color="secondary" style={styles.contactMeta}>
+                      {contact.email || contact.mobile || 'No contact info'}
+                      {contact.created_at
+                        ? ` • Added ${formatDateTime(contact.created_at)}`
+                        : ''}
+                    </Text>
+                  </View>
+                ))
               )}
             </View>
           )}
-        </View>
+        </ScrollView>
         <ConfirmationDialog
           visible={showDeleteConfirm}
           title="Disconnect ChurchSuite"
@@ -546,16 +548,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 0,
   },
-  section: {
-    gap: 12,
-  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
   },
   contactRow: {
     paddingVertical: 12,
-    paddingHorizontal: 4,
     gap: 2,
   },
   contactName: {

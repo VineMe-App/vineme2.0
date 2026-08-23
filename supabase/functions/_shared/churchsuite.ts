@@ -7,6 +7,10 @@ export interface ChurchsuiteAccessToken {
   scope: string;
 }
 
+// Tag applied to every contact this app creates, so ChurchSuite admins can see (and filter
+// on, via GET /addressbook/contacts?tag_ids[]=) which contacts originated from VineMe.
+const VINEME_TAG_NAME = 'VineMe';
+
 /**
  * Exchanges a church's stored ChurchSuite credentials for a live access
  * token via the client_credentials grant.
@@ -85,5 +89,93 @@ export async function getChurchsuiteAccessToken(
     })
     .eq('church_id', churchId); */
 
-  return response.json();
+  const authData = await response.json();
+
+  if (!authData.access_token) {
+    throw new Error('ChurchSuite token response missing access_token');
+  }
+
+  return authData;
+}
+
+/**
+ * Looks up the church's cached VineMe tag ID, creating (or finding, if it already exists
+ * in ChurchSuite) the tag on first use and caching its ID on churchsuite_connections.
+ */
+export async function ensureVinemeTagId(
+  supabaseAdmin: SupabaseClient,
+  accessToken: string,
+  churchId: string
+): Promise<number> {
+  const { data: connection, error } = await supabaseAdmin
+    .from('churchsuite_connections')
+    .select('vineme_tag_id')
+    .eq('church_id', churchId)
+    .single();
+
+  if (error || !connection) {
+    throw new Error(`No ChurchSuite connection found for church ${churchId}`);
+  }
+
+  if (connection.vineme_tag_id) {
+    return connection.vineme_tag_id;
+  }
+
+  const tagId = await findOrCreateVinemeTag(accessToken);
+
+  await supabaseAdmin
+    .from('churchsuite_connections')
+    .update({ vineme_tag_id: tagId })
+    .eq('church_id', churchId);
+
+  return tagId;
+}
+
+async function findOrCreateVinemeTag(accessToken: string): Promise<number> {
+  const createResponse = await fetch(
+    `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ name: VINEME_TAG_NAME, is_smart: false }),
+    }
+  );
+
+  if (createResponse.ok) {
+    const data = await createResponse.json();
+    return data.data.id;
+  }
+
+  // 409 means a tag with this name already exists (e.g. created by an earlier call, or
+  // manually by an admin) - look it up instead of failing.
+  if (createResponse.status === 409) {
+    const searchResponse = await fetch(
+      `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags?q=${encodeURIComponent(VINEME_TAG_NAME)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+
+    if (!searchResponse.ok) {
+      throw new Error(
+        `ChurchSuite tag lookup failed: ${searchResponse.status}`
+      );
+    }
+
+    const searchData = await searchResponse.json();
+    const existing = (searchData.data ?? []).find(
+      (tag: { name: string }) => tag.name === VINEME_TAG_NAME
+    );
+
+    if (existing) {
+      return existing.id;
+    }
+
+    throw new Error(
+      'ChurchSuite tag creation conflicted but no matching tag was found'
+    );
+  }
+
+  throw new Error(`ChurchSuite tag creation failed: ${createResponse.status}`);
 }

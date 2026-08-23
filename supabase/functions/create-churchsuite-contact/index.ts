@@ -4,14 +4,14 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import {
+  ensureVinemeTagId,
+  getChurchsuiteAccessToken,
+} from '../_shared/churchsuite.ts';
 
 // TEMPORARY rollout gate - remove this check (and the branch that uses it) once this is
 // ready to run for every church, not just internal @vineme.app accounts.
 const ALLOWED_EMAIL_DOMAIN = '@vineme.app';
-
-// Tag applied to every contact this app creates, so ChurchSuite admins can see (and filter
-// on, via GET /addressbook/contacts?tag_ids[]=) which contacts originated from VineMe.
-const VINEME_TAG_NAME = 'VineMe';
 
 interface WebhookPayload {
   id: string;
@@ -29,6 +29,7 @@ Deno.serve(async (req) => {
 
   const rawBody = await req.text();
   const { id, church_id } = JSON.parse(rawBody) as WebhookPayload;
+console.log(rawBody, id, church_id)
 
   if (!id || !church_id) {
     return Response.json({
@@ -73,6 +74,7 @@ Deno.serve(async (req) => {
   }
 
   const { new_email: email, phone } = authUserData.user;
+console.log(email, phone)
 
   if (!email || !email.toLowerCase().endsWith(ALLOWED_EMAIL_DOMAIN)) {
     return Response.json({
@@ -93,11 +95,12 @@ Deno.serve(async (req) => {
     const accessTokenData = await getChurchsuiteAccessToken(supabase, church_id, ['addressbook.read', 'addressbook.write']);
     const { access_token: accessToken } = accessTokenData
 
-    const normalisedPhone = phone.replace('44', '0');
+    const normalisedPhone = phone ? phone.replace('44', '0') : undefined;
     const existingContact = await findChurchsuiteContact(
       accessToken,
       normalisedPhone || email!
     );
+console.log(normalisedPhone, email, profile)
 
     const { data: serviceData } = existingContact
       ? { data: null }
@@ -105,7 +108,8 @@ Deno.serve(async (req) => {
           .from('services')
           .select('churchsuite_site_id')
           .eq('id', profile.service_id)
-          .single();
+          .maybeSingle();
+console.log('serviceData', serviceData)
 
     const churchsuiteContactId = existingContact
       ? existingContact.id
@@ -113,8 +117,8 @@ Deno.serve(async (req) => {
           first_name: profile.first_name,
           last_name: profile.last_name,
           email,
-          phone,
-          site_id: serviceData.churchsuite_site_id
+          phone: normalisedPhone,
+          site_id: serviceData?.churchsuite_site_id
         });
 
     await supabase
@@ -159,85 +163,6 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-async function ensureVinemeTagId(
-  // deno-lint-ignore no-explicit-any
-  supabase: any,
-  accessToken: string,
-  churchId: string
-): Promise<number> {
-  const { data: connection, error } = await supabase
-    .from('churchsuite_connections')
-    .select('vineme_tag_id')
-    .eq('church_id', churchId)
-    .single();
-
-  if (error || !connection) {
-    throw new Error(`No ChurchSuite connection found for church ${churchId}`);
-  }
-
-  if (connection.vineme_tag_id) {
-    return connection.vineme_tag_id;
-  }
-
-  const tagId = await findOrCreateVinemeTag(accessToken);
-
-  await supabase
-    .from('churchsuite_connections')
-    .update({ vineme_tag_id: tagId })
-    .eq('church_id', churchId);
-
-  return tagId;
-}
-
-async function findOrCreateVinemeTag(accessToken: string): Promise<number> {
-  const createResponse = await fetch(
-    `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ name: VINEME_TAG_NAME }),
-    }
-  );
-
-  if (createResponse.ok) {
-    const data = await createResponse.json();
-    return data.data.id;
-  }
-
-  // 409 means a tag with this name already exists (e.g. created by an earlier call, or
-  // manually by an admin) - look it up instead of failing.
-  if (createResponse.status === 409) {
-    const searchResponse = await fetch(
-      `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags?q=${encodeURIComponent(VINEME_TAG_NAME)}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-
-    if (!searchResponse.ok) {
-      throw new Error(
-        `ChurchSuite tag lookup failed: ${searchResponse.status}`
-      );
-    }
-
-    const searchData = await searchResponse.json();
-    const existing = (searchData.data ?? []).find(
-      (tag: { name: string }) => tag.name === VINEME_TAG_NAME
-    );
-
-    if (existing) {
-      return existing.id;
-    }
-
-    throw new Error(
-      'ChurchSuite tag creation conflicted but no matching tag was found'
-    );
-  }
-
-  throw new Error(`ChurchSuite tag creation failed: ${createResponse.status}`);
-}
 
 async function tagChurchsuiteContact(
   accessToken: string,
@@ -293,9 +218,13 @@ async function createChurchsuiteContact(
     last_name?: string | null;
     email?: string;
     phone?: string;
-    site_id: string
+    site_id?: string
   }
 ) {
+console.log('contact info to create', contact)
+  const siteInfo = contact.site_id
+  ? { all_sites: false, site_ids: [contact.site_id]}
+  : { all_sites: true, site_ids: [] }
   const response = await fetch(
     `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/contacts`,
     {
@@ -305,7 +234,7 @@ async function createChurchsuiteContact(
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        site_ids: [contact.site_id],
+        ...siteInfo,
         first_name: contact.first_name,
         last_name: contact.last_name,
         email: contact.email,
@@ -321,12 +250,14 @@ async function createChurchsuiteContact(
       }),
     }
   );
+console.log(response)
+  const data = await response.json();
+console.log(data)
 
   if (!response.ok) {
     throw new Error(`ChurchSuite contact creation failed: ${response.status}`);
   }
 
-  const data = await response.json();
   return data.data.id;
 }
 

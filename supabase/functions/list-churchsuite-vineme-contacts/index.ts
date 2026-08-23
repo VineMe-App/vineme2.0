@@ -4,6 +4,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { getChurchsuiteAccessToken } from '../_shared/churchsuite.ts';
 
 interface RequestPayload {
   church_id: string;
@@ -14,6 +15,7 @@ interface RequestPayload {
 Deno.serve(async (req) => {
   const authHeader = req.headers.get('Authorization') ?? '';
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+//console.log(token)
 
   if (!token) {
     return Response.json(
@@ -50,6 +52,7 @@ Deno.serve(async (req) => {
   }
 
   const { church_id, page = 1, per_page = 50 } = payload;
+console.log(church_id)
 
   if (!church_id) {
     return Response.json(
@@ -100,7 +103,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const accessToken = await getValidAccessToken(supabase, church_id);
+    const { access_token: accessToken } = await getChurchsuiteAccessToken(supabase, church_id, ['addressbook.read']);
+console.log(accessToken)
 
     const url = new URL(
       `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/contacts`
@@ -110,7 +114,7 @@ Deno.serve(async (req) => {
     url.searchParams.set('per_page', String(per_page));
 
     const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
     });
 
     if (!response.ok) {
@@ -133,76 +137,6 @@ Deno.serve(async (req) => {
   }
 });
 
-async function getValidAccessToken(
-  // deno-lint-ignore no-explicit-any
-  supabase: any,
-  churchId: string
-): Promise<string> {
-  const { data: connection, error } = await supabase
-    .from('churchsuite_connections')
-    .select('access_token, access_token_expires_at')
-    .eq('church_id', churchId)
-    .single();
-
-  if (error || !connection) {
-    throw new Error(`No ChurchSuite connection found for church ${churchId}`);
-  }
-
-  const isExpired =
-    !connection.access_token_expires_at ||
-    new Date(connection.access_token_expires_at) <= new Date();
-
-  if (connection.access_token && !isExpired) {
-    return connection.access_token;
-  }
-
-  const { data: secret, error: secretError } = await supabase
-    .rpc('get_churchsuite_secret', { p_church_id: churchId })
-    .maybeSingle();
-
-  if (secretError || !secret) {
-    throw new Error(`No ChurchSuite credentials found for church ${churchId}`);
-  }
-
-  const credentials = btoa(`${secret.identifier}:${secret.secret}`);
-  const CHURCHSUITE_AUTH_API_URL = Deno.env.get('CHURCHSUITE_AUTH_API_URL');
-  const tokenResponse = await fetch(
-    `${CHURCHSUITE_AUTH_API_URL}/oauth2/token`,
-    {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        Authorization: `Basic ${credentials}`,
-      },
-      body: JSON.stringify({
-        grant_type: 'client_credentials',
-        scope: 'addressbook.read addressbook.write',
-      }),
-    }
-  );
-
-  if (!tokenResponse.ok) {
-    throw new Error(
-      `Failed to fetch ChurchSuite access token: ${tokenResponse.status}`
-    );
-  }
-
-  const authData = await tokenResponse.json();
-  const expiresAt = authData.expires_in
-    ? new Date(Date.now() + authData.expires_in * 1000).toISOString()
-    : null;
-
-  await supabase
-    .from('churchsuite_connections')
-    .update({
-      access_token: authData.access_token,
-      access_token_expires_at: expiresAt,
-    })
-    .eq('church_id', churchId);
-
-  return authData.access_token;
-}
-
 /* This function is called by church admins from the ChurchSuite admin screen
    (src/app/admin/churchsuite.tsx) to list contacts tagged "VineMe" - i.e. contacts
    created via supabase/functions/create-churchsuite-contact.
@@ -210,7 +144,9 @@ async function getValidAccessToken(
    To invoke locally for testing:
 
    curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/list-churchsuite-vineme-contacts' \
-     --header 'Authorization: Bearer <church-admin-user-jwt>' \
+     --header 'Authorization: Bearer eyJhbGciOiJFUzI1NiIsImtpZCI6ImI4MTI2OWYxLTIxZDgtNGYyZS1iNzE5LWMyMjQwYTg0MGQ5MCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiI3ZDFjZGQ1NC00ZjAwLTQ2ZTQtODMzZS1hN2E4ZDFiNGQyZjIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg3NTAzNTk0LCJpYXQiOjE3ODc0OTk5OTQsImVtYWlsIjoiIiwicGhvbmUiOiI0NDc3MTIzNDU2NzgiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJwaG9uZSIsInByb3ZpZGVycyI6WyJwaG9uZSJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwic3ViIjoiN2QxY2RkNTQtNGYwMC00NmU0LTgzM2UtYTdhOGQxYjRkMmYyIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoib3RwIiwidGltZXN0YW1wIjoxNzg3MzQ2OTgzfV0sInNlc3Npb25faWQiOiJjM2YwYjlhOC1mMWNmLTQ4MDAtOTgyNC02NDNjZDQ0MTA5YmUiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.-dgscWqnlzZVKbGmVtwSEtOQZO3wyuvTDNzAC5eW6H95RHL_XgW24YRmrztnA5upeCDJfkkqn1vkQkufwCTKlQ
+2026-08-23T15:56:14.930781287Z
+' \
      --header 'Content-Type: application/json' \
      --data '{"church_id":"<church-uuid>"}'
 */
