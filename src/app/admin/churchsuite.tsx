@@ -10,6 +10,7 @@ import {
 } from '@/components';
 import { AdminPageLayout } from '@/components/admin/AdminHeader';
 import Text from '@/components/ui/Text';
+import { Badge } from '@/components/ui/Badge';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { Select, SelectOption } from '@/components/ui/Select';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -37,6 +38,7 @@ interface ChurchsuiteVinemeContact {
   email: string | null;
   mobile: string | null;
   created_at: string | null;
+  status: 'created' | 'matched';
 }
 
 const SubmitButton: React.FC<{
@@ -446,7 +448,7 @@ const ChurchsuiteAdminScreen = () => {
                 },
               ]}
             >
-              <Text style={styles.sectionTitle}>Users created by VineMe</Text>
+              <Text style={styles.sectionTitle}>ChurchSuite contacts</Text>
               {isLoadingVinemeContacts ? (
                 <Text color="secondary">Loading...</Text>
               ) : vinemeContactsError ? (
@@ -455,31 +457,40 @@ const ChurchsuiteAdminScreen = () => {
                 />
               ) : !vinemeContacts || vinemeContacts.length === 0 ? (
                 <Text color="secondary">
-                  No contacts have been created via VineMe yet.
+                  No contacts have been created or matched via VineMe yet.
                 </Text>
               ) : (
-                vinemeContacts.map((contact) => (
-                  <View
-                    key={contact.id}
-                    style={[
-                      styles.contactRow,
-                      {
-                        borderTopWidth: 1,
-                        borderTopColor: theme.colors.border.secondary,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.contactName}>
-                      {contact.first_name} {contact.last_name}
-                    </Text>
-                    <Text color="secondary" style={styles.contactMeta}>
-                      {contact.email || contact.mobile || 'No contact info'}
-                      {contact.created_at
-                        ? ` • Added ${formatDateTime(contact.created_at)}`
-                        : ''}
-                    </Text>
-                  </View>
-                ))
+                vinemeContacts.map((contact) => {
+                  const isCreated = contact.status === 'created';
+
+                  return (
+                    <View
+                      key={contact.id}
+                      style={[
+                        styles.contactRow,
+                        {
+                          borderTopWidth: 1,
+                          borderTopColor: theme.colors.border.secondary,
+                        },
+                      ]}
+                    >
+                      <View style={styles.contactHeaderRow}>
+                        <Text style={styles.contactName}>
+                          {contact.first_name} {contact.last_name}
+                        </Text>
+                        <Badge variant={isCreated ? 'success' : 'default'} size="small">
+                          {isCreated ? 'Created' : 'Matched'}
+                        </Badge>
+                      </View>
+                      <Text color="secondary" style={styles.contactMeta}>
+                        {contact.email || contact.mobile || 'No contact info'}
+                        {contact.created_at
+                          ? ` • Added ${formatDateTime(contact.created_at)}`
+                          : ''}
+                      </Text>
+                    </View>
+                  );
+                })
               )}
             </View>
           )}
@@ -555,6 +566,12 @@ const styles = StyleSheet.create({
   contactRow: {
     paddingVertical: 12,
     gap: 2,
+  },
+  contactHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   contactName: {
     fontWeight: '600',

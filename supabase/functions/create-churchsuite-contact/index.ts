@@ -121,27 +121,25 @@ Deno.serve(async (req) => {
       .update({ churchsuite_id: String(churchsuiteContactId) })
       .eq('id', id);
 
-    // Only tag contacts we actually created - a matched existing contact predates
-    // (and wasn't created by) VineMe, so it shouldn't be marked as such. Tagging is
-    // supplementary to the churchsuite_id link above, so failures here are logged but
-    // don't fail the request.
+    // Tag every contact we touch, so admins can distinguish brand new contacts from
+    // existing ones VineMe just linked to. Tagging is supplementary to the
+    // churchsuite_id link above, so failures here are logged but don't fail the request.
     let tagError: string | null = null;
-    if (!existingContact) {
-      try {
-        const vinemeTagId = await ensureVinemeTagId(
-          supabase,
-          accessToken,
-          church_id
-        );
-        await tagChurchsuiteContact(
-          accessToken,
-          churchsuiteContactId,
-          vinemeTagId
-        );
-      } catch (err) {
-        tagError = err instanceof Error ? err.message : String(err);
-        console.error('create-churchsuite-contact tag error:', err);
-      }
+    try {
+      const vinemeTagId = await ensureVinemeTagId(
+        supabase,
+        accessToken,
+        church_id,
+        existingContact ? 'matched' : 'created'
+      );
+      await tagChurchsuiteContact(
+        accessToken,
+        churchsuiteContactId,
+        vinemeTagId
+      );
+    } catch (err) {
+      tagError = err instanceof Error ? err.message : String(err);
+      console.error('create-churchsuite-contact tag error:', err);
     }
 
     return Response.json({
@@ -264,8 +262,10 @@ async function createChurchsuiteContact(
      --header 'Content-Type: application/json' \
      --data '{"id":"<user-uuid>","church_id":"<church-uuid>"}'
 
-   Newly-created contacts are tagged "VineMe" in ChurchSuite (creating the tag on first
-   use, and caching its ID on churchsuite_connections.vineme_tag_id). Admins can list
-   them via GET /addressbook/contacts?tag_ids[]=<vineme_tag_id> - see the
+   Contacts are tagged in ChurchSuite depending on whether they were newly created or
+   an existing contact was matched: "VineMe (created)" or "VineMe (matched)" (each tag
+   created on first use, and its ID cached on churchsuite_connections.vineme_tag_id /
+   vineme_matched_tag_id respectively). Admins can list them via
+   GET /addressbook/contacts?tag_ids[]=<tag_id> - see the
    list-churchsuite-vineme-contacts function.
 */

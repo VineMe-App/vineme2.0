@@ -85,7 +85,7 @@ console.log(church_id)
 
   const { data: connection, error: connectionError } = await supabase
     .from('churchsuite_connections')
-    .select('vineme_tag_id')
+    .select('vineme_tag_id, vineme_matched_tag_id')
     .eq('church_id', church_id)
     .maybeSingle();
 
@@ -96,37 +96,67 @@ console.log(church_id)
     );
   }
 
-  // No contact has ever been created via VineMe for this church yet, so the tag hasn't
-  // been provisioned - nothing to list.
-  if (!connection.vineme_tag_id) {
+  // Neither tag has ever been provisioned for this church yet (no contact created or
+  // matched via VineMe) - nothing to list.
+  if (!connection.vineme_tag_id && !connection.vineme_matched_tag_id) {
     return Response.json({ ok: true, contacts: [], pagination: null });
   }
 
   try {
     const { access_token: accessToken } = await getChurchsuiteAccessToken(supabase, church_id, ['addressbook.read']);
-console.log(accessToken)
 
-    const url = new URL(
-      `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/contacts`
-    );
-    url.searchParams.set('tag_ids[]', String(connection.vineme_tag_id));
-    url.searchParams.set('page', String(page));
-    url.searchParams.set('per_page', String(per_page));
-
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
-    });
-
-    if (!response.ok) {
-      throw new Error(`ChurchSuite contact list failed: ${response.status}`);
+    const tagQueries: { tagId: number; status: 'created' | 'matched' }[] = [];
+    if (connection.vineme_tag_id) {
+      tagQueries.push({ tagId: connection.vineme_tag_id, status: 'created' });
+    }
+    if (connection.vineme_matched_tag_id) {
+      tagQueries.push({
+        tagId: connection.vineme_matched_tag_id,
+        status: 'matched',
+      });
     }
 
-    const data = await response.json();
+    const contactsByStatus = await Promise.all(
+      tagQueries.map(async ({ tagId, status }) => {
+        const url = new URL(
+          `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/contacts`
+        );
+        url.searchParams.set('tag_ids[]', String(tagId));
+        url.searchParams.set('page', String(page));
+        url.searchParams.set('per_page', String(per_page));
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'content-type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`ChurchSuite contact list failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return (data.data ?? []).map((contact: Record<string, unknown>) => ({
+          ...contact,
+          status,
+        }));
+      })
+    );
+
+    // Each ChurchSuite tag is queried (and paginated) independently since a contact only
+    // ever carries one of the two tags, so results are merged here rather than relying on
+    // ChurchSuite-side pagination across both tags.
+    const contacts = contactsByStatus
+      .flat()
+      .sort((a, b) =>
+        String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))
+      );
 
     return Response.json({
       ok: true,
-      contacts: data.data,
-      pagination: data.pagination,
+      contacts,
+      pagination: null,
     });
   } catch (err) {
     console.error('list-churchsuite-vineme-contacts error:', err);
@@ -138,8 +168,10 @@ console.log(accessToken)
 });
 
 /* This function is called by church admins from the ChurchSuite admin screen
-   (src/app/admin/churchsuite.tsx) to list contacts tagged "VineMe" - i.e. contacts
-   created via supabase/functions/create-churchsuite-contact.
+   (src/app/admin/churchsuite.tsx) to list contacts tagged "VineMe (created)" or
+   "VineMe (matched)" - i.e. contacts touched via
+   supabase/functions/create-churchsuite-contact. Each returned contact carries a
+   `status: 'created' | 'matched'` field indicating which tag it came from.
 
    To invoke locally for testing:
 

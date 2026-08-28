@@ -7,9 +7,20 @@ export interface ChurchsuiteAccessToken {
   scope: string;
 }
 
-// Tag applied to every contact this app creates, so ChurchSuite admins can see (and filter
-// on, via GET /addressbook/contacts?tag_ids[]=) which contacts originated from VineMe.
-const VINEME_TAG_NAME = 'VineMe';
+// Tags applied to contacts this app touches, so ChurchSuite admins can see (and filter on,
+// via GET /addressbook/contacts?tag_ids[]=) which contacts originated from VineMe - split
+// by whether we created a brand new contact or matched an existing one.
+export type VinemeTagKind = 'created' | 'matched';
+
+const VINEME_TAG_NAMES: Record<VinemeTagKind, string> = {
+  created: 'VineMe (created)',
+  matched: 'VineMe (matched)',
+};
+
+const VINEME_TAG_ID_COLUMNS: Record<VinemeTagKind, string> = {
+  created: 'vineme_tag_id',
+  matched: 'vineme_matched_tag_id',
+};
 
 /**
  * Exchanges a church's stored ChurchSuite credentials for a live access
@@ -99,17 +110,21 @@ export async function getChurchsuiteAccessToken(
 }
 
 /**
- * Looks up the church's cached VineMe tag ID, creating (or finding, if it already exists
- * in ChurchSuite) the tag on first use and caching its ID on churchsuite_connections.
+ * Looks up the church's cached tag ID for the given kind ("created" or "matched"),
+ * creating (or finding, if it already exists in ChurchSuite) the tag on first use and
+ * caching its ID on churchsuite_connections.
  */
 export async function ensureVinemeTagId(
   supabaseAdmin: SupabaseClient,
   accessToken: string,
-  churchId: string
+  churchId: string,
+  kind: VinemeTagKind = 'created'
 ): Promise<number> {
+  const column = VINEME_TAG_ID_COLUMNS[kind];
+
   const { data: connection, error } = await supabaseAdmin
     .from('churchsuite_connections')
-    .select('vineme_tag_id')
+    .select(column)
     .eq('church_id', churchId)
     .single();
 
@@ -117,21 +132,25 @@ export async function ensureVinemeTagId(
     throw new Error(`No ChurchSuite connection found for church ${churchId}`);
   }
 
-  if (connection.vineme_tag_id) {
-    return connection.vineme_tag_id;
+  const cachedTagId = connection[column];
+  if (cachedTagId) {
+    return cachedTagId;
   }
 
-  const tagId = await findOrCreateVinemeTag(accessToken);
+  const tagId = await findOrCreateVinemeTag(accessToken, VINEME_TAG_NAMES[kind]);
 
   await supabaseAdmin
     .from('churchsuite_connections')
-    .update({ vineme_tag_id: tagId })
+    .update({ [column]: tagId })
     .eq('church_id', churchId);
 
   return tagId;
 }
 
-async function findOrCreateVinemeTag(accessToken: string): Promise<number> {
+async function findOrCreateVinemeTag(
+  accessToken: string,
+  tagName: string
+): Promise<number> {
   const createResponse = await fetch(
     `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags`,
     {
@@ -140,7 +159,7 @@ async function findOrCreateVinemeTag(accessToken: string): Promise<number> {
         Authorization: `Bearer ${accessToken}`,
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ name: VINEME_TAG_NAME, is_smart: false }),
+      body: JSON.stringify({ name: tagName, is_smart: false }),
     }
   );
 
@@ -153,7 +172,7 @@ async function findOrCreateVinemeTag(accessToken: string): Promise<number> {
   // manually by an admin) - look it up instead of failing.
   if (createResponse.status === 409) {
     const searchResponse = await fetch(
-      `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags?q=${encodeURIComponent(VINEME_TAG_NAME)}`,
+      `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tags?q=${encodeURIComponent(tagName)}`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
 
@@ -165,7 +184,7 @@ async function findOrCreateVinemeTag(accessToken: string): Promise<number> {
 
     const searchData = await searchResponse.json();
     const existing = (searchData.data ?? []).find(
-      (tag: { name: string }) => tag.name === VINEME_TAG_NAME
+      (tag: { name: string }) => tag.name === tagName
     );
 
     if (existing) {
