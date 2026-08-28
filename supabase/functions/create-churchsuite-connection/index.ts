@@ -1,7 +1,7 @@
 // Supabase Edge Function: create-churchsuite-connection
 // Saves a church admin's ChurchSuite credentials (via the create_churchsuite_connection
-// RPC) and provisions the VineMe (created) and VineMe (matched) tags up front, so they
-// don't need to be created lazily the first time a contact is synced.
+// RPC) and provisions the VineMe (created), VineMe (matched), and Vulnerable Person tags
+// up front, so they don't need to be created lazily the first time they're needed.
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import {
@@ -114,6 +114,7 @@ Deno.serve(async (req) => {
   try {
     await ensureVinemeTagId(supabaseAdmin, accessToken, churchId, 'created');
     await ensureVinemeTagId(supabaseAdmin, accessToken, churchId, 'matched');
+    await ensureVinemeTagId(supabaseAdmin, accessToken, churchId, 'vulnerable');
   } catch (err) {
     tagError = err instanceof Error ? err.message : String(err);
     console.error('create-churchsuite-connection tag error:', err);

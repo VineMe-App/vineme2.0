@@ -9,17 +9,20 @@ export interface ChurchsuiteAccessToken {
 
 // Tags applied to contacts this app touches, so ChurchSuite admins can see (and filter on,
 // via GET /addressbook/contacts?tag_ids[]=) which contacts originated from VineMe - split
-// by whether we created a brand new contact or matched an existing one.
-export type VinemeTagKind = 'created' | 'matched';
+// by whether we created a brand new contact or matched an existing one. "vulnerable" is
+// provisioned alongside the other two but is applied manually by admins, not by VineMe.
+export type VinemeTagKind = 'created' | 'matched' | 'vulnerable';
 
 const VINEME_TAG_NAMES: Record<VinemeTagKind, string> = {
   created: 'VineMe (created)',
   matched: 'VineMe (matched)',
+  vulnerable: 'Vulnerable Person',
 };
 
 const VINEME_TAG_ID_COLUMNS: Record<VinemeTagKind, string> = {
   created: 'vineme_tag_id',
   matched: 'vineme_matched_tag_id',
+  vulnerable: 'vineme_vulnerable_tag_id',
 };
 
 /**
@@ -145,6 +148,37 @@ export async function ensureVinemeTagId(
     .eq('church_id', churchId);
 
   return tagId;
+}
+
+/**
+ * Applies a ChurchSuite tag to a contact. A 409 response means the contact already
+ * carries the tag, which is treated as success.
+ */
+export async function tagChurchsuiteContact(
+  accessToken: string,
+  contactId: number,
+  tagId: number
+): Promise<void> {
+  const response = await fetch(
+    `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tag_resources`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        person: { type: 'addressbook_contact', id: contactId },
+        tag_id: tagId,
+      }),
+    }
+  );
+
+  if (!response.ok && response.status !== 409) {
+    throw new Error(
+      `ChurchSuite tag resource creation failed: ${response.status}`
+    );
+  }
 }
 
 async function findOrCreateVinemeTag(
