@@ -10,9 +10,11 @@ import {
 } from '@/components';
 import { AdminPageLayout } from '@/components/admin/AdminHeader';
 import Text from '@/components/ui/Text';
+import { Badge } from '@/components/ui/Badge';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { Select, SelectOption } from '@/components/ui/Select';
-import { View } from 'react-native';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { View, ScrollView } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/services/supabase';
@@ -27,6 +29,16 @@ interface ServiceListItem {
   day_of_week: string;
   start_time: string;
   churchsuite_site_id: string | null;
+}
+
+interface ChurchsuiteVinemeContact {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  mobile: string | null;
+  created_at: string | null;
+  status: 'created' | 'matched';
 }
 
 const SubmitButton: React.FC<{
@@ -107,6 +119,33 @@ const ChurchsuiteAdminScreen = () => {
 
       if (error) throw error;
       return data?.sites ?? [];
+    },
+    enabled: !!userProfile?.church_id && !!existingConnection,
+  });
+
+  const vinemeContactsQueryKey = [
+    'churchsuite-vineme-contacts',
+    userProfile?.church_id,
+  ];
+
+  const {
+    data: vinemeContacts,
+    isLoading: isLoadingVinemeContacts,
+    error: vinemeContactsError,
+    refetch: refetchVinemeContacts,
+  } = useQuery({
+    queryKey: vinemeContactsQueryKey,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke(
+        'list-churchsuite-vineme-contacts',
+        { body: { church_id: userProfile!.church_id } }
+      );
+
+      if (error) throw error;
+      if (!data?.ok)
+        throw new Error(data?.error || 'Failed to load ChurchSuite contacts');
+
+      return data.contacts as ChurchsuiteVinemeContact[];
     },
     enabled: !!userProfile?.church_id && !!existingConnection,
   });
@@ -204,12 +243,17 @@ const ChurchsuiteAdminScreen = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.rpc('create_churchsuite_connection', {
-        p_identifier: clientId,
-        p_secret: secret,
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'create-churchsuite-connection',
+        { body: { identifier: clientId, secret } }
+      );
 
       if (error) throw error;
+      if (!data?.ok) {
+        throw new Error(
+          data?.error || 'Could not save the ChurchSuite connection.'
+        );
+      }
 
       await queryClient.invalidateQueries({ queryKey: connectionQueryKey });
     } catch (err) {
@@ -253,7 +297,7 @@ const ChurchsuiteAdminScreen = () => {
         title="ChurchSuite connection"
         subtitle="View ChurchSuite connection settings"
       >
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
           <Text color="secondary" style={styles.intro}>
             Here you can connect your ChurchSuite account.
           </Text>
@@ -393,7 +437,64 @@ const ChurchsuiteAdminScreen = () => {
               </Form>
             </View>
           )}
-        </View>
+
+          {existingConnection && (
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.surface.primary,
+                  borderColor: theme.colors.border.primary,
+                },
+              ]}
+            >
+              <Text style={styles.sectionTitle}>ChurchSuite contacts</Text>
+              {isLoadingVinemeContacts ? (
+                <Text color="secondary">Loading...</Text>
+              ) : vinemeContactsError ? (
+                <ErrorMessage
+                  error={vinemeContactsError as Error}
+                />
+              ) : !vinemeContacts || vinemeContacts.length === 0 ? (
+                <Text color="secondary">
+                  No contacts have been created or matched via VineMe yet.
+                </Text>
+              ) : (
+                vinemeContacts.map((contact) => {
+                  const isCreated = contact.status === 'created';
+
+                  return (
+                    <View
+                      key={contact.id}
+                      style={[
+                        styles.contactRow,
+                        {
+                          borderTopWidth: 1,
+                          borderTopColor: theme.colors.border.secondary,
+                        },
+                      ]}
+                    >
+                      <View style={styles.contactHeaderRow}>
+                        <Text style={styles.contactName}>
+                          {contact.first_name} {contact.last_name}
+                        </Text>
+                        <Badge variant={isCreated ? 'success' : 'default'} size="small">
+                          {isCreated ? 'Created' : 'Matched'}
+                        </Badge>
+                      </View>
+                      <Text color="secondary" style={styles.contactMeta}>
+                        {contact.email || contact.mobile || 'No contact info'}
+                        {contact.created_at
+                          ? ` • Added ${formatDateTime(contact.created_at)}`
+                          : ''}
+                      </Text>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          )}
+        </ScrollView>
         <ConfirmationDialog
           visible={showDeleteConfirm}
           title="Disconnect ChurchSuite"
@@ -457,6 +558,26 @@ const styles = StyleSheet.create({
   siteSelect: {
     marginTop: 4,
     marginBottom: 0,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  contactRow: {
+    paddingVertical: 12,
+    gap: 2,
+  },
+  contactHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  contactName: {
+    fontWeight: '600',
+  },
+  contactMeta: {
+    fontSize: 13,
   },
 });
 
