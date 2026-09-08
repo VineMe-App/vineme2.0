@@ -8,6 +8,25 @@ CREATE EXTENSION IF NOT EXISTS "pg_cron";
 
 GRANT USAGE ON SCHEMA "cron" TO "postgres";
 
+-- Cron cadence, stored like edge_functions_base_url (see
+-- supabase/migrations/20260812221500_churchsuite_contact_sync_trigger.sql) so the same
+-- reschedule call below can read an environment-specific value without the SQL itself
+-- ever differing between environments. Defaults to prod's daily cadence;
+-- supabase/seed.sql overrides the value (never the code) to run every minute locally.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM vault.decrypted_secrets
+    WHERE name = 'churchsuite_vulnerable_tags_sync_schedule'
+  ) THEN
+    PERFORM vault.create_secret(
+      '0 3 * * *',
+      'churchsuite_vulnerable_tags_sync_schedule',
+      'Cron schedule for sync-churchsuite-vulnerable-tags - overridden locally in seed.sql'
+    );
+  END IF;
+END $$;
+
 CREATE OR REPLACE FUNCTION "public"."trigger_sync_all_churchsuite_vulnerable_tags"()
 RETURNS "void"
 LANGUAGE "plpgsql"
@@ -39,9 +58,32 @@ $$;
 
 ALTER FUNCTION "public"."trigger_sync_all_churchsuite_vulnerable_tags"() OWNER TO "postgres";
 
--- 03:00 UTC daily - low-traffic window, well clear of any midnight-boundary jobs.
-SELECT cron.schedule(
-  'sync-churchsuite-vulnerable-tags-daily',
-  '0 3 * * *',
-  $$ SELECT public.trigger_sync_all_churchsuite_vulnerable_tags(); $$
-);
+-- (Re)applies the cron job using whatever cadence is currently stored in the
+-- churchsuite_vulnerable_tags_sync_schedule secret above. Both this migration (prod
+-- default) and supabase/seed.sql (local override, after updating the secret's value)
+-- call this same function, rather than each calling cron.schedule() directly with a
+-- different literal - the scheduling code itself never changes between environments.
+CREATE OR REPLACE FUNCTION "public"."reschedule_churchsuite_vulnerable_tags_sync"()
+RETURNS "void"
+LANGUAGE "plpgsql"
+SECURITY DEFINER
+SET "search_path" TO 'public'
+AS $$
+DECLARE
+  v_schedule text;
+BEGIN
+  SELECT decrypted_secret INTO v_schedule
+  FROM vault.decrypted_secrets
+  WHERE name = 'churchsuite_vulnerable_tags_sync_schedule';
+
+  PERFORM cron.schedule(
+    'sync-churchsuite-vulnerable-tags-daily',
+    v_schedule,
+    $cron$ SELECT public.trigger_sync_all_churchsuite_vulnerable_tags(); $cron$
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."reschedule_churchsuite_vulnerable_tags_sync"() OWNER TO "postgres";
+
+SELECT public.reschedule_churchsuite_vulnerable_tags_sync();

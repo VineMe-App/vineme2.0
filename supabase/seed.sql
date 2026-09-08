@@ -11,6 +11,17 @@ SELECT vault.update_secret(
 FROM vault.secrets
 WHERE name = 'edge_functions_base_url';
 
+-- Run the ChurchSuite vulnerable-tags sync every minute locally instead of the prod
+-- 24-hour cadence, so you don't have to wait a day to see it fire. Only the stored
+-- cadence value changes here - the scheduling call itself is the same
+-- reschedule_churchsuite_vulnerable_tags_sync() function the migration uses (see
+-- supabase/migrations/20260828140000_schedule_churchsuite_vulnerable_tags_sync.sql).
+SELECT vault.update_secret(id, '* * * * *')
+FROM vault.secrets
+WHERE name = 'churchsuite_vulnerable_tags_sync_schedule';
+
+SELECT public.reschedule_churchsuite_vulnerable_tags_sync();
+
 -- Local dev data snapshot (taken 2026-08-19). Restores app data so `db reset` doesn't
 -- leave you starting from empty tables.
 --
