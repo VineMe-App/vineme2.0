@@ -7,6 +7,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import {
   ensureVinemeTagId,
   getChurchsuiteAccessToken,
+  tagChurchsuiteContact,
 } from '../_shared/churchsuite.ts';
 
 // TEMPORARY rollout gate - remove this check (and the branch that uses it) once this is
@@ -156,34 +157,6 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-async function tagChurchsuiteContact(
-  accessToken: string,
-  contactId: number,
-  tagId: number
-): Promise<void> {
-  const response = await fetch(
-    `${Deno.env.get('CHURCHSUITE_API_URL')}/addressbook/tag_resources`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        person: { type: 'addressbook_contact', id: contactId },
-        tag_id: tagId,
-      }),
-    }
-  );
-
-  // 409 means the contact is already tagged - treat as success.
-  if (!response.ok && response.status !== 409) {
-    throw new Error(
-      `ChurchSuite tag resource creation failed: ${response.status}`
-    );
-  }
-}
 
 async function findChurchsuiteContact(accessToken: string, query: string) {
   const response = await fetch(

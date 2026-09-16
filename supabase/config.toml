@@ -59,3 +59,18 @@ import_map = "./functions/create-churchsuite-contact/deno.json"
 enabled = true
 entrypoint = "./functions/list-churchsuite-vineme-contacts/index.ts"
 import_map = "./functions/list-churchsuite-vineme-contacts/deno.json"
+
+[functions.mark-user-vulnerable]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/mark-user-vulnerable/index.ts"
+import_map = "./functions/mark-user-vulnerable/deno.json"
+
+[functions.sync-churchsuite-vulnerable-tags]
+enabled = true
+# Called by both the app (church admin session JWT) and the daily cron job (shared
+# webhook secret, not a JWT - see the function's own header comment), so JWT
+# verification happens inside the function instead of at the gateway.
+verify_jwt = false
+entrypoint = "./functions/sync-churchsuite-vulnerable-tags/index.ts"
+import_map = "./functions/sync-churchsuite-vulnerable-tags/deno.json"
