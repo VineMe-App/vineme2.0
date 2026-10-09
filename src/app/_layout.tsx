@@ -107,7 +107,9 @@ function RootLayoutNav() {
     const inOnboarding = segments[1] === 'onboarding';
     const inOnboardingLoader = segments[1] === 'onboarding-loader';
     const inPhoneAuthFlow =
-      segments[1] === 'phone-signup' || segments[1] === 'phone-login';
+      segments[1] === 'phone-signup' ||
+      segments[1] === 'phone-login' ||
+      segments[1] === 'verify-otp';
     // Allow detail stacks outside of tabs (e.g., /group/[id], /event/[id], /admin/*)
     const inAllowedStacks =
       segments[0] === 'group' ||
