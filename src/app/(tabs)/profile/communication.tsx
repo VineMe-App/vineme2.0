@@ -29,7 +29,7 @@ import { CountryCodePicker } from '@/components/ui/CountryCodePicker';
 import { OtpInput } from '@/components/ui/OtpInput';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation, useLocalSearchParams } from 'expo-router';
-import { useFocusEffect } from "expo-router/react-navigation";
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '@/services/auth';
 import { supabase } from '@/services/supabase';
