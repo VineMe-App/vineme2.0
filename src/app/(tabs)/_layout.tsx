@@ -128,6 +128,7 @@ export default function TabLayout() {
   const tabBarHeight =
     Platform.OS === 'ios' ? 85 : 56 + androidBottomPadding;
   const headerHeight = 44 + insets.top;
+  const profileHeaderHeight = 60 + insets.top;
 
   return (
     <Tabs
@@ -245,17 +246,19 @@ export default function TabLayout() {
           headerTitleAlign: 'left', // Left-align title like Groups page
           headerTitleStyle: {
             fontSize: 22, // Figma: 22px
+            lineHeight: 28,
             fontFamily: theme.typography.fontFamily.bold,
             fontWeight: '800', // ExtraBold
             color: '#2C2235', // Figma: #2c2235
             letterSpacing: -0.44, // Figma: -0.44px
+            includeFontPadding: true,
           },
           headerStyle: {
             backgroundColor: '#FFFFFF',
             borderBottomWidth: 0,
             elevation: 0,
-            height: Platform.OS === 'ios' ? 60 + insets.top : 60,
-            paddingTop: Platform.OS === 'ios' ? insets.top : 0,
+            height: profileHeaderHeight,
+            paddingTop: insets.top,
             paddingHorizontal: 19, // Match Groups page padding
             paddingBottom: 0, // No bottom padding in header
             shadowOpacity: 0,

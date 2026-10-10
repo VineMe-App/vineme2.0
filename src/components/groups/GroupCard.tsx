@@ -322,14 +322,12 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             )}
 
             {/* Capacity */}
-            <View style={[
-              styles.detailRow,
-              variant === 'my-groups' && styles.detailRowNoWrap
-            ]}>
+            <View style={[styles.detailRow, styles.capacityRow]}>
               <Ionicons
                 name={group.at_capacity ? 'close-circle-outline' : 'checkmark-circle-outline'}
                 size={16}
                 color={group.at_capacity ? '#c2410c' : '#15803d'}
+                style={styles.detailIcon}
               />
               <Text
                 variant="bodySmall"
@@ -338,6 +336,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   styles.capacityText,
                   group.at_capacity && styles.capacityTextFull,
                 ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {group.at_capacity ? 'At capacity' : 'Open'}
               </Text>
@@ -1012,6 +1012,13 @@ const styles = StyleSheet.create({
   detailRowNoWrap: {
     flexWrap: 'nowrap',
   },
+  capacityRow: {
+    flexWrap: 'nowrap',
+    alignSelf: 'flex-start',
+  },
+  detailIcon: {
+    flexShrink: 0,
+  },
   detailText: {
     color: '#000000',
     fontSize: 12,
@@ -1105,6 +1112,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     letterSpacing: 0.2,
+    lineHeight: 18,
+    flexShrink: 0,
+    includeFontPadding: false,
   },
   capacityTextFull: {
     color: '#c2410c',
