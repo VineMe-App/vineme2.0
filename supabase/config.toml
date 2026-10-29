@@ -74,3 +74,14 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/sync-churchsuite-vulnerable-tags/index.ts"
 import_map = "./functions/sync-churchsuite-vulnerable-tags/deno.json"
+
+[functions.group-leader-reminder-notifications]
+enabled = true
+# Called by the cron job in
+# supabase/migrations/20261010120000_schedule_group_leader_reminder_notifications.sql
+# with the project's secret API key via the apikey header (withSupabase's own
+# "publishable"/"secret" auth modes - see the function's source), not a user JWT, so
+# gateway-level JWT verification is disabled here too.
+verify_jwt = false
+entrypoint = "./functions/group-leader-reminder-notifications/index.ts"
+import_map = "./functions/group-leader-reminder-notifications/deno.json"
