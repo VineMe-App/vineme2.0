@@ -27,11 +27,19 @@ import {
 } from '../../services/notifications';
 import { buildInfo, describeBuild } from '../../devtools/buildInfo';
 import { isDeletionFlowActive } from '../../utils/errorSuppression';
+import { DevUsersPanel } from './DevUsersPanel';
 
 export function DevToolsOverlay() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<
-    'build' | 'state' | 'logs' | 'errors' | 'queries' | 'notifs' | 'styles'
+    | 'build'
+    | 'users'
+    | 'state'
+    | 'logs'
+    | 'errors'
+    | 'queries'
+    | 'notifs'
+    | 'styles'
   >('build');
   const [tick, setTick] = useState(0);
   const segments = useSegments();
@@ -84,10 +92,16 @@ export function DevToolsOverlay() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>DevTools</Text>
-          <View style={styles.tabs}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabsScroll}
+            contentContainerStyle={styles.tabs}
+          >
             {(
               [
                 'build',
+                'users',
                 'state',
                 'logs',
                 'errors',
@@ -104,7 +118,7 @@ export function DevToolsOverlay() {
                 <Text style={styles.tabText}>{t.toUpperCase()}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
           <View style={styles.headerActions}>
             {user && (
               <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
@@ -122,6 +136,9 @@ export function DevToolsOverlay() {
 
         <ScrollView style={styles.content}>
           {tab === 'build' && <BuildInfoPanel />}
+          {tab === 'users' && (
+            <DevUsersPanel onSuccess={() => setOpen(false)} />
+          )}
           {tab === 'state' && <AppStatePanel segments={segments} />}
           {tab === 'logs' && (
             <View>
@@ -248,7 +265,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#111827',
   },
   title: { color: 'white', fontSize: 18, fontWeight: '700' },
-  tabs: { flexDirection: 'row', marginTop: 8 },
+  tabsScroll: { marginTop: 8 },
+  tabs: { flexDirection: 'row' },
   tab: {
     paddingVertical: 6,
     paddingHorizontal: 10,
