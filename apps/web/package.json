@@ -1,5 +1,5 @@
 {
-  "name": "vineme-website",
+  "name": "@vineme/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -27,8 +27,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.7",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",

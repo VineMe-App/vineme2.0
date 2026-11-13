@@ -1,3 +1,4 @@
 module.exports = {
-  './{src}/**/*.{js,jsx,ts,tsx}': 'eslint --quiet --fix',
+  'apps/mobile/src/**/*.{js,jsx,ts,tsx}':
+    'npm --workspace=@vineme/mobile exec -- eslint --quiet --fix',
 };

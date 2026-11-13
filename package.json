@@ -1,0 +1,40 @@
+{
+  "name": "vineme-monorepo",
+  "version": "2.0.1",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:mobile": "npm --workspace=@vineme/mobile run start",
+    "dev:web": "npm --workspace=@vineme/web run dev",
+    "ios": "npm --workspace=@vineme/mobile run ios",
+    "android": "npm --workspace=@vineme/mobile run android",
+    "build:web": "npm --workspace=@vineme/web run build",
+    "lint": "npm --workspace=@vineme/mobile run lint && npm --workspace=@vineme/web run lint",
+    "lint:mobile": "npm --workspace=@vineme/mobile run lint",
+    "lint:web": "npm --workspace=@vineme/web run lint",
+    "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
+    "test": "npm --workspace=@vineme/mobile run test",
+    "test:unit": "npm --workspace=@vineme/mobile run test:unit",
+    "test:integration": "npm --workspace=@vineme/mobile run test:integration",
+    "test:e2e": "npm --workspace=@vineme/mobile run test:e2e",
+    "test:coverage": "npm --workspace=@vineme/mobile run test:coverage",
+    "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json",
+    "typecheck:mobile": "tsc --noEmit -p apps/mobile/tsconfig.json",
+    "db:migration:new": "supabase migration new",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local > packages/shared/src/database.types.ts",
+    "cron:status": "supabase db query --local \"select jobid, jobname, schedule, active from cron.job;\"",
+    "cron:disable": "supabase db query --local \"select cron.unschedule('sync-churchsuite-vulnerable-tags-daily');\"",
+    "cron:enable": "supabase db query --local \"select public.reschedule_churchsuite_vulnerable_tags_sync();\""
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
+    "prettier": "^3.6.2",
+    "typescript": "~5.9.2"
+  }
+}
