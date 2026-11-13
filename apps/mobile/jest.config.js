@@ -1,3 +1,9 @@
+const path = require('path');
+
+const reactNativePath = path.dirname(
+  require.resolve('react-native/package.json')
+);
+
 module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.js'],
   testMatch: ['**/__tests__/**/*.(ts|tsx|js)', '**/*.(test|spec).(ts|tsx|js)'],
@@ -23,8 +29,8 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^react-native$': '<rootDir>/node_modules/react-native',
-    '^react-native/(.*)$': '<rootDir>/node_modules/react-native/$1',
+    '^react-native$': reactNativePath,
+    '^react-native/(.*)$': `${reactNativePath}/$1`,
     '\\.(png|jpg|jpeg|gif|svg)$': '<rootDir>/src/__mocks__/imageMock.js',
   },
   transform: {

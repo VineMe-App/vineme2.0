@@ -1,5 +1,5 @@
 {
-  "name": "vineme-mobile-app",
+  "name": "@vineme/mobile",
   "version": "2.0.1",
   "main": "expo-router/entry",
   "scripts": {
@@ -17,9 +17,6 @@
     "firewall:disable": "./scripts/expo-firewall-setup.sh disable",
     "firewall:status": "./scripts/expo-firewall-setup.sh status",
     "network:debug": "./scripts/network-troubleshoot.sh",
-    "cron:status": "supabase db query --local \"select jobid, jobname, schedule, active from cron.job;\"",
-    "cron:disable": "supabase db query --local \"select cron.unschedule('sync-churchsuite-vulnerable-tags-daily');\"",
-    "cron:enable": "supabase db query --local \"select public.reschedule_churchsuite_vulnerable_tags_sync();\"",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
@@ -48,8 +45,6 @@
     "@tanstack/react-query": "^5.84.2",
     "@totallymoney/filename-basepath": "^0.1.0",
     "babel-plugin-module-resolver": "^5.0.2",
-    "body-parser": "^2.2.2",
-    "eas-cli": "^23.2.0",
     "expo": "~54.0.25",
     "expo-blur": "~15.0.7",
     "expo-clipboard": "~8.0.7",
@@ -64,7 +59,6 @@
     "expo-notifications": "~0.32.13",
     "expo-router": "~6.0.15",
     "expo-secure-store": "~15.0.7",
-    "express": "^5.2.1",
     "pngjs": "^7.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -80,6 +74,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
+    "eas-cli": "^23.2.0",
     "@eslint/js": "^9.33.0",
     "@expo/config-plugins": "~54.0.1",
     "@expo/ngrok": "^4.1.3",
