@@ -6,6 +6,7 @@
 - Supabase migrations, seed data & Edge Functions: `supabase/`
 
 ## Web & Dashboard work
+
 @apps/web/AGENTS.md
 
 - Before any dashboard task, read `apps/web/docs/dashboard/glossary.md` and use its words exactly.
@@ -16,4 +17,3 @@
 - Once the request and person views exist, take numbers from them, never from new calculations in components.
 - Reuse shared components (contact block, avatar, drawers) rather than building new ones.
 - Red and green only ever mean needs attention and on track.
-
