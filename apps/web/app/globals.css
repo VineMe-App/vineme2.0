@@ -1,0 +1,134 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Marketing tokens: unchanged. Used by every public page. */
+:root {
+  --background: #ffffff;
+  --foreground: #2c2235;
+  --brand-pink: #ff0083;
+  --brand-dark: #2c2235;
+  --brand-beige: #fffbee;
+}
+
+/*
+ * Non-inline so the admin dashboard can override it (see .admin-theme).
+ * Marketing pages keep Nunito Black.
+ */
+@theme {
+  --font-heading: var(--font-nunito-heading);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-beige: var(--brand-beige);
+
+  --font-sans: var(--font-nunito-body);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --animate-skeleton: skeleton 2s -1s infinite linear;
+  @keyframes skeleton {
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/*
+ * Admin dashboard theme (coss ui + Cal Sans). Applied only by
+ * app/dashboard/layout.tsx. Nothing here affects marketing pages.
+ * Tokens map onto the brand colours (primary and ring are --brand-pink).
+ */
+.admin-theme {
+  --radius: 0.625rem;
+  --card: var(--color-white);
+  --card-foreground: var(--foreground);
+  --popover: var(--color-white);
+  --popover-foreground: var(--foreground);
+  --primary: var(--brand-pink);
+  --primary-foreground: var(--color-white);
+  --secondary: --alpha(var(--color-black) / 4%);
+  --secondary-foreground: var(--foreground);
+  --muted: --alpha(var(--color-black) / 4%);
+  --muted-foreground: color-mix(in srgb, var(--brand-dark) 65%, transparent);
+  --accent: --alpha(var(--color-black) / 4%);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--color-red-500);
+  --destructive-foreground: var(--color-red-700);
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-blue-700);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-700);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-amber-700);
+  --border: --alpha(var(--color-black) / 8%);
+  --input: color-mix(in srgb, var(--brand-dark) 15%, transparent);
+  --ring: var(--brand-pink);
+  /*
+   * Chart ramp for ordered stages (pink, dark = most urgent). One hue,
+   * monotone lightness, validated with `validate_palette.js --ordinal`:
+   * light end 2.34:1 on white, every step >= 0.06 OKLCH L apart.
+   */
+  --chart-stage-1: #a60253;
+  --chart-stage-2: #d2056b;
+  --chart-stage-3: #ff0083;
+  --chart-stage-4: #fe7ea7;
+  --sidebar: var(--color-neutral-50);
+  --sidebar-foreground: color-mix(in srgb, var(--foreground) 64%, var(--sidebar));
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: --alpha(var(--color-black) / 4%);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: --alpha(var(--color-black) / 6%);
+  --sidebar-ring: var(--ring);
+
+  --font-heading: var(--font-cal-sans), var(--font-nunito-heading);
+  font-family: var(--font-cal-sans), var(--font-nunito-body), sans-serif;
+}
+
+@layer base {
+  .admin-theme * {
+    border-color: var(--border);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-nunito-body), sans-serif;
+}
