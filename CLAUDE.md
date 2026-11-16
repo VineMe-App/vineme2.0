@@ -17,3 +17,10 @@
 - Once the request and person views exist, take numbers from them, never from new calculations in components.
 - Reuse shared components (contact block, avatar, drawers) rather than building new ones.
 - Red and green only ever mean needs attention and on track.
+
+## Git & PR Workflow
+See `CONTRIBUTING.md` for full details:
+- Branch off `dev` using `<type>/<issue>-<short-slug>` (`feat`, `fix`, `chore`, `docs`, `refactor` in kebab-case).
+- Target feature/fix PRs at `dev` (Squash and merge); only release `dev` → `main` via Merge commit.
+- Reference Clergy Dashboard issues as `VineMe-App/vineme-website#<number>` and mobile/monorepo issues as `#<number>`.
+- Keep schema/RLS changes in `supabase/migrations/` (`npm run db:migration:new`, `npm run db:reset`, `npm run db:types`), with `security_invoker = true` on dashboard views.

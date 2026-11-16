@@ -57,3 +57,7 @@ npm run db:types         # Generate Supabase types into packages/shared/src/data
 ## Dashboard Issues
 
 Clergy dashboard issues currently remain in `VineMe-App/vineme-website` so existing issue numbers stay intact. Reference them as `VineMe-App/vineme-website#<number>` in commits and PRs.
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for branch naming, PR workflow, database migration steps, and branch cleanup guidelines.
