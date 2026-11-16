@@ -1,4 +1,23 @@
+import * as Sentry from '@sentry/react-native';
 import { AppError, handleSupabaseError } from './errorHandling';
+
+export function initSentry() {
+  Sentry.init({
+    dsn:
+      process.env.EXPO_PUBLIC_SENTRY_DSN ??
+      'https://748bc1b8879b77ec1d38a684c7ca7f4c@o4512441027264512.ingest.de.sentry.io/4512441096994896',
+    environment: __DEV__ ? 'development' : 'production',
+    sendDefaultPii: true,
+    tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+    profilesSampleRate: __DEV__ ? 1.0 : 0.2,
+    enableLogs: true,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+    integrations: [Sentry.mobileReplayIntegration()],
+  });
+}
+
+initSentry();
 
 interface ErrorReport {
   error: AppError;
@@ -72,19 +91,27 @@ class GlobalErrorHandler {
   }
 
   private reportToService(report: ErrorReport) {
-    // In a real app, implement crash reporting here
-    // Example with Sentry:
-    // Sentry.captureException(report.error.originalError || new Error(report.error.message), {
-    //   tags: {
-    //     errorType: report.error.type,
-    //   },
-    //   contexts: {
-    //     error: report.context,
-    //   },
-    //   user: {
-    //     id: report.userId,
-    //   },
-    // });
+    const errorToCapture =
+      report.error.originalError ||
+      (report.error instanceof Error
+        ? report.error
+        : new Error(report.error.message));
+
+    Sentry.captureException(errorToCapture, {
+      tags: {
+        errorType: report.error.type,
+      },
+      contexts: report.context
+        ? {
+            error: report.context,
+          }
+        : undefined,
+      user: report.userId
+        ? {
+            id: report.userId,
+          }
+        : undefined,
+    });
   }
 
   getRecentErrors(limit: number = 10): ErrorReport[] {

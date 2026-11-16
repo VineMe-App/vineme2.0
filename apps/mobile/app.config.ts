@@ -145,6 +145,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
       // Inject Google Maps API key from environment variable
       './plugins/withGoogleMapsApiKey',
+      [
+        '@sentry/react-native/expo',
+        {
+          url: 'https://de.sentry.io/',
+          project: 'vineme-mobile',
+          organization: 'vineme',
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

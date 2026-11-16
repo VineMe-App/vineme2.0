@@ -158,3 +158,26 @@ jest.mock('@supabase/supabase-js', () => ({
 
 // Make mockSupabaseClient available globally for tests
 global.mockSupabaseClient = mockSupabaseClient;
+
+// Mock Sentry React Native SDK
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  wrap: jest.fn((component) => component),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setUser: jest.fn(),
+  setTag: jest.fn(),
+  setTags: jest.fn(),
+  setContext: jest.fn(),
+  setExtra: jest.fn(),
+  mobileReplayIntegration: jest.fn(() => ({ name: 'MobileReplay' })),
+  feedbackIntegration: jest.fn(() => ({ name: 'Feedback' })),
+  flush: jest.fn(() => Promise.resolve(true)),
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
