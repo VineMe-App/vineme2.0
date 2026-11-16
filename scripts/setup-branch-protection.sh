@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Configure GitHub merge settings and branch protection rules on dev and main.
+# Configure GitHub merge settings and repository rulesets on dev and main.
+# Ruleset definitions live in .github/rulesets/{dev,main}-branch-ruleset.json
+# and can also be imported directly in GitHub Settings -> Rules -> Rulesets.
+#
 # Usage:
 #   ./scripts/setup-branch-protection.sh
 
 OWNER="VineMe-App"
 REPO="vineme2.0"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 if ! command -v gh >/dev/null 2>&1; then
   echo "Error: GitHub CLI (gh) is not installed." >&2
@@ -27,10 +32,7 @@ if ! gh api "repos/${OWNER}/${REPO}" >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "=== Inspecting existing merge settings & protections on ${OWNER}/${REPO} ==="
-gh api "repos/${OWNER}/${REPO}" --jq '{default_branch, allow_squash_merge, allow_merge_commit, allow_rebase_merge, delete_branch_on_merge}'
-
-echo "=== Updating repository merge settings ==="
+echo "=== Updating repository merge settings on ${OWNER}/${REPO} ==="
 gh api -X PATCH "repos/${OWNER}/${REPO}" \
   -f allow_squash_merge=true \
   -f allow_merge_commit=true \
@@ -38,48 +40,36 @@ gh api -X PATCH "repos/${OWNER}/${REPO}" \
   -f delete_branch_on_merge=true \
   -f squash_merge_commit_title=PR_TITLE \
   -f squash_merge_commit_message=PR_BODY >/dev/null
-echo "Updated repository merge settings (squash for PRs, merge commit for releases, auto-delete head branches)."
+echo "Updated repository merge settings (squash/merge enabled, rebase disabled, auto-delete head branches)."
 
-apply_branch_protection() {
-  local branch="$1"
-  local approvals="$2"
-
-  echo "=== Configuring branch protection for '${branch}' (approvals: ${approvals}) ==="
-  gh api -X PUT "repos/${OWNER}/${REPO}/branches/${branch}/protection" \
-    --input - <<EOF
-{
-  "required_status_checks": {
-    "strict": true,
-    "contexts": ["test (20.x)"]
-  },
-  "enforce_admins": false,
-  "required_pull_request_reviews": {
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": false,
-    "required_approving_review_count": ${approvals}
-  },
-  "restrictions": null,
-  "required_conversation_resolution": true,
-  "allow_force_pushes": false,
-  "allow_deletions": false
-}
-EOF
-  echo "Configured branch protection for '${branch}'."
-}
-
-apply_branch_protection "dev" 0
-apply_branch_protection "main" 1
-
-echo "=== Done! Current protection summary ==="
+# Remove legacy classic branch protection rules if present so Rulesets are the single source of truth.
 for branch in dev main; do
-  echo "--- ${branch} ---"
-  gh api "repos/${OWNER}/${REPO}/branches/${branch}/protection" --jq '{
-    required_status_checks: .required_status_checks.contexts,
-    required_approving_review_count: .required_pull_request_reviews.required_approving_review_count,
-    dismiss_stale_reviews: .required_pull_request_reviews.dismiss_stale_reviews,
-    required_conversation_resolution: .required_conversation_resolution.enabled,
-    enforce_admins: .enforce_admins.enabled,
-    allow_force_pushes: .allow_force_pushes.enabled,
-    allow_deletions: .allow_deletions.enabled
-  }'
+  if gh api "repos/${OWNER}/${REPO}/branches/${branch}/protection" >/dev/null 2>&1; then
+    gh api -X DELETE "repos/${OWNER}/${REPO}/branches/${branch}/protection" >/dev/null
+    echo "Removed legacy classic branch protection on '${branch}' (replaced by Rulesets)."
+  fi
 done
+
+upsert_ruleset() {
+  local file="$1"
+  local name
+  name="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).name)" "$file")"
+
+  local existing_id
+  existing_id="$(gh api "repos/${OWNER}/${REPO}/rulesets" --jq ".[] | select(.name == \"${name}\") | .id" | head -n 1 || true)"
+
+  if [[ -n "$existing_id" ]]; then
+    gh api -X PUT "repos/${OWNER}/${REPO}/rulesets/${existing_id}" --input "$file" >/dev/null
+    echo "Updated ruleset '${name}' (id: ${existing_id})."
+  else
+    local new_id
+    new_id="$(gh api -X POST "repos/${OWNER}/${REPO}/rulesets" --input "$file" --jq '.id')"
+    echo "Created ruleset '${name}' (id: ${new_id})."
+  fi
+}
+
+upsert_ruleset "${REPO_ROOT}/.github/rulesets/dev-branch-ruleset.json"
+upsert_ruleset "${REPO_ROOT}/.github/rulesets/main-branch-ruleset.json"
+
+echo "=== Active Rulesets on ${OWNER}/${REPO} ==="
+gh api "repos/${OWNER}/${REPO}/rulesets" --jq '.[] | {id, name, enforcement, html_url: ._links.html.href}'
