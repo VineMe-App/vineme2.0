@@ -9,6 +9,22 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { Text } from '@/components/ui/Text';
+import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
+import { AdminPageLayout } from '@/components/admin/AdminHeader';
+import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
+import { useServiceJoinRequests } from '@/hooks/useServiceJoinRequests';
+import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth';
+import { supabase } from '@/services/supabase';
+import { getFullName, getDisplayName } from '@/utils/name';
+import type { GroupMembershipWithUser } from '@/types/database';
+import { Ionicons } from '@expo/vector-icons';
+import { MembershipNotesSection } from '@/components/groups/MembershipNotesSection';
+import { useGetContactInfo } from '@/hooks/useJoinRequests';
 // expo-clipboard is optional in dev client; gate usage to avoid native module errors
 // Lazy load to prevent module initialization errors at load time
 let Clipboard: typeof import('expo-clipboard') | null | undefined = undefined;
@@ -31,22 +47,6 @@ const getClipboard = (): typeof import('expo-clipboard') | null => {
     return null;
   }
 };
-import { Text } from '@/components/ui/Text';
-import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { Avatar } from '@/components/ui/Avatar';
-import { Badge } from '@/components/ui/Badge';
-import { AdminPageLayout } from '@/components/admin/AdminHeader';
-import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
-import { useServiceJoinRequests } from '@/hooks/useServiceJoinRequests';
-import { useQuery } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth';
-import { supabase } from '@/services/supabase';
-import { getFullName, getDisplayName } from '@/utils/name';
-import type { GroupMembershipWithUser } from '@/types/database';
-import { Ionicons } from '@expo/vector-icons';
-import { MembershipNotesSection } from '@/components/groups/MembershipNotesSection';
-import { useGetContactInfo } from '@/hooks/useJoinRequests';
 
 interface JoinRequestCardProps {
   request: GroupMembershipWithUser;
@@ -157,7 +157,11 @@ const JoinRequestCard: React.FC<JoinRequestCardProps> = ({ request }) => {
           <View style={styles.userHeaderRow}>
             <Text style={styles.userName}>{userName}</Text>
             {request.user?.newcomer && (
-              <Badge variant="warning" size="small" style={styles.newcomerBadge}>
+              <Badge
+                variant="warning"
+                size="small"
+                style={styles.newcomerBadge}
+              >
                 Newcomer
               </Badge>
             )}

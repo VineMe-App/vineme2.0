@@ -17,8 +17,8 @@ export function OfflineBanner() {
   const { theme } = useTheme();
   const [showReconnected, setShowReconnected] = useState(false);
   const [slideAnim] = useState(new Animated.Value(-50));
-  const [isRendered, setIsRendered] = useState(() =>
-    !isConnected || !isInternetReachable
+  const [isRendered, setIsRendered] = useState(
+    () => !isConnected || !isInternetReachable
   );
   const hasBeenOfflineRef = useRef(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

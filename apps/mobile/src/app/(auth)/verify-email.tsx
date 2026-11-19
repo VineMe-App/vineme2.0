@@ -13,7 +13,7 @@ export default function VerifyEmailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { initialize } = useAuthStore();
-  
+
   const redirectPath = params.redirect as string | undefined;
   const email = params.email as string | undefined;
 

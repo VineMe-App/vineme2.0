@@ -12,7 +12,7 @@ export function OtpInput({
 }) {
   // Store refs in a ref object using numeric keys
   const refsMap = useRef<Record<number, React.RefObject<TextInput>>>({});
-  
+
   // Initialize refs for the current length
   const refs = Array.from({ length }, (_, i) => {
     if (!refsMap.current[i]) {
@@ -20,7 +20,7 @@ export function OtpInput({
     }
     return refsMap.current[i];
   });
-  
+
   const digits = value.split('').slice(0, length);
 
   // Handle input - check if full code was pasted (autofill)
@@ -37,14 +37,13 @@ export function OtpInput({
         return;
       }
     }
-    
+
     // Normal single digit input
     const d = text.replace(/[^0-9]/g, '').slice(-1);
-    const next = (
-      value.substring(0, i) +
-      d +
-      value.substring(i + 1)
-    ).slice(0, length);
+    const next = (value.substring(0, i) + d + value.substring(i + 1)).slice(
+      0,
+      length
+    );
     onChange(next);
     if (d && i < length - 1) refs[i + 1].current?.focus();
   };
@@ -66,7 +65,9 @@ export function OtpInput({
             keyboardType="number-pad"
             maxLength={i === 0 ? length : 1} // First input can receive full code
             textContentType={i === 0 ? 'oneTimeCode' : 'none'} // Autofill on first input
-            autoComplete={i === 0 && Platform.OS === 'ios' ? 'one-time-code' : 'off'}
+            autoComplete={
+              i === 0 && Platform.OS === 'ios' ? 'one-time-code' : 'off'
+            }
             style={styles.box}
           />
         ))}

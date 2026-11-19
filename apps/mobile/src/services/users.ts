@@ -104,37 +104,52 @@ export class UserService {
 
       // Step 1: Call the RPC function to delete all user data from public schema
       console.log('[deleteAccount] Step 1: Calling delete_my_account RPC...');
-      const { data: rpcData, error: rpcError } = await supabase.rpc('delete_my_account');
-      
+      const { data: rpcData, error: rpcError } =
+        await supabase.rpc('delete_my_account');
+
       if (rpcError) {
         console.error('[deleteAccount] RPC error:', rpcError);
         // Check if error is due to being sole leader
         if (rpcError.message?.includes('SOLE_LEADER:')) {
           // Extract the message after the prefix
           const message = rpcError.message.replace('SOLE_LEADER: ', '');
-          return { 
-            data: null, 
-            error: new Error(message)
+          return {
+            data: null,
+            error: new Error(message),
           };
         }
-        return { data: null, error: new Error(rpcError.message || 'Failed to delete account data') };
+        return {
+          data: null,
+          error: new Error(rpcError.message || 'Failed to delete account data'),
+        };
       }
-      
+
       console.log('[deleteAccount] RPC response:', rpcData);
-      
+
       // Check if the RPC call was successful
       if (!rpcData || !rpcData.success) {
-        console.error('[deleteAccount] RPC returned unsuccessful result:', rpcData);
-        return { data: null, error: new Error(rpcData?.message || 'Account deletion failed') };
+        console.error(
+          '[deleteAccount] RPC returned unsuccessful result:',
+          rpcData
+        );
+        return {
+          data: null,
+          error: new Error(rpcData?.message || 'Account deletion failed'),
+        };
       }
 
       // Step 2: Delete the user from auth.users using the Edge Function
       // This ensures proper cleanup of sessions, refresh tokens, and email/phone
-      console.log('[deleteAccount] Step 2: Calling delete-auth-user edge function...');
+      console.log(
+        '[deleteAccount] Step 2: Calling delete-auth-user edge function...'
+      );
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
       if (!supabaseUrl) {
         console.error('[deleteAccount] Missing EXPO_PUBLIC_SUPABASE_URL');
-        return { data: null, error: new Error('Missing Supabase URL configuration') };
+        return {
+          data: null,
+          error: new Error('Missing Supabase URL configuration'),
+        };
       }
 
       // Prefer supabase.functions.invoke so required headers are added automatically,
@@ -155,8 +170,16 @@ export class UserService {
 
       if (fnError) {
         console.error('[deleteAccount] Edge function invoke error:', fnError);
-        console.error('[deleteAccount] Edge function error details:', JSON.stringify(fnError, null, 2));
-        return { data: null, error: new Error(`Failed to delete auth account: ${fnError.message || 'Edge function invocation failed'}`) };
+        console.error(
+          '[deleteAccount] Edge function error details:',
+          JSON.stringify(fnError, null, 2)
+        );
+        return {
+          data: null,
+          error: new Error(
+            `Failed to delete auth account: ${fnError.message || 'Edge function invocation failed'}`
+          ),
+        };
       }
 
       console.log('[deleteAccount] Edge function response:', fnData);
@@ -228,7 +251,9 @@ export class UserService {
       if (updates.cannot_find_group === true) {
         const { data: currentProfile } = await supabase
           .from('users')
-          .select('cannot_find_group, first_name, last_name, church_id, service_id')
+          .select(
+            'cannot_find_group, first_name, last_name, church_id, service_id'
+          )
           .eq('id', userId)
           .maybeSingle();
         existingProfile = currentProfile || null;
@@ -240,7 +265,10 @@ export class UserService {
       };
 
       // Handle group help request timestamps
-      if (updates.cannot_find_group === true && payload.cannot_find_group !== false) {
+      if (
+        updates.cannot_find_group === true &&
+        payload.cannot_find_group !== false
+      ) {
         // Setting cannot_find_group to true - set the requested timestamp
         payload.cannot_find_group_requested_at = new Date().toISOString();
       } else if (updates.cannot_find_group === false) {
@@ -265,8 +293,7 @@ export class UserService {
         existingProfile?.church_id &&
         existingProfile?.service_id
       ) {
-        const userName =
-          getFullName(existingProfile) || 'A member';
+        const userName = getFullName(existingProfile) || 'A member';
         await triggerCannotFindGroupReportedNotification({
           userId,
           userName,

@@ -68,10 +68,14 @@ export default function PhoneSignUpScreen() {
     try {
       // If UK number (+44) and 11 digits starting with 0, remove the leading 0
       let processedNumber = sanitizedLocalNumber;
-      if (isUk && processedNumber.length === 11 && processedNumber.startsWith('0')) {
+      if (
+        isUk &&
+        processedNumber.length === 11 &&
+        processedNumber.startsWith('0')
+      ) {
         processedNumber = processedNumber.slice(1); // Remove leading 0
       }
-      
+
       const phone = `${countryCode}${processedNumber}`;
 
       const result = await signUpWithPhone(phone);
@@ -85,7 +89,10 @@ export default function PhoneSignUpScreen() {
           },
         });
       } else {
-        Alert.alert('Error', result.error || 'Failed to send verification code.');
+        Alert.alert(
+          'Error',
+          result.error || 'Failed to send verification code.'
+        );
       }
     } catch (error) {
       console.error('Send code error', error);
@@ -95,8 +102,6 @@ export default function PhoneSignUpScreen() {
       );
     }
   };
-
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -109,10 +114,12 @@ export default function PhoneSignUpScreen() {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.screen}>
-            <View style={[
-              styles.body,
-              isKeyboardVisible && styles.bodyKeyboardVisible
-            ]}>
+            <View
+              style={[
+                styles.body,
+                isKeyboardVisible && styles.bodyKeyboardVisible,
+              ]}
+            >
               {!isKeyboardVisible && (
                 <AuthHeroLogo
                   logoSize={109}
@@ -123,7 +130,12 @@ export default function PhoneSignUpScreen() {
               )}
               {isKeyboardVisible && (
                 <View style={styles.keyboardHeader}>
-                  <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+                  <Text
+                    variant="h4"
+                    weight="extraBold"
+                    align="center"
+                    style={styles.title}
+                  >
                     Create account
                   </Text>
                   <Text
@@ -138,41 +150,43 @@ export default function PhoneSignUpScreen() {
               )}
 
               <View style={styles.inputSection}>
-              <View style={styles.phoneField}>
-                <CountryCodePicker
-                  value={countryCode}
-                  onChange={setCountryCode}
-                  hideLabel
-                  renderTrigger={({ selected, open }) => (
-                    <TouchableOpacity
-                      style={styles.countryTrigger}
-                      onPress={open}
-                      accessibilityRole="button"
-                      accessibilityLabel="Select country code"
-                    >
-                      <Text style={styles.countryFlag}>{selected.flag}</Text>
-                      <Text style={styles.countryCodeText}>
-                        {selected.code}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                />
-                <View style={styles.phoneDivider} />
-                <TextInput
-                  value={localNumber}
-                  onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
-                  style={styles.phoneInput}
-                  keyboardType="phone-pad"
-                  placeholder="7123456789"
-                  placeholderTextColor="#B4B4B4"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  blurOnSubmit={false}
-                  editable={!isLoading}
-                  accessibilityLabel="Phone number"
-                />
+                <View style={styles.phoneField}>
+                  <CountryCodePicker
+                    value={countryCode}
+                    onChange={setCountryCode}
+                    hideLabel
+                    renderTrigger={({ selected, open }) => (
+                      <TouchableOpacity
+                        style={styles.countryTrigger}
+                        onPress={open}
+                        accessibilityRole="button"
+                        accessibilityLabel="Select country code"
+                      >
+                        <Text style={styles.countryFlag}>{selected.flag}</Text>
+                        <Text style={styles.countryCodeText}>
+                          {selected.code}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                  <View style={styles.phoneDivider} />
+                  <TextInput
+                    value={localNumber}
+                    onChangeText={(text) =>
+                      setLocalNumber(text.replace(/\D/g, ''))
+                    }
+                    style={styles.phoneInput}
+                    keyboardType="phone-pad"
+                    placeholder="7123456789"
+                    placeholderTextColor="#B4B4B4"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    blurOnSubmit={false}
+                    editable={!isLoading}
+                    accessibilityLabel="Phone number"
+                  />
+                </View>
               </View>
-            </View>
 
               <View style={styles.actionsSection}>
                 <AuthButton
@@ -186,7 +200,10 @@ export default function PhoneSignUpScreen() {
                 <View style={styles.signInPrompt}>
                   <Text style={styles.signInPromptText}>
                     Already have an account?{' '}
-                    <Text style={styles.signInLink} onPress={() => router.push('/(auth)/phone-login')}>
+                    <Text
+                      style={styles.signInLink}
+                      onPress={() => router.push('/(auth)/phone-login')}
+                    >
                       Sign in
                     </Text>
                   </Text>

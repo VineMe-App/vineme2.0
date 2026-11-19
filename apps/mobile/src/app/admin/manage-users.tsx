@@ -30,9 +30,9 @@ export default function ManageUsersScreen() {
     tab?: string;
     filter?: string;
   }>();
-  const [filter, setFilter] = useState<'all' | 'connected' | 'unconnected' | 'needs_group_help'>(
-    'all'
-  );
+  const [filter, setFilter] = useState<
+    'all' | 'connected' | 'unconnected' | 'needs_group_help'
+  >('all');
 
   useEffect(() => {
     if (tab === 'needs_help' || filterParam === 'needs_group_help') {
@@ -131,7 +131,8 @@ export default function ManageUsersScreen() {
   const allCount = users?.length || 0;
   const connectedCount = users?.filter((u: any) => u.is_connected).length || 0;
   const unconnectedCount = Math.max(0, allCount - connectedCount);
-  const needsGroupHelpCount = users?.filter((u: any) => u.cannot_find_group === true).length || 0;
+  const needsGroupHelpCount =
+    users?.filter((u: any) => u.cannot_find_group === true).length || 0;
 
   const handleRefresh = async () => {
     await Promise.all([refetch(), refetchSummary()]);
@@ -240,7 +241,8 @@ export default function ManageUsersScreen() {
               <Text
                 style={[
                   styles.filterButtonText,
-                  filter === 'needs_group_help' && styles.filterButtonTextActive,
+                  filter === 'needs_group_help' &&
+                    styles.filterButtonTextActive,
                 ]}
               >
                 Needs Help

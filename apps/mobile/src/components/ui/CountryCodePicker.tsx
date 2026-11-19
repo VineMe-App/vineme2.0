@@ -222,7 +222,10 @@ export interface CountryCodePickerProps {
   onChange: (code: string) => void;
   label?: string;
   hideLabel?: boolean;
-  renderTrigger?: (options: { selected: Country; open: () => void }) => React.ReactNode;
+  renderTrigger?: (options: {
+    selected: Country;
+    open: () => void;
+  }) => React.ReactNode;
 }
 
 export function CountryCodePicker({
@@ -315,10 +318,7 @@ export function CountryCodePicker({
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={closePicker}
-            >
+            <TouchableOpacity style={styles.closeBtn} onPress={closePicker}>
               <Text weight="semiBold" style={styles.closeText}>
                 Close
               </Text>

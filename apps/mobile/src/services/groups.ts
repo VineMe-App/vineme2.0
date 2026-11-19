@@ -133,7 +133,7 @@ export class GroupService {
       // Ensure caller has church admin or group leader privileges
       const adminCheck = await permissionService.isChurchAdmin();
       const leaderCheck = await permissionService.isAnyGroupLeader();
-      
+
       if (!adminCheck.hasPermission && !leaderCheck.hasPermission) {
         return {
           data: null,
@@ -485,7 +485,9 @@ export class GroupService {
         ) {
           return {
             data: null,
-            error: new Error('Cannot leave group as the last leader. Promote another member to leader first or transfer leadership.'),
+            error: new Error(
+              'Cannot leave group as the last leader. Promote another member to leader first or transfer leadership.'
+            ),
           };
         }
       }

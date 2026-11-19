@@ -87,9 +87,7 @@ export function FriendRequestCard({
         <Text style={styles.name} numberOfLines={1}>
           {shortName || fullName || 'User'}
         </Text>
-        {type === 'sent' && (
-          <Text style={styles.statusText}>Request sent</Text>
-        )}
+        {type === 'sent' && <Text style={styles.statusText}>Request sent</Text>}
         {type === 'received' && (
           <Text style={styles.statusText}>Wants to be friends</Text>
         )}

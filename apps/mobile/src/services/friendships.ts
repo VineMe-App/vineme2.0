@@ -452,7 +452,8 @@ export class FriendshipService {
         return { data: null, error: null };
       }
 
-      const direction: FriendshipDirection = data.user_id === userId ? 'outgoing' : 'incoming';
+      const direction: FriendshipDirection =
+        data.user_id === userId ? 'outgoing' : 'incoming';
 
       return {
         data: {

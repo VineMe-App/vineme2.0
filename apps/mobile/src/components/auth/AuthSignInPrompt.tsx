@@ -21,7 +21,12 @@ export const AuthSignInPrompt: React.FC<AuthSignInPromptProps> = ({
       {message + ' '}
     </Text>
     <Link href={href} asChild>
-      <Text variant="body" weight="semiBold" style={styles.link} accessibilityRole="link">
+      <Text
+        variant="body"
+        weight="semiBold"
+        style={styles.link}
+        accessibilityRole="link"
+      >
         {linkLabel}
       </Text>
     </Link>
@@ -42,4 +47,3 @@ const styles = StyleSheet.create({
 });
 
 export default AuthSignInPrompt;
-

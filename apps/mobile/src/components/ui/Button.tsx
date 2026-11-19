@@ -208,14 +208,10 @@ export const Button: React.FC<ButtonProps> = ({
         {icon && (
           <View style={[styles.iconContainer, styles.iconLeft]}>{icon}</View>
         )}
-        <Text 
-          weight="medium" 
-          align="center" 
-          style={[
-            textStyles, 
-            !hasIcon && styles.textNoIcon,
-            textStyle
-          ]} 
+        <Text
+          weight="medium"
+          align="center"
+          style={[textStyles, !hasIcon && styles.textNoIcon, textStyle]}
           numberOfLines={1}
         >
           {title}

@@ -209,7 +209,13 @@ const GroupCardWithData: React.FC<{
     }
 
     return [];
-  }, [friendsQuery.data, friendsInGroupMemberships, members, userProfile?.id, canSeeMembers]);
+  }, [
+    friendsQuery.data,
+    friendsInGroupMemberships,
+    members,
+    userProfile?.id,
+    canSeeMembers,
+  ]);
 
   const friendsInGroup = React.useMemo(
     () => friendUsers.slice(0, 3),
@@ -300,17 +306,18 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
 
   // Close group card panel when keyboard opens
   useEffect(() => {
-    const keyboardWillShow = Platform.OS === 'ios' 
-      ? Keyboard.addListener('keyboardWillShow', () => {
-          if (selectedItems) {
-            setSelectedItems(null);
-          }
-        })
-      : Keyboard.addListener('keyboardDidShow', () => {
-          if (selectedItems) {
-            setSelectedItems(null);
-          }
-        });
+    const keyboardWillShow =
+      Platform.OS === 'ios'
+        ? Keyboard.addListener('keyboardWillShow', () => {
+            if (selectedItems) {
+              setSelectedItems(null);
+            }
+          })
+        : Keyboard.addListener('keyboardDidShow', () => {
+            if (selectedItems) {
+              setSelectedItems(null);
+            }
+          });
 
     return () => {
       keyboardWillShow.remove();
@@ -440,54 +447,58 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
     if (MapView && mapRef.current && distanceOrigin?.coordinates) {
       // Create a unique key for this distanceOrigin to track if we've already processed it
       const originKey = `${distanceOrigin.coordinates.latitude},${distanceOrigin.coordinates.longitude}`;
-      
+
       // Skip if we've already processed this exact location
       if (lastProcessedDistanceOriginRef.current === originKey) {
         if (__DEV__) {
-          console.log('[MapDebug] Already processed this distance origin, skipping');
+          console.log(
+            '[MapDebug] Already processed this distance origin, skipping'
+          );
         }
         return;
       }
-      
+
       // Check if map is already at this location (within a small threshold)
       const threshold = 0.0001; // ~11 meters
       const currentLat = currentRegion.latitude;
       const currentLon = currentRegion.longitude;
       const targetLat = distanceOrigin.coordinates.latitude;
       const targetLon = distanceOrigin.coordinates.longitude;
-      
+
       const latDiff = Math.abs(currentLat - targetLat);
       const lonDiff = Math.abs(currentLon - targetLon);
-      
+
       // Skip if already at this location
       if (latDiff < threshold && lonDiff < threshold) {
         // Mark as processed even if we skip
         lastProcessedDistanceOriginRef.current = originKey;
         if (__DEV__) {
-          console.log('[MapDebug] Already at distance origin, skipping recenter');
+          console.log(
+            '[MapDebug] Already at distance origin, skipping recenter'
+          );
         }
         return;
       }
-      
+
       // Mark this origin as processed
       lastProcessedDistanceOriginRef.current = originKey;
-      
+
       const newRegion = {
         latitude: distanceOrigin.coordinates.latitude,
         longitude: distanceOrigin.coordinates.longitude,
         latitudeDelta: LATITUDE_DELTA,
         longitudeDelta: LONGITUDE_DELTA,
       };
-      
+
       // Mark as programmatic move to prevent triggering onDistanceOriginChange
       isProgrammaticMoveRef.current = true;
       // Don't reset isUserDraggingRef here - let handleRegionChange detect if user interrupts
-      
+
       // Animate to the new region
       mapRef.current.animateToRegion(newRegion, 1000);
       setRegion(newRegion);
       setCurrentRegion(newRegion);
-      
+
       // Reset programmatic flag after animation completes
       // But allow user to override by dragging
       const timeoutId = setTimeout(() => {
@@ -496,14 +507,14 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
           isProgrammaticMoveRef.current = false;
         }
       }, 1100); // Slightly longer than animation duration
-      
+
       if (__DEV__) {
         console.log(
           '[MapDebug] Recentering map to distance origin:',
           distanceOrigin?.coordinates
         );
       }
-      
+
       // Cleanup timeout on unmount or if distanceOrigin changes again
       return () => clearTimeout(timeoutId);
     } else if (!distanceOrigin) {
@@ -600,8 +611,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         }
       } else {
         // Check permission status first
-        const permissionStatus = await locationService.getLocationPermissionStatus();
-        
+        const permissionStatus =
+          await locationService.getLocationPermissionStatus();
+
         if (!permissionStatus.granted) {
           setLocationPermissionDenied(true);
           if (__DEV__) {
@@ -782,20 +794,20 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   const getMarkerColor = useCallback(
     (category?: 'service' | 'church' | 'outside', isGreyedOut?: boolean) => {
       if (!category) return '#FF0083'; // Default primary color
-      
+
       // For greyed out markers, use a darker/desaturated version, but keep outside groups dark
       if (isGreyedOut && category !== 'outside') {
         // Return a darker version for greyed out non-outside groups
-      switch (category) {
-        case 'service':
+        switch (category) {
+          case 'service':
             return '#cc0067'; // Darker pink
-        case 'church':
+          case 'church':
             return '#6b184c'; // Darker blend
           default:
             return '#FF0083';
         }
       }
-      
+
       switch (category) {
         case 'service':
           return '#FF0083'; // Primary pink color
@@ -818,11 +830,11 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
   const getCategoryOffset = useCallback(
     (category?: 'service' | 'church' | 'outside') => {
       if (!category) return { latOffset: 0, lngOffset: 0 };
-      
+
       // Make offset proportional to the current viewport (4% of latitudeDelta)
       // This ensures markers are always visibly separated regardless of zoom level
       const baseOffset = currentRegion.latitudeDelta * 0.04;
-      
+
       switch (category) {
         case 'service':
           // No offset for primary category (center position)
@@ -898,13 +910,16 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       const isGreyedOut = Boolean((group as any).__isGreyedOut);
       // Pass isGreyedOut to getMarkerColor so it can return appropriate color
       const markerColor = getMarkerColor(category, isGreyedOut);
-      
+
       // Apply category-based offset to prevent overlap
       const offset = getCategoryOffset(category);
       const adjustedLatitude = latitude + offset.latOffset;
       const adjustedLongitude = longitude + offset.lngOffset;
-      
-      if (__DEV__ && Math.abs(offset.latOffset) > 0 || Math.abs(offset.lngOffset) > 0) {
+
+      if (
+        (__DEV__ && Math.abs(offset.latOffset) > 0) ||
+        Math.abs(offset.lngOffset) > 0
+      ) {
         console.log(
           `[MapDebug] Marker offset for ${category}: lat ${offset.latOffset.toFixed(6)}, lng ${offset.lngOffset.toFixed(6)}`
         );
@@ -913,7 +928,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       return (
         <Marker
           key={`group-${group.id}`}
-          coordinate={{ latitude: adjustedLatitude, longitude: adjustedLongitude }}
+          coordinate={{
+            latitude: adjustedLatitude,
+            longitude: adjustedLongitude,
+          }}
           tracksViewChanges={shouldTrackViewChanges}
           onPress={() => {
             setSelectedItems([group]);
@@ -948,16 +966,20 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       const { size } = getClusterVisuals(cluster.count);
       const digitCount = `${cluster.count}`.length;
       const fontSize = digitCount === 1 ? 16 : digitCount === 2 ? 14 : 12;
-      
+
       // Use category color for cluster (clusters are never greyed out)
       const clusterColor = getMarkerColor(cluster.category, false);
-      
+
       // Apply category-based offset to prevent overlap with other category clusters
       const offset = getCategoryOffset(cluster.category);
       const adjustedLatitude = cluster.coordinates.latitude + offset.latOffset;
-      const adjustedLongitude = cluster.coordinates.longitude + offset.lngOffset;
-      
-      if (__DEV__ && (Math.abs(offset.latOffset) > 0 || Math.abs(offset.lngOffset) > 0)) {
+      const adjustedLongitude =
+        cluster.coordinates.longitude + offset.lngOffset;
+
+      if (
+        __DEV__ &&
+        (Math.abs(offset.latOffset) > 0 || Math.abs(offset.lngOffset) > 0)
+      ) {
         console.log(
           `[MapDebug] Cluster offset for ${cluster.category} (${cluster.count} groups): lat ${offset.latOffset.toFixed(6)}, lng ${offset.lngOffset.toFixed(6)}`
         );
@@ -966,7 +988,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       return (
         <Marker
           key={`cluster-${cluster.id}`}
-          coordinate={{ latitude: adjustedLatitude, longitude: adjustedLongitude }}
+          coordinate={{
+            latitude: adjustedLatitude,
+            longitude: adjustedLongitude,
+          }}
           accessibilityLabel={AdminAccessibilityLabels.clusterMarker(
             cluster.count
           )}
@@ -1053,7 +1078,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         // Pure programmatic move - don't process as user drag
         return;
       }
-      
+
       // If we get here and programmatic flag is set but user was dragging,
       // clear the programmatic flag since user took control
       if (isProgrammaticMoveRef.current) {
@@ -1064,7 +1089,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       // The marker should only move when:
       // 1. User drags the marker itself (handled in onDragEnd)
       // 2. Address is changed in search bar (handled in parent component)
-      
+
       // Reset dragging flag after processing (with a small delay to allow reverse geocoding to complete)
       // Only reset if we actually detected and processed a drag
       if (isUserDraggingRef.current && !isProgrammaticMoveRef.current) {
@@ -1085,7 +1110,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       // Ignore programmatic moves (like fitToCoordinates/animateToRegion) so we don't
       // misinterpret them as user drags and overwrite the selected search origin
       if (isProgrammaticMoveRef.current && !isUserDraggingRef.current) {
-        if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+        if (
+          MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)
+        ) {
           setCurrentRegion(newRegion);
         }
         return;
@@ -1098,10 +1125,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         // This ensures user drags are always detected, even during programmatic moves
         isProgrammaticMoveRef.current = false;
         isUserDraggingRef.current = true;
-        
+
         // Always update region when user is dragging to track position accurately
         setCurrentRegion(newRegion);
-      } else if (MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)) {
+      } else if (
+        MapViewportOptimizer.hasSignificantChange(currentRegion, newRegion)
+      ) {
         // Only update region for other changes if there's a meaningful difference
         setCurrentRegion(newRegion);
       }
@@ -1298,7 +1327,9 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         ]}
         initialRegion={region}
         showsUserLocation={!locationPermissionDenied}
-        showsMyLocationButton={Platform.OS === 'android' && !locationPermissionDenied}
+        showsMyLocationButton={
+          Platform.OS === 'android' && !locationPermissionDenied
+        }
         showsCompass={true}
         showsScale={true}
         loadingEnabled={true}
@@ -1307,7 +1338,7 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
         onPress={() => {
           // Dismiss keyboard when tapping on map
           Keyboard.dismiss();
-          
+
           // On iOS, MapView onPress can fire alongside Marker onPress,
           // which immediately clears the selected card panel.
           // Preserve background-tap-to-dismiss on Android only.
@@ -1337,12 +1368,17 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
             draggable={true}
             zIndex={1000}
             anchor={{ x: 0.5, y: 1 }}
-            onDragEnd={async (e: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
+            onDragEnd={async (e: {
+              nativeEvent: {
+                coordinate: { latitude: number; longitude: number };
+              };
+            }) => {
               const newCoordinates = e.nativeEvent.coordinate;
               try {
                 // Reverse geocode to get the address for the new location
-                const address = await locationService.reverseGeocode(newCoordinates);
-                
+                const address =
+                  await locationService.reverseGeocode(newCoordinates);
+
                 // Update the distance origin with the new location immediately
                 if (onDistanceOriginChange) {
                   onDistanceOriginChange({
@@ -1351,7 +1387,10 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
                   });
                 }
               } catch (error) {
-                console.warn('Failed to reverse geocode marker position:', error);
+                console.warn(
+                  'Failed to reverse geocode marker position:',
+                  error
+                );
                 // Still update coordinates even if reverse geocoding fails
                 if (onDistanceOriginChange) {
                   onDistanceOriginChange({
@@ -1427,10 +1466,12 @@ export const GroupsMapView: React.FC<ClusteredMapViewProps> = ({
       {/* Accessibility alternative removed: list locations button no longer shown */}
 
       {locationPermissionDenied && (
-        <View style={[
-          styles.permissionBanner,
-          Platform.OS === 'android' && styles.permissionBannerAndroid
-        ]}>
+        <View
+          style={[
+            styles.permissionBanner,
+            Platform.OS === 'android' && styles.permissionBannerAndroid,
+          ]}
+        >
           {Platform.OS === 'android' ? (
             <Button
               title="Enable Location"

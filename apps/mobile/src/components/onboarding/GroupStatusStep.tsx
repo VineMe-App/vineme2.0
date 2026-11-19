@@ -48,7 +48,12 @@ export default function GroupStatusStep({
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+          <Text
+            variant="h4"
+            weight="extraBold"
+            align="center"
+            style={styles.title}
+          >
             Group status
           </Text>
           <Text
@@ -57,7 +62,8 @@ export default function GroupStatusStep({
             align="center"
             style={styles.subtitle}
           >
-            Are you already part of a small group or are you looking to join one?
+            Are you already part of a small group or are you looking to join
+            one?
           </Text>
         </View>
 
@@ -79,10 +85,7 @@ export default function GroupStatusStep({
                 <View style={styles.optionContent}>
                   <View style={styles.radioContainer}>
                     <View
-                      style={[
-                        styles.radio,
-                        isSelected && styles.radioSelected,
-                      ]}
+                      style={[styles.radio, isSelected && styles.radioSelected]}
                     >
                       <Ionicons
                         name={option.icon}
@@ -99,7 +102,11 @@ export default function GroupStatusStep({
                     >
                       {option.title}
                     </Text>
-                    <Text variant="bodySmall" color="secondary" style={styles.optionSubtitle}>
+                    <Text
+                      variant="bodySmall"
+                      color="secondary"
+                      style={styles.optionSubtitle}
+                    >
                       {option.subtitle}
                     </Text>
                   </View>
@@ -125,7 +132,11 @@ export default function GroupStatusStep({
           loading={isLoading}
           disabled={!selectedStatus || isLoading}
         />
-        <TouchableOpacity onPress={onBack} accessibilityRole="button" style={styles.backButton}>
+        <TouchableOpacity
+          onPress={onBack}
+          accessibilityRole="button"
+          style={styles.backButton}
+        >
           <Text variant="body" align="center" style={styles.backText}>
             Back
           </Text>

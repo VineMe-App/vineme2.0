@@ -12,7 +12,10 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { performanceMonitor } from '../utils/performance';
 import { getPerformanceConfig } from '../config/performance';
 import NetInfo from '@react-native-community/netinfo';
-import { isDeletionFlowActive, isPostDeletionError } from '../utils/errorSuppression';
+import {
+  isDeletionFlowActive,
+  isPostDeletionError,
+} from '../utils/errorSuppression';
 
 // Conditionally import devtools only in development and on web
 let ReactQueryDevtools: React.ComponentType<any> | null = null;

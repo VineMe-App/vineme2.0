@@ -77,8 +77,8 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
       option === 'whatsapp'
         ? `whatsapp://send?phone=${formatPhoneForWhatsApp(phone)}`
         : option === 'sms'
-        ? `sms:${formatPhoneNumber(phone)}`
-        : `tel:${formatPhoneNumber(phone)}`;
+          ? `sms:${formatPhoneNumber(phone)}`
+          : `tel:${formatPhoneNumber(phone)}`;
     try {
       await Linking.openURL(url);
     } catch {
@@ -134,12 +134,9 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
     if (contactLoaded || contactLoading) return;
     setContactLoading(true);
     try {
-      const { data, error } = await supabase.rpc(
-        'get_user_contact_admin',
-        {
-          target_user_id: user.id,
-        }
-      );
+      const { data, error } = await supabase.rpc('get_user_contact_admin', {
+        target_user_id: user.id,
+      });
       if (error) {
         throw error;
       }
@@ -329,7 +326,9 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Help Requested:</Text>
               <Text style={styles.detailValue}>
-                {new Date(user.cannot_find_group_requested_at).toLocaleDateString()}
+                {new Date(
+                  user.cannot_find_group_requested_at
+                ).toLocaleDateString()}
               </Text>
             </View>
           )}
@@ -338,7 +337,9 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Contacted:</Text>
               <Text style={styles.detailValue}>
-                {new Date(user.cannot_find_group_contacted_at).toLocaleDateString()}
+                {new Date(
+                  user.cannot_find_group_contacted_at
+                ).toLocaleDateString()}
               </Text>
             </View>
           )}
@@ -377,9 +378,9 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
                     <View style={styles.contactItem}>
                       <TouchableOpacity
                         style={styles.contactMain}
-                          onPress={() =>
-                            handleContactPress('email', contactInfo.email!)
-                          }
+                        onPress={() =>
+                          handleContactPress('email', contactInfo.email!)
+                        }
                       >
                         <Text style={styles.contactLabel}>Email</Text>
                         <Text style={styles.contactValue}>
@@ -389,13 +390,15 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
                       <TouchableOpacity
                         style={styles.copyButton}
                         onPress={async () => {
-                            await Clipboard.setStringAsync(
-                              contactInfo.email!
-                            );
+                          await Clipboard.setStringAsync(contactInfo.email!);
                           Alert.alert('Copied', 'Email copied to clipboard');
                         }}
                       >
-                        <Ionicons name="copy-outline" size={18} color="#6b7280" />
+                        <Ionicons
+                          name="copy-outline"
+                          size={18}
+                          color="#6b7280"
+                        />
                       </TouchableOpacity>
                     </View>
                   )}
@@ -414,13 +417,18 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
                       <TouchableOpacity
                         style={styles.copyButton}
                         onPress={async () => {
-                            await Clipboard.setStringAsync(
-                              contactInfo.phone!
-                            );
-                          Alert.alert('Copied', 'Phone number copied to clipboard');
+                          await Clipboard.setStringAsync(contactInfo.phone!);
+                          Alert.alert(
+                            'Copied',
+                            'Phone number copied to clipboard'
+                          );
                         }}
                       >
-                        <Ionicons name="copy-outline" size={18} color="#6b7280" />
+                        <Ionicons
+                          name="copy-outline"
+                          size={18}
+                          color="#6b7280"
+                        />
                       </TouchableOpacity>
                     </View>
                   )}
@@ -428,10 +436,10 @@ export function UserManagementCard({ user, onPress }: UserManagementCardProps) {
                   {!contactInfo?.email &&
                     !contactInfo?.phone &&
                     contactLoaded && (
-                    <Text style={styles.noContactText}>
-                      Contact information not available.
-                    </Text>
-                  )}
+                      <Text style={styles.noContactText}>
+                        Contact information not available.
+                      </Text>
+                    )}
                 </>
               )}
             </View>

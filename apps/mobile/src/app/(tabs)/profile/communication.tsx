@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+} from 'react';
 import {
   View,
   StyleSheet,
@@ -10,7 +16,10 @@ import {
   TouchableOpacity,
   Linking,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { useTheme } from '@/theme/provider/useTheme';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -35,8 +44,15 @@ import { authService } from '@/services/auth';
 import { supabase } from '@/services/supabase';
 
 export default function CommunicationAndSecurityScreen() {
-  const { user, userProfile: authUserProfile, linkEmail, linkPhone, verifyOtp, isLoading, loadUserProfile } =
-    useAuthStore();
+  const {
+    user,
+    userProfile: authUserProfile,
+    linkEmail,
+    linkPhone,
+    verifyOtp,
+    isLoading,
+    loadUserProfile,
+  } = useAuthStore();
   const userId = user?.id || authUserProfile?.id;
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -57,10 +73,11 @@ export default function CommunicationAndSecurityScreen() {
       router.push('/(tabs)/profile');
     }
   }, [navigation]);
-  
+
   // Get user profile from query hook to allow refetching
-  const { data: userProfile, refetch: refetchUserProfile } = useUserProfile(userId);
-  
+  const { data: userProfile, refetch: refetchUserProfile } =
+    useUserProfile(userId);
+
   // Use queried profile or fallback to auth store profile
   const displayUserProfile = userProfile || authUserProfile;
 
@@ -72,26 +89,27 @@ export default function CommunicationAndSecurityScreen() {
     isUpdating,
   } = useNotificationSettings(userId);
   const { checkPermissions, requestPermissions } = useNotificationPermissions();
-  
+
   // Get user's group memberships to check leadership status
   const { data: groupMemberships } = useUserGroupMemberships(userId);
-  
+
   // Check if user is a leader of any group (including pending groups)
   const isGroupLeader = useMemo(() => {
     if (!groupMemberships) return false;
-    return groupMemberships.some((membership: any) => membership.role === 'leader');
+    return groupMemberships.some(
+      (membership: any) => membership.role === 'leader'
+    );
   }, [groupMemberships]);
-  
+
   // Check if user is a leader of an approved group (for join requests)
   const isApprovedGroupLeader = useMemo(() => {
     if (!groupMemberships) return false;
     return groupMemberships.some(
       (membership: any) =>
-        membership.role === 'leader' &&
-        membership.group?.status === 'approved'
+        membership.role === 'leader' && membership.group?.status === 'approved'
     );
   }, [groupMemberships]);
-  
+
   const [localNotif, setLocalNotif] = useState({
     friend_requests: true,
     friend_request_accepted: true,
@@ -107,9 +125,9 @@ export default function CommunicationAndSecurityScreen() {
   const [pushGranted, setPushGranted] = useState<boolean | null>(null);
   const hasDisabledReferralsRef = useRef(false);
   const hasSyncedSettingsRef = useRef(false);
-  const referralDisableTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const referralDisableTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   useEffect(() => {
     checkPermissions()
@@ -193,9 +211,9 @@ export default function CommunicationAndSecurityScreen() {
       }
 
       // Always set referral_updates to false (temporarily disabled)
-      await updateSettings({ 
-        ...localNotif, 
-        referral_updates: false 
+      await updateSettings({
+        ...localNotif,
+        referral_updates: false,
       });
       Alert.alert('Saved', 'Notification settings updated.');
       setHasNotifChanges(false);
@@ -218,7 +236,7 @@ export default function CommunicationAndSecurityScreen() {
   // Email is stored in auth.users.email, not in the users table
   // So we prioritize user?.email from auth
   const currentEmail = user?.email || displayUserProfile?.email;
-  
+
   // Format phone number - if UK number, ensure it's displayed with +44
   const formatPhoneNumber = (phone: string | undefined): string => {
     if (!phone) return '';
@@ -235,8 +253,10 @@ export default function CommunicationAndSecurityScreen() {
     // Otherwise return as is (might have country code already)
     return phone;
   };
-  
-  const currentPhone = formatPhoneNumber(displayUserProfile?.phone || user?.phone);
+
+  const currentPhone = formatPhoneNumber(
+    displayUserProfile?.phone || user?.phone
+  );
 
   // Load pending email from query params or AsyncStorage
   useEffect(() => {
@@ -247,35 +267,31 @@ export default function CommunicationAndSecurityScreen() {
         router.setParams({ email: undefined });
         // Also clear from AsyncStorage if it exists
         await AsyncStorage.removeItem('pending_email_verification');
-        
+
         // Force refresh the auth user to get updated email
         const refreshedUser = await authService.getCurrentUser();
         if (refreshedUser) {
           useAuthStore.setState({ user: refreshedUser });
         }
-        
+
         // Refetch user profile to get the updated email from auth
-        await Promise.all([
-          refetchUserProfile(),
-          loadUserProfile(),
-        ]);
+        await Promise.all([refetchUserProfile(), loadUserProfile()]);
       } else {
         // Check AsyncStorage for pending email verification
-        const storedEmail = await AsyncStorage.getItem('pending_email_verification');
+        const storedEmail = await AsyncStorage.getItem(
+          'pending_email_verification'
+        );
         if (storedEmail) {
           await AsyncStorage.removeItem('pending_email_verification');
-          
+
           // Force refresh the auth user to get updated email
           const refreshedUser = await authService.getCurrentUser();
           if (refreshedUser) {
             useAuthStore.setState({ user: refreshedUser });
           }
-          
+
           // Refetch user profile to get the updated email from auth
-          await Promise.all([
-            refetchUserProfile(),
-            loadUserProfile(),
-          ]);
+          await Promise.all([refetchUserProfile(), loadUserProfile()]);
         }
       }
     };
@@ -311,15 +327,17 @@ export default function CommunicationAndSecurityScreen() {
     await AsyncStorage.setItem('pending_email_verification', emailToLink);
     // Use default Supabase redirect URL (https://vineme.app/verify-email)
     const redirectUrl = `https://vineme.app/verify-email?redirect=/profile/communication&email=${encodeURIComponent(emailToLink)}`;
-    const result = await linkEmail(emailToLink, { emailRedirectTo: redirectUrl });
+    const result = await linkEmail(emailToLink, {
+      emailRedirectTo: redirectUrl,
+    });
     if (result.success) {
       setEmailStep('idle');
       setNewEmail('');
-      await Promise.all([
-        refetchUserProfile(),
-        loadUserProfile(),
-      ]);
-      Alert.alert('Success', 'Verification email sent! Please check your inbox.');
+      await Promise.all([refetchUserProfile(), loadUserProfile()]);
+      Alert.alert(
+        'Success',
+        'Verification email sent! Please check your inbox.'
+      );
     } else {
       Alert.alert('Error', result.error || 'Failed to link email');
     }
@@ -352,10 +370,7 @@ export default function CommunicationAndSecurityScreen() {
       setLocalNumber('');
       setPhoneCode('');
       // Refetch user profile to update phone display
-      await Promise.all([
-        refetchUserProfile(),
-        loadUserProfile(),
-      ]);
+      await Promise.all([refetchUserProfile(), loadUserProfile()]);
       Alert.alert('Success', 'Phone has been linked to your account!');
     } else {
       Alert.alert('Verification Failed', result.error || 'Invalid code');
@@ -364,10 +379,7 @@ export default function CommunicationAndSecurityScreen() {
 
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: '#FFFFFF' },
-      ]}
+      style={[styles.container, { backgroundColor: '#FFFFFF' }]}
       edges={['left', 'right', 'bottom']}
     >
       <View style={[styles.header, { paddingTop: insets.top + 5 }]}>
@@ -381,7 +393,6 @@ export default function CommunicationAndSecurityScreen() {
         <Text style={styles.title}>Communication & Security</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-
         {/* Notifications Section */}
         <Card style={styles.card} shadow="none">
           <Text style={styles.cardTitle}>Notification Preferences</Text>
@@ -399,7 +410,12 @@ export default function CommunicationAndSecurityScreen() {
                     <Text style={styles.checkboxLabel}>
                       {`Enable push notifications${Platform.OS === 'android' ? ' (requires Google Play services)' : ''}`}
                     </Text>
-                    <View style={[styles.checkbox, localNotif.push_notifications && styles.checkboxChecked]}>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        localNotif.push_notifications && styles.checkboxChecked,
+                      ]}
+                    >
                       {localNotif.push_notifications && (
                         <Text style={styles.checkmark}>✓</Text>
                       )}
@@ -416,8 +432,15 @@ export default function CommunicationAndSecurityScreen() {
                   activeOpacity={0.85}
                 >
                   <View style={styles.checkboxContainer}>
-                    <Text style={styles.checkboxLabel}>Friend request received</Text>
-                    <View style={[styles.checkbox, localNotif.friend_requests && styles.checkboxChecked]}>
+                    <Text style={styles.checkboxLabel}>
+                      Friend request received
+                    </Text>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        localNotif.friend_requests && styles.checkboxChecked,
+                      ]}
+                    >
                       {localNotif.friend_requests && (
                         <Text style={styles.checkmark}>✓</Text>
                       )}
@@ -432,8 +455,16 @@ export default function CommunicationAndSecurityScreen() {
                   activeOpacity={0.85}
                 >
                   <View style={styles.checkboxContainer}>
-                    <Text style={styles.checkboxLabel}>Friend request accepted</Text>
-                    <View style={[styles.checkbox, localNotif.friend_request_accepted && styles.checkboxChecked]}>
+                    <Text style={styles.checkboxLabel}>
+                      Friend request accepted
+                    </Text>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        localNotif.friend_request_accepted &&
+                          styles.checkboxChecked,
+                      ]}
+                    >
                       {localNotif.friend_request_accepted && (
                         <Text style={styles.checkmark}>✓</Text>
                       )}
@@ -443,7 +474,8 @@ export default function CommunicationAndSecurityScreen() {
               </View>
 
               <Text style={styles.sectionLabel}>Groups</Text>
-              {(displayUserProfile?.roles?.includes('church_admin') || displayUserProfile?.roles?.includes('superadmin')) && (
+              {(displayUserProfile?.roles?.includes('church_admin') ||
+                displayUserProfile?.roles?.includes('superadmin')) && (
                 <View style={styles.settingItem}>
                   <TouchableOpacity
                     style={styles.checkboxRow}
@@ -451,8 +483,15 @@ export default function CommunicationAndSecurityScreen() {
                     activeOpacity={0.85}
                   >
                     <View style={styles.checkboxContainer}>
-                      <Text style={styles.checkboxLabel}>Group creation notifications</Text>
-                      <View style={[styles.checkbox, localNotif.group_requests && styles.checkboxChecked]}>
+                      <Text style={styles.checkboxLabel}>
+                        Group creation notifications
+                      </Text>
+                      <View
+                        style={[
+                          styles.checkbox,
+                          localNotif.group_requests && styles.checkboxChecked,
+                        ]}
+                      >
                         {localNotif.group_requests && (
                           <Text style={styles.checkmark}>✓</Text>
                         )}
@@ -469,8 +508,16 @@ export default function CommunicationAndSecurityScreen() {
                     activeOpacity={0.85}
                   >
                     <View style={styles.checkboxContainer}>
-                      <Text style={styles.checkboxLabel}>Group approved notifications</Text>
-                      <View style={[styles.checkbox, localNotif.group_request_responses && styles.checkboxChecked]}>
+                      <Text style={styles.checkboxLabel}>
+                        Group approved notifications
+                      </Text>
+                      <View
+                        style={[
+                          styles.checkbox,
+                          localNotif.group_request_responses &&
+                            styles.checkboxChecked,
+                        ]}
+                      >
                         {localNotif.group_request_responses && (
                           <Text style={styles.checkmark}>✓</Text>
                         )}
@@ -488,7 +535,12 @@ export default function CommunicationAndSecurityScreen() {
                   >
                     <View style={styles.checkboxContainer}>
                       <Text style={styles.checkboxLabel}>Join requests</Text>
-                      <View style={[styles.checkbox, localNotif.join_requests && styles.checkboxChecked]}>
+                      <View
+                        style={[
+                          styles.checkbox,
+                          localNotif.join_requests && styles.checkboxChecked,
+                        ]}
+                      >
                         {localNotif.join_requests && (
                           <Text style={styles.checkmark}>✓</Text>
                         )}
@@ -504,8 +556,16 @@ export default function CommunicationAndSecurityScreen() {
                   activeOpacity={0.85}
                 >
                   <View style={styles.checkboxContainer}>
-                    <Text style={styles.checkboxLabel}>Group accepted notifications</Text>
-                    <View style={[styles.checkbox, localNotif.join_request_responses && styles.checkboxChecked]}>
+                    <Text style={styles.checkboxLabel}>
+                      Group accepted notifications
+                    </Text>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        localNotif.join_request_responses &&
+                          styles.checkboxChecked,
+                      ]}
+                    >
                       {localNotif.join_request_responses && (
                         <Text style={styles.checkmark}>✓</Text>
                       )}
@@ -544,7 +604,11 @@ export default function CommunicationAndSecurityScreen() {
             <View style={styles.labelValueRow}>
               <Text style={styles.label}>Email</Text>
               {currentEmail ? (
-                <Text style={styles.currentValue} numberOfLines={1} ellipsizeMode="tail">
+                <Text
+                  style={styles.currentValue}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {currentEmail}
                 </Text>
               ) : (
@@ -598,7 +662,11 @@ export default function CommunicationAndSecurityScreen() {
             <View style={styles.labelValueRow}>
               <Text style={styles.label}>Phone</Text>
               {currentPhone ? (
-                <Text style={styles.currentValue} numberOfLines={1} ellipsizeMode="tail">
+                <Text
+                  style={styles.currentValue}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {currentPhone}
                 </Text>
               ) : (
@@ -695,7 +763,9 @@ export default function CommunicationAndSecurityScreen() {
           <TouchableOpacity
             style={styles.policyLink}
             onPress={() => {
-              Linking.openURL('https://hexagonal-aunt-16f.notion.site/VineMe-T-Cs-40a1160f674f4e87837f70e8513b558a');
+              Linking.openURL(
+                'https://hexagonal-aunt-16f.notion.site/VineMe-T-Cs-40a1160f674f4e87837f70e8513b558a'
+              );
             }}
             activeOpacity={0.7}
           >
@@ -705,7 +775,9 @@ export default function CommunicationAndSecurityScreen() {
           <TouchableOpacity
             style={styles.policyLink}
             onPress={() => {
-              Linking.openURL('https://hexagonal-aunt-16f.notion.site/VineMe-Privacy-Policy-1b7eccb261fd4a4fa053f8c5d09bd7ca');
+              Linking.openURL(
+                'https://hexagonal-aunt-16f.notion.site/VineMe-Privacy-Policy-1b7eccb261fd4a4fa053f8c5d09bd7ca'
+              );
             }}
             activeOpacity={0.7}
           >
@@ -714,13 +786,12 @@ export default function CommunicationAndSecurityScreen() {
           </TouchableOpacity>
         </Card>
       </ScrollView>
-
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
@@ -743,7 +814,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   content: { padding: 16 },
-  card: { 
+  card: {
     marginBottom: 16,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -813,9 +884,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.32, // Match profile page
     lineHeight: 16,
   },
-  actionsRow: { 
-    flexDirection: 'row', 
-    gap: 12, 
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 12,
     marginTop: 8,
     width: '100%',
   },
@@ -828,17 +899,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
-  label: { 
+  label: {
     fontSize: 14, // Match profile page font size
     fontWeight: '600', // SemiBold
-    color: '#2C2235', 
+    color: '#2C2235',
     letterSpacing: -0.32, // Match profile page
     lineHeight: 16,
   },
-  currentValue: { 
+  currentValue: {
     fontSize: 14, // Match profile page font size
     fontWeight: '600', // SemiBold
-    color: '#2C2235', 
+    color: '#2C2235',
     letterSpacing: -0.32, // Match profile page
     lineHeight: 16,
     flex: 1,

@@ -28,7 +28,10 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { ChurchAdminOnly } from '@/components/ui/RoleBasedRender';
 import { useTheme } from '@/theme/provider/useTheme';
 import { getDisplayName, getFullName } from '@/utils/name';
-import { setDeletionFlowActive, isDeletionFlowActive } from '@/utils/errorSuppression';
+import {
+  setDeletionFlowActive,
+  isDeletionFlowActive,
+} from '@/utils/errorSuppression';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthLoadingAnimation } from '@/components/auth/AuthLoadingAnimation';
@@ -57,8 +60,7 @@ export default function ProfileScreen() {
   // Use the new friendship hooks for better data management
   const friendsQuery = useFriends(user?.id);
 
-  const isLoading =
-    profileLoading || friendsQuery.isLoading;
+  const isLoading = profileLoading || friendsQuery.isLoading;
 
   const profileFullName = getFullName(userProfile);
   const profileShortName = getDisplayName(userProfile, { fallback: 'full' });
@@ -70,10 +72,7 @@ export default function ProfileScreen() {
   }, [userProfile?.bio, isEditingBio]);
 
   const handleRefresh = async () => {
-    await Promise.all([
-      refetchProfile(),
-      friendsQuery.refetch(),
-    ]);
+    await Promise.all([refetchProfile(), friendsQuery.refetch()]);
   };
 
   const handleAvatarPress = () => {
@@ -239,42 +238,41 @@ export default function ProfileScreen() {
             try {
               // Set flag FIRST to suppress error screen and post-deletion errors
               setDeletionFlowActive(true);
-              
+
               // Wait a tiny bit for the flag to take effect and prevent error screen flash
-              await new Promise(resolve => setTimeout(resolve, 50));
-              
+              await new Promise((resolve) => setTimeout(resolve, 50));
+
               // Start deletion
               await deleteAccountMutation.mutateAsync(user.id);
-              
+
               // Navigate immediately after successful deletion
               router.replace('/(auth)/welcome');
-              
+
               // Then sign out (this will clear auth state but we've already navigated)
               await signOut();
-              
+
               // Reset flag after a short delay to allow cleanup
               setTimeout(() => setDeletionFlowActive(false), 2000);
             } catch (error) {
               // Reset flag on error so error can be shown
               setDeletionFlowActive(false);
-              
+
               console.error('[handleDeleteAccount] Error:', error);
-              
+
               // Check if it's a sole leader error (expected validation error)
-              const errorMessage = error instanceof Error ? error.message : String(error);
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
               if (errorMessage.includes('sole leader')) {
                 // This is expected user feedback, not a system error
-                Alert.alert(
-                  'Cannot Delete Account',
-                  errorMessage,
-                  [{ text: 'OK' }]
-                );
+                Alert.alert('Cannot Delete Account', errorMessage, [
+                  { text: 'OK' },
+                ]);
                 // Prevent error from being logged as global error
                 return;
               }
-              
+
               // For unexpected errors, show generic message with more details in dev
-              const userMessage = __DEV__ 
+              const userMessage = __DEV__
                 ? `Failed to delete account: ${errorMessage}`
                 : 'Failed to delete account. Please try again.';
               Alert.alert('Error', userMessage);
@@ -287,7 +285,7 @@ export default function ProfileScreen() {
 
   // Don't show error screen during account deletion - user is being navigated away
   const deletionActive = isDeletionFlowActive();
-  
+
   if (profileError && !deletionActive) {
     return (
       <SafeAreaView
@@ -323,7 +321,7 @@ export default function ProfileScreen() {
       </SafeAreaView>
     );
   }
-  
+
   // Show loading state during deletion instead of error
   if (deletionActive || (!userProfile && isLoading)) {
     return (
@@ -388,7 +386,9 @@ export default function ProfileScreen() {
                 <Text style={styles.bioTitle}>Bio</Text>
                 <TouchableOpacity
                   style={styles.bioEditButton}
-                  onPress={isEditingBio ? handleCancelBioEdit : handleStartBioEdit}
+                  onPress={
+                    isEditingBio ? handleCancelBioEdit : handleStartBioEdit
+                  }
                   accessibilityLabel="Edit bio"
                   accessibilityRole="button"
                   activeOpacity={0.8}
@@ -451,11 +451,14 @@ export default function ProfileScreen() {
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Member since</Text>
                 <Text style={styles.infoValue}>
-                  {new Date(userProfile.created_at).toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}
+                  {new Date(userProfile.created_at).toLocaleDateString(
+                    'en-GB',
+                    {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    }
+                  )}
                 </Text>
               </View>
 
@@ -480,7 +483,9 @@ export default function ProfileScreen() {
               {/* Communication & Security Section */}
               <View style={styles.infoItem}>
                 <Text style={styles.infoLabel}>Communication & Security</Text>
-                <TouchableOpacity onPress={() => router.push('/profile/communication')}>
+                <TouchableOpacity
+                  onPress={() => router.push('/profile/communication')}
+                >
                   <Text style={styles.infoLink}>Settings</Text>
                 </TouchableOpacity>
               </View>
@@ -555,7 +560,6 @@ export default function ProfileScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
-
 
       {/* Privacy settings now live in Communication & Security screen */}
 

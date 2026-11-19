@@ -452,9 +452,7 @@ const ChurchsuiteAdminScreen = () => {
               {isLoadingVinemeContacts ? (
                 <Text color="secondary">Loading...</Text>
               ) : vinemeContactsError ? (
-                <ErrorMessage
-                  error={vinemeContactsError as Error}
-                />
+                <ErrorMessage error={vinemeContactsError as Error} />
               ) : !vinemeContacts || vinemeContacts.length === 0 ? (
                 <Text color="secondary">
                   No contacts have been created or matched via VineMe yet.
@@ -478,7 +476,10 @@ const ChurchsuiteAdminScreen = () => {
                         <Text style={styles.contactName}>
                           {contact.first_name} {contact.last_name}
                         </Text>
-                        <Badge variant={isCreated ? 'success' : 'default'} size="small">
+                        <Badge
+                          variant={isCreated ? 'success' : 'default'}
+                          size="small"
+                        >
                           {isCreated ? 'Created' : 'Matched'}
                         </Badge>
                       </View>
@@ -545,6 +546,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
     marginBottom: 12,
   },
   serviceList: {
@@ -558,10 +561,6 @@ const styles = StyleSheet.create({
   siteSelect: {
     marginTop: 4,
     marginBottom: 0,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   contactRow: {
     paddingVertical: 12,

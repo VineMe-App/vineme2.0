@@ -117,11 +117,7 @@ export const SearchBar = forwardRef<TextInput, SearchBarProps>(
             </TouchableOpacity>
           ) : (
             <View style={styles.searchIconContainer}>
-              <Ionicons
-                name="search-outline"
-                size={24}
-                color="#1D1B20"
-              />
+              <Ionicons name="search-outline" size={24} color="#1D1B20" />
             </View>
           )}
         </View>

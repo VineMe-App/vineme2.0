@@ -19,7 +19,8 @@ const HomeHeader = () => {
   const { user } = useAuthStore();
   const { count: unreadCount } = useNotificationBadge(user?.id);
   // Ensure unreadCount is a valid number (0 or positive integer)
-  const badgeCount = typeof unreadCount === 'number' && unreadCount > 0 ? unreadCount : 0;
+  const badgeCount =
+    typeof unreadCount === 'number' && unreadCount > 0 ? unreadCount : 0;
 
   const handleNotificationPress = () => {
     // Navigate to the notifications page
@@ -125,8 +126,7 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   // Nudge bottom padding slightly to avoid marginal cutoff on Android
   const androidBottomPadding = Math.max(insets.bottom + 4, 12);
-  const tabBarHeight =
-    Platform.OS === 'ios' ? 85 : 56 + androidBottomPadding;
+  const tabBarHeight = Platform.OS === 'ios' ? 85 : 56 + androidBottomPadding;
   const headerHeight = 44 + insets.top;
   const profileHeaderHeight = 60 + insets.top;
 

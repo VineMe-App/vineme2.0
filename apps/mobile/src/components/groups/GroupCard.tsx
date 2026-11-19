@@ -52,9 +52,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   variant = 'all-groups', // Default to 'all-groups' for backward compatibility
   showLocation = true,
 }) => {
-  // Guard against null/undefined groups coming from callers
-  if (!group) return null;
-
   const router = useRouter();
   const { theme } = useTheme();
 
@@ -89,10 +86,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   const [showPendingTip, setShowPendingTip] = React.useState(false);
 
-  const isAwaitingVerification = group.status === 'pending';
+  const isAwaitingVerification = group?.status === 'pending';
   const hasCustomPending = Boolean(pendingLabel);
-  const isCreator = currentUserId && group.created_by === currentUserId;
-  
+  const isCreator = currentUserId && group?.created_by === currentUserId;
+
   // Check if current user is a leader
   const isCurrentUserLeader = React.useMemo(() => {
     if (!currentUserId || !leaders) return false;
@@ -103,17 +100,17 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     if (!leader?.id) return;
     router.push(`/user/${leader.id}`);
   };
-  
+
   const badgeLabel = hasCustomPending
     ? pendingLabel || 'Join request pending'
     : isCreator
-    ? 'Group creation pending'
-    : 'Awaiting Confirmation';
+      ? 'Group creation pending'
+      : 'Awaiting Confirmation';
   const tooltipMessage = hasCustomPending
     ? pendingTooltip
     : isCreator
-    ? 'Your group request has been sent to church administrators for approval. They will be in touch to discuss your group.'
-    : 'A member of your clergy has received your request and will be in touch to approve or discuss.';
+      ? 'Your group request has been sent to church administrators for approval. They will be in touch to discuss your group.'
+      : 'A member of your clergy has received your request and will be in touch to approve or discuss.';
   const showPendingBadge = isAwaitingVerification || hasCustomPending;
   const shouldBlockNavigation = showPendingBadge;
   const pressAnim = React.useRef(new Animated.Value(0)).current;
@@ -153,6 +150,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     }).start();
   }, [pressAnim, shouldBlockNavigation]);
 
+  // Guard against null/undefined groups coming from callers
+  if (!group) return null;
+
   const pulseOpacity = pressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 0.18],
@@ -160,10 +160,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   return (
     <TouchableOpacity
-      style={[
-        styles.card,
-        style,
-      ]}
+      style={[styles.card, style]}
       onPress={shouldBlockNavigation ? undefined : onPress}
       activeOpacity={0.7}
       onPressIn={handlePressIn}
@@ -259,22 +256,26 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
         {/* Info Section */}
         {/* Apply infoMyGroups to ALL cards on my-groups page, regardless of leader status */}
-        <View style={[
-          styles.info,
-          variant === 'my-groups' ? styles.infoMyGroups : styles.infoAllGroups,
-          // Add extra padding when there are 4 or more leaders to prevent text from getting too close
-          // Square container is 108px wide, positioned 20px from right = 128px minimum + extra spacing
-          leaders && leaders.length >= 4 
-            ? { paddingRight: variant === 'all-groups' ? 140 : 130 }
-            : null
-        ]}>
+        <View
+          style={[
+            styles.info,
+            variant === 'my-groups'
+              ? styles.infoMyGroups
+              : styles.infoAllGroups,
+            // Add extra padding when there are 4 or more leaders to prevent text from getting too close
+            // Square container is 108px wide, positioned 20px from right = 128px minimum + extra spacing
+            leaders && leaders.length >= 4
+              ? { paddingRight: variant === 'all-groups' ? 140 : 130 }
+              : null,
+          ]}
+        >
           {/* Group Name */}
           <Text
             variant="h6"
             weight="bold"
             style={[
               styles.groupName,
-              variant === 'my-groups' && styles.groupNameMyGroups
+              variant === 'my-groups' && styles.groupNameMyGroups,
             ]}
             numberOfLines={variant === 'my-groups' ? 1 : 2}
             ellipsizeMode="tail"
@@ -283,10 +284,14 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </Text>
 
           {/* Details */}
-          <View style={[
-            styles.details,
-            variant === 'my-groups' ? styles.detailsMyGroups : styles.detailsAllGroups
-          ]}>
+          <View
+            style={[
+              styles.details,
+              variant === 'my-groups'
+                ? styles.detailsMyGroups
+                : styles.detailsAllGroups,
+            ]}
+          >
             {/* Time */}
             {group.meeting_day && group.meeting_time && (
               <View style={styles.detailRow}>
@@ -296,7 +301,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   weight="medium"
                   style={[
                     styles.detailText,
-                    variant === 'my-groups' && styles.detailTextMyGroups
+                    variant === 'my-groups' && styles.detailTextMyGroups,
                   ]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
@@ -324,7 +329,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {/* Capacity */}
             <View style={[styles.detailRow, styles.capacityRow]}>
               <Ionicons
-                name={group.at_capacity ? 'close-circle-outline' : 'checkmark-circle-outline'}
+                name={
+                  group.at_capacity
+                    ? 'close-circle-outline'
+                    : 'checkmark-circle-outline'
+                }
                 size={16}
                 color={group.at_capacity ? '#c2410c' : '#15803d'}
                 style={styles.detailIcon}
@@ -345,17 +354,19 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
             {/* Location */}
             {showLocation && (
-              <View style={[
-                styles.detailRow,
-                variant === 'my-groups' && styles.detailRowNoWrap
-              ]}>
+              <View
+                style={[
+                  styles.detailRow,
+                  variant === 'my-groups' && styles.detailRowNoWrap,
+                ]}
+              >
                 <Ionicons name="location-outline" size={16} color="#2C2235" />
                 <Text
                   variant="bodySmall"
                   weight="medium"
                   style={[
                     styles.detailText,
-                    variant === 'my-groups' && styles.detailTextMyGroups
+                    variant === 'my-groups' && styles.detailTextMyGroups,
                   ]}
                   numberOfLines={variant === 'my-groups' ? 1 : 2}
                   ellipsizeMode="tail"
@@ -383,18 +394,25 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   {leaders.length === 1
                     ? `Led by ${leaders[0].name || 'Unknown'}`
                     : leaders.length === 2
-                    ? `Led by ${leaders[0].name || 'Unknown'} and ${leaders[1].name || 'Unknown'}`
-                    : `Led by ${leaders.slice(0, -1).map(l => l.name || 'Unknown').join(', ')}, and ${leaders[leaders.length - 1].name || 'Unknown'}`}
+                      ? `Led by ${leaders[0].name || 'Unknown'} and ${leaders[1].name || 'Unknown'}`
+                      : `Led by ${leaders
+                          .slice(0, -1)
+                          .map((l) => l.name || 'Unknown')
+                          .join(
+                            ', '
+                          )}, and ${leaders[leaders.length - 1].name || 'Unknown'}`}
                 </Text>
               </View>
             )}
 
             {/* Church and Service */}
             {churchAndServiceLabel && (
-              <View style={[
-                styles.detailRow,
-                variant === 'my-groups' && styles.detailRowNoWrap
-              ]}>
+              <View
+                style={[
+                  styles.detailRow,
+                  variant === 'my-groups' && styles.detailRowNoWrap,
+                ]}
+              >
                 <Ionicons name="business-outline" size={16} color="#2C2235" />
                 <Text
                   variant="bodySmall"
@@ -408,15 +426,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               </View>
             )}
           </View>
-          
+
           {/* Description for my-groups variant */}
           {variant === 'my-groups' && (
-            <Text 
+            <Text
               style={styles.descriptionText}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {group.description || 'Insert important group info or description here'}
+              {group.description ||
+                'Insert important group info or description here'}
             </Text>
           )}
         </View>

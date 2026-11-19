@@ -80,8 +80,8 @@ export function FriendManagementModal({
           {showSearch ? (
             <FriendSearch onClose={() => setShowSearch(false)} />
           ) : (
-            <FriendsList 
-              userId={userId} 
+            <FriendsList
+              userId={userId}
               onViewProfile={handleViewProfile}
               onAddFriend={handleAddFriend}
             />

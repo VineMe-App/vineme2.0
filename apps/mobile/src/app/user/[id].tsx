@@ -267,8 +267,10 @@ export default function OtherUserProfileScreen() {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const params =
-    useLocalSearchParams<{ id?: string; fromNotification?: string }>();
+  const params = useLocalSearchParams<{
+    id?: string;
+    fromNotification?: string;
+  }>();
   const targetUserId = useMemo(
     () => (Array.isArray(params.id) ? params.id[0] : params.id),
     [params.id]
@@ -322,7 +324,7 @@ export default function OtherUserProfileScreen() {
   );
 
   const canNavigateGroups = isSelf || isViewerAdmin || isFriend || isSameChurch;
-  
+
   const visibleMemberships = useMemo(() => {
     if (!memberships?.length) return [];
 
@@ -454,15 +456,17 @@ export default function OtherUserProfileScreen() {
       >
         <Ionicons name="chevron-back" size={20} color="#2C2235" />
       </TouchableOpacity>
-      
-      <ScrollView 
-        style={styles.content} 
+
+      <ScrollView
+        style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
         {profile && (
           <>
-            <View style={[styles.headerSection, { paddingTop: insets.top + 50 }]}>
+            <View
+              style={[styles.headerSection, { paddingTop: insets.top + 50 }]}
+            >
               <Avatar
                 size={121}
                 imageUrl={profile.avatar_url}

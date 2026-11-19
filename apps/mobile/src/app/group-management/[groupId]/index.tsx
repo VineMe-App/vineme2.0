@@ -55,7 +55,11 @@ export default function GroupManagementScreen() {
               style={styles.headerBackButton}
             >
               <Ionicons name="chevron-back" size={20} color="#007AFF" />
-              <Text variant="body" color="primary" style={styles.headerBackText}>
+              <Text
+                variant="body"
+                color="primary"
+                style={styles.headerBackText}
+              >
                 Back
               </Text>
             </TouchableOpacity>

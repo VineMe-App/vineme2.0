@@ -60,7 +60,7 @@ export default function CreateGroupPage() {
             >
               <Ionicons name="chevron-back" size={20} color="#2C2235" />
             </TouchableOpacity>
-            
+
             <Text
               numberOfLines={1}
               style={{

@@ -38,18 +38,18 @@ const MEETING_DAYS = [
  */
 const normalizeMeetingDay = (day: string | undefined | null): string => {
   if (!day) return '';
-  
+
   const dayLower = day.toLowerCase().trim();
   const dayMap: Record<string, string> = {
-    'sunday': 'Sunday',
-    'monday': 'Monday',
-    'tuesday': 'Tuesday',
-    'wednesday': 'Wednesday',
-    'thursday': 'Thursday',
-    'friday': 'Friday',
-    'saturday': 'Saturday',
+    sunday: 'Sunday',
+    monday: 'Monday',
+    tuesday: 'Tuesday',
+    wednesday: 'Wednesday',
+    thursday: 'Thursday',
+    friday: 'Friday',
+    saturday: 'Saturday',
   };
-  
+
   return dayMap[dayLower] || day; // Return original if not found (shouldn't happen)
 };
 
@@ -249,16 +249,16 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
             if (!value || typeof value !== 'string') {
               return 'This field is required';
             }
-            
+
             const trimmed = value.trim();
             if (!trimmed) {
               return 'This field is required';
             }
-            
+
             // Check for 12-hour format with AM/PM
             const time12HourPattern = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i;
             const match = trimmed.match(time12HourPattern);
-            
+
             if (!match) {
               // Check if it's 24-hour format (invalid)
               const time24HourPattern = /^(\d{1,2}):(\d{2})$/;
@@ -271,20 +271,20 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
               }
               return 'Invalid time format. Please use format: HH:MM AM/PM (e.g., 2:30 PM)';
             }
-            
+
             const hour = parseInt(match[1], 10);
             const minute = parseInt(match[2], 10);
-            
+
             // Validate hour range (1-12 for 12-hour format)
             if (hour < 1 || hour > 12) {
               return 'Hour must be between 1 and 12';
             }
-            
+
             // Validate minute range (0-59)
             if (minute < 0 || minute > 59) {
               return 'Minutes must be between 00 and 59';
             }
-            
+
             return undefined;
           },
         },
@@ -395,7 +395,10 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Subtitle */}
       {subTitle && <Text style={styles.pageSubtitle}>{subTitle}</Text>}
 
@@ -439,7 +442,12 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
               <Text style={styles.inputLabel}>
                 Group name<Text style={styles.requiredAsterisk}>*</Text>
               </Text>
-              <View style={[styles.inputBorderWrapper, error && styles.inputBorderWrapperError]}>
+              <View
+                style={[
+                  styles.inputBorderWrapper,
+                  error && styles.inputBorderWrapperError,
+                ]}
+              >
                 <Input
                   value={value}
                   onChangeText={onChange}
@@ -463,7 +471,13 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
               <Text style={styles.inputLabel}>
                 Description<Text style={styles.requiredAsterisk}>*</Text>
               </Text>
-              <View style={[styles.inputBorderWrapper, styles.textAreaBorderWrapper, error && styles.inputBorderWrapperError]}>
+              <View
+                style={[
+                  styles.inputBorderWrapper,
+                  styles.textAreaBorderWrapper,
+                  error && styles.inputBorderWrapperError,
+                ]}
+              >
                 <Input
                   value={value}
                   onChangeText={onChange}
@@ -471,7 +485,10 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                   placeholder="What can people expect from your group"
                   placeholderTextColor="#999999"
                   containerStyle={styles.inputContainerOverride}
-                  inputStyle={StyleSheet.flatten([styles.textInput, styles.textAreaInput])}
+                  inputStyle={StyleSheet.flatten([
+                    styles.textInput,
+                    styles.textAreaInput,
+                  ])}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -512,7 +529,7 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
             const timeMatch = value?.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
             let timeValue = '';
             let meridiem = 'AM';
-            
+
             if (timeMatch) {
               // Complete format with colon
               timeValue = `${timeMatch[1]}:${timeMatch[2]}`;
@@ -523,52 +540,64 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
               if (meridiemMatch) {
                 meridiem = meridiemMatch[1].toUpperCase();
               }
-              
+
               // Extract digits and format them
               const digitsOnly = value.replace(/[^\d]/g, '');
               if (digitsOnly.length > 0) {
                 // Format based on digit count
                 if (digitsOnly.length === 3) {
                   // 3 digits: first digit is hour, last 2 are minutes
-                  timeValue = digitsOnly.substring(0, 1) + ':' + digitsOnly.substring(1, 3);
+                  timeValue =
+                    digitsOnly.substring(0, 1) +
+                    ':' +
+                    digitsOnly.substring(1, 3);
                 } else if (digitsOnly.length <= 2) {
                   // 1-2 digits: show as-is
                   timeValue = digitsOnly;
                 } else {
                   // 4+ digits: first 2 are hours, next 2 are minutes
-                  timeValue = digitsOnly.substring(0, 2) + ':' + digitsOnly.substring(2, 4);
+                  timeValue =
+                    digitsOnly.substring(0, 2) +
+                    ':' +
+                    digitsOnly.substring(2, 4);
                 }
               }
             }
-            
+
             const handleTimeChange = (text: string) => {
               // Remove any non-numeric characters except colon
               let cleanText = text.replace(/[^\d:]/g, '');
-              
+
               // Remove existing colons to rebuild format
               const digitsOnly = cleanText.replace(/:/g, '');
-              
+
               let formatted = '';
               if (digitsOnly.length > 0) {
                 // Handle different digit lengths
                 if (digitsOnly.length === 3) {
                   // Special case: 3 digits = first digit is hour, last 2 are minutes
                   // e.g., "730" becomes "7:30"
-                  formatted = digitsOnly.substring(0, 1) + ':' + digitsOnly.substring(1, 3);
+                  formatted =
+                    digitsOnly.substring(0, 1) +
+                    ':' +
+                    digitsOnly.substring(1, 3);
                 } else if (digitsOnly.length <= 2) {
                   // 1-2 digits: just show as-is (partial input)
                   formatted = digitsOnly;
                 } else {
                   // 4+ digits: first 2 are hours, next 2 are minutes
-                  formatted = digitsOnly.substring(0, 2) + ':' + digitsOnly.substring(2, 4);
+                  formatted =
+                    digitsOnly.substring(0, 2) +
+                    ':' +
+                    digitsOnly.substring(2, 4);
                 }
               }
-              
+
               // Limit to HH:MM format (max 5 characters: "12:34")
               if (formatted.length > 5) {
                 formatted = formatted.substring(0, 5);
               }
-              
+
               // Combine with current meridiem
               const newValue = formatted ? `${formatted} ${meridiem}` : '';
               onChange(newValue);
@@ -588,7 +617,12 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
                   Group time<Text style={styles.requiredAsterisk}>*</Text>
                 </Text>
                 <View style={styles.timeInputRow}>
-                  <View style={[styles.timeInputWrapper, error && styles.inputBorderWrapperError]}>
+                  <View
+                    style={[
+                      styles.timeInputWrapper,
+                      error && styles.inputBorderWrapperError,
+                    ]}
+                  >
                     <Input
                       value={timeValue}
                       onChangeText={handleTimeChange}
@@ -664,7 +698,8 @@ export const GroupEditorForm: React.FC<GroupEditorFormProps> = ({
               <Text style={styles.safetyReminderTitle}>Safety reminder</Text>
             </View>
             <Text style={styles.safetyReminderText}>
-              Please avoid placing the pin directly on your home address for safety.
+              Please avoid placing the pin directly on your home address for
+              safety.
             </Text>
             <View style={styles.safetyCheckboxRow}>
               <Checkbox

@@ -20,7 +20,7 @@ export const userKeys = {
 export const useUserProfile = (userId: string | undefined) => {
   // Import here to avoid circular dependencies
   const { isDeletionFlowActive } = require('../utils/errorSuppression');
-  
+
   return useQuery({
     queryKey: userKeys.profile(userId || ''),
     queryFn: async () => {
@@ -229,20 +229,20 @@ export const useDeleteAvatar = () => {
 export const useDeleteAccount = () => {
   const queryClient = useQueryClient();
   const { setDeletionFlowActive } = require('../utils/errorSuppression');
-  
+
   return useMutation({
     mutationFn: async (userId: string) => {
       // Set deletion flow flag BEFORE cancelling queries
       // This ensures queries won't retry when cancelled
       setDeletionFlowActive(true);
-      
+
       // Cancel all running queries before deletion to prevent them from completing
       // after the user is deleted, which could cause errors
       await queryClient.cancelQueries();
-      
+
       // Remove all queries from cache to prevent any new queries from running
       queryClient.removeQueries();
-      
+
       const { data, error } = await userService.deleteAccount(userId);
       if (error) {
         // Reset flag on error

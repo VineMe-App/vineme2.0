@@ -211,9 +211,7 @@ export function OptimizedImage({
   return (
     <View ref={containerRef} style={containerStyle}>
       {isLoading && (
-        <View style={styles.loadingOverlay}>
-          {renderPlaceholder()}
-        </View>
+        <View style={styles.loadingOverlay}>{renderPlaceholder()}</View>
       )}
       <Image
         ref={imageRef}

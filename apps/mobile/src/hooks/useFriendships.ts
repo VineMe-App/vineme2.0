@@ -398,7 +398,9 @@ export function useAcceptRejectedFriendRequest() {
     onSuccess: (_data, senderId) => {
       if (user?.id) {
         queryClient.invalidateQueries({ queryKey: friendshipKeys.all });
-        queryClient.invalidateQueries({ queryKey: friendshipKeys.friends(user.id) });
+        queryClient.invalidateQueries({
+          queryKey: friendshipKeys.friends(user.id),
+        });
         queryClient.invalidateQueries({
           queryKey: friendshipKeys.status(user.id, senderId),
         });

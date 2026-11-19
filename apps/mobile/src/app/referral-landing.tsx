@@ -46,11 +46,7 @@ export default function ReferralLandingPage() {
         >
           <Ionicons name="chevron-back" size={20} color="#2C2235" />
         </TouchableOpacity>
-        <Text
-          variant="h3"
-          weight="bold"
-          style={styles.headerTitle}
-        >
+        <Text variant="h3" weight="bold" style={styles.headerTitle}>
           Connect a friend
         </Text>
       </View>
@@ -61,11 +57,7 @@ export default function ReferralLandingPage() {
         showsVerticalScrollIndicator={false}
       >
         {/* Description */}
-        <Text
-          variant="body"
-          weight="normal"
-          style={styles.description}
-        >
+        <Text variant="body" weight="normal" style={styles.description}>
           Choose the option that fits best. Both options will create an account
           for the person you refer and email them to finish setup.
         </Text>
@@ -80,11 +72,7 @@ export default function ReferralLandingPage() {
           >
             <View style={styles.optionContent}>
               <View style={styles.optionTextContainer}>
-                <Text
-                  variant="body"
-                  weight="bold"
-                  style={styles.optionTitle}
-                >
+                <Text variant="body" weight="bold" style={styles.optionTitle}>
                   Yes, I know a group that fits
                 </Text>
                 <Text
@@ -92,8 +80,8 @@ export default function ReferralLandingPage() {
                   weight="normal"
                   style={styles.optionDescription}
                 >
-                  Browse and search groups, then use "Refer a friend" to
-                  connect them.
+                  Browse and search groups, then use "Refer a friend" to connect
+                  them.
                 </Text>
               </View>
               <Ionicons
@@ -113,11 +101,7 @@ export default function ReferralLandingPage() {
           >
             <View style={styles.optionContent}>
               <View style={styles.optionTextContainer}>
-                <Text
-                  variant="body"
-                  weight="bold"
-                  style={styles.optionTitle}
-                >
+                <Text variant="body" weight="bold" style={styles.optionTitle}>
                   No specific group fits
                 </Text>
                 <Text

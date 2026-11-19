@@ -74,9 +74,12 @@ export function handleSupabaseError(
     ...context,
     isPostDeletion: context?.isPostDeletion ?? isDeletionFlowActive(),
   };
-  
+
   if (isPostDeletionError(error, deletionContext)) {
-    return createSilentError(error, 'Resource not found (expected after account deletion)');
+    return createSilentError(
+      error,
+      'Resource not found (expected after account deletion)'
+    );
   }
 
   if ('code' in error && error.code) {

@@ -37,7 +37,9 @@ export default function GroupDetailScreen() {
   const { data: membershipData, refetch: refetchMembership } =
     useGroupMembership(id, userProfile?.id);
 
-  const { refetch: refetchUserJoinRequests } = useUserJoinRequests(userProfile?.id);
+  const { refetch: refetchUserJoinRequests } = useUserJoinRequests(
+    userProfile?.id
+  );
 
   // Check if user can manage the group (is a leader)
   const canManageGroup = React.useMemo(() => {
@@ -90,7 +92,7 @@ export default function GroupDetailScreen() {
               >
                 <Ionicons name="chevron-back" size={20} color="#2C2235" />
               </TouchableOpacity>
-              
+
               <Text
                 numberOfLines={1}
                 style={{
@@ -128,8 +130,8 @@ export default function GroupDetailScreen() {
                 )}
                 <TouchableOpacity
                   onPress={handleShare}
-                  style={{ 
-                    paddingVertical: 6, 
+                  style={{
+                    paddingVertical: 6,
                     paddingHorizontal: 8,
                     width: 34,
                     height: 34,

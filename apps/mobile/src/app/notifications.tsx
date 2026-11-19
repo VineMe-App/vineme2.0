@@ -1,5 +1,13 @@
 import React, { useMemo, useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Platform, Keyboard } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+  Platform,
+  Keyboard,
+} from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,9 +65,10 @@ export default function NotificationsScreen() {
   }, []);
 
   // Position button: above keyboard when open, otherwise above tab bar
-  const buttonBottom = keyboardHeight > 0 
-    ? keyboardHeight + 8 // 8px spacing above keyboard
-    : tabBarHeight - 40; // Closer to bottom of screen (20px above tab bar)
+  const buttonBottom =
+    keyboardHeight > 0
+      ? keyboardHeight + 8 // 8px spacing above keyboard
+      : tabBarHeight - 40; // Closer to bottom of screen (20px above tab bar)
 
   const {
     notifications,
@@ -88,7 +97,10 @@ export default function NotificationsScreen() {
             }
             break;
           case 'friend_request_accepted':
-            if (data.acceptedByUserId && typeof data.acceptedByUserId === 'string') {
+            if (
+              data.acceptedByUserId &&
+              typeof data.acceptedByUserId === 'string'
+            ) {
               ids.add(data.acceptedByUserId);
             }
             break;
@@ -101,7 +113,10 @@ export default function NotificationsScreen() {
           case 'group_request_denied':
             // For group request approved/denied, show the requester's (current user's) avatar
             // The notification.user_id is the requester
-            if (notification.user_id && typeof notification.user_id === 'string') {
+            if (
+              notification.user_id &&
+              typeof notification.user_id === 'string'
+            ) {
               ids.add(notification.user_id);
             }
             break;
@@ -116,7 +131,10 @@ export default function NotificationsScreen() {
             break;
           case 'referral_accepted':
           case 'referral_joined_group':
-            if (data.referredUserId && typeof data.referredUserId === 'string') {
+            if (
+              data.referredUserId &&
+              typeof data.referredUserId === 'string'
+            ) {
               ids.add(data.referredUserId);
             }
             break;
@@ -128,33 +146,42 @@ export default function NotificationsScreen() {
   }, [notifications]);
 
   // Batch fetch user avatars
-  const { data: userAvatars } = useQuery<Record<string, { avatar_url: string | null; name?: string }>>({
+  const { data: userAvatars } = useQuery<
+    Record<string, { avatar_url: string | null; name?: string }>
+  >({
     queryKey: ['user-avatars', userIds.sort().join(',')], // Sort to ensure stable key
     queryFn: async () => {
       if (userIds.length === 0) return {};
-      
+
       try {
         const { data, error } = await supabase
           .from('users')
           .select('id, avatar_url, first_name, last_name')
           .in('id', userIds);
-        
+
         if (error) {
           console.error('Error fetching user avatars:', error);
           return {};
         }
-        
-        const avatarMap: Record<string, { avatar_url: string | null; name?: string }> = {};
+
+        const avatarMap: Record<
+          string,
+          { avatar_url: string | null; name?: string }
+        > = {};
         data?.forEach((user) => {
-          const fullName = user.first_name && user.last_name 
-            ? `${user.first_name} ${user.last_name}`.trim()
-            : (user.first_name || user.last_name || undefined);
+          const fullName =
+            user.first_name && user.last_name
+              ? `${user.first_name} ${user.last_name}`.trim()
+              : user.first_name || user.last_name || undefined;
           avatarMap[user.id] = {
-            avatar_url: user.avatar_url && user.avatar_url.trim() ? user.avatar_url : null,
+            avatar_url:
+              user.avatar_url && user.avatar_url.trim()
+                ? user.avatar_url
+                : null,
             name: fullName,
           };
         });
-        
+
         return avatarMap;
       } catch (err) {
         console.error('Exception fetching user avatars:', err);
@@ -260,7 +287,11 @@ export default function NotificationsScreen() {
       {/* Mark all as read button - Always visible at bottom */}
       <View style={[styles.markAllContainer, { bottom: buttonBottom }]}>
         <Button
-          title={unreadCount > 0 ? `Mark all as read (${unreadCount})` : 'Mark all as read'}
+          title={
+            unreadCount > 0
+              ? `Mark all as read (${unreadCount})`
+              : 'Mark all as read'
+          }
           variant="secondary"
           onPress={() => markAllAsRead()}
           style={styles.markAllButton}

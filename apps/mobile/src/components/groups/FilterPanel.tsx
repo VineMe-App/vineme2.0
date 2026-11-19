@@ -66,11 +66,17 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   };
 
   const handleOnlyWithFriendsToggle = () => {
-    setTempFilters({ ...tempFilters, onlyWithFriends: !tempFilters.onlyWithFriends });
+    setTempFilters({
+      ...tempFilters,
+      onlyWithFriends: !tempFilters.onlyWithFriends,
+    });
   };
 
   const handleHideFullGroupsToggle = () => {
-    setTempFilters({ ...tempFilters, hideFullGroups: !tempFilters.hideFullGroups });
+    setTempFilters({
+      ...tempFilters,
+      hideFullGroups: !tempFilters.hideFullGroups,
+    });
   };
 
   const handleOnlyMyChurchToggle = () => {
@@ -109,133 +115,136 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       />
       <View style={styles.container}>
         <View style={styles.panelContent}>
-        {/* Close Button */}
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="close" size={24} color="#2C2235" />
-        </TouchableOpacity>
+          {/* Close Button */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="close" size={24} color="#2C2235" />
+          </TouchableOpacity>
 
-        {/* Title */}
-        <Text style={styles.title}>Filter groups</Text>
+          {/* Title */}
+          <Text style={styles.title}>Filter groups</Text>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Meeting Days Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Meeting days</Text>
-            <View style={styles.buttonGrid}>
-              {MEETING_DAYS.map((day) => {
-                const isActive = tempFilters.meetingDays.includes(day.value);
-                return (
-                  <TouchableOpacity
-                    key={day.value}
-                    style={[
-                      styles.filterButton,
-                      isActive && styles.filterButtonActive,
-                    ]}
-                    onPress={() => handleMeetingDayToggle(day.value)}
-                  >
-                    <Text
-                      style={[
-                        styles.filterButtonText,
-                        isActive && styles.filterButtonTextActive,
-                      ]}
-                    >
-                      {day.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Social Filters */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Social</Text>
-            <View style={styles.buttonGrid}>
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  tempFilters.onlyWithFriends && styles.filterButtonActive,
-                ]}
-                onPress={handleOnlyWithFriendsToggle}
-              >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    tempFilters.onlyWithFriends && styles.filterButtonTextActive,
-                  ]}
-                >
-                  Only groups with my friends
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Availability Filters */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Availability</Text>
-            <View style={styles.buttonGrid}>
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  tempFilters.hideFullGroups && styles.filterButtonActive,
-                ]}
-                onPress={handleHideFullGroupsToggle}
-              >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    tempFilters.hideFullGroups && styles.filterButtonTextActive,
-                  ]}
-                >
-                  Show only available groups
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {canFilterByChurch && (
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Meeting Days Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Church</Text>
+              <Text style={styles.sectionTitle}>Meeting days</Text>
+              <View style={styles.buttonGrid}>
+                {MEETING_DAYS.map((day) => {
+                  const isActive = tempFilters.meetingDays.includes(day.value);
+                  return (
+                    <TouchableOpacity
+                      key={day.value}
+                      style={[
+                        styles.filterButton,
+                        isActive && styles.filterButtonActive,
+                      ]}
+                      onPress={() => handleMeetingDayToggle(day.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterButtonText,
+                          isActive && styles.filterButtonTextActive,
+                        ]}
+                      >
+                        {day.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Social Filters */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Social</Text>
               <View style={styles.buttonGrid}>
                 <TouchableOpacity
                   style={[
                     styles.filterButton,
-                    tempFilters.onlyMyChurch && styles.filterButtonActive,
+                    tempFilters.onlyWithFriends && styles.filterButtonActive,
                   ]}
-                  onPress={handleOnlyMyChurchToggle}
+                  onPress={handleOnlyWithFriendsToggle}
                 >
                   <Text
                     style={[
                       styles.filterButtonText,
-                      tempFilters.onlyMyChurch && styles.filterButtonTextActive,
+                      tempFilters.onlyWithFriends &&
+                        styles.filterButtonTextActive,
                     ]}
                   >
-                    Only my church
+                    Only groups with my friends
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
-          )}
-        </ScrollView>
 
-        {/* Action Buttons */}
-        <View style={styles.footerActions}>
-          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-            <Text style={styles.resetButtonText}>Reset</Text>
-          </TouchableOpacity>
+            {/* Availability Filters */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Availability</Text>
+              <View style={styles.buttonGrid}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    tempFilters.hideFullGroups && styles.filterButtonActive,
+                  ]}
+                  onPress={handleHideFullGroupsToggle}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      tempFilters.hideFullGroups &&
+                        styles.filterButtonTextActive,
+                    ]}
+                  >
+                    Show only available groups
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
-          <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-            <Text style={styles.applyButtonText}>Apply</Text>
-          </TouchableOpacity>
-        </View>
+            {canFilterByChurch && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Church</Text>
+                <View style={styles.buttonGrid}>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterButton,
+                      tempFilters.onlyMyChurch && styles.filterButtonActive,
+                    ]}
+                    onPress={handleOnlyMyChurchToggle}
+                  >
+                    <Text
+                      style={[
+                        styles.filterButtonText,
+                        tempFilters.onlyMyChurch &&
+                          styles.filterButtonTextActive,
+                      ]}
+                    >
+                      Only my church
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={styles.footerActions}>
+            <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+              <Text style={styles.resetButtonText}>Reset</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+              <Text style={styles.applyButtonText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </>

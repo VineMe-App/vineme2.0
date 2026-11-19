@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Keyboard,
+  Platform,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import type { OnboardingStepProps } from '@/types/app';
 import { useAuthStore } from '@/stores/auth';
 import { AuthButton } from '@/components/auth/AuthButton';
@@ -84,7 +92,8 @@ export default function EmailStep({
 
         if (!updateSuccess) {
           const latestError =
-            useAuthStore.getState().error || 'Failed to update preferences. Please try again.';
+            useAuthStore.getState().error ||
+            'Failed to update preferences. Please try again.';
           setError(latestError);
           return;
         }
@@ -109,7 +118,12 @@ export default function EmailStep({
         >
           {!isKeyboardVisible && (
             <View style={styles.header}>
-              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+              <Text
+                variant="h4"
+                weight="extraBold"
+                align="center"
+                style={styles.title}
+              >
                 What's your email?
               </Text>
               <Text
@@ -124,7 +138,12 @@ export default function EmailStep({
           )}
           {isKeyboardVisible && (
             <View style={styles.keyboardHeader}>
-              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+              <Text
+                variant="h4"
+                weight="extraBold"
+                align="center"
+                style={styles.title}
+              >
                 What's your email?
               </Text>
               <Text
@@ -157,7 +176,11 @@ export default function EmailStep({
                 textContentType="emailAddress"
               />
               {error && (
-                <Text variant="bodySmall" color="error" style={styles.errorText}>
+                <Text
+                  variant="bodySmall"
+                  color="error"
+                  style={styles.errorText}
+                >
                   {error}
                 </Text>
               )}
@@ -169,10 +192,13 @@ export default function EmailStep({
               disabled={isLoading}
               activeOpacity={0.85}
             >
-              <View style={[styles.checkbox, newsletterOptIn && styles.checkboxChecked]}>
-                {newsletterOptIn && (
-                  <Text style={styles.checkmark}>✓</Text>
-                )}
+              <View
+                style={[
+                  styles.checkbox,
+                  newsletterOptIn && styles.checkboxChecked,
+                ]}
+              >
+                {newsletterOptIn && <Text style={styles.checkmark}>✓</Text>}
               </View>
               <Text style={styles.checkboxLabel}>
                 Send me news and updates.

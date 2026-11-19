@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Image, StyleSheet, ImageSourcePropType, ViewStyle, TextStyle } from 'react-native';
+import {
+  View,
+  Image,
+  StyleSheet,
+  ImageSourcePropType,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 import { Text } from '@/components/ui/Text';
 
 const defaultLogo = require('../../../assets/figma-105-1538/47c97a3de297c8957bfbc742d3e4396bccd0d31a.png');
@@ -73,9 +80,7 @@ export const AuthHeroLogo: React.FC<AuthHeroLogoProps> = ({
           {title}
         </Text>
       )}
-      {subtitle && (
-        <Text style={getSubtitleStyles()}>{subtitle}</Text>
-      )}
+      {subtitle && <Text style={getSubtitleStyles()}>{subtitle}</Text>}
     </View>
   );
 };
@@ -99,4 +104,3 @@ const styles = StyleSheet.create({
 });
 
 export default AuthHeroLogo;
-

@@ -106,7 +106,12 @@ export default function NameStep({
         >
           {!isKeyboardVisible && (
             <View style={styles.header}>
-              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+              <Text
+                variant="h4"
+                weight="extraBold"
+                align="center"
+                style={styles.title}
+              >
                 What's your name?
               </Text>
               <Text
@@ -115,13 +120,19 @@ export default function NameStep({
                 align="center"
                 style={styles.subtitle}
               >
-                Share your first and last name so your church community can recognize you.
+                Share your first and last name so your church community can
+                recognize you.
               </Text>
             </View>
           )}
           {isKeyboardVisible && (
             <View style={styles.keyboardHeader}>
-              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+              <Text
+                variant="h4"
+                weight="extraBold"
+                align="center"
+                style={styles.title}
+              >
                 What's your name?
               </Text>
               <Text
@@ -130,7 +141,8 @@ export default function NameStep({
                 align="center"
                 style={styles.subtitle}
               >
-                Share your first and last name so your church community can recognize you.
+                Share your first and last name so your church community can
+                recognize you.
               </Text>
             </View>
           )}
@@ -141,7 +153,10 @@ export default function NameStep({
                 First name
               </Text>
               <TextInput
-                style={[styles.input, firstNameError ? styles.inputError : null]}
+                style={[
+                  styles.input,
+                  firstNameError ? styles.inputError : null,
+                ]}
                 value={firstName}
                 onChangeText={handleFirstChange}
                 placeholder="First name"
@@ -152,7 +167,11 @@ export default function NameStep({
                 maxLength={50}
               />
               {firstNameError && (
-                <Text variant="bodySmall" color="error" style={styles.errorText}>
+                <Text
+                  variant="bodySmall"
+                  color="error"
+                  style={styles.errorText}
+                >
                   {firstNameError}
                 </Text>
               )}
@@ -174,7 +193,11 @@ export default function NameStep({
                 maxLength={50}
               />
               {lastNameError && (
-                <Text variant="bodySmall" color="error" style={styles.errorText}>
+                <Text
+                  variant="bodySmall"
+                  color="error"
+                  style={styles.errorText}
+                >
                   {lastNameError}
                 </Text>
               )}

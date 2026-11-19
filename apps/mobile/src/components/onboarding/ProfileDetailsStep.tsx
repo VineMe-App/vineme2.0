@@ -87,10 +87,11 @@ export default function ProfileDetailsStep({
       // Bio section height (approximately)
       const bioSectionHeight = 200;
       // Calculate scroll position to center the bio section
-      const scrollOffset = bioSectionY - (visibleHeight / 2) + (bioSectionHeight / 2);
-      scrollViewRef.current?.scrollTo({ 
-        y: Math.max(0, scrollOffset), 
-        animated: true 
+      const scrollOffset =
+        bioSectionY - visibleHeight / 2 + bioSectionHeight / 2;
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(0, scrollOffset),
+        animated: true,
       });
     }, 350); // Delay to allow keyboard to appear first
   };
@@ -191,7 +192,9 @@ export default function ProfileDetailsStep({
     } catch (err) {
       console.error('Failed to upload avatar during onboarding:', err);
       const errorMessage =
-        err instanceof Error ? err.message : 'Failed to upload photo. Please try again.';
+        err instanceof Error
+          ? err.message
+          : 'Failed to upload photo. Please try again.';
       setError(errorMessage);
     } finally {
       setUploading(false);
@@ -217,7 +220,12 @@ export default function ProfileDetailsStep({
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.header}>
-              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+              <Text
+                variant="h4"
+                weight="extraBold"
+                align="center"
+                style={styles.title}
+              >
                 Add a friendly face
               </Text>
               <Text
@@ -226,79 +234,80 @@ export default function ProfileDetailsStep({
                 align="center"
                 style={styles.subtitle}
               >
-                Upload a photo and quick bio to help leaders get to know you. You can skip this step and update later.
+                Upload a photo and quick bio to help leaders get to know you.
+                You can skip this step and update later.
               </Text>
             </View>
 
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarWrapper}>
-            <TouchableOpacity
-              onPress={handleChoosePhoto}
-              disabled={uploading}
-              activeOpacity={0.85}
-            >
-            {uploading ? (
-              <View style={styles.avatarLoading}>
-                <ActivityIndicator size="large" color="#2C2235" />
+            <View style={styles.avatarSection}>
+              <View style={styles.avatarWrapper}>
+                <TouchableOpacity
+                  onPress={handleChoosePhoto}
+                  disabled={uploading}
+                  activeOpacity={0.85}
+                >
+                  {uploading ? (
+                    <View style={styles.avatarLoading}>
+                      <ActivityIndicator size="large" color="#2C2235" />
+                    </View>
+                  ) : avatarUrl ? (
+                    <View style={styles.avatarContainer}>
+                      <Image
+                        source={{ uri: avatarUrl }}
+                        style={styles.avatarImage}
+                      />
+                    </View>
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Ionicons name="add" size={48} color="#999999" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                {!!avatarUrl && (
+                  <TouchableOpacity
+                    style={styles.avatarEditButton}
+                    onPress={handleChoosePhoto}
+                    accessibilityLabel="Edit profile photo"
+                    accessibilityRole="button"
+                    activeOpacity={0.8}
+                    disabled={uploading}
+                  >
+                    <Ionicons name="pencil-outline" size={14} color="#2C2235" />
+                  </TouchableOpacity>
+                )}
               </View>
-            ) : avatarUrl ? (
-              <View style={styles.avatarContainer}>
-                <Image
-                  source={{ uri: avatarUrl }}
-                  style={styles.avatarImage}
-                />
-              </View>
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="add" size={48} color="#999999" />
-              </View>
-            )}
-            </TouchableOpacity>
-            {!!avatarUrl && (
-              <TouchableOpacity
-                style={styles.avatarEditButton}
-                onPress={handleChoosePhoto}
-                accessibilityLabel="Edit profile photo"
-                accessibilityRole="button"
-                activeOpacity={0.8}
-                disabled={uploading}
-              >
-                <Ionicons name="pencil-outline" size={14} color="#2C2235" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+            </View>
 
-        <View 
-          ref={bioSectionRef} 
-          style={styles.bioSection}
-          onLayout={(event) => {
-            const { y } = event.nativeEvent.layout;
-            setBioSectionY(y);
-          }}
-        >
-          <Text variant="body" weight="semiBold" style={styles.label}>
-            Bio (optional)
-          </Text>
-          <TextInput
-            ref={bioInputRef}
-            style={styles.bioInput}
-            placeholder="Tell us a little bit about yourself..."
-            placeholderTextColor="#CBCBCB"
-            value={bio}
-            onChangeText={(text) => {
-              if (text.length <= BIO_MAX_LENGTH) {
-                setBio(text);
-              }
-            }}
-            onFocus={handleBioFocus}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-            maxLength={BIO_MAX_LENGTH}
-            editable={!isLoading && !uploading}
-          />
-        </View>
+            <View
+              ref={bioSectionRef}
+              style={styles.bioSection}
+              onLayout={(event) => {
+                const { y } = event.nativeEvent.layout;
+                setBioSectionY(y);
+              }}
+            >
+              <Text variant="body" weight="semiBold" style={styles.label}>
+                Bio (optional)
+              </Text>
+              <TextInput
+                ref={bioInputRef}
+                style={styles.bioInput}
+                placeholder="Tell us a little bit about yourself..."
+                placeholderTextColor="#CBCBCB"
+                value={bio}
+                onChangeText={(text) => {
+                  if (text.length <= BIO_MAX_LENGTH) {
+                    setBio(text);
+                  }
+                }}
+                onFocus={handleBioFocus}
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+                maxLength={BIO_MAX_LENGTH}
+                editable={!isLoading && !uploading}
+              />
+            </View>
 
             {error && (
               <Text variant="bodySmall" color="error" style={styles.errorText}>
@@ -308,14 +317,23 @@ export default function ProfileDetailsStep({
           </ScrollView>
         </View>
 
-        <View style={[styles.footer, isKeyboardVisible && styles.footerKeyboardVisible]}>
+        <View
+          style={[
+            styles.footer,
+            isKeyboardVisible && styles.footerKeyboardVisible,
+          ]}
+        >
           <AuthButton
             title="Done"
             onPress={handleContinue}
             loading={uploading || isLoading}
             disabled={uploading || isLoading}
           />
-          <TouchableOpacity onPress={onBack} accessibilityRole="button" style={styles.backButton}>
+          <TouchableOpacity
+            onPress={onBack}
+            accessibilityRole="button"
+            style={styles.backButton}
+          >
             <Text variant="body" align="center" style={styles.backText}>
               Back
             </Text>

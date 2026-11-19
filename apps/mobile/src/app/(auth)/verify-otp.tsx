@@ -22,11 +22,21 @@ import { safeGoBack } from '@/utils/navigation';
 export default function VerifyOtpScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { verifyOtp, isLoading, signUpWithPhone, signInWithPhone, signInWithEmail } = useAuthStore();
+  const {
+    verifyOtp,
+    isLoading,
+    signUpWithPhone,
+    signInWithPhone,
+    signInWithEmail,
+  } = useAuthStore();
 
   const phoneOrEmail = (params.phoneOrEmail as string) || '';
   const type = (params.type as 'sms' | 'email') || 'sms';
-  const resendFunction = params.resendFunction as 'signUpWithPhone' | 'signInWithPhone' | 'signInWithEmail' | undefined;
+  const resendFunction = params.resendFunction as
+    | 'signUpWithPhone'
+    | 'signInWithPhone'
+    | 'signInWithEmail'
+    | undefined;
 
   const [code, setCode] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -82,7 +92,10 @@ export default function VerifyOtpScreen() {
     } else if (resendFunction === 'signInWithEmail') {
       const result = await signInWithEmail(phoneOrEmail);
       if (result.success) {
-        Alert.alert('Verification Sent', 'A new verification has been sent to your email.');
+        Alert.alert(
+          'Verification Sent',
+          'A new verification has been sent to your email.'
+        );
       } else {
         Alert.alert('Error', result.error || 'Failed to resend verification');
       }
@@ -135,7 +148,9 @@ export default function VerifyOtpScreen() {
               <View style={styles.otpSection}>
                 <TextInput
                   value={code}
-                  onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
+                  onChangeText={(text) =>
+                    setCode(text.replace(/\D/g, '').slice(0, 6))
+                  }
                   style={styles.otpInput}
                   keyboardType="number-pad"
                   placeholder="123456"
@@ -151,10 +166,12 @@ export default function VerifyOtpScreen() {
                 />
               </View>
 
-              <View style={[
-                styles.actionsSection,
-                isKeyboardVisible && styles.actionsSectionKeyboardVisible
-              ]}>
+              <View
+                style={[
+                  styles.actionsSection,
+                  isKeyboardVisible && styles.actionsSectionKeyboardVisible,
+                ]}
+              >
                 <AuthButton
                   title="Verify"
                   onPress={handleVerify}
@@ -179,7 +196,8 @@ export default function VerifyOtpScreen() {
                   style={styles.resendContainer}
                 >
                   <Text style={styles.resendText}>
-                    Didn't receive a code? <Text style={styles.resendLink}>Resend</Text>
+                    Didn't receive a code?{' '}
+                    <Text style={styles.resendLink}>Resend</Text>
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity

@@ -76,7 +76,10 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
 
   const handleContactPress = async (type: 'phone' | 'email', value: string) => {
     try {
-      const url = type === 'phone' ? `tel:${formatPhoneNumber(value)}` : `mailto:${value}`;
+      const url =
+        type === 'phone'
+          ? `tel:${formatPhoneNumber(value)}`
+          : `mailto:${value}`;
       try {
         await Linking.openURL(url);
       } catch {
@@ -120,8 +123,8 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
         option === 'whatsapp'
           ? `whatsapp://send?phone=${formatPhoneForWhatsApp(phone)}`
           : option === 'sms'
-          ? `sms:${formatPhoneNumber(phone)}`
-          : `tel:${formatPhoneNumber(phone)}`;
+            ? `sms:${formatPhoneNumber(phone)}`
+            : `tel:${formatPhoneNumber(phone)}`;
 
       try {
         await Linking.openURL(url);
@@ -250,14 +253,14 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
                   </TouchableOpacity>
                 </View>
               )}
-              {(contactInfo.phone || (contactInfo as { phone_number?: string }).phone_number) && (
+              {(contactInfo.phone ||
+                (contactInfo as { phone_number?: string }).phone_number) && (
                 <View style={styles.contactItem}>
                   <TouchableOpacity
                     onPress={() => {
                       const phone =
                         contactInfo.phone ||
-                        (contactInfo as { phone_number?: string })
-                          .phone_number;
+                        (contactInfo as { phone_number?: string }).phone_number;
                       if (phone) {
                         handlePhonePress(phone);
                       }
@@ -268,8 +271,7 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
                     <Ionicons name="call-outline" size={20} color="#007AFF" />
                     <Text style={styles.contactValue}>
                       {contactInfo.phone ||
-                        (contactInfo as { phone_number?: string })
-                          .phone_number}
+                        (contactInfo as { phone_number?: string }).phone_number}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -277,8 +279,7 @@ export const MemberManagementModal: React.FC<MemberManagementModalProps> = ({
                     onPress={async () => {
                       const phone =
                         contactInfo.phone ||
-                        (contactInfo as { phone_number?: string })
-                          .phone_number;
+                        (contactInfo as { phone_number?: string }).phone_number;
                       if (!phone) return;
                       await Clipboard.setStringAsync(phone);
                       Alert.alert('Copied', 'Phone number copied to clipboard');

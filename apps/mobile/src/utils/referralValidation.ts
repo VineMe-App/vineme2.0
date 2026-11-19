@@ -453,7 +453,7 @@ export function createReferralErrorMessage(error: any): {
     const message = error.message?.includes('already been referred')
       ? error.message
       : 'This person has already been referred to this group by you.';
-    
+
     return {
       title: 'Already Referred',
       message,

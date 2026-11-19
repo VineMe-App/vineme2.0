@@ -582,12 +582,19 @@ export class GroupAdminService {
       try {
         await supabase
           .from('group_memberships')
-          .update({ status: 'inactive', joined_at: null, /* preserve updated_at via trigger if present */ })
+          .update({
+            status: 'inactive',
+            joined_at: null /* preserve updated_at via trigger if present */,
+          })
           .eq('group_id', groupId)
           .in('status', ['active', 'pending']);
       } catch (e) {
         // Non-fatal: log but do not block closing the group
-        if (__DEV__) console.warn('Failed to inactivate memberships when closing group', e);
+        if (__DEV__)
+          console.warn(
+            'Failed to inactivate memberships when closing group',
+            e
+          );
       }
 
       // Log the close action
@@ -1104,8 +1111,7 @@ export class UserAdminService {
           const activeGroups =
             user.group_memberships?.filter(
               (m: any) =>
-                m.status === 'active' &&
-                m.group?.status === 'approved'
+                m.status === 'active' && m.group?.status === 'approved'
             ) || [];
 
           return {

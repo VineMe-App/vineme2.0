@@ -37,8 +37,9 @@ export const GroupLeaderPanel: React.FC<GroupLeaderPanelProps> = ({
   const { userProfile } = useAuthStore();
   const router = useRouter();
   // Inline actions on each card
-  const [activeTab, setActiveTab] =
-    useState<'members' | 'requests'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'members' | 'requests'>(
+    initialTab
+  );
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [selectedMember, setSelectedMember] =
     useState<GroupMembershipWithUser | null>(null);

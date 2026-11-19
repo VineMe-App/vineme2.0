@@ -156,8 +156,7 @@ function RootLayoutNav() {
         const target = inPhoneAuthFlow
           ? '/(auth)/onboarding-loader'
           : '/(auth)/onboarding';
-        if (__DEV__)
-          console.log('[NavDebug] redirect ->', target);
+        if (__DEV__) console.log('[NavDebug] redirect ->', target);
         router.replace(target);
       } else if (isOnboardingDone && !(inTabsGroup || inAllowedStacks)) {
         if (__DEV__) console.log('[NavDebug] redirect -> /(tabs)');

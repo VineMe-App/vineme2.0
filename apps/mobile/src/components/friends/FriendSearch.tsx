@@ -31,7 +31,12 @@ interface FriendSearchProps {
   activeFilter?: 'friends' | 'received' | 'sent';
 }
 
-export function FriendSearch({ onClose, onViewProfile, userId, activeFilter = 'friends' }: FriendSearchProps) {
+export function FriendSearch({
+  onClose,
+  onViewProfile,
+  userId,
+  activeFilter = 'friends',
+}: FriendSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<TextInput>(null);
   const { user } = useAuth();
@@ -102,19 +107,49 @@ export function FriendSearch({ onClose, onViewProfile, userId, activeFilter = 'f
       {/* Tabs - Inactive when searching */}
       <View style={styles.filterContainer}>
         <View style={styles.tabsRow}>
-          <View style={[styles.filterButton, { backgroundColor: activeFilter === 'friends' ? '#FFFFFF' : 'rgba(238, 238, 238, 0)' }]}>
+          <View
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor:
+                  activeFilter === 'friends'
+                    ? '#FFFFFF'
+                    : 'rgba(238, 238, 238, 0)',
+              },
+            ]}
+          >
             <Text style={styles.filterButtonText}>Friends</Text>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{getFilterCount('friends')}</Text>
             </View>
           </View>
-          <View style={[styles.filterButton, { backgroundColor: activeFilter === 'received' ? '#FFFFFF' : 'rgba(238, 238, 238, 0)' }]}>
+          <View
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor:
+                  activeFilter === 'received'
+                    ? '#FFFFFF'
+                    : 'rgba(238, 238, 238, 0)',
+              },
+            ]}
+          >
             <Text style={styles.filterButtonText}>Requests</Text>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{getFilterCount('received')}</Text>
             </View>
           </View>
-          <View style={[styles.filterButton, { backgroundColor: activeFilter === 'sent' ? '#FFFFFF' : 'rgba(238, 238, 238, 0)' }]}>
+          <View
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor:
+                  activeFilter === 'sent'
+                    ? '#FFFFFF'
+                    : 'rgba(238, 238, 238, 0)',
+              },
+            ]}
+          >
             <Text style={styles.filterButtonText}>Sent</Text>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{getFilterCount('sent')}</Text>
@@ -125,7 +160,7 @@ export function FriendSearch({ onClose, onViewProfile, userId, activeFilter = 'f
 
       {/* Search Bar - Figma design - Fully tappable */}
       <View style={styles.searchBarContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.searchBar}
           onPress={handleSearchBarPress}
           activeOpacity={1}
@@ -235,7 +270,8 @@ function UserSearchItem({
   // Don't show "Add" button if this is the current user's own card
   const isSelf = user.id === currentUser?.id;
   // Only show "Add" button if not already friends or pending, and not viewing own card
-  const showAddButton = !isSelf && status !== 'accepted' && status !== 'pending';
+  const showAddButton =
+    !isSelf && status !== 'accepted' && status !== 'pending';
   const showSentButton = !isSelf && status === 'pending' && !isIncoming;
 
   return (
@@ -258,7 +294,11 @@ function UserSearchItem({
             handleSendRequest();
           }}
           activeOpacity={0.7}
-          disabled={isLoading || acceptRejected.isPending || friendshipStatusQuery.isLoading}
+          disabled={
+            isLoading ||
+            acceptRejected.isPending ||
+            friendshipStatusQuery.isLoading
+          }
         >
           <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>

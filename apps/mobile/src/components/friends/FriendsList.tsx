@@ -43,22 +43,24 @@ interface FriendsListProps {
   onSearchChange?: (show: boolean) => void;
 }
 
-export function FriendsList({ 
-  userId, 
-  onViewProfile, 
-  onAddFriend, 
-  showSearch = false, 
-  activeFilter: propActiveFilter, 
+export function FriendsList({
+  userId,
+  onViewProfile,
+  onAddFriend,
+  showSearch = false,
+  activeFilter: propActiveFilter,
   onFilterChange,
   onSearchChange,
 }: FriendsListProps) {
   const { theme } = useTheme();
   const { user: currentUser } = useAuth();
-  const [internalActiveFilter, setInternalActiveFilter] = useState<FilterType>('friends');
+  const [internalActiveFilter, setInternalActiveFilter] =
+    useState<FilterType>('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<TextInput>(null);
-  
-  const activeFilter = propActiveFilter !== undefined ? propActiveFilter : internalActiveFilter;
+
+  const activeFilter =
+    propActiveFilter !== undefined ? propActiveFilter : internalActiveFilter;
   const setActiveFilter = (filter: FilterType) => {
     if (onFilterChange) {
       onFilterChange(filter);
@@ -344,10 +346,10 @@ export function FriendsList({
           }}
           activeOpacity={0.7}
         >
-          <Ionicons 
-            name="add" 
-            size={24} 
-            color={showSearch ? '#FFFFFF' : '#2C2235'} 
+          <Ionicons
+            name="add"
+            size={24}
+            color={showSearch ? '#FFFFFF' : '#2C2235'}
           />
         </TouchableOpacity>
       </View>
@@ -355,7 +357,7 @@ export function FriendsList({
       {/* Search Bar - Show when search is active */}
       {showSearch && (
         <View style={styles.searchBarContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.searchBar}
             onPress={handleSearchBarPress}
             activeOpacity={1}
@@ -393,7 +395,9 @@ export function FriendsList({
           ) : filteredUsers.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No users found</Text>
-              <Text style={styles.emptySubtext}>Try a different search term</Text>
+              <Text style={styles.emptySubtext}>
+                Try a different search term
+              </Text>
             </View>
           ) : (
             <FlatList
@@ -446,7 +450,8 @@ export function FriendsList({
                   'Start connecting with other church members'}
                 {activeFilter === 'received' &&
                   'Friend requests will appear here'}
-                {activeFilter === 'sent' && 'Your sent requests will appear here'}
+                {activeFilter === 'sent' &&
+                  'Your sent requests will appear here'}
               </Text>
             </View>
           }
@@ -515,7 +520,8 @@ function UserSearchItem({
 
   // Don't show "Add" button if this is the current user's own card
   const isSelf = user.id === currentUser?.id;
-  const showAddButton = !isSelf && status !== 'accepted' && status !== 'pending';
+  const showAddButton =
+    !isSelf && status !== 'accepted' && status !== 'pending';
   const showSentButton = !isSelf && status === 'pending' && !isIncoming;
 
   return (
@@ -538,7 +544,11 @@ function UserSearchItem({
             handleSendRequest();
           }}
           activeOpacity={0.7}
-          disabled={isLoading || acceptRejected.isPending || friendshipStatusQuery.isLoading}
+          disabled={
+            isLoading ||
+            acceptRejected.isPending ||
+            friendshipStatusQuery.isLoading
+          }
         >
           <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>

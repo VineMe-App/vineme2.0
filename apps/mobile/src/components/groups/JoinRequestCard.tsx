@@ -8,26 +8,6 @@ import {
   Platform,
   ActionSheetIOS,
 } from 'react-native';
-// expo-clipboard is optional in dev client; gate usage to avoid native module errors
-// Lazy load to prevent module initialization errors at load time
-let Clipboard: typeof import('expo-clipboard') | null | undefined = undefined;
-const getClipboard = (): typeof import('expo-clipboard') | null => {
-  if (Clipboard !== undefined) return Clipboard;
-  
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const clipboardModule = require('expo-clipboard');
-    Clipboard = clipboardModule;
-    return Clipboard;
-  } catch (error) {
-    // Native module not available - this is expected in some environments
-    Clipboard = null;
-    if (__DEV__) {
-      console.log('[JoinRequestCard] expo-clipboard not available, clipboard functionality disabled');
-    }
-    return null;
-  }
-};
 import { Text } from '../ui/Text';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -48,6 +28,28 @@ import type {
   MembershipJourneyStatus,
 } from '../../types/database';
 import { getDisplayName, getFullName } from '@/utils/name';
+// expo-clipboard is optional in dev client; gate usage to avoid native module errors
+// Lazy load to prevent module initialization errors at load time
+let Clipboard: typeof import('expo-clipboard') | null | undefined = undefined;
+const getClipboard = (): typeof import('expo-clipboard') | null => {
+  if (Clipboard !== undefined) return Clipboard;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const clipboardModule = require('expo-clipboard');
+    Clipboard = clipboardModule;
+    return Clipboard;
+  } catch (error) {
+    // Native module not available - this is expected in some environments
+    Clipboard = null;
+    if (__DEV__) {
+      console.log(
+        '[JoinRequestCard] expo-clipboard not available, clipboard functionality disabled'
+      );
+    }
+    return null;
+  }
+};
 
 interface JoinRequestCardProps {
   request: GroupJoinRequestWithUser;
@@ -331,8 +333,8 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
         option === 'whatsapp'
           ? `whatsapp://send?phone=${formatPhoneForWhatsApp(phone)}`
           : option === 'sms'
-          ? `sms:${formatPhoneNumber(phone)}`
-          : `tel:${formatPhoneNumber(phone)}`;
+            ? `sms:${formatPhoneNumber(phone)}`
+            : `tel:${formatPhoneNumber(phone)}`;
 
       try {
         await Linking.openURL(url);
@@ -364,9 +366,7 @@ export const JoinRequestCard: React.FC<JoinRequestCardProps> = ({
       console.error('Contact action error:', error);
       Alert.alert(
         'Error',
-        error instanceof Error
-          ? error.message
-          : 'Failed to contact user'
+        error instanceof Error ? error.message : 'Failed to contact user'
       );
     }
   };

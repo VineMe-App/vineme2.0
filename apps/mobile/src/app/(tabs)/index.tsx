@@ -217,8 +217,15 @@ export default function HomeScreen() {
 
   if (isLoading && !userGroupMemberships) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: theme.colors.background.primary },
+        ]}
+      >
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
           <AuthLoadingAnimation />
         </View>
       </SafeAreaView>
@@ -226,7 +233,12 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.background.primary },
+      ]}
+    >
       <ScrollView
         style={[
           styles.scrollView,
@@ -355,234 +367,239 @@ export default function HomeScreen() {
                 )}
               </View>
 
-          {showGroupCards ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScroll}
-            >
-              {activeMemberships.map((membership) => (
-                <View key={membership.group_id} style={styles.horizontalCard}>
-                  <GroupCardWithFriends
-                    group={membership.group}
-                    membershipStatus={membership.role}
-                    currentUserId={userProfile?.id}
-                    onPress={() => router.push(`/group/${membership.group.id}`)}
-                    style={{
-                      width: 260,
-                      minHeight: MY_GROUPS_CARD_MIN_HEIGHT,
-                      marginHorizontal: 0,
-                    }}
-                    variant="my-groups"
-                    showLocation={false}
-                  />
-                </View>
-              ))}
-              {pendingJoinRequestsList.length > 0 &&
-                pendingJoinRequestsList.map((request) => {
-                  if (!request.group) return null;
-                  const leaderNames = (request.group_leaders || [])
-                    .map((l) => l?.name)
-                    .filter(Boolean) as string[];
-                  const message = buildJoinRequestMessage(
-                    request.group?.title || 'this group',
-                    leaderNames
-                  );
-                  return (
+              {showGroupCards ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalScroll}
+                >
+                  {activeMemberships.map((membership) => (
                     <View
-                      key={`join-${request.id}`}
+                      key={membership.group_id}
                       style={styles.horizontalCard}
                     >
                       <GroupCardWithFriends
-                        group={request.group as any}
-                        membershipStatus={null}
+                        group={membership.group}
+                        membershipStatus={membership.role}
                         currentUserId={userProfile?.id}
-                        onPress={undefined}
+                        onPress={() =>
+                          router.push(`/group/${membership.group.id}`)
+                        }
                         style={{
                           width: 260,
                           minHeight: MY_GROUPS_CARD_MIN_HEIGHT,
                           marginHorizontal: 0,
                         }}
-                        pendingLabel="Join request pending"
-                        pendingTooltip={message}
                         variant="my-groups"
                         showLocation={false}
                       />
                     </View>
-                  );
-                })}
-            </ScrollView>
-          ) : null}
+                  ))}
+                  {pendingJoinRequestsList.length > 0 &&
+                    pendingJoinRequestsList.map((request) => {
+                      if (!request.group) return null;
+                      const leaderNames = (request.group_leaders || [])
+                        .map((l) => l?.name)
+                        .filter(Boolean) as string[];
+                      const message = buildJoinRequestMessage(
+                        request.group?.title || 'this group',
+                        leaderNames
+                      );
+                      return (
+                        <View
+                          key={`join-${request.id}`}
+                          style={styles.horizontalCard}
+                        >
+                          <GroupCardWithFriends
+                            group={request.group as any}
+                            membershipStatus={null}
+                            currentUserId={userProfile?.id}
+                            onPress={undefined}
+                            style={{
+                              width: 260,
+                              minHeight: MY_GROUPS_CARD_MIN_HEIGHT,
+                              marginHorizontal: 0,
+                            }}
+                            pendingLabel="Join request pending"
+                            pendingTooltip={message}
+                            variant="my-groups"
+                            showLocation={false}
+                          />
+                        </View>
+                      );
+                    })}
+                </ScrollView>
+              ) : null}
 
-          {/* Action Cards - Show below groups or in empty state */}
-          {showGroupCards ? (
-            <View
-              style={[
-                styles.actionCardsContainer,
-                styles.actionCardsContainerWithGroups,
-              ]}
-            >
-              {/* Connect a friend */}
-              <TouchableOpacity
-                style={styles.actionCard}
-                onPress={() => router.push('/referral-landing')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.actionCardContent}>
-                  <Text
-                    variant="body"
-                    weight="bold"
-                    style={styles.actionCardTitle}
+              {/* Action Cards - Show below groups or in empty state */}
+              {showGroupCards ? (
+                <View
+                  style={[
+                    styles.actionCardsContainer,
+                    styles.actionCardsContainerWithGroups,
+                  ]}
+                >
+                  {/* Connect a friend */}
+                  <TouchableOpacity
+                    style={styles.actionCard}
+                    onPress={() => router.push('/referral-landing')}
+                    activeOpacity={0.8}
                   >
-                    Connect a friend
-                  </Text>
-                  <Text
-                    variant="body"
-                    weight="normal"
-                    style={styles.actionCardDescription}
+                    <View style={styles.actionCardContent}>
+                      <Text
+                        variant="body"
+                        weight="bold"
+                        style={styles.actionCardTitle}
+                      >
+                        Connect a friend
+                      </Text>
+                      <Text
+                        variant="body"
+                        weight="normal"
+                        style={styles.actionCardDescription}
+                      >
+                        Help someone get plugged in
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward-outline"
+                      size={20}
+                      color="#2C2235"
+                    />
+                  </TouchableOpacity>
+
+                  {/* Create a group */}
+                  <TouchableOpacity
+                    style={styles.actionCard}
+                    onPress={() => router.push('/group/create')}
+                    activeOpacity={0.8}
                   >
-                    Help someone get plugged in
-                  </Text>
+                    <View style={styles.actionCardContent}>
+                      <Text
+                        variant="body"
+                        weight="bold"
+                        style={styles.actionCardTitle}
+                      >
+                        Create a group
+                      </Text>
+                      <Text
+                        variant="body"
+                        weight="normal"
+                        style={styles.actionCardDescription}
+                      >
+                        Initiate a Kingdom community
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward-outline"
+                      size={20}
+                      color="#2C2235"
+                    />
+                  </TouchableOpacity>
                 </View>
-                <Ionicons
-                  name="chevron-forward-outline"
-                  size={20}
-                  color="#2C2235"
-                />
-              </TouchableOpacity>
-
-              {/* Create a group */}
-              <TouchableOpacity
-                style={styles.actionCard}
-                onPress={() => router.push('/group/create')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.actionCardContent}>
-                  <Text
-                    variant="body"
-                    weight="bold"
-                    style={styles.actionCardTitle}
-                  >
-                    Create a group
-                  </Text>
-                  <Text
-                    variant="body"
-                    weight="normal"
-                    style={styles.actionCardDescription}
-                  >
-                    Initiate a Kingdom community
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward-outline"
-                  size={20}
-                  color="#2C2235"
-                />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.emptyStateContainer}>
-              {/* Large dark CTA card */}
-              <View style={styles.emptyStateCard}>
-                <Text
-                  variant="body"
-                  weight="bold"
-                  style={styles.emptyStateTitle}
-                >
-                  You have not joined a group yet
-                </Text>
-                <Text
-                  variant="body"
-                  weight="normal"
-                  style={styles.emptyStateSubtitle}
-                >
-                  Join a Bible study group now and get connected with your
-                  community
-                </Text>
-                <TouchableOpacity
-                  style={styles.findGroupButton}
-                  onPress={() => router.push('/(tabs)/groups')}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name="search-outline"
-                    size={18}
-                    color="#FFFFFF"
-                    style={styles.searchIcon}
-                  />
-                  <Text
-                    variant="body"
-                    weight="bold"
-                    style={styles.findGroupButtonText}
-                  >
-                    Find a group
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Other action cards */}
-              <View style={styles.actionCardsContainer}>
-                {/* Connect a friend */}
-                <TouchableOpacity
-                  style={styles.actionCard}
-                  onPress={() => router.push('/referral-landing')}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.actionCardContent}>
+              ) : (
+                <View style={styles.emptyStateContainer}>
+                  {/* Large dark CTA card */}
+                  <View style={styles.emptyStateCard}>
                     <Text
                       variant="body"
                       weight="bold"
-                      style={styles.actionCardTitle}
+                      style={styles.emptyStateTitle}
                     >
-                      Connect a friend
+                      You have not joined a group yet
                     </Text>
                     <Text
                       variant="body"
                       weight="normal"
-                      style={styles.actionCardDescription}
+                      style={styles.emptyStateSubtitle}
                     >
-                      Help someone get plugged in
+                      Join a Bible study group now and get connected with your
+                      community
                     </Text>
+                    <TouchableOpacity
+                      style={styles.findGroupButton}
+                      onPress={() => router.push('/(tabs)/groups')}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons
+                        name="search-outline"
+                        size={18}
+                        color="#FFFFFF"
+                        style={styles.searchIcon}
+                      />
+                      <Text
+                        variant="body"
+                        weight="bold"
+                        style={styles.findGroupButtonText}
+                      >
+                        Find a group
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                  <Ionicons
-                    name="chevron-forward-outline"
-                    size={20}
-                    color="#2C2235"
-                  />
-                </TouchableOpacity>
 
-                {/* Create a group */}
-                <TouchableOpacity
-                  style={styles.actionCard}
-                  onPress={() => router.push('/group/create')}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.actionCardContent}>
-                    <Text
-                      variant="body"
-                      weight="bold"
-                      style={styles.actionCardTitle}
+                  {/* Other action cards */}
+                  <View style={styles.actionCardsContainer}>
+                    {/* Connect a friend */}
+                    <TouchableOpacity
+                      style={styles.actionCard}
+                      onPress={() => router.push('/referral-landing')}
+                      activeOpacity={0.8}
                     >
-                      Create a group
-                    </Text>
-                    <Text
-                      variant="body"
-                      weight="normal"
-                      style={styles.actionCardDescription}
+                      <View style={styles.actionCardContent}>
+                        <Text
+                          variant="body"
+                          weight="bold"
+                          style={styles.actionCardTitle}
+                        >
+                          Connect a friend
+                        </Text>
+                        <Text
+                          variant="body"
+                          weight="normal"
+                          style={styles.actionCardDescription}
+                        >
+                          Help someone get plugged in
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward-outline"
+                        size={20}
+                        color="#2C2235"
+                      />
+                    </TouchableOpacity>
+
+                    {/* Create a group */}
+                    <TouchableOpacity
+                      style={styles.actionCard}
+                      onPress={() => router.push('/group/create')}
+                      activeOpacity={0.8}
                     >
-                      Initiate a Kingdom community
-                    </Text>
+                      <View style={styles.actionCardContent}>
+                        <Text
+                          variant="body"
+                          weight="bold"
+                          style={styles.actionCardTitle}
+                        >
+                          Create a group
+                        </Text>
+                        <Text
+                          variant="body"
+                          weight="normal"
+                          style={styles.actionCardDescription}
+                        >
+                          Initiate a Kingdom community
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward-outline"
+                        size={20}
+                        color="#2C2235"
+                      />
+                    </TouchableOpacity>
                   </View>
-                  <Ionicons
-                    name="chevron-forward-outline"
-                    size={20}
-                    color="#2C2235"
-                  />
-                </TouchableOpacity>
-              </View>
+                </View>
+              )}
             </View>
-          )}
-        </View>
           </>
         ) : (
           <View style={[styles.section, styles.sectionSpacing]}>

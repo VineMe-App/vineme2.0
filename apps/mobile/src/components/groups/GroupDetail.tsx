@@ -65,7 +65,8 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
   const category = useMemo(() => {
     const userChurchId = userProfile?.church_id;
     const userServiceId = userProfile?.service_id;
-    const isInUserService = !!userServiceId && group.service_id === userServiceId;
+    const isInUserService =
+      !!userServiceId && group.service_id === userServiceId;
     const isInUserChurch = !!userChurchId && group.church_id === userChurchId;
 
     if (isInUserService) {
@@ -75,7 +76,12 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     } else {
       return 'outside' as const;
     }
-  }, [userProfile?.church_id, userProfile?.service_id, group.service_id, group.church_id]);
+  }, [
+    userProfile?.church_id,
+    userProfile?.service_id,
+    group.service_id,
+    group.church_id,
+  ]);
 
   const formatMeetingTime = (day: string, time: string) => {
     const date = new Date(`2000-01-01T${time}`);
@@ -249,8 +255,7 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
     : regularMembers.slice(0, 6);
 
   const isLoading =
-    leaveGroupMutation.isPending ||
-    createJoinRequestMutation.isPending;
+    leaveGroupMutation.isPending || createJoinRequestMutation.isPending;
 
   // Check if current user is a leader of this group
   const userMembership = members?.find((m) => m.user_id === userProfile?.id);
@@ -327,7 +332,10 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
             resizeMode="cover"
           />
         ) : (
-          <GroupPlaceholderImage style={styles.headerImage} category={category} />
+          <GroupPlaceholderImage
+            style={styles.headerImage}
+            category={category}
+          />
         )}
       </View>
 
@@ -384,7 +392,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                 >
                   <Ionicons name="people-outline" size={16} color="#2C2235" />
                   <Text style={styles.infoValueAlt} numberOfLines={1}>
-                    {friendsInGroup.length} {friendsInGroup.length === 1 ? 'friend' : 'friends'} in this group
+                    {friendsInGroup.length}{' '}
+                    {friendsInGroup.length === 1 ? 'friend' : 'friends'} in this
+                    group
                   </Text>
                 </TouchableOpacity>
               )}
@@ -395,7 +405,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                   </View>
                   <Text style={styles.infoValueAlt}>
                     {(() => {
-                      const leaderNames = leaders.map(l => l.user?.name || 'Unknown');
+                      const leaderNames = leaders.map(
+                        (l) => l.user?.name || 'Unknown'
+                      );
                       if (leaderNames.length === 1) {
                         return `Led by ${leaderNames[0]}`;
                       } else if (leaderNames.length === 2) {
@@ -408,14 +420,16 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                 </View>
               )}
             </View>
-            
+
             {/* Leader avatars on the right */}
             {leaders.length > 0 && (
               <View style={styles.leaderAvatarsContainer}>
                 {(() => {
                   // Extract user objects from leaders (same structure as GroupCard)
-                  const leaderUsers = leaders.map((leader) => leader.user).filter(Boolean);
-                  
+                  const leaderUsers = leaders
+                    .map((leader) => leader.user)
+                    .filter(Boolean);
+
                   if (leaderUsers.length === 1) {
                     // Single leader - 60px
                     return (
@@ -459,7 +473,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                           ]}
                         >
                           <TouchableOpacity
-                            onPress={() => handleLeaderPress(leaderUsers[0]?.id)}
+                            onPress={() =>
+                              handleLeaderPress(leaderUsers[0]?.id)
+                            }
                             activeOpacity={0.8}
                             accessibilityRole="button"
                             accessibilityLabel={`View ${leaderUsers[0]?.name || 'leader'} profile`}
@@ -482,7 +498,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                           ]}
                         >
                           <TouchableOpacity
-                            onPress={() => handleLeaderPress(leaderUsers[1]?.id)}
+                            onPress={() =>
+                              handleLeaderPress(leaderUsers[1]?.id)
+                            }
                             activeOpacity={0.8}
                             accessibilityRole="button"
                             accessibilityLabel={`View ${leaderUsers[1]?.name || 'leader'} profile`}
@@ -513,7 +531,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                             ]}
                           >
                             <TouchableOpacity
-                              onPress={() => handleLeaderPress(leaderUsers[0]?.id)}
+                              onPress={() =>
+                                handleLeaderPress(leaderUsers[0]?.id)
+                              }
                               activeOpacity={0.8}
                               accessibilityRole="button"
                               accessibilityLabel={`View ${leaderUsers[0]?.name || 'leader'} profile`}
@@ -536,7 +556,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                             ]}
                           >
                             <TouchableOpacity
-                              onPress={() => handleLeaderPress(leaderUsers[1]?.id)}
+                              onPress={() =>
+                                handleLeaderPress(leaderUsers[1]?.id)
+                              }
                               activeOpacity={0.8}
                               accessibilityRole="button"
                               accessibilityLabel={`View ${leaderUsers[1]?.name || 'leader'} profile`}
@@ -562,7 +584,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                             ]}
                           >
                             <TouchableOpacity
-                              onPress={() => handleLeaderPress(leaderUsers[2]?.id)}
+                              onPress={() =>
+                                handleLeaderPress(leaderUsers[2]?.id)
+                              }
                               activeOpacity={0.8}
                               accessibilityRole="button"
                               accessibilityLabel={`View ${leaderUsers[2]?.name || 'leader'} profile`}
@@ -660,7 +684,9 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
                                 ]}
                               >
                                 <TouchableOpacity
-                                  onPress={() => handleLeaderPress(leaderUsers[2]?.id)}
+                                  onPress={() =>
+                                    handleLeaderPress(leaderUsers[2]?.id)
+                                  }
                                   activeOpacity={0.8}
                                   accessibilityRole="button"
                                   accessibilityLabel={`View ${leaderUsers[2]?.name || 'leader'} profile`}
@@ -700,7 +726,6 @@ export const GroupDetail: React.FC<GroupDetailProps> = ({
             )}
           </View>
         </View>
-
 
         {/* Members Section - visible to members/leaders/admins or service-level church admins */}
         {(membershipStatus || isChurchAdminForService) &&

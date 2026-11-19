@@ -54,9 +54,17 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
     });
   };
 
-  const getLatestMemberLeftNote = (notes?: Array<{ note_type?: string; created_at?: string; note_text?: string | null }>) => {
+  const getLatestMemberLeftNote = (
+    notes?: {
+      note_type?: string;
+      created_at?: string;
+      note_text?: string | null;
+    }[]
+  ) => {
     if (!notes || notes.length === 0) return null;
-    const memberLeftNotes = notes.filter((note) => note.note_type === 'member_left');
+    const memberLeftNotes = notes.filter(
+      (note) => note.note_type === 'member_left'
+    );
     if (memberLeftNotes.length === 0) return null;
     return memberLeftNotes.sort((a, b) => {
       const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;

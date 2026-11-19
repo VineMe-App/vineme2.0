@@ -1,9 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -204,8 +199,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                 setSearch(address.formattedAddress);
                 propagateChange(
                   {
-                  address: address.formattedAddress,
-                  coordinates: currentLocation,
+                    address: address.formattedAddress,
+                    coordinates: currentLocation,
                   },
                   { forceImmediate: true }
                 );
@@ -213,8 +208,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                 setSearch('Current Location');
                 propagateChange(
                   {
-                  address: 'Current Location',
-                  coordinates: currentLocation,
+                    address: 'Current Location',
+                    coordinates: currentLocation,
                   },
                   { forceImmediate: true }
                 );
@@ -224,8 +219,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               setSearch('Current Location');
               propagateChange(
                 {
-                address: 'Current Location',
-                coordinates: currentLocation,
+                  address: 'Current Location',
+                  coordinates: currentLocation,
                 },
                 { forceImmediate: true }
               );
@@ -246,8 +241,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             setSearch('Default Location');
             propagateChange(
               {
-              address: 'Default Location',
-              coordinates: DEFAULT_COORDINATES,
+                address: 'Default Location',
+                coordinates: DEFAULT_COORDINATES,
               },
               { forceImmediate: true }
             );
@@ -267,8 +262,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           setSearch('Default Location');
           propagateChange(
             {
-            address: 'Default Location',
-            coordinates: DEFAULT_COORDINATES,
+              address: 'Default Location',
+              coordinates: DEFAULT_COORDINATES,
             },
             { forceImmediate: true }
           );
@@ -284,35 +279,47 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     initializeLocation();
   }, [propagateChange, value?.coordinates]);
 
-  const geocode = useCallback(async (query: string) => {
-    if (!query.trim() || query.trim().length < 3) {
-      Alert.alert('Search Error', 'Please enter at least 3 characters to search');
-      return;
-    }
-    setIsGeocoding(true);
-    try {
-      const coords = await locationService.geocodeAddress(query.trim());
-      if (coords) {
-        setSelectedCoords(coords);
-        const newRegion = {
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
-          longitudeDelta:
-            userZoomLevel?.longitudeDelta || region.longitudeDelta,
-        };
-        setRegion(newRegion);
-        mapRef.current?.animateToRegion(newRegion, 600);
-        propagateChange({ address: query.trim(), coordinates: coords });
-      } else {
-        Alert.alert('Location Not Found', 'Unable to find the location you searched for. Please try a different search.');
+  const geocode = useCallback(
+    async (query: string) => {
+      if (!query.trim() || query.trim().length < 3) {
+        Alert.alert(
+          'Search Error',
+          'Please enter at least 3 characters to search'
+        );
+        return;
       }
-    } catch (error) {
-      Alert.alert('Search Error', 'Failed to search for location. Please try again.');
-    } finally {
-      setIsGeocoding(false);
-    }
-  }, [propagateChange, region, userZoomLevel]);
+      setIsGeocoding(true);
+      try {
+        const coords = await locationService.geocodeAddress(query.trim());
+        if (coords) {
+          setSelectedCoords(coords);
+          const newRegion = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            latitudeDelta: userZoomLevel?.latitudeDelta || region.latitudeDelta,
+            longitudeDelta:
+              userZoomLevel?.longitudeDelta || region.longitudeDelta,
+          };
+          setRegion(newRegion);
+          mapRef.current?.animateToRegion(newRegion, 600);
+          propagateChange({ address: query.trim(), coordinates: coords });
+        } else {
+          Alert.alert(
+            'Location Not Found',
+            'Unable to find the location you searched for. Please try a different search.'
+          );
+        }
+      } catch (error) {
+        Alert.alert(
+          'Search Error',
+          'Failed to search for location. Please try again.'
+        );
+      } finally {
+        setIsGeocoding(false);
+      }
+    },
+    [propagateChange, region, userZoomLevel]
+  );
 
   const forceInputRecreation = () => {
     setInputKey((prev) => prev + 1);
@@ -415,7 +422,12 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     } catch (e) {
       console.warn('Recenter failed:', e);
     }
-  }, [propagateChange, region.latitudeDelta, region.longitudeDelta, userZoomLevel]);
+  }, [
+    propagateChange,
+    region.latitudeDelta,
+    region.longitudeDelta,
+    userZoomLevel,
+  ]);
 
   // Check if MapView is available after all hooks
   if (!MapView) {
@@ -444,184 +456,184 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     <View style={styles.container}>
       <View style={styles.mapContainer}>
         <View style={styles.mapInner}>
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          mapId={GOOGLE_MAPS_MAP_ID}
-          initialRegion={region}
-          onRegionChangeComplete={handleRegionChangeComplete}
-          showsUserLocation
-          showsMyLocationButton={Platform.OS === 'android'}
-          customMapStyle={[
-            {
-              elementType: 'geometry',
-              stylers: [
-                {
-                  color: '#FFFBEE', // Light cream color
-                },
-              ],
-            },
-            {
-              elementType: 'labels.icon',
-              stylers: [
-                {
-                  visibility: 'off',
-                },
-              ],
-            },
-            {
-              elementType: 'labels.text.fill',
-              stylers: [
-                {
-                  color: '#616161',
-                },
-              ],
-            },
-            {
-              elementType: 'labels.text.stroke',
-              stylers: [
-                {
-                  color: '#f5f5f5',
-                },
-              ],
-            },
-            {
-              featureType: 'administrative.land_parcel',
-              elementType: 'labels.text.fill',
-              stylers: [
-                {
-                  color: '#bdbdbd',
-                },
-              ],
-            },
-            {
-              featureType: 'poi',
-              elementType: 'geometry',
-              stylers: [
-                {
-                  color: '#eeeeee',
-                },
-              ],
-            },
-            {
-              featureType: 'poi',
-              elementType: 'labels.text.fill',
-              stylers: [
-                {
-                  color: '#757575',
-                },
-              ],
-            },
-            {
-              featureType: 'poi.park',
-              elementType: 'geometry',
-              stylers: [
-                {
-                  color: '#bcddbd',
-                },
-              ],
-            },
-            {
-              featureType: 'poi.park',
-              elementType: 'labels.text.fill',
-              stylers: [
-                {
-                  color: '#9e9e9e',
-                },
-              ],
-            },
-            {
-              featureType: 'road',
-              elementType: 'geometry',
-              stylers: [
-                {
-                  color: '#f5f5f5', // Light gray for roads
-                },
-              ],
-            },
-            {
-              featureType: 'road.arterial',
-              elementType: 'labels.text.fill',
-              stylers: [
-                {
-                  color: '#757575',
-                },
-              ],
-            },
-            {
-              featureType: 'road.highway',
-              elementType: 'geometry',
-              stylers: [
-                {
-                  color: '#dadada',
-                },
-              ],
-            },
-            {
-              featureType: 'road.highway',
-              elementType: 'labels.text.fill',
-              stylers: [
-                {
-                  color: '#616161',
-                },
-              ],
-            },
-            {
-              featureType: 'road.local',
-              elementType: 'labels.text.fill',
-              stylers: [
-                {
-                  color: '#9e9e9e',
-                },
-              ],
-            },
-            {
-              featureType: 'transit.line',
-              elementType: 'geometry',
-              stylers: [
-                {
-                  color: '#e5e5e5',
-                },
-              ],
-            },
-            {
-              featureType: 'transit.station',
-              elementType: 'geometry',
-              stylers: [
-                {
-                  color: '#eeeeee',
-                },
-              ],
-            },
-            {
-              featureType: 'water',
-              elementType: 'geometry',
-              stylers: [
-                {
-                  color: '#e8f4f8', // Light blue-gray for water
-                },
-              ],
-            },
-            {
-              featureType: 'water',
-              elementType: 'labels.text.fill',
-              stylers: [
-                {
-                  color: '#9e9e9e',
-                },
-              ],
-            },
-          ]}
-        >
-          {console.log('Rendering marker with coordinates:', selectedCoords)}
-          <Marker
-            coordinate={selectedCoords}
-            title="Meeting Location"
-            description="Move the map to adjust location"
-            pinColor="red"
-          />
-        </MapView>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            mapId={GOOGLE_MAPS_MAP_ID}
+            initialRegion={region}
+            onRegionChangeComplete={handleRegionChangeComplete}
+            showsUserLocation
+            showsMyLocationButton={Platform.OS === 'android'}
+            customMapStyle={[
+              {
+                elementType: 'geometry',
+                stylers: [
+                  {
+                    color: '#FFFBEE', // Light cream color
+                  },
+                ],
+              },
+              {
+                elementType: 'labels.icon',
+                stylers: [
+                  {
+                    visibility: 'off',
+                  },
+                ],
+              },
+              {
+                elementType: 'labels.text.fill',
+                stylers: [
+                  {
+                    color: '#616161',
+                  },
+                ],
+              },
+              {
+                elementType: 'labels.text.stroke',
+                stylers: [
+                  {
+                    color: '#f5f5f5',
+                  },
+                ],
+              },
+              {
+                featureType: 'administrative.land_parcel',
+                elementType: 'labels.text.fill',
+                stylers: [
+                  {
+                    color: '#bdbdbd',
+                  },
+                ],
+              },
+              {
+                featureType: 'poi',
+                elementType: 'geometry',
+                stylers: [
+                  {
+                    color: '#eeeeee',
+                  },
+                ],
+              },
+              {
+                featureType: 'poi',
+                elementType: 'labels.text.fill',
+                stylers: [
+                  {
+                    color: '#757575',
+                  },
+                ],
+              },
+              {
+                featureType: 'poi.park',
+                elementType: 'geometry',
+                stylers: [
+                  {
+                    color: '#bcddbd',
+                  },
+                ],
+              },
+              {
+                featureType: 'poi.park',
+                elementType: 'labels.text.fill',
+                stylers: [
+                  {
+                    color: '#9e9e9e',
+                  },
+                ],
+              },
+              {
+                featureType: 'road',
+                elementType: 'geometry',
+                stylers: [
+                  {
+                    color: '#f5f5f5', // Light gray for roads
+                  },
+                ],
+              },
+              {
+                featureType: 'road.arterial',
+                elementType: 'labels.text.fill',
+                stylers: [
+                  {
+                    color: '#757575',
+                  },
+                ],
+              },
+              {
+                featureType: 'road.highway',
+                elementType: 'geometry',
+                stylers: [
+                  {
+                    color: '#dadada',
+                  },
+                ],
+              },
+              {
+                featureType: 'road.highway',
+                elementType: 'labels.text.fill',
+                stylers: [
+                  {
+                    color: '#616161',
+                  },
+                ],
+              },
+              {
+                featureType: 'road.local',
+                elementType: 'labels.text.fill',
+                stylers: [
+                  {
+                    color: '#9e9e9e',
+                  },
+                ],
+              },
+              {
+                featureType: 'transit.line',
+                elementType: 'geometry',
+                stylers: [
+                  {
+                    color: '#e5e5e5',
+                  },
+                ],
+              },
+              {
+                featureType: 'transit.station',
+                elementType: 'geometry',
+                stylers: [
+                  {
+                    color: '#eeeeee',
+                  },
+                ],
+              },
+              {
+                featureType: 'water',
+                elementType: 'geometry',
+                stylers: [
+                  {
+                    color: '#e8f4f8', // Light blue-gray for water
+                  },
+                ],
+              },
+              {
+                featureType: 'water',
+                elementType: 'labels.text.fill',
+                stylers: [
+                  {
+                    color: '#9e9e9e',
+                  },
+                ],
+              },
+            ]}
+          >
+            {console.log('Rendering marker with coordinates:', selectedCoords)}
+            <Marker
+              coordinate={selectedCoords}
+              title="Meeting Location"
+              description="Move the map to adjust location"
+              pinColor="red"
+            />
+          </MapView>
           <TouchableOpacity
             style={[styles.recenterButton, { top: 12 + insets.top }]}
             onPress={handleRecenter}
@@ -669,10 +681,14 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             </View>
           </View>
           {isGeocoding && (
-            <Text variant="bodySmall" style={styles.searchHelperOverlay}>Finding location…</Text>
+            <Text variant="bodySmall" style={styles.searchHelperOverlay}>
+              Finding location…
+            </Text>
           )}
           {isLoadingLocation && (
-            <Text variant="bodySmall" style={styles.searchHelperOverlay}>Getting your location…</Text>
+            <Text variant="bodySmall" style={styles.searchHelperOverlay}>
+              Getting your location…
+            </Text>
           )}
         </View>
       </View>

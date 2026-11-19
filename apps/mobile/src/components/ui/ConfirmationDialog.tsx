@@ -58,19 +58,22 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   checkboxChecked = false,
 }) => {
   // Internal state management for checkbox when no external state is provided
-  const [internalCheckboxChecked, setInternalCheckboxChecked] = React.useState(false);
-  
+  const [internalCheckboxChecked, setInternalCheckboxChecked] =
+    React.useState(false);
+
   // Reset internal state when dialog visibility changes
   React.useEffect(() => {
     if (!visible) {
       setInternalCheckboxChecked(false);
     }
   }, [visible]);
-  
+
   // Use internal state if no external state management is provided
-  const isCheckboxChecked = onCheckboxChange ? checkboxChecked : internalCheckboxChecked;
+  const isCheckboxChecked = onCheckboxChange
+    ? checkboxChecked
+    : internalCheckboxChecked;
   const handleCheckboxChange = onCheckboxChange || setInternalCheckboxChecked;
-  
+
   const handleConfirm = async () => {
     if (checkboxRequired && !isCheckboxChecked) {
       return;

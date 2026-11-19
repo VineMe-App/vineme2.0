@@ -238,7 +238,10 @@ export const Modal: React.FC<ModalProps> = ({
         {(title || showCloseButton) && (
           <View style={[styles.header, headerStyle]}>
             {title && (
-              <Text style={[styles.title, titleTextStyle]} accessibilityRole="header">
+              <Text
+                style={[styles.title, titleTextStyle]}
+                accessibilityRole="header"
+              >
                 {title}
               </Text>
             )}

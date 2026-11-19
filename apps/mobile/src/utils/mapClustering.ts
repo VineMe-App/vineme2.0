@@ -88,14 +88,19 @@ export class MapClusterer {
     // Handle longitude wrapping for coordinates near -180/180
     const pointsInBounds = this.points.filter((point) => {
       // Check latitude with buffer
-      const inLatBounds = point.latitude >= minLat - latBuffer && point.latitude <= maxLat + latBuffer;
-      
+      const inLatBounds =
+        point.latitude >= minLat - latBuffer &&
+        point.latitude <= maxLat + latBuffer;
+
       if (!inLatBounds) return false;
-      
+
       // Check longitude with buffer, handling potential wrapping
       // For normal cases (not crossing date line)
       if (minLng <= maxLng) {
-        return point.longitude >= minLng - lngBuffer && point.longitude <= maxLng + lngBuffer;
+        return (
+          point.longitude >= minLng - lngBuffer &&
+          point.longitude <= maxLng + lngBuffer
+        );
       }
       // For cases crossing date line (west > east), check both sides
       return (
@@ -105,7 +110,8 @@ export class MapClusterer {
     });
 
     const midZoom = zoom >= 11 && zoom <= 13;
-    const pointsToCluster = midZoom && pointsInBounds.length === 0 ? this.points : pointsInBounds;
+    const pointsToCluster =
+      midZoom && pointsInBounds.length === 0 ? this.points : pointsInBounds;
 
     // If zoom is high enough, return individual points
     if (zoom >= this.options.maxZoom) {
@@ -180,7 +186,7 @@ export class MapClusterer {
     zoom: number
   ): (Cluster | ClusterPoint)[] {
     if (points.length === 0) return [];
-    
+
     const clusters: (Cluster | ClusterPoint)[] = [];
     const processed = new Set<string>();
     const clusterRadius = this.getClusterRadius(zoom);
@@ -318,7 +324,7 @@ export class MapViewportOptimizer {
     // When zoomed out (large delta), need padding to include more groups
     // When zoomed in (small delta), need padding to prevent precision issues from filtering out markers
     const zoomLevel = this.getZoomLevel(viewport.latitudeDelta);
-    
+
     // Use very generous padding to ensure all visible groups are included in bounds
     // This prevents groups from disappearing when clusters split or combine (especially on iOS)
     let paddingMultiplier: number;
@@ -330,7 +336,7 @@ export class MapViewportOptimizer {
       // This ensures groups don't disappear when clusters change, especially during splits
       paddingMultiplier = 1.5; // 150% padding = bounds are 2.5x the viewport size
     }
-    
+
     const latPadding = viewport.latitudeDelta * paddingMultiplier;
     const lngPadding = viewport.longitudeDelta * paddingMultiplier;
 

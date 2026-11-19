@@ -21,7 +21,10 @@ import {
   Button,
   useFormContext,
 } from '../components/ui';
-import { CountryCodePicker, type Country } from '../components/ui/CountryCodePicker';
+import {
+  CountryCodePicker,
+  type Country,
+} from '../components/ui/CountryCodePicker';
 import { referralService } from '../services/referrals';
 import { useAuthStore } from '../stores/auth';
 import {
@@ -214,11 +217,12 @@ export default function ReferralPage() {
       const timeStr = time.split(' ')[0]; // Get "12:00" from "12:00 PM"
       const [hours, minutes] = timeStr.split(':').map(Number);
       const isPM = time.toLowerCase().includes('pm');
-      const hour24 = isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours;
-      
+      const hour24 =
+        isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours;
+
       const date = new Date();
       date.setHours(hour24, minutes || 0, 0, 0);
-      
+
       const formattedTime = date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
@@ -251,7 +255,11 @@ export default function ReferralPage() {
   const category = useMemo(() => {
     const userChurchId = userProfile?.church_id;
     const userServiceId = userProfile?.service_id;
-    if (group?.service_id && userServiceId && group.service_id === userServiceId) {
+    if (
+      group?.service_id &&
+      userServiceId &&
+      group.service_id === userServiceId
+    ) {
       return 'service';
     }
     if (group?.church_id && userChurchId && group.church_id === userChurchId) {
@@ -303,7 +311,10 @@ export default function ReferralPage() {
                   resizeMode="cover"
                 />
               ) : (
-                <GroupPlaceholderImage style={styles.groupImage} category={category} />
+                <GroupPlaceholderImage
+                  style={styles.groupImage}
+                  category={category}
+                />
               )}
             </View>
 
@@ -382,7 +393,12 @@ export default function ReferralPage() {
                 <Text style={styles.fieldLabel}>
                   First name<Text style={styles.required}>*</Text>
                 </Text>
-                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    error && styles.inputWrapperError,
+                  ]}
+                >
                   <TextInput
                     value={value}
                     onChangeText={onChange}
@@ -405,7 +421,12 @@ export default function ReferralPage() {
                 <Text style={styles.fieldLabel}>
                   Last name<Text style={styles.required}>*</Text>
                 </Text>
-                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    error && styles.inputWrapperError,
+                  ]}
+                >
                   <TextInput
                     value={value}
                     onChangeText={onChange}
@@ -428,7 +449,12 @@ export default function ReferralPage() {
                 <Text style={styles.fieldLabel}>
                   Email<Text style={styles.required}>*</Text>
                 </Text>
-                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    error && styles.inputWrapperError,
+                  ]}
+                >
                   <TextInput
                     value={value}
                     onChangeText={onChange}
@@ -454,7 +480,12 @@ export default function ReferralPage() {
             {({ value, error, onChange, onBlur }) => (
               <View style={styles.fieldContainer}>
                 <Text style={styles.fieldLabel}>Note</Text>
-                <View style={[styles.textAreaWrapper, error && styles.inputWrapperError]}>
+                <View
+                  style={[
+                    styles.textAreaWrapper,
+                    error && styles.inputWrapperError,
+                  ]}
+                >
                   <TextInput
                     value={value}
                     onChangeText={onChange}
@@ -529,12 +560,15 @@ const PhoneNumberField: React.FC = () => {
   const localNumber = values.localNumber || '';
   const error = errors.localNumber;
 
-  const selectedCountry = COUNTRIES.find((c) => c.code === countryCode) || COUNTRIES[0];
+  const selectedCountry =
+    COUNTRIES.find((c) => c.code === countryCode) || COUNTRIES[0];
 
   return (
     <View style={styles.fieldContainer}>
       <Text style={styles.fieldLabel}>Phone number</Text>
-      <View style={[styles.phoneInputWrapper, error && styles.inputWrapperError]}>
+      <View
+        style={[styles.phoneInputWrapper, error && styles.inputWrapperError]}
+      >
         {/* Country Code with Flag - Clickable */}
         <CountryCodePicker
           value={countryCode}
@@ -553,10 +587,10 @@ const PhoneNumberField: React.FC = () => {
             </TouchableOpacity>
           )}
         />
-        
+
         {/* Divider */}
         <View style={styles.phoneDivider} />
-        
+
         {/* Phone Number Input */}
         <TextInput
           value={localNumber}

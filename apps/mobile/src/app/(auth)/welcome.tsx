@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Linking } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  Linking,
+} from 'react-native';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Text } from '@/components/ui/Text';
 import { useRouter } from 'expo-router';

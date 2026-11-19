@@ -47,7 +47,12 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
   const isUnread = !notification.read;
   const timestamp = formatTimestamp(notification.created_at);
-  const { avatarData } = getNotificationMetadata(notification, theme, userAvatars, currentUserId);
+  const { avatarData } = getNotificationMetadata(
+    notification,
+    theme,
+    userAvatars,
+    currentUserId
+  );
 
   const handlePress = useCallback(() => {
     if (isUnread && onMarkAsRead) {
@@ -79,8 +84,12 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       const { state, translationX } = event.nativeEvent;
       if (state === State.END) {
         const clampedTranslation = Math.max(translationX, -swipeDistance);
-        const effectiveThreshold = Math.min(SWIPE_THRESHOLD, swipeDistance * 0.75);
-        const shouldShowActions = Math.abs(clampedTranslation) >= effectiveThreshold;
+        const effectiveThreshold = Math.min(
+          SWIPE_THRESHOLD,
+          swipeDistance * 0.75
+        );
+        const shouldShowActions =
+          Math.abs(clampedTranslation) >= effectiveThreshold;
 
         Animated.parallel([
           Animated.spring(translateX, {
@@ -364,7 +373,10 @@ function formatTimestamp(timestamp: string): string {
 function getNotificationMetadata(
   notification: Notification,
   theme: any,
-  userAvatars: Record<string, { avatar_url: string | null; name?: string }> = {},
+  userAvatars: Record<
+    string,
+    { avatar_url: string | null; name?: string }
+  > = {},
   currentUserId?: string
 ) {
   const { type, data } = notification;
@@ -380,7 +392,11 @@ function getNotificationMetadata(
         const userId = data.fromUserId as string | undefined;
         const avatarUrl = data.fromUserAvatar as string | undefined;
         const userData = userId ? userAvatars[userId] : null;
-        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
+        const finalAvatarUrl =
+          avatarUrl ||
+          (userData?.avatar_url && userData.avatar_url.trim()
+            ? userData.avatar_url
+            : undefined);
         avatarData = {
           name: String(data.fromUserName),
           imageUrl: finalAvatarUrl || undefined,
@@ -393,7 +409,11 @@ function getNotificationMetadata(
         const userId = data.acceptedByUserId as string | undefined;
         const avatarUrl = data.acceptedByUserAvatar as string | undefined;
         const userData = userId ? userAvatars[userId] : null;
-        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
+        const finalAvatarUrl =
+          avatarUrl ||
+          (userData?.avatar_url && userData.avatar_url.trim()
+            ? userData.avatar_url
+            : undefined);
         avatarData = {
           name: String(data.acceptedByUserName),
           imageUrl: finalAvatarUrl || undefined,
@@ -406,7 +426,11 @@ function getNotificationMetadata(
         const userId = data.creatorId as string | undefined;
         const avatarUrl = data.creatorAvatar as string | undefined;
         const userData = userId ? userAvatars[userId] : null;
-        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
+        const finalAvatarUrl =
+          avatarUrl ||
+          (userData?.avatar_url && userData.avatar_url.trim()
+            ? userData.avatar_url
+            : undefined);
         avatarData = {
           name: String(data.creatorName),
           imageUrl: finalAvatarUrl || undefined,
@@ -421,9 +445,15 @@ function getNotificationMetadata(
       if (notification.user_id) {
         const requesterId = notification.user_id;
         const userData = userAvatars[requesterId];
-        const finalAvatarUrl = userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined;
+        const finalAvatarUrl =
+          userData?.avatar_url && userData.avatar_url.trim()
+            ? userData.avatar_url
+            : undefined;
         // Use the requester's name from user profile or fallback
-        const requesterName = userData?.name || (currentUserId === requesterId ? 'You' : undefined) || String(data.approvedByName || data.deniedByName || 'You');
+        const requesterName =
+          userData?.name ||
+          (currentUserId === requesterId ? 'You' : undefined) ||
+          String(data.approvedByName || data.deniedByName || 'You');
         avatarData = {
           name: requesterName,
           imageUrl: finalAvatarUrl || undefined,
@@ -432,7 +462,9 @@ function getNotificationMetadata(
         // Fallback if user_id is not available
         avatarData = {
           name: String(data.approvedByName || data.deniedByName),
-          imageUrl: (data.approvedByAvatar || data.deniedByAvatar) as string | undefined,
+          imageUrl: (data.approvedByAvatar || data.deniedByAvatar) as
+            | string
+            | undefined,
         };
       }
       break;
@@ -442,7 +474,11 @@ function getNotificationMetadata(
         const userId = data.requesterId as string | undefined;
         const avatarUrl = data.requesterAvatar as string | undefined;
         const userData = userId ? userAvatars[userId] : null;
-        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
+        const finalAvatarUrl =
+          avatarUrl ||
+          (userData?.avatar_url && userData.avatar_url.trim()
+            ? userData.avatar_url
+            : undefined);
         avatarData = {
           name: String(data.requesterName),
           imageUrl: finalAvatarUrl || undefined,
@@ -470,16 +506,10 @@ function getNotificationMetadata(
     case 'join_request_approved':
     case 'join_request_denied':
     case 'group_member_added':
-      if (
-        data.approvedByName ||
-        data.deniedByName ||
-        data.addedByName
-      ) {
+      if (data.approvedByName || data.deniedByName || data.addedByName) {
         avatarData = {
           name: String(
-            data.approvedByName ||
-            data.deniedByName ||
-            data.addedByName
+            data.approvedByName || data.deniedByName || data.addedByName
           ),
           imageUrl: (data.approvedByAvatar ||
             data.deniedByAvatar ||
@@ -494,7 +524,11 @@ function getNotificationMetadata(
         const userId = data.referredUserId as string | undefined;
         const avatarUrl = data.referredUserAvatar as string | undefined;
         const userData = userId ? userAvatars[userId] : null;
-        const finalAvatarUrl = avatarUrl || (userData?.avatar_url && userData.avatar_url.trim() ? userData.avatar_url : undefined);
+        const finalAvatarUrl =
+          avatarUrl ||
+          (userData?.avatar_url && userData.avatar_url.trim()
+            ? userData.avatar_url
+            : undefined);
         avatarData = {
           name: String(data.referredUserName),
           imageUrl: finalAvatarUrl || undefined,

@@ -65,10 +65,14 @@ export default function PhoneLoginScreen() {
     if (isPhoneValid) {
       try {
         let processedNumber = sanitizedLocalNumber;
-        if (isUk && processedNumber.length === 11 && processedNumber.startsWith('0')) {
+        if (
+          isUk &&
+          processedNumber.length === 11 &&
+          processedNumber.startsWith('0')
+        ) {
           processedNumber = processedNumber.slice(1);
         }
-        
+
         const phone = `${countryCode}${processedNumber}`;
 
         const result = await signInWithPhone(phone);
@@ -84,7 +88,10 @@ export default function PhoneLoginScreen() {
         } else if (result.userNotFound) {
           Alert.alert('Phone Not Found', result.error);
         } else {
-          Alert.alert('Error', result.error || 'Failed to send verification code.');
+          Alert.alert(
+            'Error',
+            result.error || 'Failed to send verification code.'
+          );
         }
       } catch (error) {
         console.error('Login send code error', error);
@@ -113,19 +120,20 @@ export default function PhoneLoginScreen() {
       }
     } else {
       if (!isPhoneValid && !isEmailValid) {
-        Alert.alert('Invalid Input', 'Please enter a valid phone number or email address.');
+        Alert.alert(
+          'Invalid Input',
+          'Please enter a valid phone number or email address.'
+        );
       }
     }
   };
 
-
   const renderEnterCredentialsStep = () => (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.screen}>
-        <View style={[
-          styles.body,
-          isKeyboardVisible && styles.bodyKeyboardVisible
-        ]}>
+        <View
+          style={[styles.body, isKeyboardVisible && styles.bodyKeyboardVisible]}
+        >
           {!isKeyboardVisible && (
             <AuthHeroLogo
               logoSize={109}
@@ -138,7 +146,12 @@ export default function PhoneLoginScreen() {
           )}
           {isKeyboardVisible && (
             <View style={styles.keyboardHeader}>
-              <Text variant="h4" weight="extraBold" align="center" style={styles.title}>
+              <Text
+                variant="h4"
+                weight="extraBold"
+                align="center"
+                style={styles.title}
+              >
                 Sign in
               </Text>
               <Text
@@ -152,67 +165,65 @@ export default function PhoneLoginScreen() {
             </View>
           )}
 
-        <View style={styles.inputSection}>
-          {/* Phone Number Input */}
-          <View style={styles.phoneField}>
-            <CountryCodePicker
-              value={countryCode}
-              onChange={setCountryCode}
-              hideLabel
-              renderTrigger={({ selected, open }) => (
-                <TouchableOpacity
-                  style={styles.countryTrigger}
-                  onPress={open}
-                  accessibilityRole="button"
-                  accessibilityLabel="Select country code"
-                >
-                  <Text style={styles.countryFlag}>{selected.flag}</Text>
-                  <Text weight="semiBold" style={styles.countryCodeText}>
-                    {selected.code}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
-            <View style={styles.phoneDivider} />
-            <TextInput
-              value={localNumber}
-              onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
-              style={styles.phoneInput}
-              keyboardType="phone-pad"
-              placeholder="7123456789"
-              placeholderTextColor="#939393"
-              autoCapitalize="none"
-              autoCorrect={false}
-              blurOnSubmit={false}
-              editable={!isLoading}
-              accessibilityLabel="Phone number"
-            />
-          </View>
+          <View style={styles.inputSection}>
+            {/* Phone Number Input */}
+            <View style={styles.phoneField}>
+              <CountryCodePicker
+                value={countryCode}
+                onChange={setCountryCode}
+                hideLabel
+                renderTrigger={({ selected, open }) => (
+                  <TouchableOpacity
+                    style={styles.countryTrigger}
+                    onPress={open}
+                    accessibilityRole="button"
+                    accessibilityLabel="Select country code"
+                  >
+                    <Text style={styles.countryFlag}>{selected.flag}</Text>
+                    <Text weight="semiBold" style={styles.countryCodeText}>
+                      {selected.code}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <View style={styles.phoneDivider} />
+              <TextInput
+                value={localNumber}
+                onChangeText={(text) => setLocalNumber(text.replace(/\D/g, ''))}
+                style={styles.phoneInput}
+                keyboardType="phone-pad"
+                placeholder="7123456789"
+                placeholderTextColor="#939393"
+                autoCapitalize="none"
+                autoCorrect={false}
+                blurOnSubmit={false}
+                editable={!isLoading}
+                accessibilityLabel="Phone number"
+              />
+            </View>
 
-          {/* Or Divider */}
-          <View style={styles.orContainer}>
-            <Text style={styles.orText}>
-              or
-            </Text>
-          </View>
+            {/* Or Divider */}
+            <View style={styles.orContainer}>
+              <Text style={styles.orText}>or</Text>
+            </View>
 
-          {/* Email Input */}
-          <View style={styles.emailField}>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              style={styles.emailInput}
-              keyboardType="email-address"
-              placeholder="Please enter your email"
-              placeholderTextColor="#939393"
-              autoCapitalize="none"
-              autoCorrect={false}
-              blurOnSubmit={false}
-              editable={!isLoading}
-              accessibilityLabel="Email address"
-            />
+            {/* Email Input */}
+            <View style={styles.emailField}>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                style={styles.emailInput}
+                keyboardType="email-address"
+                placeholder="Please enter your email"
+                placeholderTextColor="#939393"
+                autoCapitalize="none"
+                autoCorrect={false}
+                blurOnSubmit={false}
+                editable={!isLoading}
+                accessibilityLabel="Email address"
+              />
+            </View>
           </View>
-        </View>
 
           <View style={styles.actionsSection}>
             <AuthButton
@@ -229,7 +240,8 @@ export default function PhoneLoginScreen() {
               style={styles.signUpLink}
             >
               <Text style={styles.signUpText}>
-                Don't have an account? <Text style={styles.signUpLinkText}>Sign up</Text>
+                Don't have an account?{' '}
+                <Text style={styles.signUpLinkText}>Sign up</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -402,4 +414,3 @@ const styles = StyleSheet.create({
     color: '#1082FF',
   },
 });
-

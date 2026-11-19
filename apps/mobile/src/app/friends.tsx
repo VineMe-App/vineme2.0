@@ -1,10 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
 import {
@@ -32,16 +27,13 @@ export default function FriendsScreen() {
     });
   }, [navigation]);
 
-  const handleViewProfile = useCallback(
-    (profileId: string) => {
-      if (!profileId) return;
-      const delay = Platform.OS === 'ios' ? 350 : 50;
-      setTimeout(() => {
-        router.push(`/user/${profileId}`);
-      }, delay);
-    },
-    []
-  );
+  const handleViewProfile = useCallback((profileId: string) => {
+    if (!profileId) return;
+    const delay = Platform.OS === 'ios' ? 350 : 50;
+    setTimeout(() => {
+      router.push(`/user/${profileId}`);
+    }, delay);
+  }, []);
 
   const handleAddFriend = useCallback(() => {
     setShowSearch(true);
@@ -81,8 +73,8 @@ export default function FriendsScreen() {
 
       {/* Content with tabs and search */}
       <View style={styles.content}>
-        <FriendsList 
-          userId={user?.id} 
+        <FriendsList
+          userId={user?.id}
           onViewProfile={handleViewProfile}
           onAddFriend={handleAddFriend}
           activeFilter={activeFilter}
