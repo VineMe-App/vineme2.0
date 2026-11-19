@@ -6,7 +6,9 @@
 - **Labels and milestone:** the lines under the heading.
 - **Body:** everything after the `**Body**` line, up to the next `---`.
 
-Create them in the order listed, so issue numbers run in working order. Keys like DATA-1 are for cross-references. Once the issues exist, put each issue's number on its `Number:` line, and add the number wherever a body mentions another key, for example "DATA-1 (#12)".
+Create them in the order listed, so issue numbers run in working order. Keys like DATA-1 are for cross-references. Once the issues exist, put each issue's number on its `Number:` line, and add the number wherever a body mentions another key, for example "DATA-1 (#375)".
+
+The issues moved from VineMe-App/vineme-website to VineMe-App/vineme2.0 on 19 November 2026 and were renumbered #361 to #423. The numbers below are the new ones; old links redirect.
 
 Definitions live in `docs/dashboard/glossary.md`. The reference query is `docs/dashboard/reference/follow-ups.sql`.
 
@@ -46,7 +48,7 @@ Definitions live in `docs/dashboard/glossary.md`. The reference query is `docs/d
 
 Labels: dashboard, decision, size:S
 Milestone: 1. Decide and audit
-Number: #1
+Number: #361
 
 **Body**
 
@@ -71,7 +73,7 @@ The same word counts different things on different pages. Connected is 117 on Me
 
 Labels: dashboard, decision, size:S
 Milestone: 1. Decide and audit
-Number: #2
+Number: #362
 
 **Body**
 
@@ -97,7 +99,7 @@ The Follow-ups page says 31 requests need attention, but its rules differ from t
 
 Labels: dashboard, decision, size:S
 Milestone: 1. Decide and audit
-Number: #3
+Number: #363
 
 **Body**
 
@@ -121,7 +123,7 @@ Some Metabase measures only count requests that reached a stage, so they look be
 
 Labels: dashboard, decision, size:S
 Milestone: 1. Decide and audit
-Number: #4
+Number: #364
 
 **Body**
 
@@ -143,7 +145,7 @@ Number: #4
 
 Labels: dashboard, data, size:M
 Milestone: 1. Decide and audit
-Number: #5
+Number: #365
 
 **Body**
 
@@ -194,7 +196,7 @@ Several numbers disagree between pages and with Metabase, and some data on scree
 
 Labels: dashboard, bug, members, size:M
 Milestone: 2. Quick wins and bugs
-Number: #6
+Number: #366
 
 **Body**
 
@@ -217,7 +219,7 @@ Members shows "500 of 500 people", but there are about 550, and searching for so
 
 Labels: dashboard, settings, size:S
 Milestone: 2. Quick wins and bugs
-Number: #7
+Number: #367
 
 **Body**
 
@@ -236,7 +238,7 @@ The ChurchSuite connection isn't finished (DEV-14).
 
 Labels: dashboard, overview, size:S
 Milestone: 2. Quick wins and bugs
-Number: #8
+Number: #368
 
 **Body**
 
@@ -259,7 +261,7 @@ The dark banner takes a lot of space, and "Invite user" doesn't work.
 
 Labels: dashboard, groups, size:S
 Milestone: 2. Quick wins and bugs
-Number: #9
+Number: #369
 
 **Body**
 
@@ -280,7 +282,7 @@ Number: #9
 
 Labels: dashboard, shared, size:S
 Milestone: 2. Quick wins and bugs
-Number: #10
+Number: #370
 
 **Body**
 
@@ -297,7 +299,7 @@ Number: #10
 
 Labels: dashboard, shared, size:S
 Milestone: 2. Quick wins and bugs
-Number: #11
+Number: #371
 
 **Body**
 
@@ -318,7 +320,7 @@ The follow-up and member drawers each show a raw number like 447700900123. They 
 
 Labels: dashboard, follow-ups, size:S
 Milestone: 2. Quick wins and bugs
-Number: #12
+Number: #372
 
 **Body**
 
@@ -335,7 +337,7 @@ Number: #12
 
 Labels: dashboard, overview, size:S
 Milestone: 2. Quick wins and bugs
-Number: #13
+Number: #373
 
 **Body**
 
@@ -357,7 +359,7 @@ The four stages in "Pending requests by group" are close shades of pink and hard
 
 Labels: dashboard, shared, size:S
 Milestone: 2. Quick wins and bugs
-Number: #14
+Number: #374
 
 **Body**
 
@@ -380,7 +382,7 @@ Number: #14
 
 Labels: dashboard, data, size:L
 Milestone: 3. Data foundations
-Number: #15
+Number: #375
 
 **Body**
 
@@ -407,7 +409,7 @@ Each page calculates its own numbers, so they disagree. One view, read by every 
 
 Labels: dashboard, data, size:M
 Milestone: 3. Data foundations
-Number: #16
+Number: #376
 
 **Body**
 
@@ -429,7 +431,7 @@ Number: #16
 
 Labels: dashboard, data, size:M
 Milestone: 3. Data foundations
-Number: #17
+Number: #377
 
 **Body**
 
@@ -450,7 +452,7 @@ Number: #17
 
 Labels: dashboard, data, shared, size:M
 Milestone: 3. Data foundations
-Number: #18
+Number: #378
 
 **Body**
 
@@ -472,7 +474,7 @@ Number: #18
 
 Labels: dashboard, data, size:S
 Milestone: 3. Data foundations
-Number: #19
+Number: #379
 
 **Body**
 
@@ -495,7 +497,7 @@ Metabase is being retired once the dashboard replaces it. Until then it's a usef
 
 Labels: dashboard, follow-ups, size:S
 Milestone: 4. Pages
-Number: #20
+Number: #380
 
 **Body**
 
@@ -516,7 +518,7 @@ Number: #20
 
 Labels: dashboard, follow-ups, size:M
 Milestone: 4. Pages
-Number: #21
+Number: #381
 
 **Body**
 
@@ -542,7 +544,7 @@ Number: #21
 
 Labels: dashboard, follow-ups, size:M
 Milestone: 4. Pages
-Number: #22
+Number: #382
 
 **Body**
 
@@ -562,7 +564,7 @@ Number: #22
 
 Labels: dashboard, follow-ups, size:M
 Milestone: 4. Pages
-Number: #23
+Number: #383
 
 **Body**
 
@@ -587,7 +589,7 @@ Number: #23
 
 Labels: dashboard, follow-ups, size:S
 Milestone: 4. Pages
-Number: #24
+Number: #384
 Parked: closed as not planned by DEC-2. Reopen if very old requests become a problem.
 
 **Body**
@@ -609,7 +611,7 @@ Many requests from 2025 are probably resolved but never updated, such as King's 
 
 Labels: dashboard, members, size:M
 Milestone: 4. Pages
-Number: #25
+Number: #385
 
 **Body**
 
@@ -629,7 +631,7 @@ Number: #25
 
 Labels: dashboard, members, size:M
 Milestone: 4. Pages
-Number: #26
+Number: #386
 
 **Body**
 
@@ -652,7 +654,7 @@ Number: #26
 
 Labels: dashboard, members, size:M
 Milestone: 4. Pages
-Number: #27
+Number: #387
 
 **Body**
 
@@ -679,7 +681,7 @@ The drawer should be the one place to see everything about a person. Today it le
 
 Labels: dashboard, groups, size:M
 Milestone: 4. Pages
-Number: #28
+Number: #388
 
 **Body**
 
@@ -697,7 +699,7 @@ Number: #28
 
 Labels: dashboard, groups, size:S
 Milestone: 4. Pages
-Number: #29
+Number: #389
 
 **Body**
 
@@ -717,7 +719,7 @@ Number: #29
 
 Labels: dashboard, groups, size:S
 Milestone: 4. Pages
-Number: #30
+Number: #390
 
 **Body**
 
@@ -735,7 +737,7 @@ Number: #30
 
 Labels: dashboard, groups, size:S
 Milestone: 4. Pages
-Number: #31
+Number: #391
 
 **Body**
 
@@ -753,7 +755,7 @@ Number: #31
 
 Labels: dashboard, overview, size:S
 Milestone: 4. Pages
-Number: #32
+Number: #392
 
 **Body**
 
@@ -772,7 +774,7 @@ Number: #32
 
 Labels: dashboard, overview, size:M
 Milestone: 4. Pages
-Number: #33
+Number: #393
 
 **Body**
 
@@ -792,7 +794,7 @@ Number: #33
 
 Labels: dashboard, overview, size:S
 Milestone: 4. Pages
-Number: #34
+Number: #394
 
 **Body**
 
@@ -810,7 +812,7 @@ Number: #34
 
 Labels: dashboard, overview, size:M
 Milestone: 4. Pages
-Number: #35
+Number: #395
 
 **Body**
 
@@ -830,7 +832,7 @@ Number: #35
 
 Labels: dashboard, insights, size:M
 Milestone: 4. Pages
-Number: #36
+Number: #396
 
 **Body**
 
@@ -850,7 +852,7 @@ Number: #36
 
 Labels: dashboard, insights, size:M
 Milestone: 4. Pages
-Number: #37
+Number: #397
 
 **Body**
 
@@ -870,7 +872,7 @@ Number: #37
 
 Labels: dashboard, insights, size:L
 Milestone: 4. Pages
-Number: #38
+Number: #398
 
 **Body**
 
@@ -893,7 +895,7 @@ Number: #38
 
 Labels: dashboard, insights, size:M
 Milestone: 4. Pages
-Number: #39
+Number: #399
 
 **Body**
 
@@ -917,7 +919,7 @@ Number: #39
 
 Labels: dashboard, insights, size:L
 Milestone: 4. Pages
-Number: #40
+Number: #400
 
 **Body**
 
@@ -941,7 +943,7 @@ Number: #40
 
 Labels: dashboard, shared, size:M
 Milestone: 5. Polish
-Number: #41
+Number: #401
 
 **Body**
 
@@ -958,7 +960,7 @@ Number: #41
 
 Labels: dashboard, shared, size:M
 Milestone: 5. Polish
-Number: #42
+Number: #402
 Parked: closed as not planned by DEC-4. Each page's search covers that page only. The Groups search (GRP-1) can find people.
 
 **Body**
@@ -977,7 +979,7 @@ Parked: closed as not planned by DEC-4. Each page's search covers that page only
 
 Labels: dashboard, needs-dev, follow-ups
 Milestone: 6. Dev backlog
-Number: #43
+Number: #403
 
 **Body**
 
@@ -996,7 +998,7 @@ Clergy can add notes in the dashboard, but leaders won't see them unless they're
 
 Labels: dashboard, needs-dev, follow-ups
 Milestone: 6. Dev backlog
-Number: #44
+Number: #404
 
 **Body**
 
@@ -1017,7 +1019,7 @@ FU-4 lets clergy update a stage or archive a request for a leader. The leader ne
 
 Labels: dashboard, needs-dev, groups
 Milestone: 6. Dev backlog
-Number: #45
+Number: #405
 
 **Body**
 
@@ -1036,7 +1038,7 @@ Number: #45
 
 Labels: dashboard, needs-dev, members
 Milestone: 6. Dev backlog
-Number: #46
+Number: #406
 
 **Body**
 
@@ -1057,7 +1059,7 @@ When a group isn't the right fit, the person should be pointed to another one, n
 
 Labels: dashboard, needs-dev, settings
 Milestone: 6. Dev backlog
-Number: #47
+Number: #407
 Parked: closed as not planned. The plan changed: showing groups on church websites is being rethought, probably not through ChurchSuite. Syncing users into ChurchSuite is now DEV-14.
 
 **Body**
@@ -1078,7 +1080,7 @@ Churches want VineMe groups on their own websites. The plan is to sync VineMe an
 
 Labels: dashboard, needs-dev, shared
 Milestone: 6. Dev backlog
-Number: #48
+Number: #408
 
 **Body**
 
@@ -1098,7 +1100,7 @@ Number: #48
 
 Labels: dashboard, needs-dev, data
 Milestone: 6. Dev backlog
-Number: #49
+Number: #409
 
 **Body**
 
@@ -1119,7 +1121,7 @@ Only needed if AUD-1 finds that `group_membership_notes` doesn't record who made
 
 Labels: dashboard, needs-dev, groups
 Milestone: 6. Dev backlog
-Number: #50
+Number: #410
 
 **Body**
 
@@ -1140,7 +1142,7 @@ The dashboard showed pet tags with no data behind them. They're a nice idea, but
 
 Labels: dashboard, needs-dev, shared
 Milestone: 6. Dev backlog
-Number: #51
+Number: #411
 
 **Body**
 
@@ -1164,7 +1166,7 @@ Today the `church_admin` role opens the dashboard, and it isn't clear whether it
 
 Labels: dashboard, needs-dev, design, shared
 Milestone: 6. Dev backlog
-Number: #52
+Number: #412
 
 **Body**
 
@@ -1189,7 +1191,7 @@ The charts use four close shades of pink, so the stages can't be told apart at a
 
 Labels: dashboard, members, size:M
 Milestone: 4. Pages
-Number: #53
+Number: #413
 
 **Body**
 
@@ -1218,7 +1220,7 @@ People who press "I can't find a group" in the app have asked for help outright,
 
 Labels: dashboard, needs-dev, data
 Milestone: 6. Dev backlog
-Number: #54
+Number: #414
 
 **Body**
 
@@ -1238,7 +1240,7 @@ Test accounts are excluded by matching "test" in the first name, last name or em
 
 Labels: dashboard, follow-ups, size:M
 Milestone: 4. Pages
-Number: #55
+Number: #415
 
 **Body**
 
@@ -1266,7 +1268,7 @@ Clergy can add notes from the follow-up drawer. A note on its own shouldn't rese
 
 Labels: dashboard, needs-dev, data, members
 Milestone: 6. Dev backlog
-Number: #56
+Number: #416
 
 **Body**
 
@@ -1288,7 +1290,7 @@ Clergy sometimes contact someone about finding a group in general, not about one
 
 Labels: dashboard, bug, follow-ups, size:S
 Milestone: 2. Quick wins and bugs
-Number: #58
+Number: #418
 Parked: closed as not planned. Not needed: the site won't be published until the dashboard can save changes (DEV-13).
 
 **Body**
@@ -1310,7 +1312,7 @@ The follow-up drawer's stage ticks, note box, "Add to group" and "Archive" look 
 
 Labels: dashboard, needs-dev, data
 Milestone: 6. Dev backlog
-Number: #59
+Number: #419
 
 **Body**
 
@@ -1332,7 +1334,7 @@ The dashboard can't write to Supabase, so ticking a stage, adding a note, Add to
 
 Labels: dashboard, shared, size:S
 Milestone: 2. Quick wins and bugs
-Number: #60
+Number: #420
 
 **Body**
 
@@ -1354,7 +1356,7 @@ The dashboard seems to load its data once per session, so changes made in the ap
 
 Labels: dashboard, needs-dev, settings
 Milestone: 6. Dev backlog
-Number: #64
+Number: #421
 
 **Body**
 
@@ -1376,7 +1378,7 @@ Churches want people who join through VineMe to appear in their ChurchSuite data
 
 Labels: dashboard, shared, size:S
 Milestone: 2. Quick wins and bugs
-Number: #67
+Number: #422
 
 **Body**
 
@@ -1398,7 +1400,7 @@ Each page sets its own spacing and width, so they drift. The Groups map view has
 
 Labels: dashboard, shared, size:S
 Milestone: 2. Quick wins and bugs
-Number: #71
+Number: #423
 
 **Body**
 
