@@ -43,8 +43,7 @@ function InsightsView() {
 
   return (
     <DashboardPage>
-      <p className="font-medium text-muted-foreground text-sm">Insights</p>
-      <h1 className="mt-1 font-heading text-3xl font-bold sm:text-4xl">
+      <h1 className="font-heading text-3xl font-bold sm:text-4xl">
         How are people getting connected at {churchName ?? "your church"}?
       </h1>
 
