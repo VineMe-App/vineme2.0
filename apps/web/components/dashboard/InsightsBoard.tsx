@@ -101,8 +101,17 @@ function ChartCard({
         <CardTitle className="text-xl">{title}</CardTitle>
         {description ? <CardDescription>{description}</CardDescription> : null}
       </CardHeader>
-      <CardPanel>{children}</CardPanel>
+      <CardPanel className="flex flex-col">{children}</CardPanel>
     </Card>
+  );
+}
+
+/** An empty chart's message, centred in whatever space the card has. */
+function EmptyChart({ children }: { children: ReactNode }) {
+  return (
+    <p className="flex min-h-32 flex-1 items-center justify-center text-center text-muted-foreground text-sm">
+      {children}
+    </p>
   );
 }
 
@@ -174,7 +183,7 @@ function Donut({
 }) {
   const total = slices.reduce((sum, slice) => sum + slice.value, 0);
   if (total === 0) {
-    return <p className="text-muted-foreground text-sm">Nothing to show yet.</p>;
+    return <EmptyChart>Nothing to show yet.</EmptyChart>;
   }
 
   return (
@@ -392,7 +401,7 @@ function ActivityTab({
           description="Split by where they are now."
         >
           {rows.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nothing to show yet.</p>
+            <EmptyChart>Nothing to show yet.</EmptyChart>
           ) : (
             <>
               <div className="h-72">
@@ -520,7 +529,7 @@ function ResultsTab({
           description="People with a pending request, by the furthest stage recorded on it."
         >
           {total === 0 ? (
-            <p className="text-muted-foreground text-sm">No open follow-ups.</p>
+            <EmptyChart>No open follow-ups.</EmptyChart>
           ) : (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -608,7 +617,7 @@ function GroupsTab({
       <div className="mt-6">
         <ChartCard title="Members by group">
           {rows.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No active groups yet.</p>
+            <EmptyChart>No active groups yet.</EmptyChart>
           ) : (
             <div style={{ height: Math.max(280, rows.length * 36) }}>
               <ResponsiveContainer width="100%" height="100%">
