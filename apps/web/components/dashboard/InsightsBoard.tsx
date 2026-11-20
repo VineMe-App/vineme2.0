@@ -8,6 +8,8 @@ import {
   Cell,
   LabelList,
   Pie,
+  Rectangle,
+  type BarShapeProps,
   PieChart,
   ResponsiveContainer,
   Tooltip,
@@ -246,39 +248,6 @@ function ChartTip({
   );
 }
 
-function renderStackTotal<T extends { total: number }>(
-  rows: T[],
-  series: string,
-  topSeries: (row: T) => string,
-) {
-  return function StackTotal({
-    viewBox,
-    index,
-  }: {
-    viewBox?: { x?: number; y?: number; width?: number; cx?: number };
-    index?: number;
-  }) {
-    const row = index != null ? rows[index] : undefined;
-    if (!row?.total || !viewBox || topSeries(row) !== series) return <text />;
-
-    const x = Number(viewBox.x ?? 0);
-    const y = Number(viewBox.y ?? 0);
-    const width = Number(viewBox.width ?? 0);
-
-    return (
-      <text
-        x={x + width / 2}
-        y={y - 8}
-        textAnchor="middle"
-        fill="var(--foreground)"
-        fontSize={12}
-      >
-        {row.total}
-      </text>
-    );
-  };
-}
-
 /** Says who and when a tab counts, so every number says what it counts. */
 function Scope({ children }: { children: ReactNode }) {
   return <p className="mt-2 max-w-2xl text-muted-foreground text-sm">{children}</p>;
@@ -299,6 +268,8 @@ interface SignupRow {
   label: string;
   inProgress: boolean;
   total: number;
+  /** The highest series with people in it, which gets the rounded top and the total. */
+  top: SignupOutcome | null;
   attended: number;
   requested: number;
   downloaded: number;
@@ -331,8 +302,48 @@ function signupRows(
       inProgress: bucket.inProgress,
       ...counts,
       total: counts.attended + counts.requested + counts.downloaded,
+      top:
+        [...outcomes].reverse().find((outcome) => counts[outcome.key] > 0)
+          ?.key ?? null,
     };
   });
+}
+
+/**
+ * One segment of a stacked signup bar. Only the highest segment with people
+ * in it gets the rounded top and the total, so every bar looks the same
+ * whichever series is on top.
+ */
+function SignupBar({
+  series,
+  ...props
+}: BarShapeProps & { series: SignupOutcome }) {
+  const row = props.payload as SignupRow;
+  const isTop = row.top === series;
+  const x = Number(props.x ?? 0);
+  const y = Number(props.y ?? 0);
+  const width = Number(props.width ?? 0);
+
+  return (
+    <g>
+      <Rectangle
+        {...props}
+        radius={isTop ? [4, 4, 0, 0] : 0}
+        fillOpacity={row.inProgress ? inProgressOpacity : 1}
+      />
+      {isTop ? (
+        <text
+          x={x + width / 2}
+          y={y - 8}
+          textAnchor="middle"
+          fill="var(--foreground)"
+          fontSize={12}
+        >
+          {row.total}
+        </text>
+      ) : null}
+    </g>
+  );
 }
 
 function ActivityTab({
@@ -430,27 +441,10 @@ function ActivityTab({
                         stackId="people"
                         fill={outcome.color}
                         maxBarSize={40}
-                        radius={
-                          outcome.key === "downloaded" ? [4, 4, 0, 0] : undefined
-                        }
-                      >
-                        {rows.map((row) => (
-                          <Cell
-                            key={row.key}
-                            fillOpacity={row.inProgress ? inProgressOpacity : 1}
-                          />
-                        ))}
-                        <LabelList
-                          dataKey="total"
-                          content={renderStackTotal(rows, outcome.key, (row) =>
-                            row.downloaded
-                              ? "downloaded"
-                              : row.requested
-                                ? "requested"
-                                : "attended",
-                          )}
-                        />
-                      </Bar>
+                        shape={(props: BarShapeProps) => (
+                          <SignupBar {...props} series={outcome.key} />
+                        )}
+                      />
                     ))}
                   </BarChart>
                 </ResponsiveContainer>
