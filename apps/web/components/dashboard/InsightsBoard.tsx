@@ -850,21 +850,17 @@ function FilterBar({
             />
           </div>
         ) : null}
-        <FilterSelect
-          label="Group charts over time by"
-          options={periodOptions}
-          value={filters.by}
-          onChange={(value) => onChange({ by: value })}
-          disabled={!periodApplies}
-          className="w-36"
-        />
+        {/* Only shown on tabs with a chart over time; the choice stays in the URL. */}
+        {periodApplies ? (
+          <FilterSelect
+            label="Group charts over time by"
+            options={periodOptions}
+            value={filters.by}
+            onChange={(value) => onChange({ by: value })}
+            className="w-36"
+          />
+        ) : null}
       </div>
-      {!periodApplies ? (
-        <p className="text-muted-foreground text-xs">
-          Week, month or quarter changes the charts over time, which are on
-          Activity for now.
-        </p>
-      ) : null}
     </div>
   );
 }
