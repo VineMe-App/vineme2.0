@@ -204,6 +204,30 @@ Request by request today, 34 of 53 agree. The other 19:
 - **2 On track shown as Need attention by the 30-day cap:** 1 Reached out (37 days since the request) and 1 Spoken to (49 days).
 - **7 Attended, not yet added, never flagged.** Of these, 2 need attention (176 days since the last action) and 5 are on track.
 
+## The request view against reference/follow-ups.sql (DATA-1)
+
+`public.dashboard_requests` (migration `20261120170000_create_dashboard_requests_view.sql`) uses the same follow-up rules as `follow-ups.sql`. It differs in five ways, and each can change a count:
+
+| | `follow-ups.sql` | `dashboard_requests` | Effect on the counts |
+| --- | --- | --- | --- |
+| Groups with no active leader | Dropped by an inner join | Kept, with an empty leaders list | Adds the requests to those groups. On 22 October: 2 requests, both to the closed group, neither pending. |
+| Test accounts | Case-sensitive (`'%Test%'`) | Case-insensitive, nulls kept | None on 22 October: no one was caught by one and not the other, and the 2 members with no last name (kept here, as in `people.sql`) had no requests. |
+| Notes from before the request | Counted | Ignored | A rejoin reuses the old membership row and resets `created_at`, so the old request's stage dates, last action and archive reason no longer leak into the new request. Not measured on 22 October. |
+| Scope | Hard-coded service id | The signed-in church admin's service; database roles (`postgres`, `service_role`) see every service | None while one service uses VineMe. |
+| Leaders | Comma-separated names | Every active leader (role `leader` or `admin`), as `{id, name, avatar_url}`, test accounts left out | None on the counts. |
+
+Days are still counted with `current_date`, which is the database's date (UTC), as in `follow-ups.sql`. In the UK this only matters for requests made between midnight and 1am in summer time.
+
+**Reconciliation still to do.** The view hasn't been run against live data yet. Once it's applied, run this in the SQL editor and compare it with `follow-ups.sql` run on the same day. Every difference should be one of the rows above.
+
+```sql
+select status, follow_up, stage, count(*) as requests
+from dashboard_requests
+where service_id = '<service id>'
+group by grouping sets ((status), (status, follow_up, stage), ())
+order by 1, 2, 3;
+```
+
 ## The known gaps, explained with today's numbers
 
 - **Total people: Overview 564, Metabase 558, Members 500** (`people.sql`: 560). Overview counts every user in the church: 560 members plus 4 test accounts. Metabase drops the 4 test accounts and the 2 members with no last name. Members stops at the newest 500.
