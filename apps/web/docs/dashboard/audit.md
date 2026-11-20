@@ -228,6 +228,30 @@ group by grouping sets ((status), (status, follow_up, stage), ())
 order by 1, 2, 3;
 ```
 
+## The person view against reference/people.sql (DATA-2)
+
+`public.dashboard_people` (migration `20261120180000_create_dashboard_people_view.sql`) uses the same definitions as `people.sql`, and on test data it gave the same answer for every person and every column the two share. It differs in these ways:
+
+| | `people.sql` | `dashboard_people` | Effect on the counts |
+| --- | --- | --- | --- |
+| Scope | Hard-coded church and service ids | The signed-in church admin's church and service; database roles (`postgres`, `service_role`) see everyone | None while one service uses VineMe. |
+| Leaders | Role `leader` | Role `leader` or `admin`, as in `dashboard_requests` | None today: there are no `admin` memberships. |
+| Values | Labels ("Not yet connected") | Values (`not_yet_connected`), for the terms file to turn into labels | None. |
+| Role | Admin, leader and congregation as separate columns | Also one `role`: Admin, then Leader, then Newcomer or Existing member | None. |
+| Needs attention | Not in `people.sql` | Taken from `dashboard_requests` | Counts only requests to groups in the reader's service, as Follow-ups does. Read as `postgres`, it counts every service. |
+
+`outcome` is `check_data` for anyone with an added or left request that never reached Attended (`data_errors`). There were none on 22 October, so Connected + Not yet connected + Archived + No requests = All members. If a `check_data` row ever appears, it's a data error to fix, not a fifth outcome.
+
+**Reconciliation still to do.** Once the view is applied, run this and compare it with `people.sql` run on the same day (wrapped as its last comment shows). The counts should match exactly.
+
+```sql
+select outcome, furthest_stage, count(*) as people
+from dashboard_people
+where church_id = '<church id>' and service_id = '<service id>'
+group by grouping sets ((outcome, furthest_stage), ())
+order by 1, 2;
+```
+
 ## The known gaps, explained with today's numbers
 
 - **Total people: Overview 564, Metabase 558, Members 500** (`people.sql`: 560). Overview counts every user in the church: 560 members plus 4 test accounts. Metabase drops the 4 test accounts and the 2 members with no last name. Members stops at the newest 500.
