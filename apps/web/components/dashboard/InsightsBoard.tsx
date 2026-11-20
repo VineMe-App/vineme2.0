@@ -109,7 +109,7 @@ function ChartCard({
 /** An empty chart's message, centred in whatever space the card has. */
 function EmptyChart({ children }: { children: ReactNode }) {
   return (
-    <p className="flex min-h-32 flex-1 items-center justify-center text-center text-muted-foreground text-sm">
+    <p className="flex min-h-32 flex-1 items-center justify-center text-center font-heading font-semibold text-muted-foreground text-xl">
       {children}
     </p>
   );
