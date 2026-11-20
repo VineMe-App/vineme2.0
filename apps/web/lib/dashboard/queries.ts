@@ -4,10 +4,10 @@ import type {
   Group,
   Member,
   OverviewData,
-  ReportGroup,
-  ReportPerson,
-  ReportStage,
-  ReportsData,
+  InsightsGroup,
+  InsightsPerson,
+  InsightsStage,
+  InsightsData,
   SignupOutcome,
 } from "@/lib/dashboard/types";
 import { people } from "@/lib/dashboard/terms";
@@ -552,46 +552,48 @@ export async function fetchContactPhone(
   return (data as { phone?: string | null } | null)?.phone ?? "";
 }
 
-const stageRank: Record<ReportStage, number> = {
+const stageRank: Record<InsightsStage, number> = {
   "not-reached": 0,
   "reached-out": 1,
   invited: 2,
   attended: 3,
 };
 
-function stageFromJourney(status: number | null): ReportStage {
+function stageFromJourney(status: number | null): InsightsStage {
   if (status === 3) return "attended";
   if (status === 2) return "invited";
   if (status === 1) return "reached-out";
   return "not-reached";
 }
 
-type ReportUserRow = {
+type InsightsUserRow = {
   id: string;
   created_at: string;
   newcomer: boolean | null;
   cannot_find_group: boolean | null;
 };
 
-type ReportMembershipRow = {
+type InsightsMembershipRow = {
   user_id: string;
   status: string;
   journey_status: number | null;
   created_at: string;
 };
 
-type ReportGroupRow = {
+type InsightsGroupRow = {
   id: string;
   title: string;
   at_capacity: boolean;
-  group_memberships: { status: string }[] | null;
+  group_memberships:
+    | { user_id: string; status: string; created_at: string }[]
+    | null;
 };
 
-/** People, follow-ups and groups behind the Reports charts. No names. */
-export async function fetchReports({
+/** People, follow-ups and groups behind the Insights charts. No names. */
+export async function fetchInsights({
   supabase,
   churchId,
-}: AdminContextValue): Promise<ReportsData> {
+}: AdminContextValue): Promise<InsightsData> {
   const [usersResult, membershipsResult, groupsResult] = await Promise.all([
     supabase
       .from("users")
@@ -607,23 +609,25 @@ export async function fetchReports({
       .limit(2000),
     supabase
       .from("groups")
-      .select("id, title, at_capacity, group_memberships(status)")
+      .select(
+        "id, title, at_capacity, group_memberships(user_id, status, created_at)",
+      )
       .eq("church_id", churchId)
       .eq("status", "approved")
       .order("title", { ascending: true }),
   ]);
   check(usersResult, membershipsResult, groupsResult);
 
-  const memberships = (membershipsResult.data ?? []) as unknown as ReportMembershipRow[];
-  const byUser = new Map<string, ReportMembershipRow[]>();
+  const memberships = (membershipsResult.data ?? []) as unknown as InsightsMembershipRow[];
+  const byUser = new Map<string, InsightsMembershipRow[]>();
   for (const membership of memberships) {
     const list = byUser.get(membership.user_id) ?? [];
     list.push(membership);
     byUser.set(membership.user_id, list);
   }
 
-  const people = ((usersResult.data ?? []) as unknown as ReportUserRow[]).map(
-    (user): ReportPerson => {
+  const people = ((usersResult.data ?? []) as unknown as InsightsUserRow[]).map(
+    (user): InsightsPerson => {
       const rows = byUser.get(user.id) ?? [];
       const live = rows.filter(
         (row) => row.status === "active" || row.status === "pending",
@@ -638,7 +642,7 @@ export async function fetchReports({
           ? "requested"
           : "downloaded";
 
-      const furthest = pending.reduce<ReportStage | null>((best, row) => {
+      const furthest = pending.reduce<InsightsStage | null>((best, row) => {
         const stage = stageFromJourney(row.journey_status);
         if (!best || stageRank[stage] > stageRank[best]) return stage;
         return best;
@@ -659,21 +663,30 @@ export async function fetchReports({
     },
   );
 
-  const groups = ((groupsResult.data ?? []) as unknown as ReportGroupRow[])
+  const newcomers = new Set(
+    ((usersResult.data ?? []) as unknown as InsightsUserRow[])
+      .filter((user) => user.newcomer)
+      .map((user) => user.id),
+  );
+  const groups = ((groupsResult.data ?? []) as unknown as InsightsGroupRow[])
     .map(
-      (group): ReportGroup => ({
+      (group): InsightsGroup => ({
         id: group.id,
         name: group.title,
-        members: (group.group_memberships ?? []).filter(
-          (row) => row.status === "active",
-        ).length,
-        pending: (group.group_memberships ?? []).filter(
-          (row) => row.status === "pending",
-        ).length,
+        requests: (group.group_memberships ?? []).flatMap((row) =>
+          row.status === "active" || row.status === "pending"
+            ? [
+                {
+                  status: row.status,
+                  requestedAt: row.created_at,
+                  isNewcomer: newcomers.has(row.user_id),
+                },
+              ]
+            : [],
+        ),
         atCapacity: group.at_capacity,
       }),
-    )
-    .sort((a, b) => b.members - a.members || a.name.localeCompare(b.name));
+    );
 
   return { people, groups };
 }
