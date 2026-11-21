@@ -17,6 +17,7 @@ For what personal and safeguarding data needs (lawful basis, special category da
 ## Modes
 
 - **Guidance mode (default):** a security question, a review of one change, or checking one suspected issue. Read only the topic files you need. Don't create audit files or run every phase.
+- **Pre-PR diff review:** called from `pre-pr-verify`. Review only the branch diff against `dev` with the matching checklists. Report "no issues" or stop and tell the user privately.
 - **Full audit mode:** only when explicitly asked for an audit, pen test, or full/end-to-end security review. Follow the workflow below.
 
 If it's unclear which is wanted, ask one question first.

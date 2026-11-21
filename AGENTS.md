@@ -35,6 +35,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for full details:
   - `npm run test:unit` (plus `test:integration` / `test:e2e` when relevant)
   - `npm run build:web` (when `apps/web` or `packages/shared` changed)
   - `npm run db:reset` and `npm run db:types` (when `supabase/` changed)
+  - Security review of the diff with the `security-audit` skill when the branch touches `supabase/`, auth, server actions/route handlers, keys or env vars, mobile storage, dependencies or CI (see `pre-pr-verify`); never put findings in the PR
 
 ## Project Skills
 
