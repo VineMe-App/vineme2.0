@@ -45,3 +45,4 @@ Reusable workflows live in `.agents/skills/` (symlinked at `.claude/skills`):
 - `supabase-migration` — Safe SQL migrations, `security_invoker`, RLS, and type regen
 - `pre-pr-verify` — Scoped verification checks and PR checklist before opening a PR
 - `church-data-protection` — UK data protection & safeguarding checks for any feature touching personal data
+- `security-audit` — Security reviews and full audits (RLS, keys, Edge Functions, Next.js, Expo, auth, CI); findings stay out of the repo
