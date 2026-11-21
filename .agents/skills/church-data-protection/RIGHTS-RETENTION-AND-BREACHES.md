@@ -9,7 +9,7 @@ Read this when a feature creates data that must eventually be deleted, when buil
 - Backups, logs and copies in other systems are covered too.
 
 ## Individuals' rights
-Access (one month to respond), rectification, erasure, restriction, objection, portability, withdrawing consent.
+Access (one month to respond; the clock pauses while you wait for clarification you've asked for), rectification, erasure, restriction, objection, portability, withdrawing consent.
 - Provide one written channel for requests.
 - Provide an in-app deletion request that notifies the church's data protection contact.
 - Provide per-person export and delete covering all linked records.

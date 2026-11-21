@@ -12,7 +12,7 @@ Read this when building any feature that sends church data to an AI or LLM servi
 
 ## Decisions about people
 - A person stays in the loop for anything that affects someone: placing them in a group, prioritising or declining a request, flagging a concern. AI can suggest; a named role decides.
-- Solely automated decisions with legal or similarly significant effects are restricted (UK GDPR Article 22, as amended by the Data (Use and Access) Act 2025), and the restrictions stay strict for special category data. Avoid them.
+- Solely automated decisions with legal or similarly significant effects are restricted (UK GDPR Articles 22A-22D, inserted by the Data (Use and Access) Act 2025), and the restrictions stay strict for special category data. Avoid them.
 - No profiling of children by default (see [CHILDREN-AND-AGE.md](CHILDREN-AND-AGE.md)).
 
 ## Choosing an AI vendor

@@ -8,8 +8,8 @@ Read this when starting a new product, feature or system that handles church mem
 UK GDPR Article 35 requires a DPIA before processing that is likely to be high risk. It names **large-scale processing of special category data** as one case. A church app holding group memberships, attendance or pastoral notes for a large church, or for many churches, is processing religious belief data at scale. That alone triggers a DPIA, whether or not children use the service.
 
 Other common triggers on the ICO's list, any of which adds to the case:
-- children or vulnerable adults (the Children's Code expects a DPIA for any service likely used by under-18s);
-- data about people collected from someone else (invites, referrals, imports, syncs) without them knowing at the time;
+- children or vulnerable people, where their data is used for marketing, profiling or automated decisions, or online services are offered directly to children (separately, the Children's Code expects a DPIA for any service likely used by under-18s);
+- data about people collected from someone else (invites, referrals, imports, syncs) where telling them would be impossible or disproportionate ("invisible processing");
 - combining or matching data from several sources (e.g. a church management system sync);
 - new technology, including AI features (see [AI-TOOLS.md](AI-TOOLS.md));
 - location data or tracking.

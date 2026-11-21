@@ -7,11 +7,11 @@ Read this when choosing a hosting region, adding any service that stores or proc
 ## What the law actually says
 - UK GDPR doesn't say data must stay in the UK. It **restricts transfers**: sending personal data to, or making it accessible from, a receiver in another country (UK GDPR Chapter V). Remote access counts as a transfer, not just copying.
 - A transfer is allowed only if one of these applies, checked in this order:
-  1. **UK adequacy regulations ("data bridges")**: the EEA, plus countries the UK has approved (e.g. Switzerland, Japan, South Korea, Canada for commercial bodies, the Channel Islands, Isle of Man). Check the ICO's current list.
+  1. **UK adequacy regulations ("data bridges")**: the EEA, plus countries the UK has approved (e.g. Switzerland, South Korea, the Channel Islands, the Isle of Man, Japan for the private sector, Canada for commercial bodies). Check the ICO's current list.
   2. **The US only via the UK Extension to the EU-US Data Privacy Framework**, and only to companies certified for the UK Extension. Check the vendor's certification; plain EU-US DPF isn't enough.
-  3. **Appropriate safeguards**: the ICO's International Data Transfer Agreement (IDTA), or the EU Standard Contractual Clauses with the UK Addendum, **plus a transfer risk assessment** (TRA) showing the protection holds up in practice (e.g. government access laws).
+  3. **Appropriate safeguards**: usually the ICO's International Data Transfer Agreement (IDTA), or the EU Standard Contractual Clauses with the UK Addendum (others exist, such as binding corporate rules), **plus a transfer risk assessment** (TRA, now called a "data protection test" in UK law) showing the protection holds up in practice (e.g. government access laws).
   4. **Exceptions** (explicit consent, contract necessity and so on) are for occasional, one-off transfers. Never use them for routine hosting or a vendor's service.
-- The Data (Use and Access) Act 2025 changes the adequacy test to a "data protection test" (protection not materially lower than the UK's). It's being brought in in stages: check what has commenced before relying on it.
+- The Data (Use and Access) Act 2025 reworded the transfer rules from 5 February 2026: a country or safeguard now passes if protection is "not materially lower" than the UK's. The rest of the Act is being brought in in stages: check what has commenced before relying on it.
 - If the software also serves churches in the EU, EU GDPR applies to their data too. The EU recognises the UK as adequate (renewed in 2025); check the current position.
 
 ## Default for church data

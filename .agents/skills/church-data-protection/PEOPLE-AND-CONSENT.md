@@ -19,7 +19,7 @@ Read this when a feature adds people to the system (sign-up, invites, referrals,
 - Support sending consent requests to existing people and parents.
 
 ## Communications (PECR)
-- Service messages are fine; promotional messages need consent or valid soft opt-in.
+- Service messages are fine; promotional messages need consent or valid soft opt-in. A church that is a charity can also use the charitable purposes soft opt-in (from 5 February 2026), but only for contact details collected on or after that date.
 - Every email has unsubscribe and a preferences page. Push notifications used for promotion follow the same rules.
 
 ## Checks

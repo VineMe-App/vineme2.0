@@ -13,7 +13,7 @@ Read this when you need to know which law applies to a feature, why church data 
 
 ## Why church data is different
 - **Church or group membership reveals religious belief**, which is special category data. Treat memberships, join requests, attendance, prayer requests and pastoral notes as special category.
-- Churches usually rely on the **not-for-profit religious body condition**. It covers members, former members and people in regular contact only, and does not allow disclosure outside the church without consent. It does not cover new contacts, people only invited, or the provider's own use.
+- Churches usually rely on the **not-for-profit religious body condition**. It needs appropriate safeguards, covers solely members, former members and people in regular contact, and does not allow disclosure outside the church without consent. It does not cover new contacts, people only invited, or the provider's own use.
 - **Safeguarding, vulnerability and health notes** are the most sensitive data: restrict to named roles, never reachable with public or client keys, never sent to analytics or third parties.
 - **Multi-church / multi-tenant**: each church sees only its own people. A person linked to several churches must not have one church's data shown to another.
 
