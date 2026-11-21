@@ -22,9 +22,10 @@ This file holds the core rules and the checklist. The topic files hold the detai
 | [CHILDREN-AND-AGE.md](CHILDREN-AND-AGE.md) | Anyone under 18, age checks, parental consent, messaging or posting between users |
 | [ADMIN-SECURITY.md](ADMIN-SECURITY.md) | Staff and leader sign-in, two-factor, sessions, encryption in transit and at rest, devices, backups |
 | [AI-TOOLS.md](AI-TOOLS.md) | Any AI or LLM feature, AI vendor, or AI tool used by the team on real data |
-| [VENDORS-AND-INTEGRATIONS.md](VENDORS-AND-INTEGRATIONS.md) | Where data is hosted, new vendors or subprocessors, church management system syncs, exports |
+| [DATA-LOCATION-AND-TRANSFERS.md](DATA-LOCATION-AND-TRANSFERS.md) | Hosting regions, any service outside the UK, transfer mechanisms, access from abroad, where dev, CI, logs and backups run |
+| [VENDORS-AND-INTEGRATIONS.md](VENDORS-AND-INTEGRATIONS.md) | New vendors or subprocessors, church management system syncs, exports |
 | [RIGHTS-RETENTION-AND-BREACHES.md](RIGHTS-RETENTION-AND-BREACHES.md) | Retention and deletion, access or erasure requests, export, breaches |
-| [DEVELOPMENT-AND-OPERATIONS.md](DEVELOPMENT-AND-OPERATIONS.md) | Environments, seed data, secrets, migrations, logging, where each environment and tool keeps data, reporting security issues |
+| [DEVELOPMENT-AND-OPERATIONS.md](DEVELOPMENT-AND-OPERATIONS.md) | Environments, seed data, secrets, migrations, logging, reporting security issues |
 
 Sources: Church of England, "Understanding data protection" (churchofengland.org, PCC responsibilities); ICO guidance (including DPIA, Children's Code and AI guidance); ChurchSuite GDPR and privacy notice pages as an industry baseline.
 
@@ -60,6 +61,7 @@ ICO registration (data protection fee), DPAs with every supplier, the church's D
 - [ ] Age rules applied: under-13 consent, Children's Code defaults, Online Safety Act duties
 - [ ] Comms follow PECR
 - [ ] New tool, region, vendor or AI service checked for location, DPA, training use and transfers
+- [ ] Every place the data lives (backups, logs, CDN, CI) has a known region and transfer basis
 - [ ] Only seed data in dev; no secrets committed; security issues kept private
 - [ ] Anything uncertain flagged
 
@@ -68,6 +70,6 @@ ICO registration (data protection fee), DPAs with every supplier, the church's D
 2. Creating full accounts or member records for people who were only invited or imported.
 3. Treating group membership as ordinary contact data.
 4. Sending notes or free-text fields to analytics, error tracking or an AI service "just to try it".
-5. Accepting a vendor's default non-UK/EEA region.
+5. Accepting a vendor's default non-UK/EEA region, or forgetting that logs, backups and CDNs hold copies too.
 6. Copying production data into dev or a test, or pasting it into an AI chat.
 7. Writing the DPIA after launch, or never updating it.
