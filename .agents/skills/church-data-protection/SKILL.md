@@ -24,7 +24,7 @@ This file holds the core rules and the checklist. The topic files hold the detai
 | [AI-TOOLS.md](AI-TOOLS.md) | Any AI or LLM feature, AI vendor, or AI tool used by the team on real data |
 | [VENDORS-AND-INTEGRATIONS.md](VENDORS-AND-INTEGRATIONS.md) | Where data is hosted, new vendors or subprocessors, church management system syncs, exports |
 | [RIGHTS-RETENTION-AND-BREACHES.md](RIGHTS-RETENTION-AND-BREACHES.md) | Retention and deletion, access or erasure requests, export, breaches |
-| [DEVELOPMENT-AND-OPERATIONS.md](DEVELOPMENT-AND-OPERATIONS.md) | Environments, seed data, secrets, migrations, logging, reporting security issues |
+| [DEVELOPMENT-AND-OPERATIONS.md](DEVELOPMENT-AND-OPERATIONS.md) | Environments, seed data, secrets, migrations, logging, where each environment and tool keeps data, reporting security issues |
 
 Sources: Church of England, "Understanding data protection" (churchofengland.org, PCC responsibilities); ICO guidance (including DPIA, Children's Code and AI guidance); ChurchSuite GDPR and privacy notice pages as an industry baseline.
 
