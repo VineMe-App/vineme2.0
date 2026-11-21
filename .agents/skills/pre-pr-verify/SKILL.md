@@ -46,7 +46,7 @@ Run the verification suite matching the scopes touched in your branch and confir
      ```
 
 3. **Security review of the diff (when sensitive areas changed)**
-   If the branch touches `supabase/` (migrations, RLS, views, functions, storage, Edge Functions or `config.toml`), auth or sign-in flows, `apps/web` route handlers or server actions, service-role or secret key use, env vars, `apps/mobile` storage or deep links, dependencies, or `.github/workflows/`, follow the `security-audit` skill in guidance mode against `git diff origin/dev...HEAD`, using only the matching `references/` checklists.
+   If the branch touches `supabase/` (migrations, RLS, views, functions, storage, Edge Functions or `config.toml`), auth or sign-in flows, `apps/web` route handlers or server actions, service-role or secret key use, env vars, `apps/mobile` storage or deep links, dependencies, or `.github/workflows/`, follow the `security-audit` skill in guidance mode against `git diff origin/dev...HEAD`, using only the matching topic checklists.
    - If nothing turns up, say "security review: no issues" in your report.
    - If something does, stop before opening or updating the PR and tell the user directly. Don't describe it in commits, the PR title or body, or PR comments; follow the skill's rules on where findings go.
 

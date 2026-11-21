@@ -9,6 +9,6 @@ Everything in the app bundle (JS, `app.config.ts` `extra`, `EXPO_PUBLIC_*`, asse
 - [ ] Deep links and Expo Router routes validate parameters, and links that sign in or accept invites can't be replayed or hijacked by another app (prefer universal/app links over custom schemes for auth).
 - [ ] Push notification payloads don't include personal or safeguarding details that show on a locked screen; push tokens are tied to the user and removed on sign-out.
 - [ ] OTA updates (EAS Update) come only from the project's own channels; check who can publish to production channels.
-- [ ] Logs, Sentry and analytics from the app follow the rules in `keys-and-secrets.md`.
+- [ ] Logs, Sentry and analytics from the app follow the rules in `KEYS-AND-SECRETS.md`.
 - [ ] Network: no cleartext HTTP or disabled TLS checks in production config (`ios/` Info.plist ATS, Android network security config, config plugins).
 - [ ] Location features ask only when needed and don't send precise location where an area is enough.

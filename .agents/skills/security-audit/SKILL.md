@@ -59,14 +59,14 @@ Pick the files that match the change or audit scope:
 
 | Area | Read |
 | :--- | :--- |
-| Tables, views, policies, database functions, storage, realtime | [references/supabase-rls.md](references/supabase-rls.md) |
-| Anon/publishable vs service-role/secret keys, env vars, third-party tokens, logs | [references/keys-and-secrets.md](references/keys-and-secrets.md) |
-| `supabase/functions/`, `verify_jwt`, cron, webhooks | [references/edge-functions.md](references/edge-functions.md) |
-| `apps/web` route handlers, server actions, server components, dashboard | [references/nextjs-web.md](references/nextjs-web.md) |
-| Sign-in, magic links, OTP, roles, impersonation, deep links | [references/auth-and-sessions.md](references/auth-and-sessions.md) |
-| `apps/mobile` storage, bundle, deep links, push, OTA updates | [references/mobile-expo.md](references/mobile-expo.md) |
-| npm dependencies, GitHub Actions, EAS and Vercel builds | [references/dependencies-and-ci.md](references/dependencies-and-ci.md) |
-| Logic bugs that cut across areas | [references/cross-cutting.md](references/cross-cutting.md) |
+| Tables, views, policies, database functions, storage, realtime | [SUPABASE-RLS.md](SUPABASE-RLS.md) |
+| Anon/publishable vs service-role/secret keys, env vars, third-party tokens, logs | [KEYS-AND-SECRETS.md](KEYS-AND-SECRETS.md) |
+| `supabase/functions/`, `verify_jwt`, cron, webhooks | [EDGE-FUNCTIONS.md](EDGE-FUNCTIONS.md) |
+| `apps/web` route handlers, server actions, server components, dashboard | [NEXTJS-WEB.md](NEXTJS-WEB.md) |
+| Sign-in, magic links, OTP, roles, impersonation, deep links | [AUTH-AND-SESSIONS.md](AUTH-AND-SESSIONS.md) |
+| `apps/mobile` storage, bundle, deep links, push, OTA updates | [MOBILE-EXPO.md](MOBILE-EXPO.md) |
+| npm dependencies, GitHub Actions, EAS and Vercel builds | [DEPENDENCIES-AND-CI.md](DEPENDENCIES-AND-CI.md) |
+| Logic bugs that cut across areas | [CROSS-CUTTING.md](CROSS-CUTTING.md) |
 
 ## Full audit workflow
 
