@@ -26,8 +26,14 @@ This file holds the core rules and the checklist. The topic files hold the detai
 | [VENDORS-AND-INTEGRATIONS.md](VENDORS-AND-INTEGRATIONS.md) | New vendors or subprocessors, church management system syncs, exports |
 | [RIGHTS-RETENTION-AND-BREACHES.md](RIGHTS-RETENTION-AND-BREACHES.md) | Retention and deletion, access or erasure requests, export, breaches |
 | [DEVELOPMENT-AND-OPERATIONS.md](DEVELOPMENT-AND-OPERATIONS.md) | Environments, seed data, secrets, migrations, logging, reporting security issues |
+| [SOURCES.md](SOURCES.md) | Relying on a law, deadline or transfer rule; reviewing whether the skill is still current |
 
 Sources: Church of England, "Understanding data protection" (churchofengland.org, PCC responsibilities); ICO guidance (including DPIA, Children's Code and AI guidance); ChurchSuite GDPR and privacy notice pages as an industry baseline.
+
+## Keeping it current
+Laws and guidance change. [SOURCES.md](SOURCES.md) lists each claim in the topic files that can go out of date, with its official source.
+- Before relying on a claim listed there that is marked Moving, or whose Last checked is `not yet verified` or older than 6 months, check the official source if you can. Tell the user if it differs from the topic file, or if you couldn't check it.
+- When a review updates a claim, update the topic file and the Last checked date in the same PR.
 
 ## Core rules
 
