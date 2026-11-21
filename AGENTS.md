@@ -44,3 +44,4 @@ Reusable workflows live in `.agents/skills/` (symlinked at `.claude/skills`):
 - `implement-issue` — End-to-end single-issue workflow from `dev` branch to PR
 - `supabase-migration` — Safe SQL migrations, `security_invoker`, RLS, and type regen
 - `pre-pr-verify` — Scoped verification checks and PR checklist before opening a PR
+- `church-data-protection` — UK data protection & safeguarding checks for any feature touching personal data

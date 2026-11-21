@@ -15,6 +15,7 @@ Project-specific [Agent Skills](https://agentskills.io) for the VineMe monorepo 
 | `implement-issue` | End-to-end single-issue workflow from `dev` branch to PR | [`SKILL.md`](./implement-issue/SKILL.md) |
 | `supabase-migration` | Safe SQL migrations, `security_invoker`, RLS, and shared type regen | [`SKILL.md`](./supabase-migration/SKILL.md) |
 | `pre-pr-verify` | Scoped lint, typecheck, test, build, and DB verification before PR | [`SKILL.md`](./pre-pr-verify/SKILL.md) |
+| `church-data-protection` | UK data protection & safeguarding checks for features touching personal data | [`SKILL.md`](./church-data-protection/SKILL.md) |
 
 ## Directory Structure
 
