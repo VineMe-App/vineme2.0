@@ -398,7 +398,7 @@ export function GroupsTab({
 
       <p className="mt-3 text-muted-foreground text-xs">
         {plural(allRows.length, "active group")}. The small number in each cell
-        is the group&apos;s place in that column; darker cells are higher.
+        is the group&apos;s rank in that column; darker cells are higher.
       </p>
     </div>
   );
