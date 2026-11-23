@@ -51,8 +51,8 @@ const navItems: NavItem[] = [
     icon: IdCard,
   },
   {
-    href: "/dashboard/reports",
-    label: "Reports",
+    href: "/dashboard/insights",
+    label: "Insights",
     exact: false,
     icon: ChartColumn,
   },
