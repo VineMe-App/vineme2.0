@@ -24,11 +24,16 @@ import {
 } from "@/lib/dashboard/follow-up-utils";
 import { useAdmin } from "@/lib/dashboard/admin-context";
 import { fetchContactPhone, fetchFollowUps } from "@/lib/dashboard/queries";
-import type { FollowUp, FollowUpStep } from "@/lib/dashboard/types";
+import type { FollowUp, FollowUpState, FollowUpStep } from "@/lib/dashboard/types";
 import { useDashboardQuery } from "@/lib/dashboard/use-dashboard-query";
 import { cn } from "@/lib/utils";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { followUpStates, needsAttentionLabel, stages as stageTerms } from "@/lib/dashboard/terms";
+import {
+  followUpStates,
+  needsAttentionAfter,
+  needsAttentionLabel,
+  stages as stageTerms,
+} from "@/lib/dashboard/terms";
 
 const stages: (StageMeta & { note: string })[] = [
   {
@@ -176,15 +181,27 @@ function FollowUpsView({ initialPeople }: { initialPeople: FollowUp[] }) {
       .filter((person) => getFollowUpStage(person) === stage)
       .sort(compareByUrgency);
 
+  // The three follow-up states add up to every pending request, as on
+  // Overview. Attended, not yet added is its own count beside them; those
+  // past their limit are also in Needs attention.
+  const byState = (state: FollowUpState) =>
+    activePeople.filter((person) => person.followUp === state).length;
+  const needsAttentionCount = byState("needs_attention");
   const stats = [
     {
-      label: needsAttentionLabel(bySection("needs-attention").length),
-      count: bySection("needs-attention").length,
+      label: needsAttentionLabel(needsAttentionCount),
+      count: needsAttentionCount,
     },
-    { label: followUpStates.onTrack.label, count: bySection("on-track").length },
-    { label: followUpStates.attendedNotAdded.label, count: bySection("attended").length },
+    { label: followUpStates.onTrack.label, count: byState("on_track") },
+    {
+      label: followUpStates.needsFirstContact.label,
+      count: byState("needs_first_contact"),
+    },
+    {
+      label: followUpStates.attendedNotAdded.label,
+      count: bySection("attended").length,
+    },
   ];
-  const needsAttentionCount = stats[0].count;
 
   // Leaders with the most overdue people first; unled groups last.
   const byLeader = Object.values(
@@ -215,8 +232,8 @@ function FollowUpsView({ initialPeople }: { initialPeople: FollowUp[] }) {
           <h1 className="font-heading text-balance text-3xl font-bold sm:text-4xl">
             {needsAttentionCount > 0
               ? `Hi ${admin.firstName}, ${needsAttentionCount} ${
-                  needsAttentionCount === 1 ? "person needs" : "people need"
-                } a follow-up`
+                  needsAttentionCount === 1 ? "request" : "requests"
+                } ${needsAttentionAfter(needsAttentionCount)}`
               : `Hi ${admin.firstName}, you're all caught up`}
           </h1>
           <p className="mt-2 text-muted-foreground">
@@ -227,7 +244,7 @@ function FollowUpsView({ initialPeople }: { initialPeople: FollowUp[] }) {
             you make here are not saved yet.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {stats.map((stat) => (
             <Card key={stat.label}>
               <CardPanel className="px-4 py-3 text-center">

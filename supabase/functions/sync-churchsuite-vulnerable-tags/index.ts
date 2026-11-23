@@ -1,7 +1,7 @@
 // Supabase Edge Function: sync-churchsuite-vulnerable-tags
 // Fetches every ChurchSuite contact carrying the "Vulnerable Person" tag (provisioned in
 // create-churchsuite-connection, see _shared/churchsuite.ts) and reconciles
-// public.users.is_vulnerable to match - ChurchSuite is treated as the source of truth
+// public.user_safeguarding.is_vulnerable to match - ChurchSuite is treated as the source of truth
 // here, since admins may tag/untag contacts directly in ChurchSuite. Only users already
 // linked to a ChurchSuite contact (churchsuite_id set) are touched; users never linked
 // to ChurchSuite are left as-is.
@@ -218,7 +218,7 @@ async function syncChurch(
 
   const { data: linkedUsers, error: linkedUsersError } = await supabaseAdmin
     .from('users')
-    .select('id, churchsuite_id, is_vulnerable')
+    .select('id, churchsuite_id')
     .eq('church_id', churchId)
     .not('churchsuite_id', 'is', null);
 
@@ -226,27 +226,50 @@ async function syncChurch(
     throw new Error(linkedUsersError.message);
   }
 
+  const linkedIds = (linkedUsers ?? []).map((u) => u.id);
+  const vulnerableIds = new Set<string>();
+  // Chunk the id list to keep the request URL short.
+  for (let i = 0; i < linkedIds.length; i += 200) {
+    const { data: flags, error: flagsError } = await supabaseAdmin
+      .from('user_safeguarding')
+      .select('user_id')
+      .eq('is_vulnerable', true)
+      .in('user_id', linkedIds.slice(i, i + 200));
+    if (flagsError) throw new Error(flagsError.message);
+    (flags ?? []).forEach((f) => vulnerableIds.add(f.user_id));
+  }
+
   const toMarkVulnerable = (linkedUsers ?? [])
-    .filter((u) => taggedContactIds.has(u.churchsuite_id!) && !u.is_vulnerable)
+    .filter(
+      (u) => taggedContactIds.has(u.churchsuite_id!) && !vulnerableIds.has(u.id)
+    )
     .map((u) => u.id);
 
   const toClear = (linkedUsers ?? [])
-    .filter((u) => !taggedContactIds.has(u.churchsuite_id!) && u.is_vulnerable)
+    .filter(
+      (u) => !taggedContactIds.has(u.churchsuite_id!) && vulnerableIds.has(u.id)
+    )
     .map((u) => u.id);
 
+  const now = new Date().toISOString();
+
   if (toMarkVulnerable.length > 0) {
-    const { error } = await supabaseAdmin
-      .from('users')
-      .update({ is_vulnerable: true, updated_at: new Date().toISOString() })
-      .in('id', toMarkVulnerable);
+    const { error } = await supabaseAdmin.from('user_safeguarding').upsert(
+      toMarkVulnerable.map((id) => ({
+        user_id: id,
+        is_vulnerable: true,
+        updated_at: now,
+      })),
+      { onConflict: 'user_id' }
+    );
     if (error) throw new Error(error.message);
   }
 
   if (toClear.length > 0) {
     const { error } = await supabaseAdmin
-      .from('users')
-      .update({ is_vulnerable: false, updated_at: new Date().toISOString() })
-      .in('id', toClear);
+      .from('user_safeguarding')
+      .update({ is_vulnerable: false, updated_at: now })
+      .in('user_id', toClear);
     if (error) throw new Error(error.message);
   }
 
@@ -303,7 +326,7 @@ async function fetchAllTaggedContactIds(
 }
 
 /* Pulls the current "Vulnerable Person" tag membership from ChurchSuite and reconciles
-   it into public.users.is_vulnerable. ChurchSuite is authoritative here: contacts tagged
+   it into public.user_safeguarding.is_vulnerable. ChurchSuite is authoritative here: contacts tagged
    there get is_vulnerable set true, and previously-flagged users whose contact is no
    longer tagged get it cleared. Users never linked to ChurchSuite (churchsuite_id IS
    NULL) are untouched, since ChurchSuite has no record of them.

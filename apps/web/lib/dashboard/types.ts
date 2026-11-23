@@ -1,5 +1,11 @@
 export type FollowUpStep = "reachedOut" | "invited" | "attended";
 
+/** A pending request's follow-up state, from `dashboard_requests.follow_up`. */
+export type FollowUpState =
+  | "needs_first_contact"
+  | "on_track"
+  | "needs_attention";
+
 export interface FollowUp {
   id: string;
   userId: string;
@@ -13,9 +19,11 @@ export interface FollowUp {
   /** ISO timestamp the request was made. */
   requestedAt: string;
   requestedDaysAgo: number;
+  followUp: FollowUpState;
+  /** Days past the stage's limit, when it needs attention. */
   overdueDays?: number;
   dueInDays?: number;
-  /** Which SLA rule the due date comes from, e.g. "Reach out within 6 days". */
+  /** Which time limit applies, e.g. "Reach out within 6 days of the request". */
   dueReason?: string;
   fromEmail?: boolean;
   /** Empty until looked up with get_user_contact_admin. */
@@ -85,8 +93,10 @@ export interface Member {
   isNewcomer: boolean;
   /** Every request the person has made, in any status, newest first. */
   memberships: MemberGroup[];
-  /** ISO timestamp, for sorting and "new this month". */
+  /** ISO timestamp, for sorting. */
   joinedAt: string;
+  /** Signed up in the last 30 days (New), from `dashboard_people.is_new`. */
+  isNew: boolean;
 }
 
 export interface OverviewData {

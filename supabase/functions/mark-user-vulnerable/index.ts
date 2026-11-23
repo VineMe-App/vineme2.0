@@ -1,5 +1,5 @@
 // Supabase Edge Function: mark-user-vulnerable
-// Called by a church admin to flag a member as vulnerable: sets users.is_vulnerable and
+// Called by a church admin to flag a member as vulnerable: sets user_safeguarding.is_vulnerable and
 // applies the "Vulnerable Person" ChurchSuite tag (provisioned up front in
 // create-churchsuite-connection) to their linked ChurchSuite contact, if they have one.
 import '@supabase/functions-js/edge-runtime.d.ts';
@@ -102,9 +102,15 @@ Deno.serve(async (req) => {
   }
 
   const { error: updateError } = await supabaseAdmin
-    .from('users')
-    .update({ is_vulnerable: true, updated_at: new Date().toISOString() })
-    .eq('id', userId);
+    .from('user_safeguarding')
+    .upsert(
+      {
+        user_id: userId,
+        is_vulnerable: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    );
 
   if (updateError) {
     return Response.json(

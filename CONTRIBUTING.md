@@ -2,6 +2,9 @@
 
 Welcome! This repository is a monorepo containing the VineMe mobile app, website & clergy dashboard, shared types, and Supabase backend.
 
+> [!NOTE]
+> Although this repository is public, pushing branches and opening Pull Requests are restricted to repository collaborators.
+
 ---
 
 ## Monorepo Scopes
@@ -137,6 +140,9 @@ npm run build:web    # Production Next.js build
 ---
 
 ## Branch Protection & Repo Maintenance
+
+### Repository Access
+- **Collaborators only**: Pushing branches and creating Pull Requests are restricted to repository collaborators (`Settings → General → Features → Pull requests → Collaborators only`).
 
 ### Branch Protection Rules
 - **`dev`**: Requires PR before merging, passing CI checks, conversation resolution, and blocks force-pushes/deletion (0 required approvals so verified solo/CI PRs can merge smoothly, admin bypass enabled).
