@@ -7,9 +7,9 @@ import type {
   OverviewData,
   InsightsGroup,
   InsightsPerson,
-  InsightsStage,
+  InsightsRequest,
   InsightsData,
-  SignupOutcome,
+  InTimeResult,
 } from "@/lib/dashboard/types";
 import { outcomes, people } from "@/lib/dashboard/terms";
 
@@ -611,19 +611,35 @@ export async function fetchContactPhone(
   return (data as { phone?: string | null } | null)?.phone ?? "";
 }
 
-const stageRank: Record<InsightsStage, number> = {
-  "not-reached": 0,
-  "reached-out": 1,
-  invited: 2,
-  attended: 3,
+type InsightsPersonRow = Pick<
+  PersonRow,
+  "person_id" | "signed_up_at" | "newcomer" | "outcome"
+> & {
+  furthest_stage: InsightsPerson["furthestStage"];
+  plugged_in: boolean;
 };
 
-function stageFromJourney(status: number | null): InsightsStage {
-  if (status === 3) return "attended";
-  if (status === 2) return "invited";
-  if (status === 1) return "reached-out";
-  return "not-reached";
-}
+type InsightsRequestRow = {
+  request_id: string;
+  group_id: string;
+  newcomer: boolean | null;
+  status: string;
+  requested_at: string;
+  archived_at: string | null;
+  archive_reason: string | null;
+  follow_up: FollowUpState | null;
+};
+
+/** The followed up in time columns on `dashboard_requests` (INS-4). */
+type InTimeRow = {
+  request_id: string;
+  reached_out_on: string | null;
+  spoken_to_on: string | null;
+  attended_on: string | null;
+  reached_out_in_time: InTimeResult;
+  spoken_to_in_time: InTimeResult;
+  attended_in_time: InTimeResult;
+};
 
 type InsightsGroupRow = {
   id: string;
@@ -631,26 +647,38 @@ type InsightsGroupRow = {
   at_capacity: boolean;
 };
 
-const insightsOutcome: Record<PersonRow["outcome"], SignupOutcome> = {
-  connected: "attended",
-  not_yet_connected: "requested",
-  archived: "downloaded",
-  no_requests: "downloaded",
-  check_data: "downloaded",
-};
-
-type InsightsPersonRow = Pick<
-  PersonRow,
-  "person_id" | "signed_up_at" | "newcomer" | "needs_help" | "outcome"
->;
-
-type InsightsRequestRow = Pick<
-  RequestRow,
-  "request_id" | "person_id" | "group_id" | "status" | "stage" | "requested_at"
->;
+/** Postgres "column does not exist": the view hasn't been updated yet. */
+function isMissingColumn(error: unknown) {
+  return (error as { code?: string } | null)?.code === "42703";
+}
 
 /**
- * People, follow-ups and groups behind the Insights charts. No names. People
+ * The followed up in time results for every request, or null while the
+ * database doesn't have them yet, so the rest of Insights still loads.
+ */
+async function fetchInTime(admin: AdminContextValue): Promise<InTimeRow[] | null> {
+  try {
+    return await fetchAllRows<InTimeRow>((from, to) =>
+      inScope(
+        admin.supabase
+          .from("dashboard_requests")
+          .select(
+            "request_id, reached_out_on, spoken_to_on, attended_on, reached_out_in_time, spoken_to_in_time, attended_in_time",
+            { count: "exact" },
+          ),
+        admin,
+      )
+        .order("request_id", { ascending: true })
+        .range(from, to),
+    );
+  } catch (error) {
+    if (isMissingColumn(error)) return null;
+    throw error;
+  }
+}
+
+/**
+ * People, requests and groups behind the Insights charts. No names. People
  * come from `dashboard_people` and requests from `dashboard_requests`, so the
  * counts match every other page.
  */
@@ -658,12 +686,12 @@ export async function fetchInsights(
   admin: AdminContextValue,
 ): Promise<InsightsData> {
   const { supabase, churchId } = admin;
-  const [peopleRows, requestRows, groupsResult] = await Promise.all([
+  const [peopleRows, requestRows, inTimeRows, groupsResult] = await Promise.all([
     fetchAllRows<InsightsPersonRow>((from, to) =>
       inScope(
         supabase
           .from("dashboard_people")
-          .select("person_id, signed_up_at, newcomer, needs_help, outcome", {
+          .select("person_id, signed_up_at, newcomer, outcome, furthest_stage, plugged_in", {
             count: "exact",
           }),
         admin,
@@ -675,15 +703,16 @@ export async function fetchInsights(
       inScope(
         supabase
           .from("dashboard_requests")
-          .select("request_id, person_id, group_id, status, stage, requested_at", {
-            count: "exact",
-          }),
+          .select(
+            "request_id, group_id, newcomer, status, requested_at, archived_at, archive_reason, follow_up",
+            { count: "exact" },
+          ),
         admin,
       )
-        .in("status", ["active", "pending"])
         .order("request_id", { ascending: true })
         .range(from, to),
     ),
+    fetchInTime(admin),
     supabase
       .from("groups")
       .select("id, title, at_capacity")
@@ -693,60 +722,48 @@ export async function fetchInsights(
   ]);
   check(groupsResult);
 
-  const pendingByPerson = new Map<string, InsightsRequestRow[]>();
-  const requestsByGroup = new Map<string, InsightsRequestRow[]>();
-  for (const row of requestRows) {
-    if (row.status === "pending") {
-      pendingByPerson.set(row.person_id, [
-        ...(pendingByPerson.get(row.person_id) ?? []),
-        row,
-      ]);
-    }
-    requestsByGroup.set(row.group_id, [
-      ...(requestsByGroup.get(row.group_id) ?? []),
-      row,
-    ]);
-  }
+  const inTime = new Map((inTimeRows ?? []).map((row) => [row.request_id, row]));
 
-  const insightsPeople = peopleRows.map((person): InsightsPerson => {
-    const pending = pendingByPerson.get(person.person_id) ?? [];
-    const furthest = pending.reduce<InsightsStage | null>((best, row) => {
-      const stage = stageFromJourney(row.stage);
-      if (!best || stageRank[stage] > stageRank[best]) return stage;
-      return best;
-    }, null);
-
-    return {
-      createdAt: person.signed_up_at,
+  const people = peopleRows.map(
+    (person): InsightsPerson => ({
+      signedUpAt: person.signed_up_at,
       isNewcomer: person.newcomer,
-      askedForHelp: person.needs_help,
-      outcome: insightsOutcome[person.outcome],
-      pendingStage: furthest,
-      pendingSince: pending.reduce<string | null>(
-        (earliest, row) =>
-          !earliest || row.requested_at < earliest
-            ? row.requested_at
-            : earliest,
-        null,
-      ),
+      outcome: person.outcome,
+      furthestStage: person.furthest_stage,
+      pluggedIn: person.plugged_in,
+    }),
+  );
+
+  const requests = requestRows.map((row): InsightsRequest => {
+    const measures = inTime.get(row.request_id);
+    return {
+      groupId: row.group_id,
+      isNewcomer: row.newcomer ?? false,
+      status: row.status,
+      requestedAt: row.requested_at,
+      archivedAt: row.archived_at,
+      archiveReason: row.archive_reason,
+      followUp: row.follow_up,
+      reachedOn: {
+        reachedOut: measures?.reached_out_on ?? null,
+        spokenTo: measures?.spoken_to_on ?? null,
+        attended: measures?.attended_on ?? null,
+      },
+      inTime: {
+        reachedOut: measures?.reached_out_in_time ?? null,
+        spokenTo: measures?.spoken_to_in_time ?? null,
+        attended: measures?.attended_in_time ?? null,
+      },
     };
   });
 
-  const newcomers = new Set(
-    peopleRows.filter((person) => person.newcomer).map((person) => person.person_id),
-  );
   const groups = ((groupsResult.data ?? []) as unknown as InsightsGroupRow[]).map(
     (group): InsightsGroup => ({
       id: group.id,
       name: group.title,
-      requests: (requestsByGroup.get(group.id) ?? []).map((row) => ({
-        status: row.status as "active" | "pending",
-        requestedAt: row.requested_at,
-        isNewcomer: newcomers.has(row.person_id),
-      })),
       atCapacity: group.at_capacity,
     }),
   );
 
-  return { people: insightsPeople, groups };
+  return { people, requests, groups, measuresAvailable: inTimeRows !== null };
 }

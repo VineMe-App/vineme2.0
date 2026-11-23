@@ -165,6 +165,16 @@ function GroupDetails({ group }: { group: Group }) {
             Open WhatsApp group
           </Button>
         ) : null}
+        <Button
+          size="xl"
+          variant="outline"
+          className="w-full"
+          render={
+            <Link href={`/dashboard/insights?tab=groups&group=${group.id}`} />
+          }
+        >
+          See stats
+        </Button>
       </SheetFooter>
     </>
   );

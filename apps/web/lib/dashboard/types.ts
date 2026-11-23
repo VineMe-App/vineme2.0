@@ -106,39 +106,68 @@ export interface OverviewData {
   members: Member[];
 }
 
-/** Where a signed-up person sits. There is no separate download event. */
-export type SignupOutcome = "attended" | "requested" | "downloaded";
+/** A person's outcome, from `dashboard_people.outcome`. */
+export type PersonOutcome =
+  | "connected"
+  | "not_yet_connected"
+  | "archived"
+  | "no_requests"
+  | "check_data";
 
-export type InsightsStage = "not-reached" | "reached-out" | "invited" | "attended";
+/** A person's furthest stage, from `dashboard_people.furthest_stage`. */
+export type FurthestStage =
+  | "connected"
+  | "spoken_to"
+  | "reached_out"
+  | "not_contacted"
+  | "archived"
+  | "no_requests"
+  | "check_data";
 
+/** One member, for Insights. No names. */
 export interface InsightsPerson {
-  createdAt: string;
+  signedUpAt: string;
   isNewcomer: boolean;
-  /** They said they cannot find a group. */
-  askedForHelp: boolean;
-  outcome: SignupOutcome;
-  /** Furthest stage of an open (pending) follow-up, if they have one. */
-  pendingStage: InsightsStage | null;
-  pendingSince: string | null;
+  outcome: PersonOutcome;
+  furthestStage: FurthestStage;
+  /** Connected, then added to the group, even if they've since left. */
+  pluggedIn: boolean;
 }
 
-/** A group's members (added) and pending requests, so Insights can filter them. */
-export interface InsightsGroupRequest {
-  status: "active" | "pending";
-  /** When they asked to join (`group_memberships.created_at`). */
-  requestedAt: string;
-  /** False when the person isn't a member of this church, so their flag isn't loaded. */
+/** A followed up in time result: null while it isn't known yet (DEC-3). */
+export type InTimeResult = "hit" | "miss" | null;
+
+export type InTimeMeasure = "reachedOut" | "spokenTo" | "attended";
+
+/** One request, for Insights. No names. */
+export interface InsightsRequest {
+  groupId: string;
   isNewcomer: boolean;
+  /** pending, active (Added), inactive (Left) or archived. */
+  status: string;
+  requestedAt: string;
+  archivedAt: string | null;
+  archiveReason: string | null;
+  followUp: FollowUpState | null;
+  /** The day each stage was first reached (YYYY-MM-DD), when the view has it. */
+  reachedOn: Record<InTimeMeasure, string | null>;
+  inTime: Record<InTimeMeasure, InTimeResult>;
 }
 
 export interface InsightsGroup {
   id: string;
   name: string;
-  requests: InsightsGroupRequest[];
   atCapacity: boolean;
 }
 
 export interface InsightsData {
   people: InsightsPerson[];
+  requests: InsightsRequest[];
+  /** Active (approved) groups, A to Z. */
   groups: InsightsGroup[];
+  /**
+   * False until the database has the followed up in time columns on
+   * `dashboard_requests`, so the Team and Groups measures can't be shown yet.
+   */
+  measuresAvailable: boolean;
 }
