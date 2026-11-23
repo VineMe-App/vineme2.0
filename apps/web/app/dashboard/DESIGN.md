@@ -140,7 +140,10 @@ Rules:
 - Page container: wrap every page in `DashboardPage`
   (`components/dashboard/DashboardPage.tsx`), never a hand-written section. It
   sets the spacing (`px-5 py-6 sm:px-6 lg:py-8`) and width (`max-w-6xl`, or
-  `wide` for `max-w-[90rem]`), so every page shares one top edge.
+  `wide` for `max-w-[90rem]`), so every page shares one top edge. The
+  dashboard header uses the same `dashboardGutter` and `dashboardMaxWidth`
+  exported from that file, so its logo and avatar line up with the page edges.
+  Change them there, never in one place only.
   Narrow pages (Settings, Profile) are centred: a `mx-auto max-w-*` wrapper
   inside it.
 - Cards: use coss `Card` / `CardFrame` (rounded-2xl, subtle border and
