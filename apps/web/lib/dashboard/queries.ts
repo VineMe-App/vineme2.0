@@ -1,6 +1,7 @@
 import type { AdminContextValue } from "@/lib/dashboard/admin-context";
 import type {
   FollowUp,
+  FollowUpState,
   Group,
   Member,
   OverviewData,
@@ -10,7 +11,7 @@ import type {
   ReportsData,
   SignupOutcome,
 } from "@/lib/dashboard/types";
-import { people } from "@/lib/dashboard/terms";
+import { outcomes, people } from "@/lib/dashboard/terms";
 
 /**
  * The team's follow-up expectations (SLA), in days. Someone is overdue
@@ -92,6 +93,66 @@ async function fetchAllRows<T>(
   return rows;
 }
 
+/**
+ * Limits a query on `dashboard_people` or `dashboard_requests` to the church
+ * and service the dashboard is showing. Both views already limit a church
+ * admin to their own church and service; this keeps the page's own scope
+ * explicit, so a switched-to church never shows another church's numbers.
+ */
+function inScope<Q>(
+  query: Q,
+  { churchId, serviceId }: Pick<AdminContextValue, "churchId" | "serviceId">,
+): Q {
+  // Typed loosely: a structural constraint on Supabase's builder is too deep for tsc.
+  type Filterable = { eq(column: string, value: string): Filterable };
+  const church = (query as unknown as Filterable).eq("church_id", churchId);
+  return (serviceId ? church.eq("service_id", serviceId) : church) as unknown as Q;
+}
+
+/** A `dashboard_people` row (DATA-2): one per member. */
+type PersonRow = {
+  person_id: string;
+  person_name: string | null;
+  person_avatar_url: string | null;
+  signed_up_at: string;
+  is_new: boolean;
+  newcomer: boolean;
+  is_admin: boolean;
+  is_leader: boolean;
+  outcome:
+    | "connected"
+    | "not_yet_connected"
+    | "archived"
+    | "no_requests"
+    | "check_data";
+  needs_help: boolean;
+};
+
+const personColumns =
+  "person_id, person_name, person_avatar_url, signed_up_at, is_new, newcomer, is_admin, is_leader, outcome, needs_help";
+
+/** A `dashboard_requests` row (DATA-1): one per request. */
+type RequestRow = {
+  request_id: string;
+  person_id: string;
+  person_name: string | null;
+  person_avatar_url: string | null;
+  group_id: string;
+  group_title: string;
+  leaders: { id: string; name: string | null; avatar_url: string | null }[];
+  role: string;
+  status: string;
+  stage: number | null;
+  requested_at: string;
+  reached_out_at: string | null;
+  spoken_to_at: string | null;
+  attended_at: string | null;
+  last_action_at: string | null;
+  limit_days: number | null;
+  days_until_due: number | null;
+  follow_up: FollowUpState | null;
+};
+
 type MembershipRow = {
   id: string;
   role: string;
@@ -101,51 +162,54 @@ type MembershipRow = {
   groups: Maybe<{ title: string; status: string }>;
 };
 
-type MemberRow = {
+/** What the person view doesn't hold: the bio, and requests for the drawer. */
+type MemberDetailRow = {
   id: string;
-  name: string | null;
-  avatar_url: string | null;
-  roles: string[] | null;
   bio: string | null;
-  newcomer: boolean | null;
-  created_at: string;
   group_memberships: MembershipRow[];
 };
 
-function toMember(user: MemberRow): Member {
-  const memberships = user.group_memberships ?? [];
+const memberDetailColumns =
+  "id, bio, group_memberships(id, role, status, journey_status, created_at, groups(title, status))";
+
+/**
+ * The status shown on Members and Overview, from the person's outcome in
+ * `dashboard_people`. Archived and No requests share one status until MEM-1
+ * gives each its own card.
+ */
+function memberStatus(outcome: PersonRow["outcome"]): string {
+  if (outcome === "connected") return outcomes.connected.label;
+  if (outcome === "not_yet_connected") return outcomes.notYetConnected.label;
+  return "Looking for a group";
+}
+
+function toMember(person: PersonRow, detail: MemberDetailRow | undefined): Member {
+  const memberships = detail?.group_memberships ?? [];
   const active = memberships.find((m) => m.status === "active");
   const pending = memberships.find((m) => m.status === "pending");
   const current = active ?? pending;
 
-  const role = user.roles?.includes("church_admin")
-    ? people.admin.label
-    : active && ["leader", "admin"].includes(active.role)
-      ? people.leader.label
-      : "Congregation";
-
-  const status = active
-    ? "Connected"
-    : pending
-      ? "Pending follow-up"
-      : "Looking for a group";
-
   return {
-    id: user.id,
-    name: user.name || "Unnamed",
-    avatarUrl: user.avatar_url || null,
-    role,
-    status,
+    id: person.person_id,
+    name: person.person_name || "Unnamed",
+    avatarUrl: person.person_avatar_url || null,
+    role: person.is_admin
+      ? people.admin.label
+      : person.is_leader
+        ? people.leader.label
+        : "Congregation",
+    status: memberStatus(person.outcome),
     group: one(current?.groups)?.title ?? "Unassigned",
-    joined: formatMonthYear(user.created_at),
-    joinedAt: user.created_at,
-    joinedOn: new Date(user.created_at).toLocaleDateString("en-GB", {
+    joined: formatMonthYear(person.signed_up_at),
+    joinedAt: person.signed_up_at,
+    joinedOn: new Date(person.signed_up_at).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "long",
       year: "numeric",
     }),
-    bio: user.bio?.trim() ?? "",
-    isNewcomer: Boolean(user.newcomer),
+    isNew: person.is_new,
+    bio: detail?.bio?.trim() ?? "",
+    isNewcomer: person.newcomer,
     memberships: [...memberships]
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
       .map((m) => ({
@@ -159,102 +223,149 @@ function toMember(user: MemberRow): Member {
   };
 }
 
-const memberColumns =
-  "id, name, avatar_url, roles, bio, newcomer, created_at, group_memberships(id, role, status, journey_status, created_at, groups(title, status))";
-
-/** Rows per request when loading every member. */
-const MEMBER_BATCH = 500;
+/**
+ * Bios and requests, keyed by user ID: for these people, or with no IDs, for
+ * everyone at the church and service (the same people as `dashboard_people`).
+ */
+async function fetchMemberDetails(
+  { supabase, churchId, serviceId }: AdminContextValue,
+  ids?: string[],
+): Promise<Map<string, MemberDetailRow>> {
+  const rows = ids
+    ? ids.length === 0
+      ? []
+      : await supabase
+          .from("users")
+          .select(memberDetailColumns)
+          .in("id", ids)
+          .then((result) => {
+            check(result);
+            return (result.data ?? []) as unknown as MemberDetailRow[];
+          })
+    : await fetchAllRows<MemberDetailRow>((from, to) => {
+        let query = supabase
+          .from("users")
+          .select(memberDetailColumns, { count: "exact" })
+          .eq("church_id", churchId);
+        if (serviceId) query = query.eq("service_id", serviceId);
+        return query.order("id", { ascending: true }).range(from, to);
+      });
+  return new Map(rows.map((row) => [row.id, row]));
+}
 
 /**
- * Every member, newest first: everyone at this church and service, test
- * accounts excluded (see Member and Test account in docs/dashboard/glossary.md).
- * Loads them all in batches, so search and counts on the page cover everyone.
+ * Every member, newest first, from `dashboard_people`: everyone at this church
+ * and service, test accounts excluded (see Member and Test account in
+ * docs/dashboard/glossary.md). Loads them all, so search and counts on the
+ * page cover everyone.
  */
-export async function fetchMembers({
-  supabase,
-  churchId,
-  serviceId,
-}: AdminContextValue): Promise<Member[]> {
-  const batch = (from: number) => {
-    let query = supabase
-      .from("users")
-      .select(memberColumns, { count: "exact" })
-      .eq("church_id", churchId);
-    if (serviceId) query = query.eq("service_id", serviceId);
-    return query
-      .or("first_name.is.null,first_name.not.ilike.*test*")
-      .or("last_name.is.null,last_name.not.ilike.*test*")
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: true })
-      .range(from, from + MEMBER_BATCH - 1);
-  };
-
-  const rows: MemberRow[] = [];
-  let total = Infinity;
-  while (rows.length < total) {
-    const result = await batch(rows.length);
-    check(result);
-    const data = (result.data ?? []) as unknown as MemberRow[];
-    if (data.length === 0) break;
-    rows.push(...data);
-    // Without a count, keep going while batches come back full.
-    total =
-      result.count ??
-      (data.length === MEMBER_BATCH ? Infinity : rows.length);
-  }
-  return rows.map(toMember);
+export async function fetchMembers(admin: AdminContextValue): Promise<Member[]> {
+  const [rows, details] = await Promise.all([
+    fetchAllRows<PersonRow>((from, to) =>
+      inScope(
+        admin.supabase
+          .from("dashboard_people")
+          .select(personColumns, { count: "exact" }),
+        admin,
+      )
+        .order("signed_up_at", { ascending: false })
+        .order("person_id", { ascending: true })
+        .range(from, to),
+    ),
+    fetchMemberDetails(admin),
+  ]);
+  return rows.map((row) => toMember(row, details.get(row.person_id)));
 }
 
 /** One person, by user ID, shaped like a row on the Members page. */
 export async function fetchMember(
-  { supabase, churchId }: AdminContextValue,
+  admin: AdminContextValue,
   userId: string,
 ): Promise<Member | null> {
-  const result = await supabase
-    .from("users")
-    .select(memberColumns)
-    .eq("church_id", churchId)
-    .eq("id", userId)
+  const result = await inScope(
+    admin.supabase.from("dashboard_people").select(personColumns),
+    admin,
+  )
+    .eq("person_id", userId)
     .maybeSingle();
   check(result);
-  return result.data ? toMember(result.data as unknown as MemberRow) : null;
+  if (!result.data) return null;
+  const details = await fetchMemberDetails(admin, [userId]);
+  return toMember(result.data as unknown as PersonRow, details.get(userId));
 }
 
-export async function fetchOverview({
-  supabase,
-  churchId,
-}: AdminContextValue): Promise<OverviewData> {
+export async function fetchOverview(
+  admin: AdminContextValue,
+): Promise<OverviewData> {
+  const { supabase, churchId } = admin;
   const count = { count: "exact", head: true } as const;
 
   const [totalPeople, pendingFollowUps, groupsAtCapacity, recent] =
     await Promise.all([
-      supabase.from("users").select("id", count).eq("church_id", churchId),
-      supabase
-        .from("group_memberships")
-        .select("id, groups!inner(church_id)", count)
-        .eq("groups.church_id", churchId)
-        .eq("status", "pending"),
+      inScope(supabase.from("dashboard_people").select("person_id", count), admin),
+      inScope(
+        supabase.from("dashboard_requests").select("request_id", count),
+        admin,
+      ).eq("status", "pending"),
       supabase
         .from("groups")
         .select("id", count)
         .eq("church_id", churchId)
         .eq("status", "approved")
         .eq("at_capacity", true),
-      supabase
-        .from("users")
-        .select(memberColumns)
-        .eq("church_id", churchId)
-        .order("created_at", { ascending: false })
+      inScope(supabase.from("dashboard_people").select(personColumns), admin)
+        .order("signed_up_at", { ascending: false })
+        .order("person_id", { ascending: true })
         .limit(5),
     ]);
   check(totalPeople, pendingFollowUps, groupsAtCapacity, recent);
+
+  const newest = (recent.data ?? []) as unknown as PersonRow[];
+  const details = await fetchMemberDetails(
+    admin,
+    newest.map((row) => row.person_id),
+  );
 
   return {
     totalPeople: totalPeople.count ?? 0,
     pendingFollowUps: pendingFollowUps.count ?? 0,
     groupsAtCapacity: groupsAtCapacity.count ?? 0,
-    members: ((recent.data ?? []) as unknown as MemberRow[]).map(toMember),
+    members: newest.map((row) => toMember(row, details.get(row.person_id))),
   };
+}
+
+type GroupRequestRow = Pick<
+  RequestRow,
+  "group_id" | "person_name" | "person_avatar_url" | "role" | "status"
+>;
+
+/**
+ * Pending and added requests by group, from `dashboard_requests`. Group
+ * member counts and pending counts come from here on every page.
+ */
+async function fetchGroupRequests(
+  admin: AdminContextValue,
+): Promise<Map<string, GroupRequestRow[]>> {
+  const rows = await fetchAllRows<GroupRequestRow & { request_id: string }>(
+    (from, to) =>
+      inScope(
+        admin.supabase
+          .from("dashboard_requests")
+          .select(
+            "request_id, group_id, person_name, person_avatar_url, role, status",
+            { count: "exact" },
+          ),
+        admin,
+      )
+        .in("status", ["active", "pending"])
+        .order("request_id", { ascending: true })
+        .range(from, to),
+  );
+  const byGroup = new Map<string, GroupRequestRow[]>();
+  for (const row of rows) {
+    byGroup.set(row.group_id, [...(byGroup.get(row.group_id) ?? []), row]);
+  }
+  return byGroup;
 }
 
 type GroupRow = {
@@ -281,35 +392,34 @@ type GroupRow = {
     member: Maybe<{
       name: string | null;
       first_name: string | null;
-      avatar_url: string | null;
     }>;
   }[];
 };
 
-export async function fetchGroups({
-  supabase,
-  churchId,
-}: AdminContextValue): Promise<Group[]> {
-  const result = await supabase
-    .from("groups")
-    .select(
-      "id, title, description, image_url, whatsapp_link, meeting_day, meeting_time, at_capacity, status, location, group_memberships(role, status, member:users!group_memberships_user_id_fkey(name, first_name, avatar_url))",
-    )
-    .eq("church_id", churchId)
-    .in("status", ["approved", "closed"])
-    .order("title", { ascending: true });
+export async function fetchGroups(admin: AdminContextValue): Promise<Group[]> {
+  const [result, requestsByGroup] = await Promise.all([
+    admin.supabase
+      .from("groups")
+      .select(
+        "id, title, description, image_url, whatsapp_link, meeting_day, meeting_time, at_capacity, status, location, group_memberships(role, status, member:users!group_memberships_user_id_fkey(name, first_name))",
+      )
+      .eq("church_id", admin.churchId)
+      .in("status", ["approved", "closed"])
+      .order("title", { ascending: true }),
+    fetchGroupRequests(admin),
+  ]);
   check(result);
 
   return ((result.data ?? []) as unknown as GroupRow[])
     .map((group) => {
-      const memberships = group.group_memberships ?? [];
-      const leaders = memberships
+      const leaders = (group.group_memberships ?? [])
         .filter((m) => m.status === "active" && m.role === "leader")
         .map((m) => {
           const name = one(m.member)?.name || "Unnamed";
           return { name, firstName: one(m.member)?.first_name?.trim() || name };
         })
         .sort((a, b) => a.name.localeCompare(b.name));
+      const requests = requestsByGroup.get(group.id) ?? [];
       const time = group.meeting_time?.slice(0, 5);
 
       return {
@@ -319,11 +429,10 @@ export async function fetchGroups({
         imageUrl: group.image_url || null,
         whatsappLink: group.whatsapp_link || null,
         address: group.location?.address ?? "",
-        people: memberships
-          .filter((m) => m.status === "active" || m.status === "pending")
+        people: requests
           .map((m) => ({
-            name: one(m.member)?.name || "Unnamed",
-            avatarUrl: one(m.member)?.avatar_url || null,
+            name: m.person_name || "Unnamed",
+            avatarUrl: m.person_avatar_url || null,
             role: m.role,
             status: m.status,
           }))
@@ -339,27 +448,16 @@ export async function fetchGroups({
             .filter(Boolean)
             .join(", ") || "Meeting time not set",
         leaders,
-        members: memberships.filter((m) => m.status === "active").length,
+        members: requests.filter((m) => m.status === "active").length,
         atCapacity: group.at_capacity,
         status: group.status,
-        pendingFollowUps: memberships.filter((m) => m.status === "pending")
-          .length,
+        pendingFollowUps: requests.filter((m) => m.status === "pending").length,
         latitude: mapCoordinate(group.location?.coordinates?.latitude),
         longitude: mapCoordinate(group.location?.coordinates?.longitude),
       };
     })
     .sort((a, b) => b.pendingFollowUps - a.pendingFollowUps);
 }
-
-type FollowUpRow = {
-  id: string;
-  user_id: string;
-  group_id: string;
-  created_at: string;
-  journey_status: number | null;
-  member: Maybe<{ name: string | null; avatar_url: string | null }>;
-  groups: Maybe<{ title: string }>;
-};
 
 type NoteRow = {
   membership_id: string;
@@ -369,23 +467,38 @@ type NoteRow = {
   created_at: string;
 };
 
-export async function fetchFollowUps({
-  supabase,
-  churchId,
-}: AdminContextValue): Promise<FollowUp[]> {
-  // Every pending request and every note, however many there are.
-  const [requests, notes, leaders] = await Promise.all([
-    fetchAllRows<FollowUpRow>((from, to) =>
-      supabase
-        .from("group_memberships")
-        .select(
-          "id, user_id, group_id, created_at, journey_status, member:users!group_memberships_user_id_fkey(name, avatar_url), groups!inner(title, church_id)",
-          { count: "exact" },
-        )
-        .eq("groups.church_id", churchId)
+/** Which time limit a pending request is measured against, in words. */
+function dueReason(stage: number, limitDays: number | null): string | undefined {
+  if (limitDays == null) return undefined;
+  if (stage <= 0) return `Reach out within ${limitDays} days of the request`;
+  if (stage === 3) {
+    return `Add them to the group within ${limitDays} days of the last action`;
+  }
+  return `Follow up within ${limitDays} days of the last action`;
+}
+
+/**
+ * Every pending request, from `dashboard_requests`, with its stage dates and
+ * follow-up state. Notes are only loaded for their text.
+ */
+export async function fetchFollowUps(
+  admin: AdminContextValue,
+): Promise<FollowUp[]> {
+  const { supabase, churchId } = admin;
+  const [requests, notes] = await Promise.all([
+    fetchAllRows<RequestRow>((from, to) =>
+      inScope(
+        supabase
+          .from("dashboard_requests")
+          .select(
+            "request_id, person_id, person_name, person_avatar_url, group_id, group_title, leaders, role, status, stage, requested_at, reached_out_at, spoken_to_at, attended_at, last_action_at, limit_days, days_until_due, follow_up",
+            { count: "exact" },
+          ),
+        admin,
+      )
         .eq("status", "pending")
-        .order("created_at", { ascending: true })
-        .order("id", { ascending: true })
+        .order("requested_at", { ascending: true })
+        .order("request_id", { ascending: true })
         .range(from, to),
     ),
     fetchAllRows<NoteRow>((from, to) =>
@@ -401,29 +514,7 @@ export async function fetchFollowUps({
         .order("id", { ascending: true })
         .range(from, to),
     ),
-    supabase
-      .from("group_memberships")
-      .select(
-        "group_id, member:users!group_memberships_user_id_fkey(name), groups!inner(church_id)",
-      )
-      .eq("groups.church_id", churchId)
-      .eq("role", "leader")
-      .eq("status", "active"),
   ]);
-  check(leaders);
-
-  const leadersByGroup = new Map<string, string[]>();
-  for (const row of (leaders.data ?? []) as unknown as {
-    group_id: string;
-    member: Maybe<{ name: string | null }>;
-  }[]) {
-    const name = one(row.member)?.name;
-    if (!name) continue;
-    leadersByGroup.set(row.group_id, [
-      ...(leadersByGroup.get(row.group_id) ?? []),
-      name,
-    ]);
-  }
 
   const notesByMembership = new Map<string, NoteRow[]>();
   for (const note of notes) {
@@ -435,82 +526,50 @@ export async function fetchFollowUps({
   const now = Date.now();
 
   return requests.map((row) => {
-    const history = notesByMembership.get(row.id) ?? [];
-    const journey = row.journey_status ?? 0;
-
-    // Journey status: 1 reached out, 2 spoken to (invited), 3 attended group.
-    const stepDate = (status: number) => {
-      const reached = history
-        .filter((note) => note.new_journey_status === status)
-        .at(-1);
-      return reached ? formatDay(reached.created_at) : "earlier";
-    };
-
+    // Only notes from this request, not an earlier one on the same row.
+    const history = (notesByMembership.get(row.request_id) ?? []).filter(
+      (note) => note.created_at >= row.requested_at,
+    );
+    const stage = row.stage ?? 0;
+    const stageDate = (at: string | null) => (at ? formatDay(at) : "earlier");
     const lastJourneyNote = history
       .filter((note) => note.note_type === "journey_status_change")
       .at(-1);
-    const lastActivity = lastJourneyNote?.created_at;
-
-    // When the person reached their current stage. If that was never logged
-    // we can only count from the request, so the window may look longer gone.
-    const enteredStageAt = (status: number) =>
-      history.filter((note) => note.new_journey_status === status).at(-1)
-        ?.created_at ?? lastActivity ?? row.created_at;
-
-    const requestedMs = new Date(row.created_at).getTime();
-    const attendDeadline = requestedMs + FOLLOW_UP_SLA.attendGroup * DAY_MS;
-    let dueAt: number | null = null;
-    let dueReason = "";
-
-    if (journey <= 0) {
-      dueAt = requestedMs + FOLLOW_UP_SLA.reachOut * DAY_MS;
-      dueReason = `Reach out within ${FOLLOW_UP_SLA.reachOut} days of the request`;
-    } else if (journey === 1) {
-      dueAt =
-        new Date(enteredStageAt(1)).getTime() +
-        FOLLOW_UP_SLA.afterReachOut * DAY_MS;
-      dueReason = `Follow up within ${FOLLOW_UP_SLA.afterReachOut} days of reaching out`;
-    } else if (journey === 2) {
-      dueAt =
-        new Date(enteredStageAt(2)).getTime() +
-        FOLLOW_UP_SLA.afterSpokenTo * DAY_MS;
-      dueReason = `Follow up within ${FOLLOW_UP_SLA.afterSpokenTo} days of speaking to them`;
-    }
-
-    // Whatever the stage, 30 days after the request is the final deadline.
-    if (dueAt !== null && attendDeadline < dueAt) {
-      dueAt = attendDeadline;
-      dueReason = `Attend a group within ${FOLLOW_UP_SLA.attendGroup} days of the request`;
-    }
-    const isOverdue = dueAt !== null && now > dueAt;
+    const needsAttention = row.follow_up === "needs_attention";
+    const leaderNames = (row.leaders ?? [])
+      .map((leader) => leader.name)
+      .filter((name): name is string => Boolean(name));
 
     return {
-      id: row.id,
-      userId: row.user_id,
-      name: one(row.member)?.name || "Unnamed",
-      avatarUrl: one(row.member)?.avatar_url || null,
-      group: one(row.groups)?.title ?? "Group",
+      id: row.request_id,
+      userId: row.person_id,
+      name: row.person_name || "Unnamed",
+      avatarUrl: row.person_avatar_url || null,
+      group: row.group_title,
       groupId: row.group_id,
-      leader: leadersByGroup.get(row.group_id)?.sort().join(" & ") || "No leader yet",
-      requestedOn: formatDay(row.created_at),
-      requestedAt: row.created_at,
-      requestedDaysAgo: daysSince(row.created_at, now),
+      leader: leaderNames.join(" & ") || "No leader yet",
+      requestedOn: formatDay(row.requested_at),
+      requestedAt: row.requested_at,
+      requestedDaysAgo: daysSince(row.requested_at, now),
+      followUp: row.follow_up ?? "needs_first_contact",
       overdueDays:
-        isOverdue && dueAt !== null
-          ? Math.max(1, Math.floor((now - dueAt) / DAY_MS))
+        needsAttention && row.days_until_due != null
+          ? Math.max(1, -row.days_until_due)
           : undefined,
       dueInDays:
-        !isOverdue && dueAt !== null
-          ? Math.max(0, Math.ceil((dueAt - now) / DAY_MS))
+        !needsAttention && row.days_until_due != null
+          ? Math.max(0, row.days_until_due)
           : undefined,
-      dueReason: dueAt !== null ? dueReason : undefined,
+      dueReason: dueReason(stage, row.limit_days),
       phone: "",
       progress: {
-        reachedOut: journey >= 1 ? stepDate(1) : null,
-        invited: journey >= 2 ? stepDate(2) : null,
-        attended: journey >= 3 ? stepDate(3) : null,
+        reachedOut: stage >= 1 ? stageDate(row.reached_out_at) : null,
+        invited: stage >= 2 ? stageDate(row.spoken_to_at) : null,
+        attended: stage >= 3 ? stageDate(row.attended_at) : null,
       },
-      lastUpdatedOn: lastActivity ? formatDay(lastActivity) : undefined,
+      lastUpdatedOn: lastJourneyNote
+        ? formatDay(lastJourneyNote.created_at)
+        : undefined,
       lastUpdateNote: lastJourneyNote?.note_text ?? undefined,
       notes: history
         .filter((note) => note.note_type === "manual" && note.note_text)
@@ -566,114 +625,120 @@ function stageFromJourney(status: number | null): ReportStage {
   return "not-reached";
 }
 
-type ReportUserRow = {
-  id: string;
-  created_at: string;
-  newcomer: boolean | null;
-  cannot_find_group: boolean | null;
-};
-
-type ReportMembershipRow = {
-  user_id: string;
-  status: string;
-  journey_status: number | null;
-  created_at: string;
-};
-
 type ReportGroupRow = {
   id: string;
   title: string;
   at_capacity: boolean;
-  group_memberships: { status: string }[] | null;
 };
 
-/** People, follow-ups and groups behind the Reports charts. No names. */
-export async function fetchReports({
-  supabase,
-  churchId,
-}: AdminContextValue): Promise<ReportsData> {
-  const [usersResult, membershipsResult, groupsResult] = await Promise.all([
-    supabase
-      .from("users")
-      .select("id, created_at, newcomer, cannot_find_group")
-      .eq("church_id", churchId)
-      .limit(2000),
-    supabase
-      .from("group_memberships")
-      .select(
-        "user_id, status, journey_status, created_at, groups!inner(church_id)",
-      )
-      .eq("groups.church_id", churchId)
-      .limit(2000),
-    supabase
-      .from("groups")
-      .select("id, title, at_capacity, group_memberships(status)")
-      .eq("church_id", churchId)
-      .eq("status", "approved")
-      .order("title", { ascending: true }),
-  ]);
-  check(usersResult, membershipsResult, groupsResult);
+const reportOutcome: Record<PersonRow["outcome"], SignupOutcome> = {
+  connected: "attended",
+  not_yet_connected: "requested",
+  archived: "downloaded",
+  no_requests: "downloaded",
+  check_data: "downloaded",
+};
 
-  const memberships = (membershipsResult.data ?? []) as unknown as ReportMembershipRow[];
-  const byUser = new Map<string, ReportMembershipRow[]>();
-  for (const membership of memberships) {
-    const list = byUser.get(membership.user_id) ?? [];
-    list.push(membership);
-    byUser.set(membership.user_id, list);
+type ReportPersonRow = Pick<
+  PersonRow,
+  "person_id" | "signed_up_at" | "newcomer" | "needs_help" | "outcome"
+>;
+
+type ReportRequestRow = Pick<
+  RequestRow,
+  "request_id" | "person_id" | "stage" | "requested_at"
+>;
+
+/**
+ * People, follow-ups and groups behind the Reports charts. No names. People
+ * come from `dashboard_people` and requests from `dashboard_requests`, so the
+ * counts match every other page.
+ */
+export async function fetchReports(
+  admin: AdminContextValue,
+): Promise<ReportsData> {
+  const { supabase, churchId } = admin;
+  const [peopleRows, pendingRows, groupsResult, requestsByGroup] =
+    await Promise.all([
+      fetchAllRows<ReportPersonRow>((from, to) =>
+        inScope(
+          supabase
+            .from("dashboard_people")
+            .select("person_id, signed_up_at, newcomer, needs_help, outcome", {
+              count: "exact",
+            }),
+          admin,
+        )
+          .order("person_id", { ascending: true })
+          .range(from, to),
+      ),
+      fetchAllRows<ReportRequestRow>((from, to) =>
+        inScope(
+          supabase
+            .from("dashboard_requests")
+            .select("request_id, person_id, stage, requested_at", {
+              count: "exact",
+            }),
+          admin,
+        )
+          .eq("status", "pending")
+          .order("request_id", { ascending: true })
+          .range(from, to),
+      ),
+      supabase
+        .from("groups")
+        .select("id, title, at_capacity")
+        .eq("church_id", churchId)
+        .eq("status", "approved")
+        .order("title", { ascending: true }),
+      fetchGroupRequests(admin),
+    ]);
+  check(groupsResult);
+
+  const pendingByPerson = new Map<string, ReportRequestRow[]>();
+  for (const row of pendingRows) {
+    pendingByPerson.set(row.person_id, [
+      ...(pendingByPerson.get(row.person_id) ?? []),
+      row,
+    ]);
   }
 
-  const people = ((usersResult.data ?? []) as unknown as ReportUserRow[]).map(
-    (user): ReportPerson => {
-      const rows = byUser.get(user.id) ?? [];
-      const live = rows.filter(
-        (row) => row.status === "active" || row.status === "pending",
-      );
-      const pending = rows.filter((row) => row.status === "pending");
-      const attended = live.some(
-        (row) => row.status === "active" || row.journey_status === 3,
-      );
-      const outcome: SignupOutcome = attended
-        ? "attended"
-        : pending.length > 0
-          ? "requested"
-          : "downloaded";
+  const reportPeople = peopleRows.map((person): ReportPerson => {
+    const pending = pendingByPerson.get(person.person_id) ?? [];
+    const furthest = pending.reduce<ReportStage | null>((best, row) => {
+      const stage = stageFromJourney(row.stage);
+      if (!best || stageRank[stage] > stageRank[best]) return stage;
+      return best;
+    }, null);
 
-      const furthest = pending.reduce<ReportStage | null>((best, row) => {
-        const stage = stageFromJourney(row.journey_status);
-        if (!best || stageRank[stage] > stageRank[best]) return stage;
-        return best;
-      }, null);
-
-      return {
-        createdAt: user.created_at,
-        isNewcomer: Boolean(user.newcomer),
-        askedForHelp: user.cannot_find_group === true,
-        outcome,
-        pendingStage: furthest,
-        pendingSince: pending.reduce<string | null>(
-          (earliest, row) =>
-            !earliest || row.created_at < earliest ? row.created_at : earliest,
-          null,
-        ),
-      };
-    },
-  );
+    return {
+      createdAt: person.signed_up_at,
+      isNewcomer: person.newcomer,
+      askedForHelp: person.needs_help,
+      outcome: reportOutcome[person.outcome],
+      pendingStage: furthest,
+      pendingSince: pending.reduce<string | null>(
+        (earliest, row) =>
+          !earliest || row.requested_at < earliest
+            ? row.requested_at
+            : earliest,
+        null,
+      ),
+    };
+  });
 
   const groups = ((groupsResult.data ?? []) as unknown as ReportGroupRow[])
-    .map(
-      (group): ReportGroup => ({
+    .map((group): ReportGroup => {
+      const requests = requestsByGroup.get(group.id) ?? [];
+      return {
         id: group.id,
         name: group.title,
-        members: (group.group_memberships ?? []).filter(
-          (row) => row.status === "active",
-        ).length,
-        pending: (group.group_memberships ?? []).filter(
-          (row) => row.status === "pending",
-        ).length,
+        members: requests.filter((row) => row.status === "active").length,
+        pending: requests.filter((row) => row.status === "pending").length,
         atCapacity: group.at_capacity,
-      }),
-    )
+      };
+    })
     .sort((a, b) => b.members - a.members || a.name.localeCompare(b.name));
 
-  return { people, groups };
+  return { people: reportPeople, groups };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { MemberSheet } from "@/components/dashboard/MemberSheet";
 import { MemberTableRow } from "@/components/dashboard/MemberTableRow";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,6 @@ export default function MembersPage() {
   });
   const [sort, setSort] = useState<Option>(sortOptions[0]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [now] = useState(() => Date.now());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -82,24 +81,19 @@ export default function MembersPage() {
     setIsSheetOpen(true);
   };
 
-  const isNew = useCallback(
-    (member: Member) =>
-      now - new Date(member.joinedAt).getTime() < NEW_WINDOW_DAYS * 864e5,
-    [now],
-  );
-
   const counts = useMemo(
     () => ({
       all: members.length,
       Connected: members.filter((m) => m.status === "Connected").length,
-      "Pending follow-up": members.filter((m) => m.status === "Pending follow-up")
-        .length,
+      "Not yet connected": members.filter(
+        (m) => m.status === "Not yet connected",
+      ).length,
       "Looking for a group": members.filter(
         (m) => m.status === "Looking for a group",
       ).length,
-      new: members.filter(isNew).length,
+      new: members.filter((m) => m.isNew).length,
     }),
-    [members, isNew],
+    [members],
   );
 
   const groupOptions: Option[] = useMemo(() => {
@@ -119,7 +113,7 @@ export default function MembersPage() {
     .filter(
       (member) =>
         (status === "all" || member.status === status) &&
-        (!onlyNew || isNew(member)) &&
+        (!onlyNew || member.isNew) &&
         (role === "all" || member.role === role) &&
         (groupFilter.value === "all" || member.group === groupFilter.value) &&
         (!needle ||
@@ -168,7 +162,7 @@ export default function MembersPage() {
         setVisibleCount(PAGE_SIZE);
       },
     },
-    ...(["Connected", "Pending follow-up", "Looking for a group"] as const).map(
+    ...(["Connected", "Not yet connected", "Looking for a group"] as const).map(
       (name) => ({
         label: name,
         count: counts[name],
@@ -359,7 +353,7 @@ export default function MembersPage() {
                   member={member}
                   onSelect={handleSelect}
                   showJoined
-                  isNew={isNew(member)}
+                  isNew={member.isNew}
                 />
               ))
             )}
