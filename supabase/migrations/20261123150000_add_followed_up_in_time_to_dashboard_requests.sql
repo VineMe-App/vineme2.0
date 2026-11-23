@@ -11,6 +11,11 @@
 --   reached_out_in_time, spoken_to_in_time,
 --   attended_in_time                                 'hit', 'miss' or null (not known yet)
 --
+-- It also reads users, notes and each group's leaders once each (materialized CTEs) instead
+-- of once per request. With the users policies from 20261122120000, the old shape ran the
+-- row-level security checks on users hundreds of times per query and timed out on a few
+-- hundred people. The rows returned are the same.
+--
 -- One change from the reference query: joined_at only stands in for a stage date when it
 -- is on or after the request date, because a rejoin reuses the membership row.
 --
@@ -19,7 +24,20 @@
 create or replace view public.dashboard_requests
 with (security_invoker = true)
 as
-with notes as (
+with people as materialized (
+	-- Everyone who isn't a test account, read once. Joining users row by row made row-level
+	-- security run its checks once per request for every user, which timed out (see header).
+	select u.id
+	, u.first_name
+	, u.last_name
+	, u.name
+	, u.avatar_url
+	, u.newcomer
+	from public.users u
+	where coalesce(u.first_name, '') not ilike '%test%'
+	  and coalesce(u.last_name, '') not ilike '%test%'
+)
+, notes as materialized (
 	-- Notes that belong to the current request on each membership row.
 	select n.*
 	from public.group_membership_notes n
@@ -35,7 +53,7 @@ with notes as (
 	from notes
 	where new_journey_status is not null
 )
-, stage_dates as (
+, stage_dates as materialized (
 	-- When each stage was first reached. Taps undone within an hour are ignored.
 	select membership_id
 	, min(created_at) filter (where new_journey_status = 1) as reached_out_at
@@ -47,7 +65,7 @@ with notes as (
 	   or next_at - created_at >= interval '1 hour'
 	group by membership_id
 )
-, actions as (
+, actions as materialized (
 	-- Last action: a leader's note, a stage moving forward, or a status change.
 	-- Clergy notes marked "spoken to them" join this once FU-6 adds them.
 	select membership_id
@@ -59,7 +77,7 @@ with notes as (
 	   or new_status is distinct from previous_status
 	group by membership_id
 )
-, archived as (
+, archived as materialized (
 	-- The note that archived the request, with the reason the leader picked.
 	select distinct on (membership_id) membership_id
 	, created_at as archived_at
@@ -67,6 +85,19 @@ with notes as (
 	from notes
 	where new_status = 'archived'
 	order by membership_id, created_at desc
+)
+, group_leaders as materialized (
+	-- Every active leader of each group, worked out once per group rather than per request.
+	select lm.group_id
+	, jsonb_agg(
+		jsonb_build_object('id', lu.id, 'name', lu.name, 'avatar_url', lu.avatar_url)
+		order by lu.name
+	) as leaders
+	from public.group_memberships lm
+	join people lu on lu.id = lm.user_id
+	where lm.role in ('leader', 'admin')
+	  and lm.status = 'active'
+	group by lm.group_id
 )
 , base as (
 	select gm.id as request_id
@@ -113,30 +144,16 @@ with notes as (
 		else coalesce(a.last_action_at, gm.created_at)::date
 		end as clock_start_on
 	from public.group_memberships gm
-	join public.users u on u.id = gm.user_id
+	join people u on u.id = gm.user_id
 	join public.groups g on g.id = gm.group_id
-	left join lateral (
-		select jsonb_agg(
-			jsonb_build_object('id', lu.id, 'name', lu.name, 'avatar_url', lu.avatar_url)
-			order by lu.name
-		) as leaders
-		from public.group_memberships lm
-		join public.users lu on lu.id = lm.user_id
-		where lm.group_id = gm.group_id
-		  and lm.role in ('leader', 'admin')
-		  and lm.status = 'active'
-		  and coalesce(lu.first_name, '') not ilike '%test%'
-		  and coalesce(lu.last_name, '') not ilike '%test%'
-	) l on true
+	left join group_leaders l on l.group_id = gm.group_id
 	left join stage_dates sd on sd.membership_id = gm.id
 	left join actions a on a.membership_id = gm.id
 	left join archived ar on ar.membership_id = gm.id
 	cross join lateral (
 		select case when gm.joined_at >= gm.created_at then gm.joined_at end as joined_at
 	) j
-	where coalesce(u.first_name, '') not ilike '%test%'
-	  and coalesce(u.last_name, '') not ilike '%test%'
-	  and (
+	where (
 		-- Signed-in church admins see their own service's requests.
 		(public.current_user_has_role('church_admin') and g.service_id = public.current_user_service_id())
 		-- Database roles that already bypass row-level security (the SQL editor, Metabase,
