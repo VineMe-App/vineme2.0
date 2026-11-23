@@ -7,6 +7,8 @@ Read this when adding any tool, vendor or subprocessor, syncing with a church ma
 ## Where data is stored
 Regions, transfer mechanisms and every place data lives are in [DATA-LOCATION-AND-TRANSFERS.md](DATA-LOCATION-AND-TRANSFERS.md). Check it for every new vendor.
 
+The project should keep a vendor record in its docs (e.g. `docs/security/`): vendor, the personal data it gets, region, transfer route, DPA link and date checked. Read it before flagging a vendor, and update it when you add or change one.
+
 ## New tools and vendors
 Before adding any tool or vendor (email/SMS, analytics, BI, church management systems, hosting/CDN, error tracking, AI APIs, push), check:
 - where data is stored and processed, and the EU/UK region options;

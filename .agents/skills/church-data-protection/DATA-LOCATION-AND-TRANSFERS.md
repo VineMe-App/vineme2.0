@@ -9,7 +9,7 @@ Read this when choosing a hosting region, adding any service that stores or proc
 - A transfer is allowed only if one of these applies, checked in this order:
   1. **UK adequacy regulations ("data bridges")**: the EEA, plus countries the UK has approved (e.g. Switzerland, South Korea, the Channel Islands, the Isle of Man, Japan for the private sector, Canada for commercial bodies). Check the ICO's current list.
   2. **The US only via the UK Extension to the EU-US Data Privacy Framework**, and only to companies certified for the UK Extension. Check the vendor's certification; plain EU-US DPF isn't enough.
-  3. **Appropriate safeguards**: usually the ICO's International Data Transfer Agreement (IDTA), or the EU Standard Contractual Clauses with the UK Addendum (others exist, such as binding corporate rules), **plus a transfer risk assessment** (TRA, now called a "data protection test" in UK law) showing the protection holds up in practice (e.g. government access laws).
+  3. **Appropriate safeguards**: usually the ICO's International Data Transfer Agreement (IDTA), the EU Standard Contractual Clauses (SCCs) with the UK Addendum, or the vendor's approved Binding Corporate Rules (BCRs), **plus a transfer risk assessment** (TRA, now called a "data protection test" in UK law) showing the protection holds up in practice (e.g. government access laws).
   4. **Exceptions** (explicit consent, contract necessity and so on) are for occasional, one-off transfers. Never use them for routine hosting or a vendor's service.
 - The Data (Use and Access) Act 2025 reworded the transfer rules from 5 February 2026: a country or safeguard now passes if protection is "not materially lower" than the UK's. The rest of the Act is being brought in in stages: check what has commenced before relying on it.
 - If the software also serves churches in the EU, EU GDPR applies to their data too. The EU recognises the UK as adequate (renewed in 2025); check the current position.
@@ -39,6 +39,7 @@ Personal data is often stored in more places than the main database. Check and r
 
 ## Record it
 - Keep a data map listing each store or service, what personal data it holds, its region, the transfer mechanism (if any) and the date checked. It feeds the DPIA (see [DPIA.md](DPIA.md)) and the privacy notice.
+- Before flagging a vendor's transfer as a problem, check the project's own data map or vendor record (e.g. in `docs/security/`) for the route already recorded. A vendor that isn't on the Data Privacy Framework list may still be covered by SCCs or BCRs.
 - Recheck when a vendor changes its subprocessors or regions.
 
 ## Checks

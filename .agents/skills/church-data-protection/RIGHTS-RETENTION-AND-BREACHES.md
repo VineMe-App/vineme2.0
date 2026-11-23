@@ -15,7 +15,7 @@ Access (one month to respond; the clock pauses while you wait for clarification 
 - Provide per-person export and delete covering all linked records.
 
 ## Breaches
-- A personal data breach (e.g. an access-rule gap) may need reporting to the ICO within 72 hours of awareness, and to affected people if high risk.
+- A personal data breach (e.g. an access-rule gap): assess it first. Report it to the ICO within 72 hours of becoming aware, unless it's unlikely to result in a risk to people's rights and freedoms. If the risk to people is high, tell them without undue delay.
 - As processor, tell the church without undue delay so it can decide.
 - Have a breach procedure before you need one.
 
