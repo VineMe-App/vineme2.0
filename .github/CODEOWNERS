@@ -1,0 +1,25 @@
+# High-risk paths require human Code Owner approval on PRs targeting dev and main.
+# Standard UI, copy, and feature paths outside this list can merge to dev with 0 approvals
+# once CI checks pass.
+
+# Database schema, migrations, RLS policies, seed, config, and Edge Functions
+/supabase/migrations/ @hugheshallettj @tomoakley @aonghas
+/supabase/functions/ @hugheshallettj @tomoakley @aonghas
+/supabase/config.toml @hugheshallettj @tomoakley @aonghas
+/supabase/seed.sql @hugheshallettj @tomoakley @aonghas
+
+# CI/CD workflows, branch rulesets, and ownership config
+/.github/workflows/ @hugheshallettj @tomoakley @aonghas
+/.github/rulesets/ @hugheshallettj @tomoakley @aonghas
+/.github/CODEOWNERS @hugheshallettj @tomoakley @aonghas
+/scripts/check-db-security.sql @hugheshallettj @tomoakley @aonghas
+/scripts/typecheck-mobile-gate.mjs @hugheshallettj @tomoakley @aonghas
+/scripts/mobile-typecheck-baseline.json @hugheshallettj @tomoakley @aonghas
+
+# Auth, permissions, server API routes, and Supabase client wiring
+/apps/web/lib/supabase/ @hugheshallettj @tomoakley @aonghas
+/apps/web/app/api/ @hugheshallettj @tomoakley @aonghas
+/apps/web/app/login/ @hugheshallettj @tomoakley @aonghas
+/apps/mobile/src/services/auth.ts @hugheshallettj @tomoakley @aonghas
+/apps/mobile/src/services/permissions.ts @hugheshallettj @tomoakley @aonghas
+/apps/mobile/src/services/supabase.ts @hugheshallettj @tomoakley @aonghas

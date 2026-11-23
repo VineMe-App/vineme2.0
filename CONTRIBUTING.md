@@ -76,10 +76,13 @@ If a piece of work is not tied to an issue number, omit `<issue>-` (e.g. `chore/
    - **Feature / fix PRs → `dev`**: Use **Squash and merge** so each PR lands as one clean, atomic commit on `dev`.
    - **Release PRs (`dev` → `main`)**: Use **Create a merge commit** (never Squash and merge) so `dev` and `main` share commit history and never diverge.
 4. **Delete merged branches**:
-   GitHub is configured to delete head branches automatically after a PR merges. Locally, prune stale tracking branches and remove merged local branches regularly:
+   GitHub automatically deletes head branches after a PR merges (`delete_branch_on_merge`). Enable auto-pruning once locally so deleted remote branches disappear from your local refs on every `fetch`/`pull`:
    ```bash
-   git fetch --prune
-   ./scripts/cleanup-branches.sh --local
+   git config --global fetch.prune true
+   ```
+   Then clean up finished local branches (including squash-merged branches whose upstream is `[gone]`) anytime with:
+   ```bash
+   npm run git:clean
    ```
 
 ---
@@ -145,8 +148,9 @@ npm run build:web    # Production Next.js build
 - **Collaborators only**: Pushing branches and creating Pull Requests are restricted to repository collaborators (`Settings → General → Features → Pull requests → Collaborators only`).
 
 ### Branch Protection Rules
-- **`dev`**: Requires PR before merging, passing CI checks, conversation resolution, and blocks force-pushes/deletion (0 required approvals so verified solo/CI PRs can merge smoothly, admin bypass enabled).
+- **`dev`**: Requires PR before merging, passing CI checks, conversation resolution, **Code Owner review** on high-risk paths in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (0 baseline approvals so standard UI/docs PRs merge smoothly), and blocks force-pushes/deletion (admin bypass enabled).
 - **`main`**: Same protections as `dev` plus **1 required approving review** (dismissing stale reviews on new pushes, admin bypass enabled).
+- **Branch naming (`Enforce branch naming convention`)**: Rejects remote branch creation outside `dev`, `main`, `feat/*`, `fix/*`, `chore/*`, `docs/*`, `refactor/*`, `release/*`, `revert-*`, and `dependabot/*`.
 
 To apply or re-sync these rules and repository merge settings via the GitHub CLI:
 
@@ -155,14 +159,15 @@ To apply or re-sync these rules and repository merge settings via the GitHub CLI
 ```
 
 ### Cleaning Up Old Branches
-Use [`scripts/cleanup-branches.sh`](./scripts/cleanup-branches.sh) to audit and clean up branches safely:
+- **Automated remote cleanup**: A weekly GitHub Action ([`.github/workflows/stale-branches.yml`](./.github/workflows/stale-branches.yml)) automatically tags unmerged remote branches with no open PR and no commits for **30 days** as `archive/<branch>` and deletes the remote branch.
+- **Local & manual cleanup**: Run `npm run git:clean` or [`scripts/cleanup-branches.sh`](./scripts/cleanup-branches.sh) to clean up finished branches safely:
 
 ```bash
+npm run git:clean
 ./scripts/cleanup-branches.sh --dry-run --local --remote-merged
-./scripts/cleanup-branches.sh --local --remote-merged
 ./scripts/cleanup-branches.sh --dry-run --archive-stale
 ```
 
-- `--local` deletes local branches already merged into `origin/dev`.
+- `--local` deletes local branches whose upstream is `[gone]` (e.g. after Squash & Merge) or already merged into `origin/dev`.
 - `--remote-merged` deletes remote branches on `origin` already merged into `origin/dev`.
-- `--archive-stale` tags unmerged remote branches older than 90 days as `archive/<branch>`, pushes the tags, and deletes the remote branches so nothing is lost.
+- `--archive-stale` tags unmerged remote branches older than 30 days as `archive/<branch>`, pushes the tags, and deletes the remote branches so nothing is lost.

@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Clean up merged local/remote branches and optionally archive + delete stale unmerged remote branches.
+# Clean up local branches (Squash & Merge upstream gone or merged) and remote branches,
+# and optionally archive + delete stale unmerged remote branches.
 # Usage:
-#   ./scripts/cleanup-branches.sh [--dry-run] [--local] [--remote-merged] [--archive-stale]
+#   ./scripts/cleanup-branches.sh [--dry-run] [--no-fetch] [--local] [--remote-merged] [--archive-stale]
 
 REMOTE="origin"
 BASE_BRANCH="origin/dev"
-STALE_DAYS=90
+STALE_DAYS=30
 
 DRY_RUN=false
+NO_FETCH=false
 DO_LOCAL=false
 DO_REMOTE_MERGED=false
 DO_ARCHIVE_STALE=false
@@ -19,10 +21,12 @@ usage() {
 Usage: $(basename "$0") [options]
 
 Options:
-  --local           Delete local branches already merged into ${BASE_BRANCH}
+  --local           Delete local branches whose upstream is [gone] (e.g. Squash & Merge)
+                    or already merged into ${BASE_BRANCH}
   --remote-merged   Delete remote branches on ${REMOTE} already merged into ${BASE_BRANCH}
   --archive-stale   Tag unmerged ${REMOTE}/* branches older than ${STALE_DAYS} days as archive/<branch>,
                     push the tags, and delete the remote branches
+  --no-fetch        Skip 'git fetch --prune' before inspecting branches
   --dry-run         Print actions without deleting or pushing anything
   -h, --help        Show this help message
 EOF
@@ -31,6 +35,7 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=true ;;
+    --no-fetch) NO_FETCH=true ;;
     --local) DO_LOCAL=true ;;
     --remote-merged) DO_REMOTE_MERGED=true ;;
     --archive-stale) DO_ARCHIVE_STALE=true ;;
@@ -62,33 +67,38 @@ run_cmd() {
 
 CURRENT_BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
 
-if [[ "$DO_REMOTE_MERGED" == true || "$DO_ARCHIVE_STALE" == true ]]; then
+if [[ "$NO_FETCH" == false ]]; then
   echo "=== Pruning stale remote-tracking refs for ${REMOTE} ==="
   git fetch --prune "$REMOTE"
 fi
 
 if [[ "$DO_LOCAL" == true ]]; then
-  echo "=== Local branches merged into ${BASE_BRANCH} ==="
-  MERGED_LOCAL=()
-  while IFS= read -r branch; do
-    branch="${branch#"${branch%%[![:space:]]*}"}"
-    branch="${branch#\* }"
+  echo "=== Local branches with [gone] upstream or merged into ${BASE_BRANCH} ==="
+  LOCAL_TO_DELETE=()
+  LOCAL_REASONS=()
+  while IFS=$'\t' read -r branch track; do
     [[ -z "$branch" ]] && continue
     case "$branch" in
       dev|main|"$CURRENT_BRANCH") continue ;;
     esac
-    MERGED_LOCAL+=("$branch")
-  done < <(git branch --merged "$BASE_BRANCH")
+    if [[ "$track" == "[gone]" ]]; then
+      LOCAL_TO_DELETE+=("$branch")
+      LOCAL_REASONS+=("upstream gone")
+    elif git merge-base --is-ancestor "$branch" "$BASE_BRANCH" 2>/dev/null; then
+      LOCAL_TO_DELETE+=("$branch")
+      LOCAL_REASONS+=("merged into ${BASE_BRANCH}")
+    fi
+  done < <(git for-each-ref --format=$'%(refname:short)\t%(upstream:track)' refs/heads)
 
-  if [[ ${#MERGED_LOCAL[@]} -eq 0 ]]; then
-    echo "No merged local branches to delete."
+  if [[ ${#LOCAL_TO_DELETE[@]} -eq 0 ]]; then
+    echo "No gone or merged local branches to delete."
   else
-    echo "Deleting ${#MERGED_LOCAL[@]} merged local branches..."
-    for branch in "${MERGED_LOCAL[@]}"; do
-      # Already verified merged into BASE_BRANCH; -D avoids false positives when a branch's upstream lags behind BASE_BRANCH.
-      if git merge-base --is-ancestor "$branch" "$BASE_BRANCH"; then
-        run_cmd git branch -D "$branch"
-      fi
+    echo "Deleting ${#LOCAL_TO_DELETE[@]} local branches..."
+    for i in "${!LOCAL_TO_DELETE[@]}"; do
+      branch="${LOCAL_TO_DELETE[$i]}"
+      reason="${LOCAL_REASONS[$i]}"
+      echo "  - ${branch} (${reason})"
+      run_cmd git branch -D "$branch"
     done
   fi
 fi

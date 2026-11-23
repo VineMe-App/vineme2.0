@@ -29,7 +29,8 @@
     "db:types": "supabase gen types typescript --local > packages/shared/src/database.types.ts",
     "cron:status": "supabase db query --local \"select jobid, jobname, schedule, active from cron.job;\"",
     "cron:disable": "supabase db query --local \"select cron.unschedule('sync-churchsuite-vulnerable-tags-daily');\"",
-    "cron:enable": "supabase db query --local \"select public.reschedule_churchsuite_vulnerable_tags_sync();\""
+    "cron:enable": "supabase db query --local \"select public.reschedule_churchsuite_vulnerable_tags_sync();\"",
+    "git:clean": "./scripts/cleanup-branches.sh --local"
   },
   "devDependencies": {
     "husky": "^9.1.7",
