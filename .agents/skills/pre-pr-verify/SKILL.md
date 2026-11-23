@@ -45,7 +45,12 @@ Run the verification suite matching the scopes touched in your branch and confir
      npx prettier --check <changed-files>
      ```
 
-3. **Confirm PR checklist and report results**
+3. **Security review of the diff (when sensitive areas changed)**
+   If the branch touches `supabase/` (migrations, RLS, views, functions, storage, Edge Functions or `config.toml`), auth or sign-in flows, `apps/web` route handlers or server actions, service-role or secret key use, env vars, `apps/mobile` storage or deep links, dependencies, or `.github/workflows/`, follow the `security-audit` skill in guidance mode against `git diff origin/dev...HEAD`, using only the matching topic checklists.
+   - If nothing turns up, say "security review: no issues" in your report.
+   - If something does, stop before opening or updating the PR and tell the user directly. Don't describe it in commits, the PR title or body, or PR comments; follow the skill's rules on where findings go.
+
+4. **Confirm PR checklist and report results**
    - Verify the target base branch is `dev` (Squash and merge) for feature/fix PRs, or `main` (Merge commit) for `dev` → `main` releases.
    - Verify the PR title follows `<type>(<scope>): <concise summary> (#<number>)` and the body completes `.github/PULL_REQUEST_TEMPLATE.md` (`Closes #<number>`).
    - Report the exact commands executed and their observed pass/fail output.
