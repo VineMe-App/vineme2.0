@@ -9,9 +9,10 @@ export function getInitials(name: string): string {
     .toUpperCase();
 }
 
+/** Keyed by the outcome labels in terms.ts; "Looking for a group" waits for MEM-1. */
 export const memberStatusVariants = {
   Connected: "success",
-  "Pending follow-up": "warning",
+  "Not yet connected": "warning",
   "Looking for a group": "info",
 } as const;
 

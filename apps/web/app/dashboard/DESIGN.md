@@ -28,7 +28,7 @@ brand styling and must not use anything described here.
 | `/dashboard/follow-ups` | People waiting on a follow-up, split into "Needs attention", "On track" and "Attended, not yet added". Each section is a `CardFrame` + `Table`. Each row ends with a "Review" button (chevron) and the whole row is clickable; both open a Sheet editor |
 | `/dashboard/groups` | Compact group cards. Map is the default: two columns of cards beside a MapLibre map (OpenFreeMap tiles) that fills the screen under the nav and stays put while the cards scroll. Cards shows the grid only. On a small screen the map sits above the cards. A pin opens the same `GroupSheet`. Pins use `location.coordinates` |
 | `/dashboard/members` | Searchable members table. Rows (and the Overview "User database" rows) open a `MemberSheet` with badges, phone (looked up on open) with Call and WhatsApp, bio, group memberships, and links to the follow-ups and groups pages |
-| `/dashboard/reports` | Short underline tabs (Downloads, Pipeline, Groups, Team, Newcomers, Connection). The full question stays as the heading inside the panel. Charts are Recharts, church-scoped, and only where the table has the data. "Downloaded" is a signup with no live group, not a store download event |
+| `/dashboard/insights` | Headed "How are people getting connected at [church name]?". Page-wide filters (Everyone or Newcomers, dates, and week, month or quarter) sit above four underline tabs (Activity, Results, Groups, Team), and all of them live in the URL (`?tab=results&who=newcomers&range=6m&by=week`). The old `/dashboard/reports` address redirects here. Each panel's heading is a plain question, with a line saying who and when it counts. Charts are Recharts, church-scoped, and only where the table has the data. "Downloaded" is a signup with no live group, not a store download event |
 | `/dashboard/settings` | Integrations, starting with the ChurchSuite link form |
 
 Live data comes from `lib/dashboard/queries.ts` (one fetch function per page, run through `useDashboardQuery`); shared components in
@@ -36,7 +36,7 @@ Live data comes from `lib/dashboard/queries.ts` (one fetch function per page, ru
 
 ## Navigation
 
-- Sticky top bar: logo, tabs (icon + label for Overview (Home), Follow-ups, Groups, Members, Reports, Settings),
+- Sticky top bar: logo, tabs (icon + label for Overview (Home), Follow-ups, Groups, Members, Insights, Settings),
   avatar on the right. Active tab has a `border-b-2` underline and
   `aria-current="page"`. Tabs scroll horizontally on small screens.
 - Page background is `bg-muted` (light grey) so white coss cards stand out.
