@@ -1,0 +1,54 @@
+name: Supabase Migrations & Security
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'supabase/**'
+      - 'scripts/check-db-security.sql'
+      - '.github/workflows/supabase-check.yml'
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'supabase/**'
+      - 'scripts/check-db-security.sql'
+      - '.github/workflows/supabase-check.yml'
+
+jobs:
+  supabase-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase database
+        run: supabase start -x studio,mailpit,imgproxy,edge-runtime,logflare,vector
+
+      - name: Reset database and apply all migrations + seed
+        run: supabase db reset
+
+      - name: Verify RLS and view security_invoker
+        run: |
+          set -euo pipefail
+          DB_URL="$(supabase status -o env | sed -n 's/^DB_URL=//p' | tr -d '"' | head -n 1)"
+          test -n "$DB_URL"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f scripts/check-db-security.sql
+
+      - name: Run pgTAP database tests
+        run: |
+          set -euo pipefail
+          if compgen -G "supabase/tests/*.sql" > /dev/null; then
+            supabase test db
+          else
+            echo "No pgTAP tests under supabase/tests/*.sql yet; skipping supabase test db."
+          fi
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup
