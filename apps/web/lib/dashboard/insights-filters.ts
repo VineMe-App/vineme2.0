@@ -6,6 +6,7 @@
  * - `range`: 3m, 6m, 12m (default), year, all or custom, with `from` and `to`
  *   (YYYY-MM-DD) for custom
  * - `by`: week, month (default) or quarter, for charts over time
+ * - `group`: a group id, to show only that group on the Groups tab
  */
 
 export type InsightsTab = "activity" | "results" | "groups" | "team";
@@ -21,6 +22,8 @@ export interface InsightsFilters {
   from: string | null;
   to: string | null;
   by: Period;
+  /** Groups tab only: show this group's row. */
+  group: string | null;
 }
 
 export const tabOptions: { value: InsightsTab; label: string }[] = [
@@ -57,6 +60,7 @@ export const defaultFilters: InsightsFilters = {
   from: null,
   to: null,
   by: "month",
+  group: null,
 };
 
 const isoDate = /^\d{4}-\d{2}-\d{2}$/;
@@ -81,6 +85,7 @@ export function parseFilters(params: URLSearchParams): InsightsFilters {
     from: from && isoDate.test(from) ? from : null,
     to: to && isoDate.test(to) ? to : null,
     by: pick(params.get("by"), periodOptions, defaultFilters.by),
+    group: params.get("group") || null,
   };
 }
 
@@ -94,6 +99,7 @@ export function filterParams(filters: InsightsFilters): URLSearchParams {
     if (filters.from) params.set("from", filters.from);
     if (filters.to) params.set("to", filters.to);
   }
+  if (filters.group) params.set("group", filters.group);
   return params;
 }
 
