@@ -91,3 +91,14 @@ google-services.json
 
 # Supabase CLI local state
 supabase/.temp/
+
+# VitePress docs site
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+# Safety net: an old root-level VitePress setup cached here. The site now lives in docs/.vitepress/.
+/.vitepress/
+
+# Per-developer AI tool and MCP configs: these hold personal access tokens. Never commit them.
+.cursor/mcp.json
+.kiro/
+.mcp.json

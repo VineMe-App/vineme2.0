@@ -31,4 +31,4 @@ Turn an issue or feature request into an implementation-ready specification grou
 
 3. **Confirm before coding**
    - Present the draft spec and any open questions for sign-off before editing application code.
-   - Do not move or reorganize existing files in `docs/` or `.kiro/` unless explicitly asked.
+   - Do not move or reorganize existing files in `docs/` unless explicitly asked. Old 2025 Kiro specs are history in `docs/archive/2025-kiro-specs/`: don't implement from them.
