@@ -12,6 +12,9 @@
     "ios": "npm --workspace=@vineme/mobile run ios",
     "android": "npm --workspace=@vineme/mobile run android",
     "build:web": "npm --workspace=@vineme/web run build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
     "lint": "npm --workspace=@vineme/mobile run lint && npm --workspace=@vineme/web run lint",
     "lint:mobile": "npm --workspace=@vineme/mobile run lint",
     "lint:web": "npm --workspace=@vineme/web run lint",
@@ -33,9 +36,12 @@
     "git:clean": "./scripts/cleanup-branches.sh --local"
   },
   "devDependencies": {
+    "@mermaid-js/layout-elk": "^0.2.3",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.4",
+    "mermaid": "^11.17.2",
     "prettier": "^3.6.2",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitepress": "^1.6.4"
   }
 }

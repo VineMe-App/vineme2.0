@@ -111,23 +111,23 @@ Sizes: **S** is under an hour, **M** is a session of 2 to 3 hours, **L** is more
 
 One issue at a time, each on its own branch, in a fresh Claude Code session.
 
-- Each issue gets its own branch from `staging`, linked to the issue, and is assigned to whoever is working on it.
-- `CLAUDE.md` in the repo root holds the dashboard rules, so Claude Code reads them at the start of every session. One of them: if a task depends on anything marked "Decision needed" in the glossary, it stops and asks rather than assuming the recommendation.
+- Each issue gets its own branch from `dev`, named as in [CONTRIBUTING.md](../../../../CONTRIBUTING.md#branch-naming-rules) (`feat/<N>-<short-slug>`), and is assigned to whoever is working on it. The issues live in this repo (`VineMe-App/vineme2.0`; they were moved from `VineMe-App/vineme-website` and have new numbers), so reference them as `#<N>`.
+- `apps/web/AGENTS.md` holds the dashboard rules (loaded through `CLAUDE.md`), so Claude Code reads them at the start of every session. One of them: if a task depends on anything marked "Decision needed" in the glossary, it stops and asks rather than assuming the recommendation.
 
 **For each issue**
 
 1. Start a fresh session with `/clear`. Use plan mode if the issue says so.
 2. Paste the prompt below with the issue number.
 3. Check the change in the browser.
-4. When you're happy, Claude Code commits, pushes and opens a pull request into `staging`.
-5. Merge the pull request (or ask a dev to review it first), then close the issue. GitHub only closes issues automatically for pull requests into `main`, so close it yourself or ask Claude Code to.
+4. When you're happy, Claude Code commits, pushes and opens a pull request into `dev`.
+5. Squash and merge the pull request (or ask a dev to review it first). The `Closes #<N>` line closes the issue when it merges into `dev`.
 
 ```text
-Read docs/dashboard/glossary.md. Then work on issue <N> only:
-1. Assign it to me: gh issue edit <N> --add-assignee @me
-2. Create and check out a branch for it from staging: gh issue develop <N> --base staging --checkout
+Read apps/web/docs/dashboard/glossary.md. Then work on issue #<N> only:
+1. Read it and assign it to me: gh issue view <N>, then gh issue edit <N> --add-assignee @me
+2. Create a branch from an up-to-date dev: git checkout dev && git pull --ff-only origin dev && git checkout -b feat/<N>-<short-slug>
 3. Do the issue. When you're done, tell me how to check it in the browser.
-4. When I say OK, commit, push, and open a pull request into staging that mentions #<N>.
+4. When I say OK, commit, then rebase onto the latest dev (git fetch origin && git rebase origin/dev; never merge dev into the branch). Push, using --force-with-lease if the branch was already pushed before the rebase, and open a pull request into dev titled "<type>(web): <summary> (#<N>)" with "Closes #<N>" in the body.
 ```
 
 **When a decision is made:** update `glossary.md`, tick it in its decision issue, and close the issue once every box is ticked.

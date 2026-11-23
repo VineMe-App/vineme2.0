@@ -2,8 +2,7 @@
 <!-- What does this PR change and why? -->
 
 ## Linked Issue
-<!-- For Clergy Dashboard issues (tracked in vineme-website), use: Closes VineMe-App/vineme-website#<number> -->
-<!-- For mobile / monorepo issues (tracked here), use: Closes #<number> -->
+<!-- All issues, including Clergy Dashboard issues, live in this repo. Use: Closes #<number> -->
 
 ## Scopes Touched
 - [ ] `apps/mobile` (`mobile`)
@@ -11,6 +10,9 @@
 - [ ] `packages/shared` (`shared`)
 - [ ] `supabase/` (`db` — migrations, functions, or seed)
 - [ ] Docs / Tooling (`docs` / `chore`)
+
+## Secrets
+- [ ] No secrets, tokens or keys in this diff (including comments, tests and example commands), and no `.env` or MCP config files
 
 ## Database & Security Checklist (if `supabase/` changed)
 - [ ] Tracked SQL migration added in `supabase/migrations/` (not run manually)
@@ -23,3 +25,7 @@
 - [ ] `npm run typecheck`
 - [ ] `npm run build:web` (if `apps/web` or `packages/shared` changed)
 - [ ] `npm run test:unit` (if `apps/mobile` changed)
+
+## Documentation
+- [ ] Docs updated per the "Update triggers" table in `docs/maintaining-docs.md`, or none affected
+- [ ] ADR added in `docs/decisions/` if this makes a significant technical decision
