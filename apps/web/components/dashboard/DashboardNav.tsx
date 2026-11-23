@@ -15,6 +15,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { ChurchSwitcher } from "@/components/dashboard/ChurchSwitcher";
+import {
+  dashboardGutter,
+  dashboardMaxWidth,
+} from "@/components/dashboard/DashboardPage";
 import { useAdmin } from "@/lib/dashboard/admin-context";
 import { cn } from "@/lib/utils";
 
@@ -51,8 +55,8 @@ const navItems: NavItem[] = [
     icon: IdCard,
   },
   {
-    href: "/dashboard/reports",
-    label: "Reports",
+    href: "/dashboard/insights",
+    label: "Insights",
     exact: false,
     icon: ChartColumn,
   },
@@ -89,11 +93,17 @@ export function DashboardNav() {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur"
+      className={cn(
+        "sticky top-0 z-40 border-b bg-background/95 backdrop-blur",
+        dashboardGutter,
+      )}
     >
       <nav
         aria-label="Dashboard"
-        className="mx-auto flex w-full max-w-6xl items-center gap-4 px-5 sm:gap-8 sm:px-6"
+        className={cn(
+          "mx-auto flex w-full items-center gap-4 sm:gap-8",
+          dashboardMaxWidth,
+        )}
       >
         <Link
           href="/dashboard"

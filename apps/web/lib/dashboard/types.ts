@@ -1,5 +1,11 @@
 export type FollowUpStep = "reachedOut" | "invited" | "attended";
 
+/** A pending request's follow-up state, from `dashboard_requests.follow_up`. */
+export type FollowUpState =
+  | "needs_first_contact"
+  | "on_track"
+  | "needs_attention";
+
 export interface FollowUp {
   id: string;
   userId: string;
@@ -13,9 +19,11 @@ export interface FollowUp {
   /** ISO timestamp the request was made. */
   requestedAt: string;
   requestedDaysAgo: number;
+  followUp: FollowUpState;
+  /** Days past the stage's limit, when it needs attention. */
   overdueDays?: number;
   dueInDays?: number;
-  /** Which SLA rule the due date comes from, e.g. "Reach out within 6 days". */
+  /** Which time limit applies, e.g. "Reach out within 6 days of the request". */
   dueReason?: string;
   fromEmail?: boolean;
   /** Empty until looked up with get_user_contact_admin. */
@@ -85,8 +93,10 @@ export interface Member {
   isNewcomer: boolean;
   /** Every request the person has made, in any status, newest first. */
   memberships: MemberGroup[];
-  /** ISO timestamp, for sorting and "new this month". */
+  /** ISO timestamp, for sorting. */
   joinedAt: string;
+  /** Signed up in the last 30 days (New), from `dashboard_people.is_new`. */
+  isNew: boolean;
 }
 
 export interface OverviewData {
@@ -99,28 +109,36 @@ export interface OverviewData {
 /** Where a signed-up person sits. There is no separate download event. */
 export type SignupOutcome = "attended" | "requested" | "downloaded";
 
-export type ReportStage = "not-reached" | "reached-out" | "invited" | "attended";
+export type InsightsStage = "not-reached" | "reached-out" | "invited" | "attended";
 
-export interface ReportPerson {
+export interface InsightsPerson {
   createdAt: string;
   isNewcomer: boolean;
   /** They said they cannot find a group. */
   askedForHelp: boolean;
   outcome: SignupOutcome;
   /** Furthest stage of an open (pending) follow-up, if they have one. */
-  pendingStage: ReportStage | null;
+  pendingStage: InsightsStage | null;
   pendingSince: string | null;
 }
 
-export interface ReportGroup {
+/** A group's members (added) and pending requests, so Insights can filter them. */
+export interface InsightsGroupRequest {
+  status: "active" | "pending";
+  /** When they asked to join (`group_memberships.created_at`). */
+  requestedAt: string;
+  /** False when the person isn't a member of this church, so their flag isn't loaded. */
+  isNewcomer: boolean;
+}
+
+export interface InsightsGroup {
   id: string;
   name: string;
-  members: number;
-  pending: number;
+  requests: InsightsGroupRequest[];
   atCapacity: boolean;
 }
 
-export interface ReportsData {
-  people: ReportPerson[];
-  groups: ReportGroup[];
+export interface InsightsData {
+  people: InsightsPerson[];
+  groups: InsightsGroup[];
 }

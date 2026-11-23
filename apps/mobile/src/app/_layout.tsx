@@ -21,7 +21,7 @@ import { logPlatformInfo } from '@/utils/platformTesting';
 import '@/utils/globalErrorHandler'; // Initialize global error handler
 
 function RootLayoutNav() {
-  const segments = useSegments();
+  const segments: readonly string[] = useSegments();
   const { user, userProfile, isInitialized, initialize } = useAuthStore();
   const [onboardingCompleted, setOnboardingCompleted] = useState<
     boolean | null
