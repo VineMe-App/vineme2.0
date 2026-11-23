@@ -224,3 +224,47 @@ export const measures = {
     description: "Requests that were added or archived this week.",
   },
 } satisfies Record<string, Term>;
+
+/**
+ * The three followed up in time measures on the Team tab and the Groups
+ * scorecard, each counted from the request date (DEC-3).
+ */
+export const inTimeMeasures = {
+  reachedOut: {
+    label: "Reached out within 6 days",
+    description: "Reached out (or further) within 6 days of the request.",
+    limitDays: 6,
+    stage: stages.reachedOut,
+  },
+  spokenTo: {
+    label: "Spoken to within 16 days",
+    description: "Spoken to (or further) within 16 days of the request (6 + 10).",
+    limitDays: 16,
+    stage: stages.spokenTo,
+  },
+  attended: {
+    label: "Attended within 30 days",
+    description: "Attended within 30 days of the request (6 + 10 + 14).",
+    limitDays: 30,
+    stage: stages.attended,
+  },
+} satisfies Record<string, Term & { limitDays: number; stage: Term }>;
+
+/** How a request counts towards a followed up in time measure, from the glossary. */
+export const inTimeCounting: { happened: string; counts: string; result: string }[] = [
+  { happened: "Reached the stage within the limit", counts: "Yes", result: "Hit" },
+  { happened: "Reached the stage after the limit", counts: "Yes", result: "Miss" },
+  { happened: "Archived before reaching the stage, for any reason", counts: "Yes", result: "Miss" },
+  { happened: "Past the limit without reaching the stage", counts: "Yes", result: "Miss" },
+  { happened: "Still open, within the limit, stage not reached", counts: "No", result: "Not known yet" },
+];
+
+/**
+ * Archive reasons that mean the person should be offered another group
+ * (DEV-4), matched against the reason the app stores. The full list of
+ * reasons is read from the data, never kept here.
+ */
+export const reReferralReasons = ["Not suitable for group", "Group at capacity"];
+
+/** The archive reason where how long they had waited is shown. */
+export const noLongerInterestedReason = "No longer interested";
