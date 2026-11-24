@@ -74,8 +74,19 @@ echo "Enabled secret scanning, push protection, and Dependabot vulnerability ale
 if [[ "$SYNC_ACCESS" == true ]]; then
   echo "=== Syncing organization default permission & break-glass admin roles ==="
   gh api -X PATCH "orgs/${OWNER}" -f default_repository_permission=write >/dev/null
-  gh api -X PUT "repos/${OWNER}/${REPO}/collaborators/TofunmiOnaeko" -f permission=push >/dev/null
-  echo "Set ${OWNER} default_repository_permission=write and TofunmiOnaeko permission=push."
+  echo "Set ${OWNER} default_repository_permission=write."
+
+  ORG_OWNERS="$(gh api "orgs/${OWNER}/members?role=admin" --jq '.[].login')"
+  DIRECT_ADMINS="$(gh api "repos/${OWNER}/${REPO}/collaborators?affiliation=direct" --jq '.[] | select(.role_name == "admin") | .login' || true)"
+
+  for login in $DIRECT_ADMINS; do
+    if printf '%s\n' "$ORG_OWNERS" | grep -Fxq "$login"; then
+      echo "Keeping break-glass admin for org owner '${login}'."
+    else
+      gh api -X PUT "repos/${OWNER}/${REPO}/collaborators/${login}" -f permission=push >/dev/null
+      echo "Downgraded direct non-owner collaborator '${login}' from admin to write."
+    fi
+  done
 fi
 
 # Remove legacy classic branch protection rules if present so Rulesets are the single source of truth.
