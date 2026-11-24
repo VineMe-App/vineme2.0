@@ -103,6 +103,20 @@ Examples:
 ### Linking Issues
 - All issues, including Clergy Dashboard issues, live in `VineMe-App/vineme2.0`. Reference them as `#<number>` (e.g. `Closes #337`).
 - Dashboard issues were moved here from `VineMe-App/vineme-website`, so they have new numbers. Old links redirect, but old `vineme-website#<number>` references in past commits and PRs use the old numbers.
+- Blank issues are disabled; file new issues using the structured forms in `.github/ISSUE_TEMPLATE/` (*Feature / Spec*, *Bug Report*, or *Decision Needed*).
+
+### Risk-Tiered PRs & Review Policy
+
+PRs targeting `dev` are automatically classified by [`.github/workflows/pr-risk-tier.yml`](./.github/workflows/pr-risk-tier.yml) ([`scripts/classify-pr-risk.mjs`](./scripts/classify-pr-risk.mjs)) based on the files touched:
+
+| Tier | Label | Paths | Merge & Review Rule (`dev`) |
+| :--- | :--- | :--- | :--- |
+| **Tier 1** | `risk:low` | **Only** `docs/**` (excluding `docs/.vitepress/**`), non-agent `**/*.md`, static assets, and test files (`__tests__`, `*.test.*`, `*.spec.*`) | **Auto-merges** (squash) once required CI checks pass (`test (20.x)` and `supabase-gate`), on non-draft PRs to `dev` |
+| **Tier 2** | `risk:medium` | Standard app/package code (`apps/web/`, `apps/mobile/`, `packages/shared/`), `AGENTS.md`, `CLAUDE.md`, `.agents/**`, and `docs/.vitepress/**` | Auto-merge **disabled**; author verifies behaviour on the Vercel Preview URL or Expo, then merges (0 extra code reviews required) |
+| **Tier 3** | `risk:high` | Any path in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (`supabase/`, auth, permissions, API routes, `.github/`, CI gate & classifier scripts) | Auto-merge **disabled**; blocked until **1 non-author Code Owner** approves + required CI checks pass |
+
+- **Escalation safety:** If a later push adds a Tier 2 or Tier 3 file, auto-merge is automatically disabled.
+- **Releases (`dev` → `main`):** Auto-merge is never enabled on `main`. Release PRs require **1 approving review + Code Owner review**, passing `test (20.x)` and `supabase-gate`, and must use **Create a merge commit**.
 
 ---
 
@@ -173,14 +187,14 @@ Also confirm the docs your change affects are updated (see [Documentation](#docu
 - **Collaborators only**: Pushing branches and creating Pull Requests are restricted to repository collaborators (`Settings → General → Features → Pull requests → Collaborators only`).
 
 ### Branch Protection Rules
-- **`dev`**: Requires PR before merging, passing CI checks, conversation resolution, **Code Owner review** on high-risk paths in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (0 baseline approvals so standard UI/docs PRs merge smoothly), and blocks force-pushes/deletion (admin bypass enabled).
-- **`main`**: Same protections as `dev` plus **1 required approving review** (dismissing stale reviews on new pushes, admin bypass enabled).
+- **`dev`**: Requires PR before merging, passing `test (20.x)` and `supabase-gate` checks, conversation resolution, **Code Owner review** on high-risk paths in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (0 baseline approvals so Tier 1 auto-merge and Tier 2 self-merge work smoothly), GitHub Auto-Merge enabled, and blocks force-pushes/deletion. Only the 2 organization owners hold break-glass `admin` bypass rights; all other collaborators hold `write`.
+- **`main`**: Same protections as `dev` plus **1 required approving review** (dismissing stale reviews on new pushes, auto-merge disabled).
 - **Branch naming (`Enforce branch naming convention`)**: Rejects remote branch creation outside `dev`, `main`, `feat/*`, `fix/*`, `chore/*`, `docs/*`, `refactor/*`, `release/*`, `revert-*`, and `dependabot/*`.
 
-To apply or re-sync these rules and repository merge settings via the GitHub CLI:
+To apply or re-sync these rules, security settings, and organization/collaborator permissions via the GitHub CLI:
 
 ```bash
-./scripts/setup-branch-protection.sh
+./scripts/setup-branch-protection.sh --sync-access
 ```
 
 ### Cleaning Up Old Branches

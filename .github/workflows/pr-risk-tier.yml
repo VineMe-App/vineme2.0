@@ -1,0 +1,142 @@
+name: PR Risk Tier & Auto-Merge
+
+on:
+  pull_request:
+    branches: [dev, main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+
+concurrency:
+  group: pr-risk-tier-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  classify-and-manage:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Classify PR risk, sync labels, toggle auto-merge, and update summary comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          set -euo pipefail
+
+          # Ensure standard risk labels exist idempotently.
+          gh label create "risk:low" --color "0e8a16" --description "Tier 1: docs, assets, tests (auto-merges to dev when CI passes)" --force >/dev/null
+          gh label create "risk:medium" --color "fbca04" --description "Tier 2: standard app/agent changes (author verifies Preview, then merges)" --force >/dev/null
+          gh label create "risk:high" --color "d93f0b" --description "Tier 3: CODEOWNERS path (requires Code Owner approval + CI)" --force >/dev/null
+
+          # Evaluate CODEOWNERS from the base branch so edits to CODEOWNERS cannot weaken classification.
+          CODEOWNERS_PATH=".github/CODEOWNERS"
+          CODEOWNERS_TMP="$(mktemp)"
+          trap 'rm -f "$CODEOWNERS_TMP"' EXIT
+          if git fetch --no-tags --depth=1 origin "${BASE_REF}" >/dev/null 2>&1 && \
+             git show "FETCH_HEAD:.github/CODEOWNERS" > "$CODEOWNERS_TMP" 2>/dev/null; then
+            CODEOWNERS_PATH="$CODEOWNERS_TMP"
+          fi
+
+          RESULT_JSON="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" --jq '.[].filename' \
+            | node scripts/classify-pr-risk.mjs --codeowners "$CODEOWNERS_PATH")"
+
+          printf '%s\n' "$RESULT_JSON"
+
+          TIER="$(node -e "const r = JSON.parse(process.argv[1]); console.log(r.tier);" "$RESULT_JSON")"
+          TARGET_LABEL="$(node -e "const r = JSON.parse(process.argv[1]); console.log(r.label);" "$RESULT_JSON")"
+
+          # Sync risk:* labels without leaving stale tiers behind.
+          CURRENT_RISK_LABELS="$(gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' | grep -E '^risk:' || true)"
+          HAS_TARGET=false
+          for lbl in $CURRENT_RISK_LABELS; do
+            if [[ "$lbl" == "$TARGET_LABEL" ]]; then
+              HAS_TARGET=true
+            else
+              gh pr edit "$PR_NUMBER" --remove-label "$lbl" >/dev/null
+            fi
+          done
+          if [[ "$HAS_TARGET" == "false" ]]; then
+            gh pr edit "$PR_NUMBER" --add-label "$TARGET_LABEL" >/dev/null
+          fi
+
+          # Toggle GitHub Auto-Merge strictly for non-draft Tier 1 PRs targeting dev.
+          AUTO_MERGE_ENABLED="$(gh pr view "$PR_NUMBER" --json autoMergeRequest --jq '.autoMergeRequest != null')"
+          AUTO_MERGE_STATUS="Disabled"
+          if [[ "$TIER" == "low" && "$BASE_REF" == "dev" && "$IS_DRAFT" == "false" ]]; then
+            if [[ "$AUTO_MERGE_ENABLED" != "true" ]]; then
+              gh pr merge --auto --squash "$PR_NUMBER" >/dev/null
+            fi
+            AUTO_MERGE_STATUS="Enabled (will squash-merge into \`dev\` once required CI checks pass)"
+          else
+            if [[ "$AUTO_MERGE_ENABLED" == "true" ]]; then
+              gh pr merge --disable-auto "$PR_NUMBER" >/dev/null
+            fi
+            if [[ "$BASE_REF" == "main" ]]; then
+              AUTO_MERGE_STATUS="Disabled (release PRs to \`main\` require human review)"
+            elif [[ "$IS_DRAFT" == "true" ]]; then
+              AUTO_MERGE_STATUS="Disabled (draft PR)"
+            fi
+          fi
+
+          COMMENT_BODY="$(node -e '
+            const r = JSON.parse(process.argv[1]);
+            const baseRef = process.argv[2];
+            const autoMergeStatus = process.argv[3];
+            const lines = ["<!-- vineme-risk-tier -->"];
+
+            if (r.tier === "high") {
+              lines.push("### Risk Tier: High (`risk:high`)");
+              lines.push("");
+              lines.push("- **Review policy:** Code Owner approval required (`@hugheshallettj`, `@tomoakley`, or `@aonghas`, non-author) + passing `test (20.x)` and `supabase-gate`.");
+              lines.push(`- **Auto-merge:** ${autoMergeStatus}`);
+              lines.push("");
+              lines.push("**Matched CODEOWNERS paths:**");
+              for (const f of r.matchedHighRisk.slice(0, 20)) {
+                lines.push(`- \`${f}\``);
+              }
+              if (r.matchedHighRisk.length > 20) {
+                lines.push(`- _...and ${r.matchedHighRisk.length - 20} more_`);
+              }
+            } else if (r.tier === "medium") {
+              lines.push("### Risk Tier: Medium (`risk:medium`)");
+              lines.push("");
+              if (baseRef === "main") {
+                lines.push("- **Review policy:** Release PR to `main` requires **1 approving review + Code Owner review** + passing `test (20.x)` and `supabase-gate`.");
+              } else {
+                lines.push("- **Review policy:** Verify behavior on the **Vercel Preview URL** (for `apps/web`) or Expo (for `apps/mobile`), ensure `test (20.x)` and `supabase-gate` pass, then click **Squash and merge**.");
+              }
+              lines.push(`- **Auto-merge:** ${autoMergeStatus}`);
+            } else {
+              lines.push("### Risk Tier: Low (`risk:low`)");
+              lines.push("");
+              if (baseRef === "main") {
+                lines.push("- **Review policy:** Release PR to `main` requires **1 approving review + Code Owner review** + passing `test (20.x)` and `supabase-gate`.");
+              } else {
+                lines.push("- **Review policy:** Docs, non-agent markdown, static assets, or tests only. No extra code review required.");
+              }
+              lines.push(`- **Auto-merge:** ${autoMergeStatus}`);
+            }
+            console.log(lines.join("\n"));
+          ' "$RESULT_JSON" "$BASE_REF" "$AUTO_MERGE_STATUS")"
+
+          EXISTING_COMMENT_ID="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
+            --jq '.[] | select(.body | contains("<!-- vineme-risk-tier -->")) | .id' | head -n 1 || true)"
+
+          if [[ -n "$EXISTING_COMMENT_ID" ]]; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${EXISTING_COMMENT_ID}" -f body="$COMMENT_BODY" >/dev/null
+          else
+            gh pr comment "$PR_NUMBER" --body "$COMMENT_BODY" >/dev/null
+          fi

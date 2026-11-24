@@ -1,0 +1,72 @@
+name: Feature / Spec
+description: Propose a new feature or scoped implementation task with testable acceptance criteria
+title: "feat(<scope>): "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Follow VineMe's contract-first rules before filing: check `docs/glossary.md` (and `apps/web/docs/dashboard/glossary.md` for dashboard work) and keep one logical change per issue.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What problem does this solve, and for whom?
+      placeholder: As a ..., I want ... so that ...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scopes
+    attributes:
+      label: Scopes Touched
+      options:
+        - label: "`apps/mobile` (`mobile`)"
+        - label: "`apps/web` (`web`)"
+        - label: "`packages/shared` (`shared`)"
+        - label: "`supabase/` (`db` — migrations, RLS, or Edge Functions)"
+        - label: "Docs / Tooling (`docs` / `chore`)"
+
+  - type: input
+    id: doc_refs
+    attributes:
+      label: Glossary, Feature Doc & ADR References
+      description: Link relevant docs (`docs/features/...`, `docs/decisions/...`, `apps/web/docs/dashboard/...`) and note any open "Decision needed" items.
+      placeholder: docs/glossary.md, docs/features/...
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Write observable, testable criteria (e.g. `WHEN ... THEN ... SHALL ...` or Given/When/Then).
+      value: |
+        - [ ] WHEN ... THEN the system SHALL ...
+        - [ ] WHEN ... THEN the system SHALL ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Non-Goals / Out of Scope
+      description: Explicitly state what this issue should NOT change so agents and contributors stay in scope.
+      placeholder: Do not refactor unrelated screens or invent database fields not yet migrated.
+
+  - type: textarea
+    id: data_privacy
+    attributes:
+      label: Data, RLS & Privacy Impact
+      description: Tables/views added or queried, `security_invoker = true` requirements, church/service RLS boundaries, and UK data protection / safeguarding checks (see `docs/security/`).
+      placeholder: None / Reads existing `...` view with RLS scoped to church/service.
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification Plan
+      description: Exact automated checks and manual/Preview verification steps confirming the acceptance criteria.
+      value: |
+        - [ ] Scoped lint, typecheck, and tests pass
+        - [ ] Manual / Vercel Preview / Expo check: ...
+    validations:
+      required: true

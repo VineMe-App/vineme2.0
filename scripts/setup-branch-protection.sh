@@ -1,17 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Configure GitHub merge settings and repository rulesets on dev and main.
-# Ruleset definitions live in .github/rulesets/{dev,main}-branch-ruleset.json
+# Configure GitHub repository settings, security features, rulesets, and optional org/collaborator roles.
+# Ruleset definitions live in .github/rulesets/{dev,main,branch-naming}-*.json
 # and can also be imported directly in GitHub Settings -> Rules -> Rulesets.
 #
 # Usage:
-#   ./scripts/setup-branch-protection.sh
+#   ./scripts/setup-branch-protection.sh [--sync-access]
 
 OWNER="VineMe-App"
 REPO="vineme2.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+SYNC_ACCESS=false
+for arg in "$@"; do
+  case "$arg" in
+    --sync-access) SYNC_ACCESS=true ;;
+    -h|--help)
+      echo "Usage: $(basename "$0") [--sync-access]"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      exit 1
+      ;;
+  esac
+done
 
 if ! command -v gh >/dev/null 2>&1; then
   echo "Error: GitHub CLI (gh) is not installed." >&2
@@ -32,16 +47,36 @@ if ! gh api "repos/${OWNER}/${REPO}" >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "=== Updating repository merge settings on ${OWNER}/${REPO} ==="
+echo "=== Updating repository merge and PR settings on ${OWNER}/${REPO} ==="
 gh api -X PATCH "repos/${OWNER}/${REPO}" \
   -f allow_squash_merge=true \
   -f allow_merge_commit=true \
   -f allow_rebase_merge=false \
+  -f allow_auto_merge=true \
   -f delete_branch_on_merge=true \
   -f pull_request_creation_policy=collaborators_only \
   -f squash_merge_commit_title=PR_TITLE \
   -f squash_merge_commit_message=PR_BODY >/dev/null
-echo "Updated repository merge and PR settings (squash/merge enabled, rebase disabled, auto-delete head branches, collaborators-only PRs)."
+echo "Updated repository merge and PR settings (squash/merge enabled, rebase disabled, auto-merge enabled, auto-delete head branches, collaborators-only PRs)."
+
+echo "=== Enabling secret scanning, push protection, and Dependabot alerts ==="
+gh api -X PATCH "repos/${OWNER}/${REPO}" --input - >/dev/null <<'JSON'
+{
+  "security_and_analysis": {
+    "secret_scanning": { "status": "enabled" },
+    "secret_scanning_push_protection": { "status": "enabled" }
+  }
+}
+JSON
+gh api -X PUT "repos/${OWNER}/${REPO}/vulnerability-alerts" >/dev/null
+echo "Enabled secret scanning, push protection, and Dependabot vulnerability alerts."
+
+if [[ "$SYNC_ACCESS" == true ]]; then
+  echo "=== Syncing organization default permission & break-glass admin roles ==="
+  gh api -X PATCH "orgs/${OWNER}" -f default_repository_permission=write >/dev/null
+  gh api -X PUT "repos/${OWNER}/${REPO}/collaborators/TofunmiOnaeko" -f permission=push >/dev/null
+  echo "Set ${OWNER} default_repository_permission=write and TofunmiOnaeko permission=push."
+fi
 
 # Remove legacy classic branch protection rules if present so Rulesets are the single source of truth.
 for branch in dev main; do
@@ -75,3 +110,8 @@ upsert_ruleset "${REPO_ROOT}/.github/rulesets/branch-naming-ruleset.json"
 
 echo "=== Active Rulesets on ${OWNER}/${REPO} ==="
 gh api "repos/${OWNER}/${REPO}/rulesets" --jq '.[] | {id, name, enforcement, html_url: ._links.html.href}'
+
+if [[ "$SYNC_ACCESS" == true ]]; then
+  echo "=== Collaborator Roles on ${OWNER}/${REPO} ==="
+  gh api "repos/${OWNER}/${REPO}/collaborators" --jq '.[] | {login, role_name}'
+fi
