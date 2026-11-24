@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation Overview
+    url: https://github.com/VineMe-App/vineme2.0/blob/dev/docs/README.md
+    about: Read system architecture, ADRs, and feature references before filing an issue
+  - name: Domain Glossary
+    url: https://github.com/VineMe-App/vineme2.0/blob/dev/docs/glossary.md
+    about: Check canonical VineMe and Clergy Dashboard terminology before writing specs

@@ -1,0 +1,50 @@
+name: Bug Report
+description: Report a bug with reproduction steps and clear fix acceptance criteria
+title: "fix(<scope>): "
+labels: ["bug"]
+body:
+  - type: checkboxes
+    id: scopes
+    attributes:
+      label: Scopes Affected
+      options:
+        - label: "`apps/mobile` (`mobile`)"
+        - label: "`apps/web` (`web`)"
+        - label: "`packages/shared` (`shared`)"
+        - label: "`supabase/` (`db` — migrations, RLS, or Edge Functions)"
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Sign in as ...
+        2. Navigate to ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs Actual Behaviour
+      description: Describe what should happen vs what currently happens (include error message or screenshot if helpful; never include real personal data).
+    validations:
+      required: true
+
+  - type: input
+    id: role_context
+    attributes:
+      label: Affected Role / Church Context
+      description: e.g., church member, group leader, church admin, anonymous visitor, local vs staging vs prod.
+      placeholder: Group leader on staging
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria for Fix
+      description: Observable condition confirming the bug is resolved without regressions.
+      value: |
+        - [ ] WHEN ... THEN the system SHALL ...
+    validations:
+      required: true

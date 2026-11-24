@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -41,6 +43,33 @@ jobs:
 
       - name: Run mobile type checking gate
         run: node scripts/typecheck-mobile-gate.mjs
+
+      - name: Run PR risk classifier tests
+        run: node --test scripts/classify-pr-risk.test.mjs
+
+      - name: Build VitePress docs (when docs changed)
+        run: |
+          set -euo pipefail
+          SHOULD_BUILD=false
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            SHOULD_BUILD=true
+          else
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null || ! git cat-file -e "${HEAD_SHA}^{commit}" 2>/dev/null; then
+              git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA" >/dev/null 2>&1 || true
+            fi
+            CHANGED_FILES="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}" 2>/dev/null || echo "docs/fallback")"
+            if printf '%s\n' "$CHANGED_FILES" | grep -qE '^(docs/|README\.md$|CONTRIBUTING\.md$|supabase/README\.md$|apps/web/README\.md$|apps/web/docs/|apps/web/app/dashboard/DESIGN\.md$|apps/mobile/src/theme/[^/]+\.md$|apps/mobile/src/components/(ui|referrals)/README\.md$|package\.json$|package-lock\.json$)'; then
+              SHOULD_BUILD=true
+            fi
+          fi
+
+          if [[ "$SHOULD_BUILD" == "true" ]]; then
+            npm run docs:build
+          else
+            echo "No docs files changed; skipping npm run docs:build."
+          fi
 
       - name: Run mobile unit tests
         run: npm run test:unit

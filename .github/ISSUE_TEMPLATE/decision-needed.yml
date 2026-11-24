@@ -1,0 +1,43 @@
+name: Decision Needed
+description: Raise an unresolved product, schema, or architecture decision that blocks implementation
+title: "decision: "
+labels: ["decision-needed"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form whenever implementation would otherwise force an agent or contributor to guess a domain definition, privacy rule, or architecture choice.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Question
+      description: What decision needs to be made, and where does it appear (e.g., glossary marker, schema ambiguity)?
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: Options Considered
+      description: List the viable options and their trade-offs.
+      value: |
+        - **Option A:** ...
+        - **Option B:** ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommendation
+      description: Suggested option and reasoning (if any).
+
+  - type: input
+    id: blocked
+    attributes:
+      label: Blocked Issues / PRs
+      description: Reference any issues or docs blocked until this is settled (e.g., `#375`, `docs/glossary.md`).
+      placeholder: "#..."
+    validations:
+      required: true

@@ -3,19 +3,54 @@ name: Supabase Migrations & Security
 on:
   push:
     branches: [main, dev]
-    paths:
-      - 'supabase/**'
-      - 'scripts/check-db-security.sql'
-      - '.github/workflows/supabase-check.yml'
   pull_request:
     branches: [main, dev]
-    paths:
-      - 'supabase/**'
-      - 'scripts/check-db-security.sql'
-      - '.github/workflows/supabase-check.yml'
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check whether Supabase or DB gate files changed
+        id: filter
+        run: |
+          set -euo pipefail
+          CHANGED_FILES=""
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null || ! git cat-file -e "${HEAD_SHA}^{commit}" 2>/dev/null; then
+              git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA" >/dev/null 2>&1 || true
+            fi
+            CHANGED_FILES="$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}" 2>/dev/null || echo "supabase/fallback")"
+          else
+            BEFORE_SHA="${{ github.event.before }}"
+            if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            CHANGED_FILES="$(git diff --name-only "${BEFORE_SHA}..${GITHUB_SHA}" 2>/dev/null || echo "supabase/fallback")"
+          fi
+
+          if printf '%s\n' "$CHANGED_FILES" | grep -qE '^(supabase/|scripts/check-db-security\.sql$|\.github/workflows/supabase-check\.yml$)'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Supabase-related files changed; running full DB security check."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No Supabase-related files changed; skipping Docker DB reset."
+          fi
+
   supabase-check:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -52,3 +87,27 @@ jobs:
       - name: Stop local Supabase
         if: always()
         run: supabase stop --no-backup
+
+  supabase-gate:
+    name: supabase-gate
+    needs: [detect-changes, supabase-check]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Evaluate Supabase gate status
+        run: |
+          set -euo pipefail
+          if [[ "${{ needs.detect-changes.result }}" != "success" ]]; then
+            echo "detect-changes failed (${{ needs.detect-changes.result }})." >&2
+            exit 1
+          fi
+          case "${{ needs.supabase-check.result }}" in
+            success|skipped)
+              echo "supabase-gate passed (supabase-check: ${{ needs.supabase-check.result }})."
+              ;;
+            *)
+              echo "supabase-check did not pass (${{ needs.supabase-check.result }})." >&2
+              exit 1
+              ;;
+          esac

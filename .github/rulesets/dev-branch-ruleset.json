@@ -42,6 +42,10 @@
           {
             "context": "test (20.x)",
             "integration_id": 15368
+          },
+          {
+            "context": "supabase-gate",
+            "integration_id": 15368
           }
         ]
       }
