@@ -8,6 +8,7 @@ Shared Postgres schema, Row-Level Security (RLS), `seed.sql`, `config.toml`, and
   ```bash
   npm run db:migration:new <descriptive_snake_case_name>
   ```
+- **Keep migrations backward-compatible with live mobile builds:** Because mobile apps stay live across app-store rollout windows, follow **Expand → Migrate → Contract** (see [CONTRIBUTING.md](../CONTRIBUTING.md)) and never drop/rename live tables, views, functions, or columns, alter column types, add `NOT NULL` columns without `DEFAULT`, tighten `SET NOT NULL`, or alter core mobile table RLS policies in place. Run `node scripts/check-migration-compat.mjs <migration-file>` locally; CI enforces it automatically on added/modified migrations. For intentional Contract-phase cleanups after older mobile builds are retired, annotate with `-- allow-breaking-migration: <reason>` (at least 10 characters).
 
 ## Security & RLS
 
