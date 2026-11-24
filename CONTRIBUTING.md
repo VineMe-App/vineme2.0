@@ -28,6 +28,17 @@ We use a **two-branch** workflow:
 > [!IMPORTANT]
 > Never commit directly to `dev` or `main`. All changes go through Pull Requests.
 
+### Independent Web & Mobile Releases (Why One Shared `dev` Branch)
+
+We deliberately keep **one shared `dev` branch** across both apps rather than separate `dev-web` and `dev-mobile` branches. Both apps share one Supabase schema and generated TypeScript types ([ADR-0002](./docs/decisions/0002-monorepo-with-npm-workspaces.md)); splitting branches per app would cause constant schema drift and painful merges.
+
+Instead, we decouple **merging code** from **releasing to users**:
+
+- **Web (`apps/web`) deploys automatically** via Vercel when `dev` → `main` merges (mobile-only commits skip web rebuilds via Vercel's Ignored Build Step).
+- **Mobile (`apps/mobile`) ships only on explicit store releases** (`eas build --profile production` / `eas submit` — `main` does not auto-publish OTA updates). Tag store releases (e.g. `mobile-v2.0.4`), and use a short-lived `release/mobile-x.y.z` branch off that tag only if an urgent store-review fix is needed while `dev` moves ahead.
+- **Gate unfinished features with feature flags, not branches** (via `supaflag` / `useFeatureFlag` on mobile) so `dev` and `main` stay shippable for either app at any time.
+- **Keep shared `supabase/` changes backward-compatible** with the currently live mobile app version (**Expand → Migrate → Contract**): add new views, tables, or nullable columns first; only drop/rename columns or tighten breaking RLS policies once older mobile builds are phased out.
+
 ---
 
 ## Branch Naming Rules
