@@ -1,0 +1,147 @@
+name: Stale Branch Cleanup
+
+on:
+  schedule:
+    # Weekly on Monday at 09:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      stale_days:
+        description: 'Archive and delete branches inactive for this many days'
+        required: true
+        default: '30'
+        type: string
+      dry_run:
+        description: 'Report stale branches without tagging or deleting'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  cleanup-stale-branches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Archive and delete stale remote branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STALE_DAYS_INPUT: ${{ inputs.stale_days || '30' }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$STALE_DAYS_INPUT" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Error: stale_days must be a positive integer (got: '$STALE_DAYS_INPUT')." >&2
+            exit 1
+          fi
+          STALE_DAYS="$STALE_DAYS_INPUT"
+
+          echo "Fetching all remote branches (shallow)..."
+          git fetch --prune --depth=1 origin '+refs/heads/*:refs/remotes/origin/*'
+
+          declare -A PROTECTED=()
+          PROTECTED["dev"]=1
+          PROTECTED["main"]=1
+          if [[ -n "$DEFAULT_BRANCH" ]]; then
+            PROTECTED["$DEFAULT_BRANCH"]=1
+          fi
+
+          # Protect both head and base branches of all open PRs (handles stacked PRs safely).
+          while IFS= read -r branch; do
+            [[ -z "$branch" ]] && continue
+            PROTECTED["$branch"]=1
+          done < <(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" --jq '.[] | .head.ref, .base.ref')
+
+          NOW_EPOCH="$(date +%s)"
+          CUTOFF_EPOCH=$(( NOW_EPOCH - STALE_DAYS * 86400 ))
+
+          ARCHIVED_ROWS=()
+          SKIPPED_ROWS=()
+          ACTIVE_ROWS=()
+          FAILED=0
+
+          while IFS=$'\t' read -r ref commit_epoch commit_date; do
+            [[ "$ref" == "origin" || "$ref" == "origin/HEAD" ]] && continue
+            branch="${ref#origin/}"
+            [[ -z "$branch" ]] && continue
+
+            if [[ -n "${PROTECTED[$branch]+set}" ]]; then
+              SKIPPED_ROWS+=("| \`${branch}\` | ${commit_date} | Protected or open PR |")
+              continue
+            fi
+
+            if (( commit_epoch < CUTOFF_EPOCH )); then
+              tag="archive/${branch}"
+              if [[ "$DRY_RUN" == "true" ]]; then
+                echo "[dry-run] Would tag '${tag}' and delete remote branch '${branch}' (last commit: ${commit_date})"
+                ARCHIVED_ROWS+=("| \`${branch}\` | ${commit_date} | \`${tag}\` | Dry run (would archive & delete) |")
+              else
+                echo "Archiving '${branch}' (last commit: ${commit_date}) as '${tag}'..."
+                git tag -f "$tag" "origin/${branch}"
+                if git push origin "refs/tags/${tag}"; then
+                  if git push origin --delete "$branch"; then
+                    ARCHIVED_ROWS+=("| \`${branch}\` | ${commit_date} | \`${tag}\` | Archived & deleted |")
+                  else
+                    echo "Error: pushed tag '${tag}' but failed to delete remote branch '${branch}'." >&2
+                    ARCHIVED_ROWS+=("| \`${branch}\` | ${commit_date} | \`${tag}\` | Tag pushed; delete failed |")
+                    FAILED=1
+                  fi
+                else
+                  echo "Error: failed to push archive tag '${tag}'; skipping deletion of '${branch}'." >&2
+                  ARCHIVED_ROWS+=("| \`${branch}\` | ${commit_date} | \`${tag}\` | Tag push failed; kept branch |")
+                  FAILED=1
+                fi
+              fi
+            else
+              ACTIVE_ROWS+=("| \`${branch}\` | ${commit_date} | Active (< ${STALE_DAYS}d) |")
+            fi
+          done < <(git for-each-ref --format=$'%(refname:short)\t%(committerdate:unix)\t%(committerdate:short)' refs/remotes/origin)
+
+          {
+            echo "## Stale Branch Cleanup Summary"
+            echo ""
+            echo "- **Retention threshold:** ${STALE_DAYS} days"
+            echo "- **Dry run:** \`${DRY_RUN}\`"
+            echo "- **Archived / Stale branches:** ${#ARCHIVED_ROWS[@]}"
+            echo "- **Skipped (protected / open PR):** ${#SKIPPED_ROWS[@]}"
+            echo "- **Active branches (< ${STALE_DAYS}d):** ${#ACTIVE_ROWS[@]}"
+            echo ""
+
+            if [[ ${#ARCHIVED_ROWS[@]} -gt 0 ]]; then
+              echo "### Archived / Stale Branches"
+              echo "| Branch | Last Commit | Archive Tag | Action |"
+              echo "| :--- | :--- | :--- | :--- |"
+              printf '%s\n' "${ARCHIVED_ROWS[@]}"
+              echo ""
+            fi
+
+            if [[ ${#SKIPPED_ROWS[@]} -gt 0 ]]; then
+              echo "### Skipped (Protected or Open PR)"
+              echo "| Branch | Last Commit | Reason |"
+              echo "| :--- | :--- | :--- |"
+              printf '%s\n' "${SKIPPED_ROWS[@]}"
+              echo ""
+            fi
+
+            if [[ ${#ACTIVE_ROWS[@]} -gt 0 ]]; then
+              echo "### Active Branches"
+              echo "| Branch | Last Commit | Status |"
+              echo "| :--- | :--- | :--- |"
+              printf '%s\n' "${ACTIVE_ROWS[@]}"
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$FAILED" -ne 0 ]]; then
+            exit 1
+          fi

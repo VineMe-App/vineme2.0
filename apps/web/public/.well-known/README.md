@@ -14,7 +14,7 @@ These files need to be hosted at your domain root under `/.well-known/`:
 
 ## Setup Instructions
 
-See `docs/email-verification-hosting-setup.md` for complete setup instructions.
+See `docs/guides/email-verification-hosting.md` for complete setup instructions.
 
 ## Android Certificate Fingerprint
 

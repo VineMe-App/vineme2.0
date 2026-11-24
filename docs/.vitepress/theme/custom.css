@@ -1,0 +1,285 @@
+/*
+ * VineMe brand theme for the docs site.
+ * Brand colours: apps/web/app/globals.css (--brand-pink #ff0083, --brand-dark #2c2235, --brand-beige #fffbee).
+ * Pure #ff0083 is below 4.5:1 contrast on light backgrounds for body-size text, so links use the
+ * deeper stage pink (#d2056b) and pure pink is kept for buttons, accents and hover.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+@font-face {
+  font-family: 'Cal Sans';
+  src: url('../../../apps/web/app/fonts/cal-sans/CalSansVF.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+:root {
+  --vm-pink: #ff0083;
+  --vm-pink-deep: #d2056b;
+  --vm-pink-darker: #a60253;
+  --vm-pink-soft: #fe7ea7;
+  --vm-dark: #2c2235;
+  --vm-beige: #fffbee;
+
+  --vp-font-family-base: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  --vp-font-family-heading: 'Cal Sans', 'Nunito', ui-sans-serif, system-ui, sans-serif;
+
+  --vp-c-brand-1: var(--vm-pink-deep);
+  --vp-c-brand-2: var(--vm-pink);
+  --vp-c-brand-3: var(--vm-pink);
+  --vp-c-brand-soft: rgba(255, 0, 131, 0.1);
+
+  --vp-c-text-1: var(--vm-dark);
+  --vp-c-text-2: rgba(44, 34, 53, 0.74);
+  --vp-c-text-3: rgba(44, 34, 53, 0.56);
+
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: var(--vm-beige);
+  --vp-c-bg-soft: #fdf6ef;
+  --vp-c-divider: rgba(44, 34, 53, 0.1);
+  --vp-c-gutter: rgba(44, 34, 53, 0.06);
+
+  --vp-nav-bg-color: rgba(255, 255, 255, 0.92);
+  --vp-sidebar-bg-color: var(--vm-beige);
+  --vp-code-bg: rgba(44, 34, 53, 0.05);
+  --vp-c-tip-1: var(--vm-pink-deep);
+  --vp-c-tip-soft: rgba(255, 0, 131, 0.08);
+
+  --vm-diagram-bg: #ffffff;
+  --vm-diagram-border: rgba(44, 34, 53, 0.1);
+}
+
+.dark {
+  --vp-c-brand-1: var(--vm-pink-soft);
+  --vp-c-brand-2: #ff4da6;
+  --vp-c-brand-3: var(--vm-pink);
+  --vp-c-brand-soft: rgba(255, 0, 131, 0.18);
+
+  --vp-c-text-1: var(--vm-beige);
+  --vp-c-text-2: rgba(255, 251, 238, 0.74);
+  --vp-c-text-3: rgba(255, 251, 238, 0.52);
+
+  --vp-c-bg: #1f1826;
+  --vp-c-bg-alt: #181220;
+  --vp-c-bg-soft: var(--vm-dark);
+  --vp-c-divider: rgba(255, 251, 238, 0.1);
+  --vp-c-gutter: #120d17;
+
+  --vp-nav-bg-color: rgba(31, 24, 38, 0.92);
+  --vp-sidebar-bg-color: #181220;
+  --vp-code-bg: rgba(255, 251, 238, 0.06);
+
+  --vm-diagram-bg: #1f1826;
+  --vm-diagram-border: rgba(255, 251, 238, 0.1);
+}
+
+/* Header */
+.VPNavBarTitle .title {
+  font-family: var(--vp-font-family-heading);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.VPNavBarTitle .logo {
+  height: 28px;
+  width: auto;
+}
+
+/* Headings */
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+  font-family: var(--vp-font-family-heading);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.vp-doc h2 {
+  border-top-color: var(--vp-c-divider);
+}
+
+/* Summary blockquotes ("> **Summary.** ...") read as a callout */
+.vp-doc blockquote {
+  border: 1px solid color-mix(in srgb, var(--vm-pink) 22%, transparent);
+  background: var(--vp-c-brand-soft);
+  border-radius: 12px;
+  padding: 12px 18px;
+  color: var(--vp-c-text-1);
+}
+.vp-doc blockquote > p {
+  color: inherit;
+}
+
+/* Tables: softer header in brand beige */
+.vp-doc th {
+  background: var(--vp-c-bg-alt);
+  font-weight: 700;
+}
+
+/* Sidebar active item */
+.VPSidebarItem.is-active > .item .link > .text {
+  color: var(--vp-c-brand-1);
+  font-weight: 700;
+}
+
+/* Mermaid diagrams as cards */
+.vm-diagram {
+  position: relative;
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid var(--vm-diagram-border);
+  border-radius: 16px;
+  background: var(--vm-diagram-bg);
+  overflow-x: auto;
+}
+.vm-diagram-svg {
+  display: flex;
+  justify-content: center;
+}
+.vm-diagram foreignObject,
+.vm-viewer foreignObject {
+  /* Nunito's line box is slightly taller than Mermaid measures; don't clip descenders. */
+  overflow: visible;
+}
+.vm-diagram-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.vm-diagram-expand {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  padding: 4px 10px;
+  border: 1px solid var(--vm-diagram-border);
+  border-radius: 999px;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+}
+.vm-diagram:hover .vm-diagram-expand,
+.vm-diagram-expand:focus-visible {
+  opacity: 1;
+}
+.vm-diagram-expand:hover {
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+@media (hover: none) {
+  .vm-diagram-expand { opacity: 1; }
+}
+
+.vm-diagram-svg {
+  cursor: zoom-in;
+}
+
+/* Full-screen diagram viewer (zoom & pan) */
+.vm-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: color-mix(in srgb, var(--vp-c-bg) 96%, transparent);
+  backdrop-filter: blur(6px);
+}
+.vm-viewer-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  background-image: radial-gradient(var(--vp-c-divider) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.vm-viewer-stage.is-dragging {
+  cursor: grabbing;
+}
+.vm-viewer-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.vm-viewer-canvas svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+}
+.vm-viewer-toolbar {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--vm-diagram-border);
+  border-radius: 999px;
+  background: var(--vp-c-bg);
+  box-shadow: 0 8px 28px rgba(44, 34, 53, 0.16);
+}
+.vm-viewer-toolbar button {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--vp-c-text-1);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+}
+.vm-viewer-toolbar button.vm-viewer-text {
+  font-size: 13px;
+}
+.vm-viewer-toolbar button:hover {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+.vm-viewer-toolbar button:focus-visible {
+  outline: 2px solid var(--vm-pink);
+  outline-offset: 1px;
+}
+.vm-viewer-zoom {
+  min-width: 52px;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--vp-c-text-2);
+}
+.vm-viewer-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--vp-c-divider);
+}
+.vm-viewer-hint {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--vp-c-text-3);
+  pointer-events: none;
+}
+html.vm-diagram-locked {
+  overflow: hidden;
+}
+.vm-diagram-loading {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  color: var(--vp-c-text-3);
+  font-size: 14px;
+}
+.vm-diagram-error {
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--vp-c-danger-1);
+  font-size: 13px;
+}

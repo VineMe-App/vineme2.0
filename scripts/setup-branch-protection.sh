@@ -38,9 +38,10 @@ gh api -X PATCH "repos/${OWNER}/${REPO}" \
   -f allow_merge_commit=true \
   -f allow_rebase_merge=false \
   -f delete_branch_on_merge=true \
+  -f pull_request_creation_policy=collaborators_only \
   -f squash_merge_commit_title=PR_TITLE \
   -f squash_merge_commit_message=PR_BODY >/dev/null
-echo "Updated repository merge settings (squash/merge enabled, rebase disabled, auto-delete head branches)."
+echo "Updated repository merge and PR settings (squash/merge enabled, rebase disabled, auto-delete head branches, collaborators-only PRs)."
 
 # Remove legacy classic branch protection rules if present so Rulesets are the single source of truth.
 for branch in dev main; do
@@ -70,6 +71,7 @@ upsert_ruleset() {
 
 upsert_ruleset "${REPO_ROOT}/.github/rulesets/dev-branch-ruleset.json"
 upsert_ruleset "${REPO_ROOT}/.github/rulesets/main-branch-ruleset.json"
+upsert_ruleset "${REPO_ROOT}/.github/rulesets/branch-naming-ruleset.json"
 
 echo "=== Active Rulesets on ${OWNER}/${REPO} ==="
 gh api "repos/${OWNER}/${REPO}/rulesets" --jq '.[] | {id, name, enforcement, html_url: ._links.html.href}'

@@ -76,10 +76,13 @@ If a piece of work is not tied to an issue number, omit `<issue>-` (e.g. `chore/
    - **Feature / fix PRs → `dev`**: Use **Squash and merge** so each PR lands as one clean, atomic commit on `dev`.
    - **Release PRs (`dev` → `main`)**: Use **Create a merge commit** (never Squash and merge) so `dev` and `main` share commit history and never diverge.
 4. **Delete merged branches**:
-   GitHub is configured to delete head branches automatically after a PR merges. Locally, prune stale tracking branches and remove merged local branches regularly:
+   GitHub automatically deletes head branches after a PR merges (`delete_branch_on_merge`). Enable auto-pruning once locally so deleted remote branches disappear from your local refs on every `fetch`/`pull`:
    ```bash
-   git fetch --prune
-   ./scripts/cleanup-branches.sh --local
+   git config --global fetch.prune true
+   ```
+   Then clean up finished local branches (including squash-merged branches whose upstream is `[gone]`) anytime with:
+   ```bash
+   npm run git:clean
    ```
 
 ---
@@ -94,16 +97,26 @@ Because feature PRs are squashed into a single commit on `dev`, write clear, Con
 ```
 
 Examples:
-- `feat(web,db): add request view for follow-ups (VineMe-App/vineme-website#15)`
+- `feat(web,db): add request view for follow-ups (#421)`
 - `fix(mobile): show reminder notification deep link (#337)`
 
-### Linking Issues Across Repositories
-- **Clergy Dashboard issues** live in `VineMe-App/vineme-website` so existing issue numbers stay intact. Always prefix them with the repo name:
-  ```text
-  Closes VineMe-App/vineme-website#15
-  ```
-  *(Plain `#15` in this repo resolves to `VineMe-App/vineme2.0#15`!)*
-- **Mobile / monorepo issues** live in `VineMe-App/vineme2.0` and use `#<number>` (e.g. `Closes #337`).
+### Linking Issues
+- All issues, including Clergy Dashboard issues, live in `VineMe-App/vineme2.0`. Reference them as `#<number>` (e.g. `Closes #337`).
+- Dashboard issues were moved here from `VineMe-App/vineme-website`, so they have new numbers. Old links redirect, but old `vineme-website#<number>` references in past commits and PRs use the old numbers.
+
+---
+
+## Secrets
+
+This repository is public, and git history is permanent: deleting a file doesn't remove a secret from it.
+
+- **Never commit secrets** (API keys, tokens, service role keys, passwords, private keys), including in comments, tests, docs or example commands.
+- Keep them in `.env` / `.env.local` (gitignored), Supabase Edge Function secrets, Supabase Vault or Vercel env vars. Commit only `.env.example` files with placeholders.
+- **Don't commit AI tool or MCP configs** (`.mcp.json`, `.cursor/mcp.json`, `.kiro/`). Set them up locally with your own token.
+- Share secrets through a secrets manager, never in chat.
+- **If you commit a secret by mistake:** revoke or rotate it at the provider first, then tell the team privately. Removing the commit isn't enough.
+
+Where each secret lives: [docs/security/access-and-secrets.md](./docs/security/access-and-secrets.md).
 
 ---
 
@@ -124,6 +137,19 @@ Examples:
    ```
 5. **Security requirement**: Any Postgres view read by the dashboard or app must set `security_invoker = true` so Row-Level Security (RLS) policies apply per signed-in user/church.
 
+For the full pre-PR checklist (RLS, `SECURITY DEFINER` functions, cron, docs), see [docs/guides/database-migrations.md](./docs/guides/database-migrations.md).
+
+---
+
+## Documentation
+
+Docs live in [`docs/`](./docs/README.md). Start at its README.
+
+- **Update docs in the same PR as the code.** Use the "Update triggers" table in [`docs/maintaining-docs.md`](./docs/maintaining-docs.md) to find which docs your change affects.
+- **Significant technical decisions** (new library or service, data ownership, auth/RLS patterns) need an ADR in [`docs/decisions/`](./docs/decisions/README.md). Open it as *Proposed* in the PR and set it to *Accepted* on merge.
+- **Don't add** implementation summaries (`*_SUMMARY.md`, `final-*.md`). Put that history in the PR description.
+- Docs-only changes use the `docs` branch prefix and the `docs` PR scope, e.g. `docs(db): document edge function deploys`.
+
 ---
 
 ## Pre-PR Verification
@@ -137,6 +163,8 @@ npm run test:unit    # Mobile unit tests
 npm run build:web    # Production Next.js build
 ```
 
+Also confirm the docs your change affects are updated (see [Documentation](#documentation)).
+
 ---
 
 ## Branch Protection & Repo Maintenance
@@ -145,8 +173,9 @@ npm run build:web    # Production Next.js build
 - **Collaborators only**: Pushing branches and creating Pull Requests are restricted to repository collaborators (`Settings → General → Features → Pull requests → Collaborators only`).
 
 ### Branch Protection Rules
-- **`dev`**: Requires PR before merging, passing CI checks, conversation resolution, and blocks force-pushes/deletion (0 required approvals so verified solo/CI PRs can merge smoothly, admin bypass enabled).
+- **`dev`**: Requires PR before merging, passing CI checks, conversation resolution, **Code Owner review** on high-risk paths in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (0 baseline approvals so standard UI/docs PRs merge smoothly), and blocks force-pushes/deletion (admin bypass enabled).
 - **`main`**: Same protections as `dev` plus **1 required approving review** (dismissing stale reviews on new pushes, admin bypass enabled).
+- **Branch naming (`Enforce branch naming convention`)**: Rejects remote branch creation outside `dev`, `main`, `feat/*`, `fix/*`, `chore/*`, `docs/*`, `refactor/*`, `release/*`, `revert-*`, and `dependabot/*`.
 
 To apply or re-sync these rules and repository merge settings via the GitHub CLI:
 
@@ -155,14 +184,15 @@ To apply or re-sync these rules and repository merge settings via the GitHub CLI
 ```
 
 ### Cleaning Up Old Branches
-Use [`scripts/cleanup-branches.sh`](./scripts/cleanup-branches.sh) to audit and clean up branches safely:
+- **Automated remote cleanup**: A weekly GitHub Action ([`.github/workflows/stale-branches.yml`](./.github/workflows/stale-branches.yml)) automatically tags unmerged remote branches with no open PR and no commits for **30 days** as `archive/<branch>` and deletes the remote branch.
+- **Local & manual cleanup**: Run `npm run git:clean` or [`scripts/cleanup-branches.sh`](./scripts/cleanup-branches.sh) to clean up finished branches safely:
 
 ```bash
+npm run git:clean
 ./scripts/cleanup-branches.sh --dry-run --local --remote-merged
-./scripts/cleanup-branches.sh --local --remote-merged
 ./scripts/cleanup-branches.sh --dry-run --archive-stale
 ```
 
-- `--local` deletes local branches already merged into `origin/dev`.
+- `--local` deletes local branches whose upstream is `[gone]` (e.g. after Squash & Merge) or already merged into `origin/dev`.
 - `--remote-merged` deletes remote branches on `origin` already merged into `origin/dev`.
-- `--archive-stale` tags unmerged remote branches older than 90 days as `archive/<branch>`, pushes the tags, and deletes the remote branches so nothing is lost.
+- `--archive-stale` tags unmerged remote branches older than 30 days as `archive/<branch>`, pushes the tags, and deletes the remote branches so nothing is lost.

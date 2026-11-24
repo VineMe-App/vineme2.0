@@ -16,6 +16,7 @@ Project-specific [Agent Skills](https://agentskills.io) for the VineMe monorepo 
 | `supabase-migration` | Safe SQL migrations, `security_invoker`, RLS, and shared type regen | [`SKILL.md`](./supabase-migration/SKILL.md) |
 | `pre-pr-verify` | Scoped lint, typecheck, test, build, and DB verification before PR | [`SKILL.md`](./pre-pr-verify/SKILL.md) |
 | `church-data-protection` | UK data protection & safeguarding checks for features touching personal data | [`SKILL.md`](./church-data-protection/SKILL.md) |
+| `security-audit` | Security reviews and full audits: Supabase RLS & keys, Edge Functions, Next.js, Expo, secrets, auth, CI | [`SKILL.md`](./security-audit/SKILL.md) |
 
 ## Directory Structure
 

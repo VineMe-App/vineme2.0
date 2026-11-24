@@ -19,7 +19,7 @@ Execute one GitHub issue end-to-end on a clean branch off `dev`, strictly within
 
 2. **Create a clean branch off `dev`**
    ```bash
-   git fetch origin
+   git fetch --prune origin
    git checkout dev
    git pull origin dev
    git checkout -b <type>/<number>-<short-slug>

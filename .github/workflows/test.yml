@@ -39,6 +39,9 @@ jobs:
       - name: Run type checking
         run: npm run typecheck
 
+      - name: Run mobile type checking gate
+        run: node scripts/typecheck-mobile-gate.mjs
+
       - name: Run mobile unit tests
         run: npm run test:unit
 

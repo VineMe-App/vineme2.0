@@ -25,8 +25,10 @@ vineme2.0/
    ```
 
 2. **Environment variables**:
-   - Mobile: copy `apps/mobile/.env.example` to `apps/mobile/.env` and fill in `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
-   - Web: create `apps/web/.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (plus `SENDGRID_API_KEY` if testing contact emails).
+   - Mobile: copy `apps/mobile/.env.example` to `apps/mobile/.env`.
+   - Web: copy `apps/web/.env.example` to `apps/web/.env.local`.
+   - Edge Functions (only if you work on them): copy `supabase/functions/.env.example` to `supabase/functions/.env`.
+   - Fill in the Supabase URL and anon key from `supabase status`. Every variable, and where to get each value, is in [docs/guides/environment-setup.md](./docs/guides/environment-setup.md).
 
 ## Common Commands
 
@@ -41,6 +43,10 @@ npm run typecheck        # TypeScript check across mobile and web
 npm run test:unit        # Run mobile unit tests
 npm run build:web        # Build Next.js web app
 
+# Docs
+npm run docs:dev         # Browse docs/ as a local site (search + diagrams)
+npm run docs:build       # Build the site; fails on broken doc links
+
 # Supabase
 npm run db:migration:new <name>
 npm run db:reset
@@ -52,11 +58,11 @@ npm run db:types         # Generate Supabase types into packages/shared/src/data
 - Connect the Vercel project to `VineMe-App/vineme2.0`.
 - Set **Root Directory** to `apps/web`.
 - Set **Ignored Build Step** to `git diff HEAD^ HEAD --quiet -- . ../../packages/shared`.
-- Preserve existing environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SENDGRID_API_KEY`, etc.).
+- Preserve existing environment variables. The full list is in [docs/guides/environment-setup.md](./docs/guides/environment-setup.md#web-app).
 
 ## Dashboard Issues
 
-Clergy dashboard issues currently remain in `VineMe-App/vineme-website` so existing issue numbers stay intact. Reference them as `VineMe-App/vineme-website#<number>` in commits and PRs.
+Clergy dashboard issues now live in this repo alongside everything else (moved from `VineMe-App/vineme-website`, so they have new numbers; old links redirect). Reference them as `#<number>` in commits and PRs.
 
 ## Contributing
 
