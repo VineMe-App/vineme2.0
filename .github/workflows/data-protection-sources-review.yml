@@ -1,0 +1,104 @@
+name: Data protection sources review
+
+# Every quarter, checks the legal sources register used by the
+# church-data-protection skill and opens (or updates) a review issue
+# when any entry is unverified or was last checked over 183 days ago.
+
+on:
+  schedule:
+    - cron: '0 8 1 1,4,7,10 *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Open or update review issue
+        uses: actions/github-script@v8
+        env:
+          SOURCES_PATH: .agents/skills/church-data-protection/SOURCES.md
+          REVIEWER: oyoule91
+          LABEL: data-protection-review
+          MAX_AGE_DAYS: '183'
+        with:
+          script: |
+            const fs = require('fs');
+            const { SOURCES_PATH, REVIEWER, LABEL, MAX_AGE_DAYS } = process.env;
+            const title = 'Data protection skill: legal sources due for review';
+            const maxAgeMs = Number(MAX_AGE_DAYS) * 24 * 60 * 60 * 1000;
+
+            // Parse the markdown table: Claim | Used in | Official source | Moving? | Last checked
+            const rows = fs.readFileSync(SOURCES_PATH, 'utf8')
+              .split('\n')
+              .filter((line) => line.trim().startsWith('|'))
+              .map((line) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim()))
+              .filter((cells) => cells.length === 5)
+              .filter((cells) => cells[0] !== 'Claim' && !/^-+$/.test(cells[0]));
+
+            if (rows.length === 0) {
+              core.setFailed(`No entries parsed from ${SOURCES_PATH}`);
+              return;
+            }
+
+            const now = Date.now();
+            const due = rows.filter(([, , , , lastChecked]) => {
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(lastChecked)) return true;
+              const t = Date.parse(lastChecked);
+              return Number.isNaN(t) || now - t > maxAgeMs;
+            });
+
+            core.info(`${rows.length} entries, ${due.length} due for review`);
+            if (due.length === 0) return;
+
+            const fileUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/${context.ref.replace('refs/heads/', '')}/${SOURCES_PATH}`;
+            const list = due
+              .map(([claim, usedIn, source, , lastChecked]) =>
+                `- [ ] **${claim}**\n  Used in: ${usedIn}. Source: ${source}. Last checked: ${lastChecked}.`)
+              .join('\n');
+            const body = [
+              `${due.length} of ${rows.length} entries in [SOURCES.md](${fileUrl}) are unverified or were last checked more than ${MAX_AGE_DAYS} days ago.`,
+              '',
+              list,
+              '',
+              '**To close this issue:**',
+              '1. Check each claim against its official source.',
+              '2. Where the law or guidance has changed, update the topic files listed under "Used in".',
+              '3. Set each entry\'s Last checked date (YYYY-MM-DD) in SOURCES.md, in the same PR.',
+              '4. Merge the PR, then close this issue. The next quarterly run opens a new one if anything is still due.',
+              '',
+              '_Opened by the data-protection-sources-review workflow._',
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: LABEL });
+            } catch (e) {
+              if (e.status !== 404) throw e;
+              await github.rest.issues.createLabel({
+                owner, repo, name: LABEL, color: 'd93f0b',
+                description: 'Legal sources in the church-data-protection skill need review',
+              });
+            }
+
+            const open = await github.rest.issues.listForRepo({
+              owner, repo, labels: LABEL, state: 'open', per_page: 1,
+            });
+
+            if (open.data.length > 0) {
+              const number = open.data[0].number;
+              await github.rest.issues.update({ owner, repo, issue_number: number, body });
+              await github.rest.issues.addAssignees({ owner, repo, issue_number: number, assignees: [REVIEWER] });
+              core.info(`Updated issue #${number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner, repo, title, body, labels: [LABEL], assignees: [REVIEWER],
+              });
+              core.info(`Opened issue #${created.data.number}`);
+            }
