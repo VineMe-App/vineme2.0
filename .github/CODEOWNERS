@@ -17,6 +17,8 @@
 /scripts/mobile-typecheck-baseline.json @hugheshallettj @tomoakley @aonghas
 /scripts/classify-pr-risk.mjs @hugheshallettj @tomoakley @aonghas
 /scripts/classify-pr-risk.test.mjs @hugheshallettj @tomoakley @aonghas
+/scripts/check-migration-compat.mjs @hugheshallettj @tomoakley @aonghas
+/scripts/check-migration-compat.test.mjs @hugheshallettj @tomoakley @aonghas
 
 # Auth, permissions, server API routes, and Supabase client wiring
 /apps/web/lib/supabase/ @hugheshallettj @tomoakley @aonghas

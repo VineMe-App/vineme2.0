@@ -40,7 +40,7 @@ jobs:
             CHANGED_FILES="$(git diff --name-only "${BEFORE_SHA}..${GITHUB_SHA}" 2>/dev/null || echo "supabase/fallback")"
           fi
 
-          if printf '%s\n' "$CHANGED_FILES" | grep -qE '^(supabase/|scripts/check-db-security\.sql$|\.github/workflows/supabase-check\.yml$)'; then
+          if printf '%s\n' "$CHANGED_FILES" | grep -qE '^(supabase/|scripts/check-db-security\.sql$|scripts/check-migration-compat\.mjs$|\.github/workflows/supabase-check\.yml$)'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Supabase-related files changed; running full DB security check."
           else
@@ -56,6 +56,41 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Check migration backward compatibility
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null || ! git cat-file -e "${PR_HEAD_SHA}^{commit}" 2>/dev/null; then
+              git fetch --no-tags --depth=1 origin "$BASE_SHA" "$PR_HEAD_SHA" >/dev/null 2>&1 || true
+            fi
+            CHANGED_MIGRATIONS=$(git diff --name-only --diff-filter=AM "${BASE_SHA}...${PR_HEAD_SHA}" -- 'supabase/migrations/*.sql')
+          elif [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            CHANGED_MIGRATIONS=$(git diff --name-only --diff-filter=AM "${BEFORE_SHA}..${COMMIT_SHA}" -- 'supabase/migrations/*.sql')
+          else
+            echo "Skipping migration diff check on initial branch push without prior base SHA."
+            exit 0
+          fi
+
+          if [ -z "$CHANGED_MIGRATIONS" ]; then
+            echo "No added or modified SQL migrations to check."
+            exit 0
+          fi
+
+          printf '%s\n' "$CHANGED_MIGRATIONS" | node scripts/check-migration-compat.mjs
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
