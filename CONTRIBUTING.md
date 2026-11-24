@@ -127,7 +127,7 @@ PRs targeting `dev` are automatically classified by [`.github/workflows/pr-risk-
 | **Tier 3** | `risk:high` | Any path in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (`supabase/`, auth, permissions, API routes, `.github/`, CI gate & classifier scripts) | Auto-merge **disabled**; blocked until **1 non-author Code Owner** approves + required CI checks pass |
 
 - **Escalation safety:** If a later push adds a Tier 2 or Tier 3 file, auto-merge is automatically disabled.
-- **Releases (`dev` → `main`):** Auto-merge is never enabled on `main`. Release PRs require **1 approving review + Code Owner review**, passing `test (20.x)` and `supabase-gate`, and must use **Create a merge commit**.
+- **Releases (`dev` → `main`):** Auto-merge is never enabled on `main`. Release PRs require **1 approving review** (from a Code Owner if any `CODEOWNERS` path changed), passing `test (20.x)` and `supabase-gate`, and must use **Create a merge commit**.
 
 ---
 
