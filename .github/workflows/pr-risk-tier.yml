@@ -100,7 +100,7 @@ jobs:
             if (r.tier === "high") {
               lines.push("### Risk Tier: High (`risk:high`)");
               lines.push("");
-              lines.push("- **Review policy:** Code Owner approval required (`@hugheshallettj`, `@tomoakley`, or `@aonghas`, non-author) + passing `test (20.x)` and `supabase-gate`.");
+              lines.push("- **Review policy:** 1 non-author Code Owner approval required (`@hugheshallettj` or `@tomoakley`) + passing `test (20.x)` and `supabase-gate`.");
               lines.push(`- **Auto-merge:** ${autoMergeStatus}`);
               lines.push("");
               lines.push("**Matched CODEOWNERS paths:**");
@@ -114,7 +114,7 @@ jobs:
               lines.push("### Risk Tier: Medium (`risk:medium`)");
               lines.push("");
               if (baseRef === "main") {
-                lines.push("- **Review policy:** Release PR to `main` requires **1 approving review + Code Owner review** + passing `test (20.x)` and `supabase-gate`.");
+                lines.push("- **Review policy:** Release PR to `main` requires **1 approving review** (from a Code Owner if any `CODEOWNERS` path changed) + passing `test (20.x)` and `supabase-gate`.");
               } else {
                 lines.push("- **Review policy:** Verify behavior on the **Vercel Preview URL** (for `apps/web`) or Expo (for `apps/mobile`), ensure `test (20.x)` and `supabase-gate` pass, then click **Squash and merge**.");
               }
@@ -123,7 +123,7 @@ jobs:
               lines.push("### Risk Tier: Low (`risk:low`)");
               lines.push("");
               if (baseRef === "main") {
-                lines.push("- **Review policy:** Release PR to `main` requires **1 approving review + Code Owner review** + passing `test (20.x)` and `supabase-gate`.");
+                lines.push("- **Review policy:** Release PR to `main` requires **1 approving review** (from a Code Owner if any `CODEOWNERS` path changed) + passing `test (20.x)` and `supabase-gate`.");
               } else {
                 lines.push("- **Review policy:** Docs, non-agent markdown, static assets, or tests only. No extra code review required.");
               }
