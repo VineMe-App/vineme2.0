@@ -1,0 +1,68 @@
+name: Project Auto-Triage
+
+on:
+  issues:
+    types: [opened, assigned]
+  create: {}
+  pull_request:
+    branches: [dev]
+    types:
+      [
+        opened,
+        reopened,
+        edited,
+        synchronize,
+        ready_for_review,
+        converted_to_draft,
+        labeled,
+        unlabeled,
+        closed,
+      ]
+  pull_request_review:
+    types: [submitted, dismissed]
+  workflow_run:
+    workflows: ['Test Suite', 'Supabase Migrations & Security']
+    types: [completed]
+
+concurrency:
+  group: >-
+    project-triage-${{ github.event.issue.number || github.event.pull_request.number || github.event.workflow_run.head_sha || github.event.ref || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  checks: read
+
+jobs:
+  triage:
+    if: >-
+      (github.event_name != 'pull_request' && github.event_name != 'pull_request_review' && github.event_name != 'workflow_run') ||
+      (github.event.pull_request && github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event.workflow_run && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout default branch (dev)
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Sync VineMe 3.0 project item status
+        env:
+          PROJECT_TOKEN: ${{ secrets.PROJECT_AUTOMATION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECT_ORG: VineMe-App
+          PROJECT_TITLE: ${{ vars.PROJECT_TITLE || 'VineMe 3.0' }}
+          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
+        run: |
+          if [ ! -f scripts/project-triage.mjs ]; then
+            echo "scripts/project-triage.mjs is not on dev yet; skipping until merged."
+            exit 0
+          fi
+          node scripts/project-triage.mjs

@@ -13,6 +13,7 @@ Follow the steps in [CONTRIBUTING.md › Database Migrations](../../CONTRIBUTING
 - [ ] `SECURITY DEFINER` functions check `auth.uid()` and set `search_path`.
 - [ ] Cron schedules are read from Vault, like the existing `reschedule_*` functions. Don't hard-code project URLs or keys.
 - [ ] Idempotent where you can (`IF NOT EXISTS`, `CREATE OR REPLACE`).
+- [ ] Backward-compatible with live mobile builds (**Expand → Migrate → Contract**): `node scripts/check-migration-compat.mjs <migration_file>` passes (or intentional Contract-phase cleanups include `-- allow-breaking-migration: <reason>` with at least 10 characters).
 - [ ] Docs updated per [maintaining-docs.md](../maintaining-docs.md#update-triggers-if-you-change-x-update-y) (ER diagram, status table, RPC table, background jobs).
 
 ## Don'ts

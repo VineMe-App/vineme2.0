@@ -128,6 +128,8 @@ PRs targeting `dev` are automatically classified by [`.github/workflows/pr-risk-
 
 - **Escalation safety:** If a later push adds a Tier 2 or Tier 3 file, auto-merge is automatically disabled.
 - **Releases (`dev` → `main`):** Auto-merge is never enabled on `main`. Release PRs require **1 approving review** (from a Code Owner if any `CODEOWNERS` path changed), passing `test (20.x)` and `supabase-gate`, and must use **Create a merge commit**.
+- **Automated PR checks & project sync:** Every PR runs `test (20.x)` (lint, typecheck, mobile baseline gate, unit/integration/e2e tests, web build) and `supabase-gate` (backward-compatibility linter + local DB security check), alongside Vercel Preview, Supabase Preview branching, automated Codex review, and automatic `VineMe 3.0` board triage ([`.github/workflows/project-triage.yml`](./.github/workflows/project-triage.yml)).
+- **More workflow & release guides:** Issue forms, `VineMe 3.0` board triage, Slack/Sentry channels, and AI agents live in [docs/guides/team-workflow.md](./docs/guides/team-workflow.md); environment and release steps live in [docs/guides/deployment.md](./docs/guides/deployment.md).
 
 ---
 
@@ -152,8 +154,9 @@ Where each secret lives: [docs/security/access-and-secrets.md](./docs/security/a
    ```bash
    npm run db:migration:new <descriptive_name>
    ```
-3. Test the full migration chain and `supabase/seed.sql` locally:
+3. Test the full migration chain and `supabase/seed.sql` locally, and check backward compatibility with live mobile builds (**Expand → Migrate → Contract**):
    ```bash
+   node scripts/check-migration-compat.mjs supabase/migrations/<migration_file>.sql
    npm run db:reset
    ```
 4. Regenerate shared TypeScript database types when tables or views change:
