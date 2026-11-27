@@ -275,7 +275,25 @@ test('determineTargetStatus handles issues, branches, PR tiers, merge to dev, an
       isDraft: false,
       riskLabel: 'risk:high',
       requiredChecksPassed: true,
+      authorIsCodeOwner: false,
       approvedByCodeOwner: true,
+      hasChangesRequested: false,
+      currentStatus: 'In Progress',
+    }).targetStatus,
+    'Code Complete'
+  );
+
+  // Tier 3 authored by Code Owner: CI green moves straight to Code Complete without extra reviewer
+  assert.equal(
+    determineTargetStatus({
+      event: 'workflow_run',
+      baseRef: 'dev',
+      state: 'open',
+      isDraft: false,
+      riskLabel: 'risk:high',
+      requiredChecksPassed: true,
+      authorIsCodeOwner: true,
+      approvedByCodeOwner: false,
       hasChangesRequested: false,
       currentStatus: 'In Progress',
     }).targetStatus,

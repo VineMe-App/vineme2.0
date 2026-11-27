@@ -64,7 +64,7 @@ flowchart LR
 | :--- | :--- | :--- |
 | **→ `Backlog`** | Issue opened with no assignee | Skipped if issue already has a board status |
 | **→ `In Progress`** | Issue opened with an assignee or assigned later; matching branch created (`feat\|fix\|chore\|docs\|refactor/<issue>-*`); draft or open PR targeting `dev` awaiting checks/review; changes requested (`CHANGES_REQUESTED`) | Never pulls an issue back from `Ready for QA` or `Done`; assignment alone never pulls back `Code Complete` |
-| **→ `Code Complete`** | Non-draft PR targeting `dev` where required checks (`test (20.x)` and `supabase-gate`) both pass, no reviewer has `CHANGES_REQUESTED`, and (if `risk:high`) a non-author Code Owner in [`.github/CODEOWNERS`](../../.github/CODEOWNERS) has `APPROVED` | Pulls back to `In Progress` if switched to draft, changes are requested, or a new push resets checks |
+| **→ `Code Complete`** | Non-draft PR targeting `dev` where required checks (`test (20.x)` and `supabase-gate`) both pass, no reviewer has `CHANGES_REQUESTED`, and (if `risk:high`) either the PR author is a listed Code Owner (`@hugheshallettj` or `@tomoakley`) or a non-author Code Owner in [`.github/CODEOWNERS`](../../.github/CODEOWNERS) has `APPROVED` | Pulls back to `In Progress` if switched to draft, changes are requested, or a new push resets checks |
 | **→ `Ready for QA`** | Linked PR (`Closes #<n>` or branch `<type>/<n>-...`) is merged into `dev` | Never moves an issue already in `Done`; release PRs targeting `main` are ignored |
 | **→ `Done`** | **Manual** move after verifying on Vercel Preview (`dev`) / Expo `preview` | — |
 

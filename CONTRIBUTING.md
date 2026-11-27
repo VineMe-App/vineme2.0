@@ -122,13 +122,13 @@ PRs targeting `dev` are automatically classified by [`.github/workflows/pr-risk-
 
 | Tier | Label | Paths | Merge & Review Rule (`dev`) |
 | :--- | :--- | :--- | :--- |
-| **Tier 1** | `risk:low` | **Only** `docs/**` (excluding `docs/.vitepress/**`), non-agent `**/*.md`, static assets, and test files (`__tests__`, `*.test.*`, `*.spec.*`) | **Auto-merges** (squash) once required CI checks pass (`test (20.x)` and `supabase-gate`), on non-draft PRs to `dev` |
+| **Tier 1** | `risk:low` | **Only** `docs/**` (excluding `docs/.vitepress/**`), non-agent `**/*.md`, static assets, and test files (`__tests__`, `*.test.*`, `*.spec.*`) | **Auto-merges** (squash) once required CI checks pass (`test (20.x)`, `supabase-gate`, and `codeowner-gate`), on non-draft PRs to `dev` |
 | **Tier 2** | `risk:medium` | Standard app/package code (`apps/web/`, `apps/mobile/`, `packages/shared/`), `AGENTS.md`, `CLAUDE.md`, `.agents/**`, and `docs/.vitepress/**` | Auto-merge **disabled**; author verifies behaviour on the Vercel Preview URL or Expo, then merges (0 extra code reviews required) |
-| **Tier 3** | `risk:high` | Any path in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (`supabase/`, auth, permissions, API routes, `.github/`, CI gate & classifier scripts) | Auto-merge **disabled**; blocked until **1 non-author Code Owner** approves + required CI checks pass |
+| **Tier 3** | `risk:high` | Any path in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (`supabase/`, auth, permissions, API routes, `.github/`, CI gate & classifier scripts) | Auto-merge **disabled**; **`codeowner-gate`** requires `@hugheshallettj` or `@tomoakley` to approve unless authored by one of them + required CI checks pass |
 
 - **Escalation safety:** If a later push adds a Tier 2 or Tier 3 file, auto-merge is automatically disabled.
-- **Releases (`dev` → `main`):** Auto-merge is never enabled on `main`. Release PRs require **1 approving review** (from a Code Owner if any `CODEOWNERS` path changed), passing `test (20.x)` and `supabase-gate`, and must use **Create a merge commit**.
-- **Automated PR checks & project sync:** Every PR runs `test (20.x)` (lint, typecheck, mobile baseline gate, unit/integration/e2e tests, web build) and `supabase-gate` (backward-compatibility linter + local DB security check), alongside Vercel Preview, Supabase Preview branching, automated Codex review, and automatic `VineMe 3.0` board triage ([`.github/workflows/project-triage.yml`](./.github/workflows/project-triage.yml)).
+- **Releases (`dev` → `main`):** Auto-merge is never enabled on `main`. Release PRs require **1 approving review**, passing `test (20.x)`, `supabase-gate`, and `codeowner-gate`, and must use **Create a merge commit**.
+- **Automated PR checks & project sync:** Every PR runs `test (20.x)` (lint, typecheck, mobile baseline gate, unit/integration/e2e tests, web build), `supabase-gate` (backward-compatibility linter + local DB security check), and `codeowner-gate` (enforcing Code Owner approval on Tier 3 PRs not authored by `@hugheshallettj` or `@tomoakley`), alongside Vercel Preview, Supabase Preview branching, automated Codex review, and automatic `VineMe 3.0` board triage ([`.github/workflows/project-triage.yml`](./.github/workflows/project-triage.yml)).
 - **More workflow & release guides:** Issue forms, `VineMe 3.0` board triage, Slack/Sentry channels, and AI agents live in [docs/guides/team-workflow.md](./docs/guides/team-workflow.md); environment and release steps live in [docs/guides/deployment.md](./docs/guides/deployment.md).
 
 ---
@@ -201,7 +201,7 @@ Also confirm the docs your change affects are updated (see [Documentation](#docu
 - **Collaborators only**: Pushing branches and creating Pull Requests are restricted to repository collaborators (`Settings → General → Features → Pull requests → Collaborators only`).
 
 ### Branch Protection Rules
-- **`dev`**: Requires PR before merging, passing `test (20.x)` and `supabase-gate` checks, conversation resolution, **Code Owner review** on high-risk paths in [`.github/CODEOWNERS`](./.github/CODEOWNERS) (0 baseline approvals so Tier 1 auto-merge and Tier 2 self-merge work smoothly), GitHub Auto-Merge enabled, and blocks force-pushes/deletion. Only the 2 organization owners hold break-glass `admin` bypass rights; all other collaborators hold `write`.
+- **`dev`**: Requires PR before merging, passing `test (20.x)`, `supabase-gate`, and `codeowner-gate` checks, conversation resolution, 0 baseline approvals (so Tier 1 auto-merge, Tier 2 self-merge, and Code-Owner-authored Tier 3 PRs work smoothly while requiring `@hugheshallettj` or `@tomoakley` approval on Tier 3 PRs by others), GitHub Auto-Merge enabled, and blocks force-pushes/deletion. Only the 2 organization owners hold break-glass `admin` bypass rights; all other collaborators hold `write`.
 - **`main`**: Same protections as `dev` plus **1 required approving review** (dismissing stale reviews on new pushes, auto-merge disabled).
 - **Branch naming (`Enforce branch naming convention`)**: Rejects remote branch creation outside `dev`, `main`, `feat/*`, `fix/*`, `chore/*`, `docs/*`, `refactor/*`, `release/*`, `revert-*`, and `dependabot/*`.
 

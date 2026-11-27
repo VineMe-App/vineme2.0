@@ -5,7 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { classifyFiles } from './classify-pr-risk.mjs';
+import { classifyFiles, parseCodeowners } from './classify-pr-risk.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
@@ -240,6 +240,7 @@ export function evaluateRequiredChecks(
  *   issueAssigned?: boolean,
  *   riskLabel?: string | null,
  *   requiredChecksPassed?: boolean,
+ *   authorIsCodeOwner?: boolean,
  *   approvedByCodeOwner?: boolean,
  *   hasChangesRequested?: boolean
  * }} ctx
@@ -341,7 +342,9 @@ export function determineTargetStatus(ctx) {
   }
 
   const needsCodeOwnerReview = ctx.riskLabel === 'risk:high';
-  const reviewSatisfied = !needsCodeOwnerReview || ctx.approvedByCodeOwner;
+  const reviewSatisfied =
+    !needsCodeOwnerReview ||
+    Boolean(ctx.authorIsCodeOwner || ctx.approvedByCodeOwner);
   const readyForMerge =
     !ctx.hasChangesRequested &&
     ctx.requiredChecksPassed === true &&
@@ -354,7 +357,9 @@ export function determineTargetStatus(ctx) {
     return {
       targetStatus: 'Code Complete',
       reason: needsCodeOwnerReview
-        ? 'Required checks passed and Code Owner approved'
+        ? ctx.authorIsCodeOwner
+          ? 'Required checks passed for high-risk PR authored by Code Owner'
+          : 'Required checks passed and Code Owner approved'
         : 'Required checks passed for non-high-risk PR',
     };
   }
@@ -709,6 +714,7 @@ async function processPullRequest({
   projectToken,
   project,
   codeowners,
+  codeownersPatterns,
 }) {
   if (!pr) return;
   const baseRef = pr.base?.ref ?? null;
@@ -738,6 +744,9 @@ async function processPullRequest({
   let requiredChecksPassed = false;
   let approvedByCodeOwner = false;
   let hasChangesRequested = false;
+  const authorIsCodeOwner = codeowners.has(
+    (pr.user?.login ?? '').trim().toLowerCase()
+  );
   let riskLabel =
     (pr.labels ?? []).find((l) => l?.name?.startsWith('risk:'))?.name ?? null;
 
@@ -770,7 +779,7 @@ async function processPullRequest({
       const changedFiles = (filesData ?? [])
         .map((f) => f?.filename)
         .filter(Boolean);
-      riskLabel = classifyFiles(changedFiles).label;
+      riskLabel = classifyFiles(changedFiles, codeownersPatterns).label;
     }
   }
 
@@ -798,6 +807,7 @@ async function processPullRequest({
       state: pr.state,
       riskLabel,
       requiredChecksPassed,
+      authorIsCodeOwner,
       approvedByCodeOwner,
       hasChangesRequested,
     });
@@ -855,6 +865,7 @@ async function runCli() {
     ? fs.readFileSync(DEFAULT_CODEOWNERS_PATH, 'utf8')
     : '';
   const codeowners = parseCodeownersLogins(codeownersText);
+  const codeownersPatterns = parseCodeowners(codeownersText);
 
   if (eventName === 'issues') {
     const issue = payload.issue;
@@ -939,6 +950,7 @@ async function runCli() {
       projectToken,
       project,
       codeowners,
+      codeownersPatterns,
     });
     return;
   }
@@ -966,6 +978,7 @@ async function runCli() {
       projectToken,
       project,
       codeowners,
+      codeownersPatterns,
     });
     return;
   }
@@ -1019,6 +1032,7 @@ async function runCli() {
         projectToken,
         project,
         codeowners,
+        codeownersPatterns,
       });
     }
   }

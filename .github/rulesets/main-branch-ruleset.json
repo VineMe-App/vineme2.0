@@ -27,7 +27,7 @@
       "parameters": {
         "required_approving_review_count": 1,
         "dismiss_stale_reviews_on_push": true,
-        "require_code_owner_review": true,
+        "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_review_thread_resolution": true,
         "allowed_merge_methods": ["merge"]
@@ -45,6 +45,10 @@
           },
           {
             "context": "supabase-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "codeowner-gate",
             "integration_id": 15368
           }
         ]
