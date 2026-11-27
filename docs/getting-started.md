@@ -33,7 +33,7 @@ _TODO: time this on a fresh machine and note anything that takes longer than 15 
 
 ## 5. Your first change
 
-1. Pick an issue labelled "good first issue". All issues, including the Clergy Dashboard's, are in this repo.
+1. Pick an issue labelled "good first issue" (or file one using our issue forms). All issues, including the Clergy Dashboard's, are in this repo; how issues flow on `VineMe 3.0`, Slack, and Sentry is in [guides/team-workflow.md](./guides/team-workflow.md).
 2. Branch off `dev` as `<type>/<issue>-<short-slug>` (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
 3. Ask Claude (or another agent) for help. Agents read the root `AGENTS.md` (Claude Code through `CLAUDE.md`), which points them at these docs. Project skills such as `implement-issue` and `church-data-protection` are in `.agents/skills/`.
 4. Open a PR against `dev`.

@@ -7,7 +7,7 @@ Last verified against code: 2026-11-24
 ## Repository
 
 - `VineMe-App/vineme2.0` is **public**. _Decision needed: should it stay public?_
-- Branch rulesets for `dev`, `main`, and branch naming are kept as code in `.github/rulesets/` and active on GitHub: no deletion, no force-push, changes through a pull request, required status checks (`test (20.x)` and `supabase-gate`), GitHub Auto-Merge for Tier 1 PRs, and `CODEOWNERS` review on Tier 3 paths.
+- Branch rulesets for `dev`, `main`, and branch naming are kept as code in `.github/rulesets/` and active on GitHub: no deletion, no force-push, changes through a pull request, required status checks (`test (20.x)`, `supabase-gate`, and `codeowner-gate`), GitHub Auto-Merge for Tier 1 PRs, and Code Owner review on Tier 3 paths (enforced by `codeowner-gate` when not authored by `@hugheshallettj` or `@tomoakley`).
 - Only the 2 organization owners hold `admin` rights (for break-glass emergencies); all other collaborators hold `write` and cannot bypass rulesets or `CODEOWNERS`.
 - Pull requests and branch creation are restricted to repository collaborators (`collaborators_only`).
 - Full branch, risk-tier PR, and merge workflow: [CONTRIBUTING.md](../../CONTRIBUTING.md).
@@ -46,7 +46,7 @@ Rule: AI tool and MCP configs (`.mcp.json`, `.cursor/mcp.json`, `.kiro/`) hold p
 - [ ] Remove people who have left (periodically audit collaborators).
 - [x] Drop admin rights from anyone who doesn't need them (`VineMe-App` default permission set to `write`; only the 2 org owners keep break-glass `admin`).
 - [x] Only contributors can create branches and PRs (`collaborators_only` PR policy + branch-naming ruleset).
-- [x] Protect `dev` and `main` (rulesets active with `test (20.x)`, `supabase-gate`, and `CODEOWNERS`).
+- [x] Protect `dev` and `main` (rulesets active with `test (20.x)`, `supabase-gate`, and `codeowner-gate`).
 - [ ] Decide whether the repo stays public.
 - [x] Turn on GitHub secret scanning, push protection, and Dependabot ([`.github/dependabot.yml`](../../.github/dependabot.yml)).
 

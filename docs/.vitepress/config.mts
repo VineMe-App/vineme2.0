@@ -165,6 +165,8 @@ const sidebar = [
     collapsed: true,
     items: [
       { text: 'Index', link: '/guides/' },
+      { text: 'Team workflow', link: '/guides/team-workflow' },
+      { text: 'Deployment & releases', link: '/guides/deployment' },
       { text: 'Environment setup', link: '/guides/environment-setup' },
       { text: 'Database migrations', link: '/guides/database-migrations' },
       { text: 'Edge Functions', link: '/guides/edge-functions' },

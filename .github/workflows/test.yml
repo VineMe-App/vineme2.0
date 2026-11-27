@@ -45,7 +45,7 @@ jobs:
         run: node scripts/typecheck-mobile-gate.mjs
 
       - name: Run CI script unit tests
-        run: node --test scripts/classify-pr-risk.test.mjs scripts/check-migration-compat.test.mjs
+        run: node --test scripts/classify-pr-risk.test.mjs scripts/check-migration-compat.test.mjs scripts/project-triage.test.mjs scripts/codeowner-gate.test.mjs
 
       - name: Build VitePress docs (when docs changed)
         run: |

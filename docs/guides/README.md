@@ -5,6 +5,8 @@
 | Guide | Use it to… |
 | --- | --- |
 | [Getting started](../getting-started.md) | The short route in for newcomers |
+| [Team workflow](./team-workflow.md) | Filing issues, `VineMe 3.0` board triage, Slack/Sentry, and AI agents |
+| [Deployment and releases](./deployment.md) | Web (Vercel), mobile (EAS), Supabase branching, and safe preview QA |
 | [Environment setup](./environment-setup.md) | Every env var and secret, per environment, and local setup from scratch |
 | [Database migrations](./database-migrations.md) | Change schema, RLS, views, RPCs or cron |
 | [Edge Functions](./edge-functions.md) | Add, run, test and deploy a function |

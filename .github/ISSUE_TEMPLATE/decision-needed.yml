@@ -1,7 +1,7 @@
 name: Decision Needed
 description: Raise an unresolved product, schema, or architecture decision that blocks implementation
 title: "decision: "
-labels: ["decision-needed"]
+labels: ["decision"]
 body:
   - type: markdown
     attributes:

@@ -1,4 +1,4 @@
-# High-risk paths require 1 non-author Code Owner approval on PRs targeting dev and main.
+# High-risk paths require Code Owner approval (enforced by codeowner-gate for PRs not authored by @hugheshallettj or @tomoakley).
 # Standard UI, copy, and feature paths outside this list can merge to dev with 0 approvals
 # once CI checks pass.
 
@@ -19,6 +19,10 @@
 /scripts/classify-pr-risk.test.mjs @hugheshallettj @tomoakley
 /scripts/check-migration-compat.mjs @hugheshallettj @tomoakley
 /scripts/check-migration-compat.test.mjs @hugheshallettj @tomoakley
+/scripts/project-triage.mjs @hugheshallettj @tomoakley
+/scripts/project-triage.test.mjs @hugheshallettj @tomoakley
+/scripts/codeowner-gate.mjs @hugheshallettj @tomoakley
+/scripts/codeowner-gate.test.mjs @hugheshallettj @tomoakley
 
 # Auth, permissions, server API routes, and Supabase client wiring
 /apps/web/lib/supabase/ @hugheshallettj @tomoakley

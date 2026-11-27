@@ -64,6 +64,8 @@ VineMe helps people get connected to small groups at their church. Members use t
 ## Guides
 
 - [Guides index](./guides/README.md)
+- [Team workflow](./guides/team-workflow.md): issues, `VineMe 3.0` auto-triage, Slack, Sentry, and AI agents
+- [Deployment and releases](./guides/deployment.md): Vercel, Expo EAS, Supabase branching, and preview QA
 - [Testing](./guides/testing/README.md) · [Cross-platform testing](./guides/testing/cross-platform.md) · [Admin features testing](./guides/testing/admin-features.md)
 - [Environment setup](./guides/environment-setup.md): every env var and secret, per environment
 - [Database migrations](./guides/database-migrations.md)
